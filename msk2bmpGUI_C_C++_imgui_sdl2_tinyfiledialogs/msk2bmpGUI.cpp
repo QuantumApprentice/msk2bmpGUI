@@ -1,3 +1,7 @@
 #include <iostream>
 #include "imgui.h"
-#include <stdio.h>
+
+int main()
+{
+	std::cout << "Hello World";
+}
