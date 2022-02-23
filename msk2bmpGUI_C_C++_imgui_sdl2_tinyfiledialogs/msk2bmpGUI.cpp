@@ -106,8 +106,8 @@ int main(int, char**)
 		ImGui::NewFrame();
 
 		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		if (show_demo_window)
-			ImGui::ShowDemoWindow(&show_demo_window);
+		//if (show_demo_window)
+		//	ImGui::ShowDemoWindow(&show_demo_window);
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 		{
@@ -124,19 +124,25 @@ int main(int, char**)
 			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
 			char * Opened_File = nullptr;
-			char * FilterPattern1[2] = { "*.BMP", "*.PNG" };
-			if (ImGui::Button("Open File..."))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-			{	Opened_File = tinyfd_openFileDialog(
-					"What exactly is this string anyway...",
-					"yet another string that I have no idea...",
+			char * FilterPattern1[2] = { "*.bmp", "*.png" };
+			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
+			{
+				Opened_File = tinyfd_openFileDialog(
+					"Open files...",
+					"",
 					2,
 					FilterPattern1,
-					"Image files?",
+					NULL,
 					1);
 				counter++;
-			}
-			if (!Opened_File) {
-				std::cout << "Error unable to open file";
+				if (!Opened_File) {
+					tinyfd_messageBox(
+						"Error",
+						"No file opened...",
+						"ok",
+						"error",
+						0);					
+				}
 			}
 
 			ImGui::SameLine();
