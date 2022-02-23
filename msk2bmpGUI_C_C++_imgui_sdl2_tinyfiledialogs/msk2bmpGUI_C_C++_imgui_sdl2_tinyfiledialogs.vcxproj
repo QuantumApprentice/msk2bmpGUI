@@ -70,19 +70,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs;C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\lib\Release\Win32;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs;C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\lib\Release\Win32;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs;C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\lib\Release\Win32;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs;C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\OpenGL\glew-2.2.0\lib\Release\Win32;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
