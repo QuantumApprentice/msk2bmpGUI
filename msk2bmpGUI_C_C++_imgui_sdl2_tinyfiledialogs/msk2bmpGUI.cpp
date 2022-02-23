@@ -8,9 +8,9 @@
 // because it provide a rather limited API to the end-user. We provide this backend for the sake of completeness.
 // For a multi-platform app consider using e.g. SDL+DirectX on Windows and SDL+OpenGL on Linux/OSX.
 
-#include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_sdlrenderer.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_sdlrenderer.h"
 #include <stdio.h>
 #include <SDL.h>
 #include "tinyfiledialogs.h"
@@ -123,7 +123,7 @@ int main(int, char**)
 			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-			char * Opened_File;
+			char * Opened_File = nullptr;
 			char * FilterPattern1[2] = { "*.BMP", "*.PNG" };
 			if (ImGui::Button("Open File..."))                            // Buttons return true when clicked (most widgets return true when edited/activated)
 			{	Opened_File = tinyfd_openFileDialog(
