@@ -70,19 +70,19 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\imgui;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\imgui;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\imgui;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\imgui;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -134,16 +134,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="imgui.cpp" />
-    <ClCompile Include="imgui_impl_sdl.cpp" />
-    <ClCompile Include="imgui_impl_sdlrenderer.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui\imgui_impl_sdlrenderer.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="imgui.h" />
-    <ClInclude Include="imgui_impl_sdl.h" />
-    <ClInclude Include="imgui_impl_sdlrenderer.h" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_impl_sdl.h" />
+    <ClInclude Include="imgui\imgui_impl_sdlrenderer.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
