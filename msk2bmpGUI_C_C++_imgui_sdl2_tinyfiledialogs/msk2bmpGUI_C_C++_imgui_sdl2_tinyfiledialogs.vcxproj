@@ -69,7 +69,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -119,10 +134,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui_impl_sdlrenderer.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
+    <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui.h" />
+    <ClInclude Include="imgui_impl_sdl.h" />
+    <ClInclude Include="imgui_impl_sdlrenderer.h" />
+    <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
