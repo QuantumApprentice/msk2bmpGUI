@@ -121,12 +121,17 @@ FileDir SelectFile()
 					auto res = WideCharToMultiByte(CP_UTF8, 0, FilePath, length, Dir.str, 256, nullptr, nullptr);
 					if (!res)
 					{
-						IErrorInfo*	INFO = nullptr;
+						//IErrorInfo*	INFO = nullptr;
 						auto Err = GetLastError();
+						std::cout << Err;
 					}
-					Dir.str[length] = '\0';
-					Dir.Valid = true;
-					return Dir;
+					else 
+					{
+						Dir.str[length] = '\0';
+						Dir.Valid = true;
+						CoTaskMemFree(FilePath);
+						return Dir;
+					}
 				}
 			}
 		}
