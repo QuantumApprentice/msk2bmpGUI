@@ -13,6 +13,7 @@
 #include "imgui/imgui_impl_sdlrenderer.h"
 #include <stdio.h>
 #include <SDL.h>
+#include <SDL_image.h>
 #include "tinyfiledialogs.h"
 
 #if !SDL_VERSION_ATLEAST(2,0,17)
@@ -80,6 +81,10 @@ int main(int, char**)
 	bool show_demo_window = true;
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	SDL_Surface* image1 = NULL;
+	SDL_Texture* optimizedSurface = NULL;
+	int texture_width = 0;
+	int texture_height = 0;
 
 	// Main loop
 	bool done = false;
@@ -125,6 +130,8 @@ int main(int, char**)
 
 			char * Opened_File = nullptr;
 			char * FilterPattern1[2] = { "*.bmp", "*.png" };
+
+			
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
 				Opened_File = tinyfd_openFileDialog(
@@ -143,6 +150,54 @@ int main(int, char**)
 						"error",
 						0);					
 				}
+				//Initialize PNG loading
+				int imgFlags = IMG_INIT_PNG;
+				if (!(IMG_Init(imgFlags) & imgFlags))
+				{
+					printf("SDL_image could not initialize! SDL_Image Error: %s\n", IMG_GetError());
+				}
+
+				image1 = IMG_Load(Opened_File);
+				if (Opened_File == NULL)
+				{
+					printf("Unable to optimize image %s! SDL Error: %s\n",
+						Opened_File, 
+						SDL_GetError());
+				}
+				else
+				{	//Convert surface to screen format
+					optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
+					if (optimizedSurface == NULL) {
+						printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
+					}
+
+					SDL_QueryTexture(optimizedSurface, 
+						NULL, NULL, 
+						&texture_width, 
+						&texture_height);
+
+				}
+			}
+
+			ImGuiIO& io = ImGui::GetIO();
+
+
+			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
+			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+			if (optimizedSurface == NULL) {
+				printf("Optimized Surface is NULL\n");
+			}
+			else {
+				ImGui::Image(
+					optimizedSurface,
+					ImVec2((float)texture_width,
+						(float)texture_height),
+					uv_min,
+					uv_max,
+					tint_col,
+					border_col);
 			}
 
 			ImGui::SameLine();
