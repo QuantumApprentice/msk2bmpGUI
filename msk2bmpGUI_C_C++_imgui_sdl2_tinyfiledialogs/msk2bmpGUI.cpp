@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sdl.h>
 #include <SDL_image.h>
+#include <filesystem>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
@@ -154,17 +155,17 @@ int main(int, char**)
 		if (show_image_window) {
 			// fix: Need to figure out why the window appears below the main window (and move it to top)
 			ImGui::Begin("Image Window...", &show_image_window);
-			// fix: Need to figure out how to crop just the filename to display above the image
-			ImGui::Text(Opened_File.str);
-			//
+
 			int width, height;
 			SDL_QueryTexture(Opt_Surface,
 				NULL, NULL,
 				&width, &height);
 			if ((width != 350) || (height != 300)) {
 				ImGui::Text("This image is the wrong size to make a tile...");
-
+				ImGui::Text("Size is %dx%d", width, height);
+				ImGui::Text("It needs to be 350x300 pixels");
 			}
+			ImGui::Text(std::filesystem::path(Opened_File.str).filename().string().c_str());
 			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
