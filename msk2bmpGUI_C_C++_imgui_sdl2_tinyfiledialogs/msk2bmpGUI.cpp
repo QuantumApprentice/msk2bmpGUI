@@ -161,8 +161,9 @@ int main(int, char**)
 			SDL_QueryTexture(Opt_Surface,
 				NULL, NULL,
 				&width, &height);
-			if ((width != 350) | (height != 300)) {
+			if ((width != 350) || (height != 300)) {
 				ImGui::Text("This image is the wrong size to make a tile...");
+
 			}
 			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
