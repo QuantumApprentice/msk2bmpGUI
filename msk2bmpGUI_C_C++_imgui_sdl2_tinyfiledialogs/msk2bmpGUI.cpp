@@ -160,7 +160,9 @@ int main(int, char**)
 			SDL_QueryTexture(Opt_Surface,
 				NULL, NULL,
 				&width, &height);
-			if ((width != 350) || (height != 300)) {
+
+			bool wrong_size = (width != 350) || (height != 300);
+			if (wrong_size) {
 				ImGui::Text("This image is the wrong size to make a tile...");
 				ImGui::Text("Size is %dx%d", width, height);
 				ImGui::Text("It needs to be 350x300 pixels");
@@ -178,6 +180,12 @@ int main(int, char**)
 				uv_max,
 				tint_col,
 				border_col);
+			if (wrong_size) {
+				ImVec2 topLeft = ImGui::GetItemRectMin();
+				ImVec2 bottomRight = { topLeft.x + 350, topLeft.y + 300 };
+				ImDrawList *drawList = ImGui::GetWindowDrawList();
+				drawList->AddRect(topLeft, bottomRight, 0xFF0000FF, 0, 0, 5.0f);
+			}
 			ImGui::End();
 		}
 		// Only opens if no file selected when opening files
