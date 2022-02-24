@@ -1,144 +1,11 @@
 #include <iostream>
-
 #include <sdl.h>
+#include <SDL_image.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
-#include "imgui/imgui_impl_opengl3.h"
 #include "ImFileDialog.h"
-#include <Windows.h>
-#include <shobjidl.h> //?
-
-
-#define MERGECOUNT_(a,b)  a##b
-#define FINALLABEL_(a) MERGECOUNT_(Finally_ID_, a)
-#define FINALLABEL FINALLABEL_(__LINE__)
-
-
-#if 0
-
-struct _FINALLY
-{
-	_FINALLY(std::function<void()> INFN) : FN(INFN) {}
-	~_FINALLY() { FN(); }
-	std::function<void()> FN;
-
-private:
-	_FINALLY(const _FINALLY& INFN) {}
-};
-
-#define FINALLY _FINALLY FINALLABEL([&]()->void {
-#define FINALLYOVER });
-
-#else
-
-template<typename TY>
-struct FINAL_CONTAINER
-{
-	template<typename TY_1>
-	FINAL_CONTAINER(TY_1 fn) : FN(fn) {}
-
-	~FINAL_CONTAINER() { FN(); }
-
-	const TY FN;
-};
-
-template<typename FN_TYPE>
-auto BuildFinal(FN_TYPE FN) -> FINAL_CONTAINER<decltype(FN)> { return FINAL_CONTAINER<decltype(FN)>(FN); }
-
-#define FINALLY auto FINALLABEL = BuildFinal([&]()->void {
-#define FINALLYOVER });
-
-#define FINAL(a) FINALLY a FINALLYOVER
-
-#define EXITSCOPE(a) FINAL(a;)
-
-struct FileDir
-{
-	char str[256];
-	bool Valid = false;
-};
-
-FileDir SelectFile()
-{
-	IFileDialog* pFD = nullptr;
-	SUCCEEDED(CoInitialize(nullptr));
-	auto HRES = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pFD));
-
-	if (SUCCEEDED(HRES))
-	{
-		DWORD Flags;
-		HRES = pFD->GetOptions(&Flags);
-
-		if (SUCCEEDED(HRES))
-		{
-			pFD->SetOptions(FOS_FILEMUSTEXIST | FOS_FORCEFILESYSTEM);
-		}
-		else return FileDir();
-
-		FINALLY{
-			if (pFD)
-				pFD->Release();
-		}FINALLYOVER;
-
-		IShellItem* pItem = nullptr;
-
-		WCHAR CurrentDirectory[256];
-		GetCurrentDirectoryW(256, CurrentDirectory);
-
-		HRES = pFD->GetFolder(&pItem);
-		if (SUCCEEDED(HRES))
-		{
-			HRES = SHCreateItemFromParsingName(CurrentDirectory, nullptr, IID_PPV_ARGS(&pItem));
-			pFD->SetDefaultFolder(pItem);
-		}
-
-		FINALLY{
-			if (pItem)
-				pItem->Release();
-		}FINALLYOVER;
-
-		HRES = pFD->Show(nullptr);
-		if (SUCCEEDED(HRES))
-		{
-			IShellItem* pItem = nullptr;
-			HRES = pFD->GetResult(&pItem);
-			if (SUCCEEDED(HRES))
-			{
-				FINALLY{
-				if (pItem)
-					pItem->Release();
-				}FINALLYOVER;
-
-				PWSTR FilePath;
-				HRES = pItem->GetDisplayName(SIGDN_FILESYSPATH, &FilePath);
-				if (SUCCEEDED(HRES))
-				{
-					size_t length = wcslen(FilePath);
-					FileDir	Dir;
-					BOOL DefaultCharUsed = 0;
-					CCHAR	DChar = ' ';
-					auto res = WideCharToMultiByte(CP_UTF8, 0, FilePath, length, Dir.str, 256, nullptr, nullptr);
-					if (!res)
-					{
-						//IErrorInfo*	INFO = nullptr;
-						auto Err = GetLastError();
-						std::cout << Err;
-					}
-					else 
-					{
-						Dir.str[length] = '\0';
-						Dir.Valid = true;
-						CoTaskMemFree(FilePath);
-						return Dir;
-					}
-				}
-			}
-		}
-	}
-	return FileDir();
-}
-
+#include "MonotoneZombie_FileOpenDialog.h"
 
 
 // Main code
@@ -201,9 +68,13 @@ int main(int, char**)
 	// Our state
 	bool show_demo_window = true;
 	bool show_another_window = false;
+	bool Empty_Window = false;
+	bool show_image_window = false;
+
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-
+	FileDir Opened_File;
+	SDL_Surface* image1 = nullptr;
+	SDL_Texture* Opt_Surface = nullptr;
 
 	// Main loop
 	bool done = false;
@@ -247,16 +118,74 @@ int main(int, char**)
 
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
-				SelectFile();
+				Opened_File = SelectFile();
 				counter++;
+				if (!Opened_File.Valid) { 
+					Empty_Window = true; 
+				}
+				else {
+					image1 = IMG_Load(Opened_File.str);
+					if (image1 == NULL)
+					{
+						printf("Unable to open image file %s! SDL Error: %s\n",
+							Opened_File.str,
+							SDL_GetError());
+					}
+					else
+					{
+						show_image_window = true;
+						Opt_Surface = SDL_CreateTextureFromSurface(renderer, image1);
+						if (Opt_Surface == NULL) {
+							printf("Unable to convert surface to texture! SDL Error: %s\n",
+								SDL_GetError());
+						}
+					}
+				}
 			}
+
+
 			ImGui::SameLine();
 			ImGui::Text("counter = %d", counter);
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
 		}
-
+		// Image Window (is this the window section of code?)
+		if (show_image_window) {
+			// fix: Need to figure out why the window appears below the main window (and move it to top)
+			ImGui::Begin("Image Window...", &show_image_window);
+			// fix: Need to figure out how to crop just the filename to display above the image
+			ImGui::Text(Opened_File.str);
+			//
+			int width, height;
+			SDL_QueryTexture(Opt_Surface,
+				NULL, NULL,
+				&width, &height);
+			if ((width != 350) | (height != 300)) {
+				ImGui::Text("This image is the wrong size to make a tile...");
+			}
+			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
+			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+			ImGui::Image(
+				Opt_Surface,
+				ImVec2((float)width,
+				(float)height),
+				uv_min,
+				uv_max,
+				tint_col,
+				border_col);
+			ImGui::End();
+		}
+		// Only opens if no file selected when opening files
+		if (Empty_Window == true){
+			ImGui::Begin("Nothing selected...", &Empty_Window);
+			ImGui::Text("You didn't select anything.");
+			if (ImGui::Button("Close"))	
+				Empty_Window = false;
+			ImGui::End();
+		}
 		// 3. Show another simple window.
 		if (show_another_window)
 		{
@@ -286,4 +215,3 @@ int main(int, char**)
 
 	return 0;
 }
-#endif
