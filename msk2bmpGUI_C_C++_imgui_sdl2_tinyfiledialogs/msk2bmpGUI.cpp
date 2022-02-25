@@ -150,22 +150,9 @@ int main(int, char**)
 						"error",
 						0);					
 				}
-				//Initialize PNG loading
-				int imgFlags = IMG_INIT_PNG;
-				if (!(IMG_Init(imgFlags) & imgFlags))
-				{
-					printf("SDL_image could not initialize! SDL_Image Error: %s\n", IMG_GetError());
-				}
-
-				image1 = IMG_Load(Opened_File);
-				if (Opened_File == NULL)
-				{
-					printf("Unable to optimize image %s! SDL Error: %s\n",
-						Opened_File, 
-						SDL_GetError());
-				}
-				else
-				{	//Convert surface to screen format
+				else {
+					image1 = IMG_Load(Opened_File);
+					//Convert surface to screen format
 					optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
 					if (optimizedSurface == NULL) {
 						printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
@@ -179,17 +166,12 @@ int main(int, char**)
 				}
 			}
 
-			ImGuiIO& io = ImGui::GetIO();
-
-
 			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
-			if (optimizedSurface == NULL) {
-				printf("Optimized Surface is NULL\n");
-			}
-			else {
+			if (optimizedSurface != NULL) {
+				ImGui::Begin(texture_width, );
 				ImGui::Image(
 					optimizedSurface,
 					ImVec2((float)texture_width,
@@ -198,6 +180,7 @@ int main(int, char**)
 					uv_max,
 					tint_col,
 					border_col);
+				ImGui::End();
 			}
 
 			ImGui::SameLine();
