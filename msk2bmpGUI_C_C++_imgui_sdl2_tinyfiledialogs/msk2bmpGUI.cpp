@@ -171,6 +171,7 @@ int main(int, char**)
 			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+
 			if (optimizedSurface != NULL) {
 				ImGui::Begin(c_name, (&file_open[1][1]), 0);
 
@@ -182,6 +183,7 @@ int main(int, char**)
 					uv_max,
 					tint_col,
 					border_col);
+
 				ImGui::End();
 			}
 
