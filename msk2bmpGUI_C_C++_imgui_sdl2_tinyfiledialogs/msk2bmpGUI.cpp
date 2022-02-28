@@ -88,7 +88,7 @@ int main(int, char**)
 	int texture_height = 0;
 	char * Opened_File = nullptr;
 	char * c_name = nullptr;
-	bool file_open[1][1] = { false };
+	bool file_open_window[1][1] = { false };
 
 	// Main loop
 	bool done = false;
@@ -144,26 +144,41 @@ int main(int, char**)
 					1);
 				counter++;
 				if (!Opened_File) {
-					tinyfd_messageBox(
+/*					tinyfd_messageBox(
 						"Error",
 						"No file opened...",
 						"ok",
 						"error",
-						0);					
+						0);		*/			
 				}
 				else {
+					c_name = strrchr(Opened_File, '/\\') + 1;
 					image1 = IMG_Load(Opened_File);
-					//Convert surface to screen format
-					optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
-					if (optimizedSurface == NULL) {
-						printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
+					if (image1 == NULL)
+					{
+						printf("Unable to open image file %s! SDL Error: %s\n",
+							Opened_File,
+							SDL_GetError());
 					}
-					file_open[1][1] = true;
-					SDL_QueryTexture(optimizedSurface, 
-						NULL, NULL, 
-						&texture_width, 
-						&texture_height);
-					c_name = strrchr(Opened_File, '/\\')+1;
+					else
+					{//Convert surface to screen format
+						optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
+						file_open_window[0][0] = true;
+						if (optimizedSurface == NULL) {
+							printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
+							file_open_window[1][1] = false;
+						}
+						else
+						{
+							SDL_QueryTexture(optimizedSurface,
+								NULL, NULL,
+								&texture_width,
+								&texture_height);
+						}
+					}
+					
+
+					
 				}
 			}
 
@@ -172,9 +187,16 @@ int main(int, char**)
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
 
-			if (optimizedSurface != NULL) {
-				ImGui::Begin(c_name, (&file_open[1][1]), 0);
-
+			if (file_open_window[0][0]) {
+				ImGui::Begin(c_name, (&file_open_window[1][1]), 0);
+				bool wrong_size = (texture_width != 350) 
+					|| (texture_height != 300);
+				if (wrong_size) {
+					ImGui::Text("This image is the wrong size to make a tile...");
+					ImGui::Text("Size is %dx%d", texture_width, texture_height);
+					ImGui::Text("It needs to be 350x300 pixels");
+				}
+				ImGui::Text(c_name);
 				ImGui::Image(
 					optimizedSurface,
 					ImVec2((float)texture_width,
@@ -183,7 +205,17 @@ int main(int, char**)
 					uv_max,
 					tint_col,
 					border_col);
-
+				if (wrong_size) {
+					ImVec2 Top_Left = ImGui::GetItemRectMin();
+					ImVec2 Bottom_Right =
+						{ Top_Left.x + 350, Top_Left.y + 300 };
+					ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+					Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+				}
+				if (ImGui::Button("Close Me"))
+				{
+					file_open_window[0][0] = false;
+				}
 				ImGui::End();
 			}
 
