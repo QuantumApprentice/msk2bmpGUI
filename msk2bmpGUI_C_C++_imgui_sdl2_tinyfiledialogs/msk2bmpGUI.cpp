@@ -15,6 +15,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include "tinyfiledialogs.h"
+#include <string.h>
 
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -85,6 +86,9 @@ int main(int, char**)
 	SDL_Texture* optimizedSurface = NULL;
 	int texture_width = 0;
 	int texture_height = 0;
+	char * Opened_File = nullptr;
+	char * c_name = nullptr;
+	bool file_open[1][1] = { false };
 
 	// Main loop
 	bool done = false;
@@ -118,6 +122,7 @@ int main(int, char**)
 		{
 			static float f = 0.0f;
 			static int counter = 0;
+			char * FilterPattern1[2] = { "*.bmp", "*.png" };
 
 			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
@@ -128,10 +133,6 @@ int main(int, char**)
 			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
-			char * Opened_File = nullptr;
-			char * FilterPattern1[2] = { "*.bmp", "*.png" };
-
-			
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
 				Opened_File = tinyfd_openFileDialog(
@@ -157,12 +158,12 @@ int main(int, char**)
 					if (optimizedSurface == NULL) {
 						printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
 					}
-
+					file_open[1][1] = true;
 					SDL_QueryTexture(optimizedSurface, 
 						NULL, NULL, 
 						&texture_width, 
 						&texture_height);
-
+					c_name = strrchr(Opened_File, '/\\')+1;
 				}
 			}
 
@@ -171,7 +172,8 @@ int main(int, char**)
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
 			if (optimizedSurface != NULL) {
-				ImGui::Begin(texture_width, );
+				ImGui::Begin(c_name, (&file_open[1][1]), 0);
+
 				ImGui::Image(
 					optimizedSurface,
 					ImVec2((float)texture_width,
