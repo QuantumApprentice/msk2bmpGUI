@@ -89,6 +89,8 @@ int main(int, char**)
 	char * Opened_File = nullptr;
 	char * c_name = nullptr;
 	bool file_open_window[1][1] = { false };
+	bool Render_Window = false;
+	bool Preview_Tiles = false;
 
 	// Main loop
 	bool done = false;
@@ -144,7 +146,7 @@ int main(int, char**)
 					1);
 				counter++;
 				if (!Opened_File) {
-/*					tinyfd_messageBox(
+					/*	tinyfd_messageBox(
 						"Error",
 						"No file opened...",
 						"ok",
@@ -175,10 +177,7 @@ int main(int, char**)
 								&texture_width,
 								&texture_height);
 						}
-					}
-					
-
-					
+					}					
 				}
 			}
 
@@ -195,6 +194,10 @@ int main(int, char**)
 					ImGui::Text("This image is the wrong size to make a tile...");
 					ImGui::Text("Size is %dx%d", texture_width, texture_height);
 					ImGui::Text("It needs to be 350x300 pixels");
+					if (ImGui::Button("Preview Tiles"))
+					{
+						Preview_Tiles = true;
+					}
 				}
 				ImGui::Text(c_name);
 				ImGui::Image(
@@ -205,17 +208,67 @@ int main(int, char**)
 					uv_max,
 					tint_col,
 					border_col);
+
+				// Check image size to match tile size (350x300 pixels)
 				if (wrong_size) {
-					ImVec2 Top_Left = ImGui::GetItemRectMin();
-					ImVec2 Bottom_Right =
-						{ Top_Left.x + 350, Top_Left.y + 300 };
 					ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-					Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+					ImVec2 Origin = ImGui::GetItemRectMin();
+					ImVec2 Top_Left = Origin;
+					ImVec2 Bottom_Right = { 0, 0 };
+					int max_box_x = texture_width / 350;
+					int max_box_y = texture_height / 300;
+
+					// Draw red boxes to indicate where the tiles will be cut from
+					for (int i = 0; i < max_box_x; i++)
+					{
+						for (int j = 0; j < max_box_y; j++)
+						{
+							Top_Left.x = Origin.x + (i * 350);
+ 							Top_Left.y = Origin.y + (j * 300);
+
+							Bottom_Right = { Top_Left.x + 350, Top_Left.y + 300 };
+
+							Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+						}
+					}
+					// Preview tiles from red boxes
+					if (Preview_Tiles) {
+						ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
+						
+						if(ImGui::Button("Render as tiles...")) {
+							Render_Window = true;
+						}
+						
+						uv_max = ImVec2((350.0f / texture_width), (300.0f / texture_height));
+						Top_Left = Origin;
+						for (int y = 0; y < max_box_y; y++)
+						{
+							for (int x = 0; x < max_box_x; x++)
+							{
+								Top_Left.x = ((x * 350.0f))/texture_width;
+								Top_Left.y = ((y * 300.0f))/texture_height;
+
+								Bottom_Right = { (Top_Left.x + (350.0f/texture_width)), 
+									(Top_Left.y + (300.0f/texture_height)) };
+
+								ImGui::SameLine();
+								ImGui::Image(
+									optimizedSurface,
+									ImVec2(350, 300),
+									Top_Left,
+									Bottom_Right,
+									tint_col,
+									border_col);
+								
+							}
+							ImGui::NewLine();
+						}
+
+
+						ImGui::End();
+					}
 				}
-				if (ImGui::Button("Close Me"))
-				{
-					file_open_window[0][0] = false;
-				}
+
 				ImGui::End();
 			}
 
