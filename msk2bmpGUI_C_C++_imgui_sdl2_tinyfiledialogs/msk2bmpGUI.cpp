@@ -83,7 +83,9 @@ int main(int, char**)
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 	SDL_Surface* image1 = NULL;
+	SDL_Surface* image2 = NULL;
 	SDL_Texture* optimizedSurface = NULL;
+	SDL_Texture* Final_Render = NULL;
 	int texture_width = 0;
 	int texture_height = 0;
 	char * Opened_File = nullptr;
@@ -91,6 +93,7 @@ int main(int, char**)
 	bool file_open_window[1][1] = { false };
 	bool Render_Window = false;
 	bool Preview_Tiles = false;
+	int Render_Width = 0, Render_Height = 0;
 
 	// Main loop
 	bool done = false;
@@ -165,6 +168,7 @@ int main(int, char**)
 					else
 					{//Convert surface to screen format
 						optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
+						
 						file_open_window[0][0] = true;
 						if (optimizedSurface == NULL) {
 							printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
@@ -217,7 +221,7 @@ int main(int, char**)
 					ImVec2 Bottom_Right = { 0, 0 };
 					int max_box_x = texture_width / 350;
 					int max_box_y = texture_height / 300;
-
+					
 					// Draw red boxes to indicate where the tiles will be cut from
 					for (int i = 0; i < max_box_x; i++)
 					{
@@ -236,10 +240,25 @@ int main(int, char**)
 						ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
 						
 						if(ImGui::Button("Render as tiles...")) {
+
+							//uint8_t* pix = (uint8_t*)(image1->pixels);
+							memset(image1->pixels, 0xffff, 255);
+							int success;
+							Uint32 temp = {0};
+
+							SDL_QueryTexture(Final_Render,
+								&temp, NULL,
+								&Render_Width,
+								&Render_Height);
+							//SDL_CreateRGBSurface(0, Render_Width, Render_Height, 32, 0, 0, 0, 0);
+
+							image2 = SDL_ConvertSurfaceFormat(image2, SDL_PIXELFORMAT_RGBA8888, 0);
+							Final_Render = SDL_CreateTextureFromSurface(renderer, image2);
+							//SDL_UpdateTexture(Final_Render, NULL, image1->pixels, image1->pitch);
+
 							Render_Window = true;
 						}
 						
-						uv_max = ImVec2((350.0f / texture_width), (300.0f / texture_height));
 						Top_Left = Origin;
 						for (int y = 0; y < max_box_y; y++)
 						{
@@ -262,8 +281,21 @@ int main(int, char**)
 								
 							}
 							ImGui::NewLine();
-						}
 
+						}
+						ImGui::End();
+					}
+					if (Render_Window)
+					{
+						ImGui::Begin("Rendering?");
+
+						ImGui::Image(Final_Render,
+							ImVec2((float)Render_Width,
+							(float)Render_Height),
+							uv_min,
+							uv_max,
+							tint_col,
+							border_col);
 
 						ImGui::End();
 					}
