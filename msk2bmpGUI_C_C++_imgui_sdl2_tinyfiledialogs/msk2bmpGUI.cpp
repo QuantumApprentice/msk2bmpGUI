@@ -11,11 +11,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
-#include <stdio.h>
 #include <SDL.h>
-#include <SDL_image.h>
-#include "tinyfiledialogs.h"
-#include <string.h>
+#include "Load_Files.h"
 
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -82,19 +79,16 @@ int main(int, char**)
 	bool show_demo_window = true;
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	SDL_Surface* image1 = NULL;
-	SDL_Surface* image2 = NULL;
-	SDL_Texture* optimizedSurface = NULL;
-	SDL_Texture* Final_Render = NULL;
+	struct LF F_Prop {};
+	SDL_Texture* Optimized_Texture = nullptr;
+	SDL_Surface* Final_Render = nullptr;
 	int texture_width = 0;
 	int texture_height = 0;
-	char * Opened_File = nullptr;
-	char * c_name = nullptr;
-	bool file_open_window[1][1] = { false };
+	SDL_Surface* Temp_Surface = nullptr;
 	bool Render_Window = false;
 	bool Preview_Tiles = false;
 	int Render_Width = 0, Render_Height = 0;
-
+	SDL_Texture* temp_Render = nullptr;
 	// Main loop
 	bool done = false;
 	while (!done)
@@ -127,7 +121,7 @@ int main(int, char**)
 		{
 			static float f = 0.0f;
 			static int counter = 0;
-			char * FilterPattern1[2] = { "*.bmp", "*.png" };
+			
 
 			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
@@ -140,49 +134,8 @@ int main(int, char**)
 
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
-				Opened_File = tinyfd_openFileDialog(
-					"Open files...",
-					"",
-					2,
-					FilterPattern1,
-					NULL,
-					1);
 				counter++;
-				if (!Opened_File) {
-					/*	tinyfd_messageBox(
-						"Error",
-						"No file opened...",
-						"ok",
-						"error",
-						0);		*/			
-				}
-				else {
-					c_name = strrchr(Opened_File, '/\\') + 1;
-					image1 = IMG_Load(Opened_File);
-					if (image1 == NULL)
-					{
-						printf("Unable to open image file %s! SDL Error: %s\n",
-							Opened_File,
-							SDL_GetError());
-					}
-					else
-					{//Convert surface to screen format
-						optimizedSurface = SDL_CreateTextureFromSurface(renderer, image1);
-						
-						file_open_window[0][0] = true;
-						if (optimizedSurface == NULL) {
-							printf("Unable to optimize image %s! SDL Error: %s\n", Opened_File, SDL_GetError());
-							file_open_window[1][1] = false;
-						}
-						else
-						{
-							SDL_QueryTexture(optimizedSurface,
-								NULL, NULL,
-								&texture_width,
-								&texture_height);
-						}
-					}					
-				}
+				Load_Files(F_Prop);
 			}
 
 			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -190,8 +143,28 @@ int main(int, char**)
 			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
 
-			if (file_open_window[0][0]) {
-				ImGui::Begin(c_name, (&file_open_window[1][1]), 0);
+			if (F_Prop.file_open_window[0][0]) {
+				if (!Optimized_Texture) {
+
+					
+					Temp_Surface = SDL_ConvertSurfaceFormat(F_Prop.image1, SDL_PIXELFORMAT_RGBA8888, 0);
+					Optimized_Texture = SDL_CreateTextureFromSurface(renderer, Temp_Surface);
+					
+				}
+				if (Optimized_Texture == NULL) {
+					printf("Unable to optimize image %s! SDL Error: %s\n",
+						F_Prop.Opened_File, SDL_GetError());
+					F_Prop.file_open_window[0][0] = false;
+				}
+
+				else
+				{
+					SDL_QueryTexture(Optimized_Texture,
+						NULL, NULL,
+						&texture_width,
+						&texture_height);
+				}
+				ImGui::Begin(F_Prop.c_name, (&F_Prop.file_open_window[0][0]), 0);
 				bool wrong_size = (texture_width != 350) 
 					|| (texture_height != 300);
 				if (wrong_size) {
@@ -203,9 +176,9 @@ int main(int, char**)
 						Preview_Tiles = true;
 					}
 				}
-				ImGui::Text(c_name);
+				ImGui::Text(F_Prop.c_name);
 				ImGui::Image(
-					optimizedSurface,
+					Optimized_Texture,
 					ImVec2((float)texture_width,
 						(float)texture_height),
 					uv_min,
@@ -240,22 +213,25 @@ int main(int, char**)
 						ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
 						
 						if(ImGui::Button("Render as tiles...")) {
+							
+							Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
+							SDL_Rect temp_Rect;
+							temp_Rect.w = 350;
+							temp_Rect.h = 300;
+							temp_Rect.x = 0;
+							temp_Rect.y = 0;
 
-							//uint8_t* pix = (uint8_t*)(image1->pixels);
-							memset(image1->pixels, 0xffff, 255);
-							int success;
-							Uint32 temp = {0};
-
-							SDL_QueryTexture(Final_Render,
-								&temp, NULL,
+							SDL_BlitSurface(Temp_Surface,
+								&temp_Rect,
+								Final_Render,
+								&temp_Rect);
+							SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
+							
+							temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
+							SDL_QueryTexture(temp_Render,
+								NULL, NULL,
 								&Render_Width,
 								&Render_Height);
-							//SDL_CreateRGBSurface(0, Render_Width, Render_Height, 32, 0, 0, 0, 0);
-
-							image2 = SDL_ConvertSurfaceFormat(image2, SDL_PIXELFORMAT_RGBA8888, 0);
-							Final_Render = SDL_CreateTextureFromSurface(renderer, image2);
-							//SDL_UpdateTexture(Final_Render, NULL, image1->pixels, image1->pitch);
-
 							Render_Window = true;
 						}
 						
@@ -272,7 +248,7 @@ int main(int, char**)
 
 								ImGui::SameLine();
 								ImGui::Image(
-									optimizedSurface,
+									Optimized_Texture,
 									ImVec2(350, 300),
 									Top_Left,
 									Bottom_Right,
@@ -287,9 +263,11 @@ int main(int, char**)
 					}
 					if (Render_Window)
 					{
+						
+						//SDL_BlitSurface()
 						ImGui::Begin("Rendering?");
 
-						ImGui::Image(Final_Render,
+						ImGui::Image(temp_Render,
 							ImVec2((float)Render_Width,
 							(float)Render_Height),
 							uv_min,
