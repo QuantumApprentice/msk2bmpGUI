@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FRM_Convert.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_sdl.cpp" />
@@ -145,9 +146,12 @@
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
+    <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FRM_Convert.h" />
+    <ClInclude Include="Load_Files.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_sdl.h" />
