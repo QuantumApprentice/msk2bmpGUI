@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="B_Endian.cpp" />
     <ClCompile Include="FRM_Convert.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="B_Endian.h" />
     <ClInclude Include="FRM_Convert.h" />
     <ClInclude Include="Load_Files.h" />
     <ClInclude Include="imgui\imconfig.h" />

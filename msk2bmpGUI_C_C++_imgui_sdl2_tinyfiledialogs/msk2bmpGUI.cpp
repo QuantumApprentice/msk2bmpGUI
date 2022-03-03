@@ -13,6 +13,7 @@
 #include "imgui/imgui_impl_sdlrenderer.h"
 #include <SDL.h>
 #include "Load_Files.h"
+#include "FRM_Convert.h"
 
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
@@ -214,19 +215,31 @@ int main(int, char**)
 						
 						if(ImGui::Button("Render as tiles...")) {
 							
-							Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
-							SDL_Rect temp_Rect;
-							temp_Rect.w = 350;
-							temp_Rect.h = 300;
-							temp_Rect.x = 0;
-							temp_Rect.y = 0;
 
-							SDL_BlitSurface(Temp_Surface,
-								&temp_Rect,
-								Final_Render,
-								&temp_Rect);
-							SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
+							//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
+							//SDL_Rect temp_Rect;
+							//temp_Rect.w = 350;
+							//temp_Rect.h = 300;
+							//temp_Rect.x = 0;
+							//temp_Rect.y = 0;
+
+							//SDL_BlitSurface(Temp_Surface,
+							//	&temp_Rect,
+							//	Final_Render,
+							//	&temp_Rect);
+							//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
 							
+							//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
+							Final_Render = FRM_Convert(Temp_Surface);
+							//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
+							//SDL_LockSurface(Final_Render);							
+							//memset(Final_Render->pixels, 0, (1400 * 1500));
+							//SDL_UnlockSurface(Final_Render);
+
+							SDL_SaveBMP_RW(Final_Render, SDL_RWFromFile("temp2.bmp", "wb"), 1);
+
+							
+
 							temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
 							SDL_QueryTexture(temp_Render,
 								NULL, NULL,
@@ -234,7 +247,7 @@ int main(int, char**)
 								&Render_Height);
 							Render_Window = true;
 						}
-						
+						// Window to show the tiles split up already
 						Top_Left = Origin;
 						for (int y = 0; y < max_box_y; y++)
 						{
@@ -261,21 +274,22 @@ int main(int, char**)
 						}
 						ImGui::End();
 					}
+					// Final render
 					if (Render_Window)
 					{
 						
 						//SDL_BlitSurface()
-						ImGui::Begin("Rendering?");
+						//ImGui::Begin("Rendering?");
 
-						ImGui::Image(temp_Render,
-							ImVec2((float)Render_Width,
-							(float)Render_Height),
-							uv_min,
-							uv_max,
-							tint_col,
-							border_col);
+						//ImGui::Image(temp_Render,
+						//	ImVec2((float)Render_Width,
+						//	(float)Render_Height),
+						//	uv_min,
+						//	uv_max,
+						//	tint_col,
+						//	border_col);
 
-						ImGui::End();
+						//ImGui::End();
 					}
 				}
 
