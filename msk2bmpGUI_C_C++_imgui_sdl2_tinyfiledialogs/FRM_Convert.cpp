@@ -24,9 +24,10 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-std::vector<SDL_Color> PaletteColors;
+//std::vector<SDL_Color> PaletteColors;
+SDL_Color PaletteColors[256];
 
-bool loadPalette()
+SDL_Color* loadPalette()
 {
 	std::ifstream f("color.pal", 
 		std::ios::in | std::ios::binary);
@@ -34,19 +35,24 @@ bool loadPalette()
 		printf("Error opening color.pal.\n");
 		return false;
 	}
-	
 	uint8_t r, g, b;
-	PaletteColors.resize(256);
-	printf("Palette size: %d\n", PaletteColors.size());
-	for (int i = 0; i < PaletteColors.size(); i++)
+	//PaletteColors.resize(256);
+	printf("Palette size: %d\n", sizeof(PaletteColors)); // PaletteColors.size());
+	for (int i = 0; i < sizeof(PaletteColors); i++) //PaletteColors.size(); i++)
 	{
-		r = B_Endian::read_u8(f);
-		g = B_Endian::read_u8(f);
-		b = B_Endian::read_u8(f);
+		uint8_t bytes[4];
+
+		f.read((char*)bytes, 3);
+		r = bytes[0];
+		g = bytes[1];
+		b = bytes[2];
+		//r = B_Endian::read_u8(f);
+		//g = B_Endian::read_u8(f);
+		//b = B_Endian::read_u8(f);
 		printf("RGB: %d, %d, %d\n", r, g, b);
 		PaletteColors[i] = SDL_Color{ r, g, b };
 	}
-	return true;
+	return PaletteColors;
 }
 
 
@@ -60,33 +66,53 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 		uint8_t b;
 		uint8_t a;
 	} rgba_;
+	
+	//SDL_Surface another_Temp_Surface;
+	//SDL_Surface* Temp_Surface = &another_Temp_Surface;
+	
+	SDL_Palette myPalette;
+	SDL_PixelFormat pxlFMT;
+	SDL_Surface* Temp_Surface;
+	myPalette.ncolors = 256;
+	myPalette.colors = PaletteColors;
 
-	 SDL_Surface* Temp_Surface = SDL_CreateRGBSurface(0, surface->w, surface->h, 8, 0, 0, 0, 0);
-	for (int i = 0; i < (surface->w * surface->h); i++)
+	pxlFMT = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+	pxlFMT.palette = &myPalette;
+	pxlFMT.BitsPerPixel = 8;
+	pxlFMT.BytesPerPixel = 1;
+	int k = (surface->w)*(surface->h);
+
+	//Temp_Surface = SDL_CreateRGBSurfaceFrom(surface->pixels, surface->w, surface->h, surface->format->BitsPerPixel, surface->pitch, surface->format->Rmask, surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
+	Temp_Surface = SDL_ConvertSurface(surface, &pxlFMT, 0);
+	//Temp_Surface = SDL_CreateRGBSurface(0, surface->w, surface->h, 8, 0, 0, 0, 0);
+
+	if (!Temp_Surface) {
+		printf("Error: %s", SDL_GetError());
+	}
+
+	for (int i = 0; i < k; i++) 
 	{
 		memcpy(&rgba_, (rgba*)surface->pixels + i, sizeof(rgba));
 		int w_smallest = INT_MAX;
 		int w_PaletteColor;
-		for (int j = 0; j < 256; j++)
-		{
-			int s = (rgba_.r - PaletteColors[j].r);
-			int t = (rgba_.g - PaletteColors[j].g);
-			int u = (rgba_.b - PaletteColors[j].b);
-			int v = (rgba_.a - PaletteColors[j].a);
-			s *= s;
-			t *= t;
-			u *= u;
-			v *= v;
-
-			int w = sqrt(s + t + u + v);
-
-			if (w < w_smallest) { 
-				w_smallest = w; 
-				w_PaletteColor = j;
-			}
-			printf("i: %d, j: %d \n", i, j);
-			//printf("stuv: %d %d %d %d", s, t, u, v);
-		}
+		w_PaletteColor = SDL_MapRGB(&pxlFMT, rgba_.r, rgba_.g, rgba_.b);
+		//for (int j = 0; j < 256; j++)
+		//{
+		//	int s = (rgba_.r - PaletteColors[j].r);
+		//	int t = (rgba_.g - PaletteColors[j].g);
+		//	int u = (rgba_.b - PaletteColors[j].b);
+		//	int v = (rgba_.a - PaletteColors[j].a);
+		//	s *= s;
+		//	t *= t;
+		//	u *= u;
+		//	v *= v;
+		//	int w = sqrt(s + t + u + v);
+		//	if (w < w_smallest) { 
+		//		w_smallest = w; 
+		//		w_PaletteColor = j;
+		//	}
+		//	printf("stuv: %d %d %d %d", s, t, u, v);
+		//}
 		((uint8_t*)Temp_Surface->pixels)[i]  = w_PaletteColor;
 		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
