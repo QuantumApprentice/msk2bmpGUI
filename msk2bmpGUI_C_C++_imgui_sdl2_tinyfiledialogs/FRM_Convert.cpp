@@ -26,6 +26,14 @@ typedef struct {
 
 //std::vector<SDL_Color> PaletteColors;
 SDL_Color PaletteColors[256];
+uint8_t convert_colors(uint8_t bytes) {
+	if (bytes <= 64) {
+		return 4 * bytes;
+	}
+	else {
+		return bytes;
+	}
+}
 
 SDL_Color* loadPalette()
 {
@@ -37,21 +45,24 @@ SDL_Color* loadPalette()
 	}
 	uint8_t r, g, b;
 	//PaletteColors.resize(256);
-	printf("Palette size: %d\n", sizeof(PaletteColors)); // PaletteColors.size());
-	for (int i = 0; i < sizeof(PaletteColors); i++) //PaletteColors.size(); i++)
+	printf("Palette size: %d\n", 256); // PaletteColors.size());
+	for (int i = 0; i < 256; i++) //PaletteColors.size(); i++)
 	{
 		uint8_t bytes[4];
 
 		f.read((char*)bytes, 3);
-		r = bytes[0];
-		g = bytes[1];
-		b = bytes[2];
+		r = convert_colors(bytes[0]);
+		g = convert_colors(bytes[1]);
+		b = convert_colors(bytes[2]);
 		//r = B_Endian::read_u8(f);
 		//g = B_Endian::read_u8(f);
 		//b = B_Endian::read_u8(f);
 		printf("RGB: %d, %d, %d\n", r, g, b);
 		PaletteColors[i] = SDL_Color{ r, g, b };
 	}
+
+
+
 	return PaletteColors;
 }
 
