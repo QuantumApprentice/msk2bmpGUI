@@ -18,10 +18,27 @@
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
-void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surface *Temp_Surface,
-	ImVec2 Top_Left, ImVec2 Bottom_Right, int max_box_x, int max_box_y, ImVec2 Origin,
-	int texture_width, int texture_height, SDL_Texture* Optimized_Texture, ImVec4 tint_col, ImVec4 border_col);
-
+	// Our state
+struct variables {
+	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
+	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+	ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+	bool Preview_Tiles = false;
+	bool Render_Window = false;
+	int texture_width = 0, texture_height = 0;
+	int Render_Width = 0, Render_Height = 0;
+	SDL_Surface* Temp_Surface = nullptr;
+	SDL_Surface* Final_Render = nullptr;
+	//SDL_Texture* temp_Render = nullptr;
+	SDL_Texture* Optimized_Texture = nullptr;
+	struct LF F_Prop {};
+} My_Variables = {};
+void ShowPreviewWindow(struct variables *My_Variables);
+void ShowRenderPreview(struct variables *My_Variables, 
+	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin, 
+	int *max_box_x, int *max_box_y);
+void Show_Palette_Window(struct variables *My_Variables);
 
 // Main code
 int main(int, char**)
@@ -80,22 +97,14 @@ int main(int, char**)
 	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 	//IM_ASSERT(font != NULL);
 
-	// Our state
+
+
 	bool show_demo_window = true;
 	bool show_another_window = false;
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-	struct LF F_Prop {};
-	SDL_Texture* Optimized_Texture = nullptr;
-	SDL_Surface* Final_Render = nullptr;
-	int texture_width = 0;
-	int texture_height = 0;
-	SDL_Surface* Temp_Surface = nullptr;
-	bool Render_Window = false;
-	bool Preview_Tiles = false;
-	int Render_Width = 0, Render_Height = 0;
-	SDL_Texture* temp_Render = nullptr;
-	// Main loop
 	bool done = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+	// Main loop
 	while (!done)
 	{
 		// Poll and handle events (inputs, window resize, etc.)
@@ -140,118 +149,30 @@ int main(int, char**)
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
 				counter++;
-				Load_Files(F_Prop);
+				Load_Files(My_Variables.F_Prop);
 			}
-
-			ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-			ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
-			ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
-			ImVec2 uv_max = ImVec2(1.0f, 1.0f);
-
-			if (F_Prop.file_open_window[0][0]) {
-				if (!Optimized_Texture) {
-					Temp_Surface = SDL_ConvertSurfaceFormat(F_Prop.image1, SDL_PIXELFORMAT_RGBA8888, 0);
-					Optimized_Texture = SDL_CreateTextureFromSurface(renderer, Temp_Surface);
+			if (My_Variables.F_Prop.file_open_window[0][0]) {
+				if (!My_Variables.Optimized_Texture) {
+					My_Variables.Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables.F_Prop.image1, SDL_PIXELFORMAT_RGBA8888, 0);
+					My_Variables.Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables.Temp_Surface);
 				}
-				if (Optimized_Texture == NULL) {
+				if (My_Variables.Optimized_Texture == NULL) {
 					printf("Unable to optimize image %s! SDL Error: %s\n",
-						F_Prop.Opened_File, SDL_GetError());
-					F_Prop.file_open_window[0][0] = false;
+						My_Variables.F_Prop.Opened_File, SDL_GetError());
+					My_Variables.F_Prop.file_open_window[0][0] = false;
 				}
 
 				else
 				{
-					SDL_QueryTexture(Optimized_Texture,
+					SDL_QueryTexture(My_Variables.Optimized_Texture,
 						NULL, NULL,
-						&texture_width,
-						&texture_height);
+						&My_Variables.texture_width,
+						&My_Variables.texture_height);
 				}
 
-				ImGui::Begin(F_Prop.c_name, (&F_Prop.file_open_window[0][0]), 0);
-				bool wrong_size = (texture_width != 350) 
-					|| (texture_height != 300);
-				if (wrong_size) {
-					ImGui::Text("This image is the wrong size to make a tile...");
-					ImGui::Text("Size is %dx%d", texture_width, texture_height);
-					ImGui::Text("It needs to be 350x300 pixels");
-					if (ImGui::Button("Preview Tiles"))
-					{
-						Preview_Tiles = true;
-					}
-				}
-				ImGui::Text(F_Prop.c_name);
-				ImGui::Image(
-					Optimized_Texture,
-					ImVec2((float)texture_width,
-						(float)texture_height),
-					uv_min,
-					uv_max,
-					tint_col,
-					border_col);
+				ShowPreviewWindow(&My_Variables);
 
-				// Check image size to match tile size (350x300 pixels)
-				if (wrong_size) {
-					ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-					ImVec2 Origin = ImGui::GetItemRectMin();
-					ImVec2 Top_Left = Origin;
-					ImVec2 Bottom_Right = { 0, 0 };
-					int max_box_x = texture_width / 350;
-					int max_box_y = texture_height / 300;
-					
-					// Draw red boxes to indicate where the tiles will be cut from
-					for (int i = 0; i < max_box_x; i++)
-					{
-						for (int j = 0; j < max_box_y; j++)
-						{
-							Top_Left.x = Origin.x + (i * 350);
- 							Top_Left.y = Origin.y + (j * 300);
-
-							Bottom_Right = { Top_Left.x + 350, Top_Left.y + 300 };
-
-							Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-						}
-					}
-					// Preview tiles from red boxes
-					if (Preview_Tiles) {
-						ShowRenderPreview(&Preview_Tiles, Final_Render, Temp_Surface, Top_Left, Bottom_Right, 
-							max_box_x, max_box_y, Origin, texture_width, texture_height, Optimized_Texture, 
-							tint_col, border_col);
-					}
-					// Final render
-					if (Render_Window)
-					{
-						//SDL_Color* PaletteColors = loadPalette();
-						//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
-						//for (int y = 0; y < 16; y++) {
-						//	for (int x = 0; x < 16; x++) {
-						//		SDL_Color color = PaletteColors[y * 16 + x];
-						//		float r = (float)color.r / 255.0f;
-						//		float g = (float)color.g / 255.0f;
-						//		float b = (float)color.b / 255.0f;
-						//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
-						//		if (x < 15) ImGui::SameLine();
-						//	}
-						//}
-						//ImGui::End();
-
-						//SDL_BlitSurface()
-						//ImGui::Begin("Rendering?");
-
-						//ImGui::Image(temp_Render,
-						//	ImVec2((float)Render_Width,
-						//	(float)Render_Height),
-						//	uv_min,
-						//	uv_max,
-						//	tint_col,
-						//	border_col);
-
-						//ImGui::End();
-					}
-				}
-
-				ImGui::End();
 			}
-
 
 			ImGui::SameLine();
 			ImGui::Text("counter = %d", counter);
@@ -290,17 +211,121 @@ int main(int, char**)
 	return 0;
 }
 
-
-
-void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surface *Temp_Surface, 
-	ImVec2 Top_Left, ImVec2 Bottom_Right, int max_box_x, int max_box_y, ImVec2 Origin, 
-	int texture_width, int texture_height, SDL_Texture* Optimized_Texture, ImVec4 tint_col, ImVec4 border_col) 
+void ShowPreviewWindow(struct variables *My_Variables)
 {
-	ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
+	ImGui::Begin(My_Variables->F_Prop.c_name, (&My_Variables->F_Prop.file_open_window[0][0]), 0);
+	// Check image size to match tile size (350x300 pixels)
+	bool wrong_size = (My_Variables->texture_width != 350)
+		|| (My_Variables->texture_height != 300);
+	if (wrong_size) {
+		ImGui::Text("This image is the wrong size to make a tile...");
+		ImGui::Text("Size is %dx%d", My_Variables->texture_width, My_Variables->texture_height);
+		ImGui::Text("It needs to be 350x300 pixels");
+		if (ImGui::Button("Preview Tiles"))
+		{
+			My_Variables->Preview_Tiles = true;
+		}
+	}
+	ImGui::Text(My_Variables->F_Prop.c_name);
+	ImGui::Image(
+		My_Variables->Optimized_Texture,
+		ImVec2((float)My_Variables->texture_width,
+		(float)My_Variables->texture_height),
+		My_Variables->uv_min,
+		My_Variables->uv_max,
+		My_Variables->tint_col,
+		My_Variables->border_col);
 
+	if (wrong_size) {
+		ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+		ImVec2 Origin = ImGui::GetItemRectMin();
+		ImVec2 Top_Left = Origin;
+		ImVec2 Bottom_Right = { 0, 0 };
+		int max_box_x = My_Variables->texture_width / 350;
+		int max_box_y = My_Variables->texture_height / 300;
+
+		// Draw red boxes to indicate where the tiles will be cut from
+		for (int i = 0; i < max_box_x; i++)
+		{
+			for (int j = 0; j < max_box_y; j++)
+			{
+				Top_Left.x = Origin.x + (i * 350);
+				Top_Left.y = Origin.y + (j * 300);
+
+				Bottom_Right = { Top_Left.x + 350, Top_Left.y + 300 };
+
+				Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+			}
+		}
+		// Preview tiles from red boxes
+		if (My_Variables->Preview_Tiles) {
+			ShowRenderPreview(My_Variables, &Top_Left, &Bottom_Right, &Origin, &max_box_x, &max_box_y);
+		}
+		// Final render
+		if (My_Variables->Render_Window)
+		{
+			//SDL_Color* PaletteColors = loadPalette();
+			//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
+			//for (int y = 0; y < 16; y++) {
+			//	for (int x = 0; x < 16; x++) {
+			//		SDL_Color color = PaletteColors[y * 16 + x];
+			//		float r = (float)color.r / 255.0f;
+			//		float g = (float)color.g / 255.0f;
+			//		float b = (float)color.b / 255.0f;
+			//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
+			//		if (x < 15) ImGui::SameLine();
+			//	}
+			//}
+			//ImGui::End();
+
+			//SDL_BlitSurface()
+			//ImGui::Begin("Rendering?");
+
+			//ImGui::Image(temp_Render,
+			//	ImVec2((float)Render_Width,
+			//	(float)Render_Height),
+			//	uv_min,
+			//	uv_max,
+			//	tint_col,
+			//	border_col);
+
+			//ImGui::End();
+		}
+
+	}
+	ImGui::End();
+
+}
+void Show_Palette_Window(struct variables *My_Variables) {
+	if (My_Variables->Preview_Tiles)
+	{
+		SDL_Color *PaletteColors = loadPalette();
+		ImGui::Begin("##palette", &My_Variables->Preview_Tiles, ImGuiWindowFlags_NoSavedSettings);
+		for (int y = 0; y < 16; y++) {
+			for (int x = 0; x < 16; x++) {
+				SDL_Color color = PaletteColors[y * 16 + x];
+				float r = (float)color.r / 255.0f;
+				float g = (float)color.g / 255.0f;
+				float b = (float)color.b / 255.0f;
+				ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
+				if (x < 15) ImGui::SameLine();
+			}
+		}
+		ImGui::End();
+	}
+}
+
+
+void ShowRenderPreview(struct variables *My_Variables,
+	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
+	int *max_box_x, int *max_box_y)
+{
+	ImGui::Begin("Preview Window...", &My_Variables->Preview_Tiles, 0);
+	Show_Palette_Window(My_Variables);
 
 	if (ImGui::Button("Render as tiles...")) {
-		Preview_Tiles = false;
+		//My_Variables->Preview_Tiles = false;
+		
 
 		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
 		//SDL_Rect temp_Rect;
@@ -316,14 +341,14 @@ void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surfac
 		//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
 
 		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-		Final_Render = FRM_Convert(Temp_Surface);
+		My_Variables->Final_Render = FRM_Convert(My_Variables->Temp_Surface);
 		//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
 		//SDL_LockSurface(Final_Render);							
 		//memset(Final_Render->pixels, 0, (1400 * 1500));
 		//SDL_UnlockSurface(Final_Render);
 
-		SDL_SaveBMP_RW(Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1);
-		SDL_SaveBMP_RW(Final_Render, SDL_RWFromFile("temp3.bmp", "wb"), 1);
+		SDL_SaveBMP_RW(My_Variables->Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1);
+		SDL_SaveBMP_RW(My_Variables->Final_Render, SDL_RWFromFile("temp3.bmp", "wb"), 1);
 
 
 
@@ -334,34 +359,32 @@ void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surfac
 		//	&Render_Height);
 		//Render_Window = true;
 	}
+
 	// Window to show the tiles split up already
-	if (Preview_Tiles) {
+	if (My_Variables->Preview_Tiles) {
 
 		Top_Left = Origin;
-		for (int y = 0; y < max_box_y; y++)
+		for (int y = 0; y < *max_box_y; y++)
 		{
-			for (int x = 0; x < max_box_x; x++)
+			for (int x = 0; x < *max_box_x; x++)
 			{
-				Top_Left.x = ((x * 350.0f)) / texture_width;
-				Top_Left.y = ((y * 300.0f)) / texture_height;
+				Top_Left->x = ((x * 350.0f)) / My_Variables->texture_width;
+				Top_Left->y = ((y * 300.0f)) / My_Variables->texture_height;
 
-				Bottom_Right = { (Top_Left.x + (350.0f / texture_width)),
-					(Top_Left.y + (300.0f / texture_height)) };
+				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->texture_width)),
+					(Top_Left->y + (300.0f / My_Variables->texture_height)) };
 
 				ImGui::SameLine();
 				ImGui::Image(
-					Optimized_Texture,
+					My_Variables->Optimized_Texture,
 					ImVec2(350, 300),
-					Top_Left,
-					Bottom_Right,
-					tint_col,
-					border_col);
-
+					*Top_Left,
+					*Bottom_Right,
+					My_Variables->tint_col,
+					My_Variables->border_col);
 			}
 			ImGui::NewLine();
-
 		}
-
 	}
 	ImGui::End();
 }
