@@ -18,6 +18,10 @@
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
+void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surface *Temp_Surface,
+	ImVec2 Top_Left, ImVec2 Bottom_Right, int max_box_x, int max_box_y, ImVec2 Origin,
+	int texture_width, int texture_height, SDL_Texture* Optimized_Texture, ImVec4 tint_col, ImVec4 border_col);
+
 
 // Main code
 int main(int, char**)
@@ -146,11 +150,8 @@ int main(int, char**)
 
 			if (F_Prop.file_open_window[0][0]) {
 				if (!Optimized_Texture) {
-
-					
 					Temp_Surface = SDL_ConvertSurfaceFormat(F_Prop.image1, SDL_PIXELFORMAT_RGBA8888, 0);
 					Optimized_Texture = SDL_CreateTextureFromSurface(renderer, Temp_Surface);
-					
 				}
 				if (Optimized_Texture == NULL) {
 					printf("Unable to optimize image %s! SDL Error: %s\n",
@@ -165,6 +166,7 @@ int main(int, char**)
 						&texture_width,
 						&texture_height);
 				}
+
 				ImGui::Begin(F_Prop.c_name, (&F_Prop.file_open_window[0][0]), 0);
 				bool wrong_size = (texture_width != 350) 
 					|| (texture_height != 300);
@@ -211,73 +213,27 @@ int main(int, char**)
 					}
 					// Preview tiles from red boxes
 					if (Preview_Tiles) {
-						ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
-						
-						if(ImGui::Button("Render as tiles...")) {
-							
-
-							//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
-							//SDL_Rect temp_Rect;
-							//temp_Rect.w = 350;
-							//temp_Rect.h = 300;
-							//temp_Rect.x = 0;
-							//temp_Rect.y = 0;
-
-							//SDL_BlitSurface(Temp_Surface,
-							//	&temp_Rect,
-							//	Final_Render,
-							//	&temp_Rect);
-							//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
-							
-							//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-							Final_Render = FRM_Convert(Temp_Surface);
-							//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
-							//SDL_LockSurface(Final_Render);							
-							//memset(Final_Render->pixels, 0, (1400 * 1500));
-							//SDL_UnlockSurface(Final_Render);
-
-							SDL_SaveBMP_RW(Final_Render, SDL_RWFromFile("temp2.bmp", "wb"), 1);
-
-							
-
-							temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-							SDL_QueryTexture(temp_Render,
-								NULL, NULL,
-								&Render_Width,
-								&Render_Height);
-							Render_Window = true;
-						}
-						// Window to show the tiles split up already
-						Top_Left = Origin;
-						for (int y = 0; y < max_box_y; y++)
-						{
-							for (int x = 0; x < max_box_x; x++)
-							{
-								Top_Left.x = ((x * 350.0f))/texture_width;
-								Top_Left.y = ((y * 300.0f))/texture_height;
-
-								Bottom_Right = { (Top_Left.x + (350.0f/texture_width)), 
-									(Top_Left.y + (300.0f/texture_height)) };
-
-								ImGui::SameLine();
-								ImGui::Image(
-									Optimized_Texture,
-									ImVec2(350, 300),
-									Top_Left,
-									Bottom_Right,
-									tint_col,
-									border_col);
-								
-							}
-							ImGui::NewLine();
-
-						}
-						ImGui::End();
+						ShowRenderPreview(&Preview_Tiles, Final_Render, Temp_Surface, Top_Left, Bottom_Right, 
+							max_box_x, max_box_y, Origin, texture_width, texture_height, Optimized_Texture, 
+							tint_col, border_col);
 					}
 					// Final render
 					if (Render_Window)
 					{
-						
+						//SDL_Color* PaletteColors = loadPalette();
+						//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
+						//for (int y = 0; y < 16; y++) {
+						//	for (int x = 0; x < 16; x++) {
+						//		SDL_Color color = PaletteColors[y * 16 + x];
+						//		float r = (float)color.r / 255.0f;
+						//		float g = (float)color.g / 255.0f;
+						//		float b = (float)color.b / 255.0f;
+						//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
+						//		if (x < 15) ImGui::SameLine();
+						//	}
+						//}
+						//ImGui::End();
+
 						//SDL_BlitSurface()
 						//ImGui::Begin("Rendering?");
 
@@ -295,6 +251,7 @@ int main(int, char**)
 
 				ImGui::End();
 			}
+
 
 			ImGui::SameLine();
 			ImGui::Text("counter = %d", counter);
@@ -331,4 +288,80 @@ int main(int, char**)
 	SDL_Quit();
 
 	return 0;
+}
+
+
+
+void ShowRenderPreview(bool Preview_Tiles, SDL_Surface *Final_Render, SDL_Surface *Temp_Surface, 
+	ImVec2 Top_Left, ImVec2 Bottom_Right, int max_box_x, int max_box_y, ImVec2 Origin, 
+	int texture_width, int texture_height, SDL_Texture* Optimized_Texture, ImVec4 tint_col, ImVec4 border_col) 
+{
+	ImGui::Begin("Preview Window...", &Preview_Tiles, 0);
+
+
+	if (ImGui::Button("Render as tiles...")) {
+		Preview_Tiles = false;
+
+		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
+		//SDL_Rect temp_Rect;
+		//temp_Rect.w = 350;
+		//temp_Rect.h = 300;
+		//temp_Rect.x = 0;
+		//temp_Rect.y = 0;
+
+		//SDL_BlitSurface(Temp_Surface,
+		//	&temp_Rect,
+		//	Final_Render,
+		//	&temp_Rect);
+		//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
+
+		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
+		Final_Render = FRM_Convert(Temp_Surface);
+		//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
+		//SDL_LockSurface(Final_Render);							
+		//memset(Final_Render->pixels, 0, (1400 * 1500));
+		//SDL_UnlockSurface(Final_Render);
+
+		SDL_SaveBMP_RW(Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1);
+		SDL_SaveBMP_RW(Final_Render, SDL_RWFromFile("temp3.bmp", "wb"), 1);
+
+
+
+		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
+		//SDL_QueryTexture(temp_Render,
+		//	NULL, NULL,
+		//	&Render_Width,
+		//	&Render_Height);
+		//Render_Window = true;
+	}
+	// Window to show the tiles split up already
+	if (Preview_Tiles) {
+
+		Top_Left = Origin;
+		for (int y = 0; y < max_box_y; y++)
+		{
+			for (int x = 0; x < max_box_x; x++)
+			{
+				Top_Left.x = ((x * 350.0f)) / texture_width;
+				Top_Left.y = ((y * 300.0f)) / texture_height;
+
+				Bottom_Right = { (Top_Left.x + (350.0f / texture_width)),
+					(Top_Left.y + (300.0f / texture_height)) };
+
+				ImGui::SameLine();
+				ImGui::Image(
+					Optimized_Texture,
+					ImVec2(350, 300),
+					Top_Left,
+					Bottom_Right,
+					tint_col,
+					border_col);
+
+			}
+			ImGui::NewLine();
+
+		}
+
+	}
+	ImGui::End();
 }
