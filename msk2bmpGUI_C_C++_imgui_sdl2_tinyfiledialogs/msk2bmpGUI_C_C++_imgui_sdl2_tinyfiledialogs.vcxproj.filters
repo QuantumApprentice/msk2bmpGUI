@@ -51,6 +51,9 @@
     <ClCompile Include="FRM_Animate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Save_Files.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FRM_Animate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Save_Files.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

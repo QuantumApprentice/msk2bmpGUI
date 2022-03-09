@@ -1,4 +1,5 @@
 #include "B_Endian.h"
+#include <iostream>
 
 // Signed conversions
 //int32_t bendian::read_32(std::istream& f)
@@ -27,6 +28,13 @@ uint32_t B_Endian::read_u32(std::istream& f)
 		| (bytes[0] << 24);
 	return val;
 }
+uint32_t B_Endian::write_u32(int f)
+{
+	uint32_t val = f;
+	std::reverse((char*)&val,
+		((char*)&val) + 4);
+	return val;
+}
 uint16_t B_Endian::read_u16(std::istream& f)
 {
 	uint16_t val;
@@ -35,6 +43,23 @@ uint16_t B_Endian::read_u16(std::istream& f)
 	val = bytes[1]
 		| (bytes[0] << 8);
 	return val;
+}
+uint16_t B_Endian::write_u16(int f)
+{
+	uint16_t val = f;
+	std::reverse((char*)&val,
+		((char*)&val) + 2);
+	return val;
+
+	//uint8_t bytes[2];
+	//for (int i = 0; i < 2; i++)
+	//{
+	//	bytes[i] = ((uint8_t)(f) + i);
+	//}
+
+
+	//val = bytes[1]
+	//	| (bytes[0] << 8);
 }
 uint8_t B_Endian::read_u8(std::istream& f)
 {

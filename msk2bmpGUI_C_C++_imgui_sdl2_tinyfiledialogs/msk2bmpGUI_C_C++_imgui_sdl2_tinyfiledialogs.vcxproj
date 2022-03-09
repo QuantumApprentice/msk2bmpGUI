@@ -149,6 +149,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="Load_Files.cpp" />
+    <ClCompile Include="Save_Files.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +165,7 @@
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="Save_Files.h" />
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
