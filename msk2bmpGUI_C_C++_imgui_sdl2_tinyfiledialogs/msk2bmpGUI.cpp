@@ -28,14 +28,17 @@ struct variables {
 	bool Render_Window = false;
 	int texture_width = 0, texture_height = 0;
 	int Render_Width = 0, Render_Height = 0;
+
+	SDL_Color *PaletteColors = nullptr;
+
 	SDL_Surface* Temp_Surface = nullptr;
 	SDL_Surface* Final_Render = nullptr;
 	//SDL_Texture* temp_Render = nullptr;
 	SDL_Texture* Optimized_Texture = nullptr;
 	struct LF F_Prop {};
 } My_Variables = {};
-void ShowPreviewWindow(struct variables *My_Variables);
-void ShowRenderPreview(struct variables *My_Variables, 
+void ShowPreviewWindow(variables *My_Variables);
+void ShowRenderPreview(variables *My_Variables, 
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin, 
 	int *max_box_x, int *max_box_y);
 void Show_Palette_Window(struct variables *My_Variables);
@@ -150,6 +153,8 @@ int main(int, char**)
 			{
 				counter++;
 				Load_Files(My_Variables.F_Prop);
+				My_Variables.PaletteColors = loadPalette(My_Variables.F_Prop.c_name);
+
 			}
 			if (My_Variables.F_Prop.file_open_window[0][0]) {
 				if (!My_Variables.Optimized_Texture) {
@@ -296,14 +301,14 @@ void ShowPreviewWindow(struct variables *My_Variables)
 	ImGui::End();
 
 }
-void Show_Palette_Window(struct variables *My_Variables) {
+void Show_Palette_Window(variables *My_Variables) {
 	if (My_Variables->Preview_Tiles)
 	{
-		SDL_Color *PaletteColors = loadPalette();
+
 		ImGui::Begin("##palette", &My_Variables->Preview_Tiles, ImGuiWindowFlags_NoSavedSettings);
 		for (int y = 0; y < 16; y++) {
 			for (int x = 0; x < 16; x++) {
-				SDL_Color color = PaletteColors[y * 16 + x];
+				SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
 				float r = (float)color.r / 255.0f;
 				float g = (float)color.g / 255.0f;
 				float b = (float)color.b / 255.0f;
@@ -316,13 +321,13 @@ void Show_Palette_Window(struct variables *My_Variables) {
 }
 
 
-void ShowRenderPreview(struct variables *My_Variables,
+void ShowRenderPreview(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y)
 {
-	ImGui::Begin("Preview Window...", &My_Variables->Preview_Tiles, 0);
 	Show_Palette_Window(My_Variables);
 
+	ImGui::Begin("Preview Window...", &My_Variables->Preview_Tiles, 0);
 	if (ImGui::Button("Render as tiles...")) {
 		//My_Variables->Preview_Tiles = false;
 		

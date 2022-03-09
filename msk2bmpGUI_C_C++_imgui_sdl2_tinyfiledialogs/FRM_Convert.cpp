@@ -1,4 +1,6 @@
 #include "FRM_Convert.h"
+#include "FRM_Animate.h"
+
 #include "B_Endian.h"
 #include <cstdint>
 #include <fstream>
@@ -24,10 +26,9 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-//std::vector<SDL_Color> PaletteColors;
-SDL_Color PaletteColors[256];
+// Used to convert Fallout's palette colors to normal values
 uint8_t convert_colors(uint8_t bytes) {
-	if (bytes <= 64) {
+	if (bytes < 64) {
 		return 4 * bytes;
 	}
 	else {
@@ -35,7 +36,8 @@ uint8_t convert_colors(uint8_t bytes) {
 	}
 }
 
-SDL_Color* loadPalette()
+SDL_Color PaletteColors[256];
+SDL_Color* loadPalette(char * name)
 {
 	std::ifstream f("color.pal", 
 		std::ios::in | std::ios::binary);
@@ -43,10 +45,10 @@ SDL_Color* loadPalette()
 		printf("Error opening color.pal.\n");
 		return false;
 	}
+
 	uint8_t r, g, b;
-	//PaletteColors.resize(256);
-	printf("Palette size: %d\n", 256); // PaletteColors.size());
-	for (int i = 0; i < 256; i++) //PaletteColors.size(); i++)
+	printf("Palette size: %d\n", 256);
+	for (int i = 0; i < 256; i++)
 	{
 		uint8_t bytes[4];
 
@@ -60,23 +62,19 @@ SDL_Color* loadPalette()
 		printf("RGB: %d, %d, %d\n", r, g, b);
 		PaletteColors[i] = SDL_Color{ r, g, b };
 	}
-
-
-
 	return PaletteColors;
 }
 
 
 SDL_Surface* FRM_Convert(SDL_Surface *surface)
 {
-	loadPalette();
-	struct rgba
+	struct abgr
 	{
-		uint8_t r;
-		uint8_t g;
-		uint8_t b;
 		uint8_t a;
-	} rgba_;
+		uint8_t b;
+		uint8_t g;
+		uint8_t r;
+	} abgr_;
 	
 	//SDL_Surface another_Temp_Surface;
 	//SDL_Surface* Temp_Surface = &another_Temp_Surface;
@@ -85,7 +83,7 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 	SDL_PixelFormat pxlFMT;
 	SDL_Surface* Temp_Surface;
 	myPalette.ncolors = 256;
-	myPalette.colors = PaletteColors;
+	myPalette.colors = loadPalette("default"); //PaletteColors;
 
 	pxlFMT = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
 	pxlFMT.palette = &myPalette;
@@ -103,16 +101,16 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 
 	for (int i = 0; i < k; i++) 
 	{
-		memcpy(&rgba_, (rgba*)surface->pixels + i, sizeof(rgba));
+		memcpy(&abgr_, (abgr*)surface->pixels + i, sizeof(abgr));
 		int w_smallest = INT_MAX;
-		int w_PaletteColor;
-		w_PaletteColor = SDL_MapRGB(&pxlFMT, rgba_.r, rgba_.g, rgba_.b);
+		uint8_t w_PaletteColor;
+		w_PaletteColor = SDL_MapRGBA(&pxlFMT, abgr_.r, abgr_.g, abgr_.b, abgr_.a);
 		//for (int j = 0; j < 256; j++)
 		//{
-		//	int s = (rgba_.r - PaletteColors[j].r);
-		//	int t = (rgba_.g - PaletteColors[j].g);
-		//	int u = (rgba_.b - PaletteColors[j].b);
-		//	int v = (rgba_.a - PaletteColors[j].a);
+		//	int s = (abgr_.r - PaletteColors[j].r);
+		//	int t = (abgr_.g - PaletteColors[j].g);
+		//	int u = (abgr_.b - PaletteColors[j].b);
+		//	int v = (abgr_.a - PaletteColors[j].a);
 		//	s *= s;
 		//	t *= t;
 		//	u *= u;
@@ -122,8 +120,14 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 		//		w_smallest = w; 
 		//		w_PaletteColor = j;
 		//	}
-		//	printf("stuv: %d %d %d %d", s, t, u, v);
+		//	//printf("stuv: %d %d %d %d", s, t, u, v);
 		//}
+		if (i == 100)		{ printf("loop #: %d\n", i); }
+		if (i == 1000)		{ printf("loop #: %d\n", i); }
+		if (i == 10000)		{ printf("loop #: %d\n", i); }
+		if (i == 100000)	{ printf("loop #: %d\n", i); }
+		if (i == 1000000)	{ printf("loop #: %d\n", i); }
+		if (i == 2000000)	{ printf("loop #: %d\n", i); }
 		((uint8_t*)Temp_Surface->pixels)[i]  = w_PaletteColor;
 		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
@@ -132,3 +136,13 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 
 	return Temp_Surface;
 }
+
+int Save_FRM(SDL_Surface f_surface) {
+
+
+
+
+
+
+}
+
