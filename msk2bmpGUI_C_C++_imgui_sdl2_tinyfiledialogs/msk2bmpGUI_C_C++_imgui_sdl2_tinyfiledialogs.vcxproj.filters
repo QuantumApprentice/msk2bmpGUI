@@ -48,6 +48,9 @@
     <ClCompile Include="B_Endian.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FRM_Animate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="B_Endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FRM_Animate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
