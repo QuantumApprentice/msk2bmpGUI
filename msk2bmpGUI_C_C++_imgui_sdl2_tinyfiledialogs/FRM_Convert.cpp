@@ -1,30 +1,16 @@
 #include "FRM_Convert.h"
 #include "FRM_Animate.h"
+#include "Save_Files.h"
 
-#include "B_Endian.h"
 #include <cstdint>
 #include <fstream>
 #include <vector>
 #include <SDL.h>
 
-#pragma pack(push, 1)
-typedef struct {
-	uint32_t version = 0;					// 0x0000
-	uint16_t FPS = 0;						// 0x0004
-	uint16_t Action_Frame = 0;				// 0x0006
-	uint16_t Frames_Per_Orientation = 0;	// 0x0008
-	int16_t  Shift_Orient_x[6];				// 0x000A
-	int16_t  Shift_Orient_y[6];				// 0x0016
-	uint32_t Frame_0_Offset[6];				// 0x0022
-	uint32_t Frame_Area;					// 0x003A
-	uint16_t Frame_0_Width;					// 0x003E
-	uint16_t Frame_0_Height;				// 0x0040
-	uint32_t Frame_0_Size;					// 0x0042
-	uint16_t Shift_Offset_x;				// 0x0046
-	uint16_t Shift_Offset_y;				// 0x0048
+void Save_FRM(SDL_Surface *f_surface);
+uint8_t convert_colors(uint8_t bytes);
 
-} FRM_Header;
-#pragma pack(pop)
+
 
 // Used to convert Fallout's palette colors to normal values
 uint8_t convert_colors(uint8_t bytes) {
@@ -59,7 +45,7 @@ SDL_Color* loadPalette(char * name)
 		//r = B_Endian::read_u8(f);
 		//g = B_Endian::read_u8(f);
 		//b = B_Endian::read_u8(f);
-		printf("RGB: %d, %d, %d\n", r, g, b);
+		//printf("RGB: %d, %d, %d\n", r, g, b);
 		PaletteColors[i] = SDL_Color{ r, g, b };
 	}
 	return PaletteColors;
@@ -132,14 +118,16 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
 	
-	SDL_SaveBMP_RW(Temp_Surface, SDL_RWFromFile("temp1.bmp", "wb"), 1);
+	//SDL_SaveBMP_RW(Temp_Surface, SDL_RWFromFile("temp1.bmp", "wb"), 1);
+	Save_FRM(Temp_Surface);
 
 	return Temp_Surface;
 }
 
-int Save_FRM(SDL_Surface f_surface) {
+void Save_FRM(SDL_Surface *f_surface) {
 
 
+	Save_Files(f_surface);
 
 
 
