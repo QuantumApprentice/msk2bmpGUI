@@ -4,17 +4,17 @@
 #include <string.h>
 #include <SDL_image.h>
 
-void Load_Files(LF &F_Prop)
+void Load_Files(LF F_Prop[], int counter)
 {
-	F_Prop.Opened_File = tinyfd_openFileDialog(
+	F_Prop[counter].Opened_File = tinyfd_openFileDialog(
 		"Open files...",
 		"",
 		2,
-		F_Prop.FilterPattern1,
+		F_Prop[counter].FilterPattern1,
 		NULL,
 		1);
 	
-	if (!F_Prop.Opened_File) {
+	if (!F_Prop[counter].Opened_File) {
 		/*	tinyfd_messageBox(
 			"Error",
 			"No file opened...",
@@ -23,17 +23,17 @@ void Load_Files(LF &F_Prop)
 			0);		*/
 	}
 	else {
-		F_Prop.c_name = strrchr(F_Prop.Opened_File, '/\\') + 1;
-		F_Prop.image1 = IMG_Load(F_Prop.Opened_File);
-		if (F_Prop.image1 == NULL)
+		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
+		F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
+		if (F_Prop[counter].image == NULL)
 		{
 			printf("Unable to open image file %s! SDL Error: %s\n",
-				F_Prop.Opened_File,
+				F_Prop[counter].Opened_File,
 				SDL_GetError());
 		}
 		else
 		{//Convert surface to screen format
-			F_Prop.file_open_window[0][0] = true;
+			F_Prop[counter].file_open_window = true;
 		}
 	}
 }
