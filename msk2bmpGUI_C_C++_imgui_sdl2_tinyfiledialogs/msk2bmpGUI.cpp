@@ -15,6 +15,7 @@
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 
+
 #if !SDL_VERSION_ATLEAST(2,0,17)
 #error This backend requires SDL 2.0.17+ because of SDL_RenderGeometry() function
 #endif
@@ -34,10 +35,12 @@ struct variables {
 	SDL_Surface* Temp_Surface = nullptr;
 	SDL_Surface* Final_Render = nullptr;
 	//SDL_Texture* temp_Render = nullptr;
-	SDL_Texture* Optimized_Texture = nullptr;
-	struct LF F_Prop {};
+	SDL_Texture* Optimized_Texture[2]{};
+	struct LF F_Prop[3] {};
 } My_Variables = {};
-void ShowPreviewWindow(variables *My_Variables);
+
+void Open_Context_Window(variables* My_Variables, SDL_Renderer* renderer, int counter);
+void ShowPreviewWindow(variables *My_Variables, int counter);
 void ShowRenderPreview(variables *My_Variables, 
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin, 
 	int *max_box_x, int *max_box_y);
@@ -138,7 +141,7 @@ int main(int, char**)
 		{
 			static float f = 0.0f;
 			static int counter = 0;
-			
+
 
 			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
@@ -151,31 +154,18 @@ int main(int, char**)
 
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
+				
+				// Assigns image to Load_Files.image and loads palette for the image
+				// TODO: image needs to be less than 1 million pixels (1000x1000)
+				// to be viewable in Titanium FRM viewer, what's the limit in the game?
+				Load_Files(My_Variables.F_Prop, counter);
+				My_Variables.PaletteColors = loadPalette(My_Variables.F_Prop[counter].c_name);
+				Open_Context_Window(&My_Variables, renderer, counter);
+
 				counter++;
-				Load_Files(My_Variables.F_Prop);
-				My_Variables.PaletteColors = loadPalette(My_Variables.F_Prop.c_name);
 
-			}
-			if (My_Variables.F_Prop.file_open_window[0][0]) {
-				if (!My_Variables.Optimized_Texture) {
-					My_Variables.Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables.F_Prop.image1, SDL_PIXELFORMAT_RGBA8888, 0);
-					My_Variables.Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables.Temp_Surface);
-				}
-				if (My_Variables.Optimized_Texture == NULL) {
-					printf("Unable to optimize image %s! SDL Error: %s\n",
-						My_Variables.F_Prop.Opened_File, SDL_GetError());
-					My_Variables.F_Prop.file_open_window[0][0] = false;
-				}
 
-				else
-				{
-					SDL_QueryTexture(My_Variables.Optimized_Texture,
-						NULL, NULL,
-						&My_Variables.texture_width,
-						&My_Variables.texture_height);
-				}
 
-				ShowPreviewWindow(&My_Variables);
 
 			}
 
@@ -184,7 +174,16 @@ int main(int, char**)
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
+			for (int i = 0; i < counter; i++)
+			{
+				if (My_Variables.F_Prop[i].file_open_window)
+				{
+					ShowPreviewWindow(&My_Variables, i);
+				}
+			}
+
 		}
+
 
 		// 3. Show another simple window.
 		if (show_another_window)
@@ -216,9 +215,9 @@ int main(int, char**)
 	return 0;
 }
 
-void ShowPreviewWindow(struct variables *My_Variables)
+void ShowPreviewWindow(struct variables *My_Variables, int counter)
 {
-	ImGui::Begin(My_Variables->F_Prop.c_name, (&My_Variables->F_Prop.file_open_window[0][0]), 0);
+	ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
 	// Check image size to match tile size (350x300 pixels)
 	bool wrong_size = (My_Variables->texture_width != 350)
 		|| (My_Variables->texture_height != 300);
@@ -231,9 +230,9 @@ void ShowPreviewWindow(struct variables *My_Variables)
 			My_Variables->Preview_Tiles = true;
 		}
 	}
-	ImGui::Text(My_Variables->F_Prop.c_name);
+	ImGui::Text(My_Variables->F_Prop[counter].c_name);
 	ImGui::Image(
-		My_Variables->Optimized_Texture,
+		My_Variables->Optimized_Texture[0],
 		ImVec2((float)My_Variables->texture_width,
 		(float)My_Variables->texture_height),
 		My_Variables->uv_min,
@@ -320,7 +319,6 @@ void Show_Palette_Window(variables *My_Variables) {
 	}
 }
 
-
 void ShowRenderPreview(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y)
@@ -381,7 +379,7 @@ void ShowRenderPreview(variables *My_Variables,
 
 				ImGui::SameLine();
 				ImGui::Image(
-					My_Variables->Optimized_Texture,
+					My_Variables->Optimized_Texture[0],
 					ImVec2(350, 300),
 					*Top_Left,
 					*Bottom_Right,
@@ -392,4 +390,28 @@ void ShowRenderPreview(variables *My_Variables,
 		}
 	}
 	ImGui::End();
+}
+
+
+void Open_Context_Window(variables* My_Variables, SDL_Renderer* renderer, int counter) {
+	if (My_Variables->F_Prop[counter].file_open_window) {
+		if (!My_Variables->Optimized_Texture[counter]) 
+		{
+			SDL_FreeSurface(My_Variables->Temp_Surface);
+			My_Variables->Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables->F_Prop[counter].image, SDL_PIXELFORMAT_RGBA8888, 0);
+			My_Variables->Optimized_Texture[counter] = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
+		}
+		if (My_Variables->Optimized_Texture[counter] == NULL) {
+			printf("Unable to optimize image %s! SDL Error: %s\n",
+				My_Variables->F_Prop[counter].Opened_File, SDL_GetError());
+			My_Variables->F_Prop[counter].file_open_window = false;
+		}
+		else
+		{
+			SDL_QueryTexture(My_Variables->Optimized_Texture[counter],
+				NULL, NULL,
+				&My_Variables->texture_width,
+				&My_Variables->texture_height);
+		}
+	}
 }
