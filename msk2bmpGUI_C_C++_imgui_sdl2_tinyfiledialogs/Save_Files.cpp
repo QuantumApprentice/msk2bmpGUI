@@ -5,7 +5,6 @@
 #include "tinyfiledialogs.h"
 #include "B_Endian.h"
 
-
 #pragma pack(push, 1)
 typedef struct {
 	uint32_t version = B_Endian::write_u32(4);					// 0x0000
@@ -21,6 +20,7 @@ typedef struct {
 	uint32_t Frame_0_Size;					// 0x0042
 	uint16_t Shift_Offset_x = 0;			// 0x0046
 	uint16_t Shift_Offset_y = 0;			// 0x0048
+	//uint8_t  Color_Index = 0;				// 0x004A
 } FRM_Header;
 #pragma pack(pop)
 
@@ -30,8 +30,7 @@ char* Save_Files(SDL_Surface *f_surface)
 	FRM_Stuff.Frame_0_Height = B_Endian::write_u16(f_surface->h);
 	FRM_Stuff.Frame_0_Width  = B_Endian::write_u16(f_surface->w);
 	FRM_Stuff.Frame_Area	 = B_Endian::write_u32(f_surface->h * f_surface->w);
-	FRM_Stuff.Frame_0_Size	 = B_Endian::write_u32(sizeof(FRM_Stuff) + 
-						(sizeof(f_surface->pixels)*FRM_Stuff.Frame_Area));
+	FRM_Stuff.Frame_0_Size	 = B_Endian::write_u32(f_surface->h * f_surface->w);
 
 	FILE * File_ptr;
 	char * Save_File_Name;
@@ -56,7 +55,7 @@ char* Save_Files(SDL_Surface *f_surface)
 			1);
 		//return 1;
 	}
-
+	
 	fwrite(&FRM_Stuff, sizeof(FRM_Stuff), 1, File_ptr);
 	fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
 
