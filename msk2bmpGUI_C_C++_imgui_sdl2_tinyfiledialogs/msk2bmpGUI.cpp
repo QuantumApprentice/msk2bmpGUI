@@ -27,7 +27,6 @@ struct variables {
 	ImVec2 uv_max = ImVec2(1.0f, 1.0f);
 	bool Preview_Tiles = false;
 	bool Render_Window = false;
-	int texture_width = 0, texture_height = 0;
 	int Render_Width = 0, Render_Height = 0;
 
 	SDL_Color *PaletteColors = nullptr;
@@ -35,16 +34,15 @@ struct variables {
 	SDL_Surface* Temp_Surface = nullptr;
 	SDL_Surface* Final_Render = nullptr;
 	//SDL_Texture* temp_Render = nullptr;
-	SDL_Texture* Optimized_Texture[2]{};
-	struct LF F_Prop[3] {};
+	struct LF F_Prop[99] {};
 } My_Variables = {};
 
-void Open_Context_Window(variables* My_Variables, SDL_Renderer* renderer, int counter);
+void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter);
 void ShowPreviewWindow(variables *My_Variables, int counter);
 void ShowRenderPreview(variables *My_Variables, 
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin, 
-	int *max_box_x, int *max_box_y);
-void Show_Palette_Window(struct variables *My_Variables);
+	int *max_box_x, int *max_box_y, int counter);
+void Show_Palette_Window(struct variables *My_Variables, int counter);
 
 // Main code
 int main(int, char**)
@@ -159,10 +157,11 @@ int main(int, char**)
 				// TODO: image needs to be less than 1 million pixels (1000x1000)
 				// to be viewable in Titanium FRM viewer, what's the limit in the game?
 				Load_Files(My_Variables.F_Prop, counter);
-				My_Variables.PaletteColors = loadPalette(My_Variables.F_Prop[counter].c_name);
-				Open_Context_Window(&My_Variables, renderer, counter);
+				My_Variables.PaletteColors = loadPalette("string"); // My_Variables.F_Prop[counter].c_name);
+				Image2Texture(&My_Variables, renderer, counter);
 
-				counter++;
+				if (My_Variables.F_Prop[counter].c_name) { counter++; }
+
 
 
 
@@ -181,19 +180,8 @@ int main(int, char**)
 					ShowPreviewWindow(&My_Variables, i);
 				}
 			}
-
 		}
 
-
-		// 3. Show another simple window.
-		if (show_another_window)
-		{
-			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-			ImGui::Text("Hello from another window!");
-			if (ImGui::Button("Close Me"))
-				show_another_window = false;
-			ImGui::End();
-		}
 
 		// Rendering
 		ImGui::Render();
@@ -219,11 +207,12 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 {
 	ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
 	// Check image size to match tile size (350x300 pixels)
-	bool wrong_size = (My_Variables->texture_width != 350)
-		|| (My_Variables->texture_height != 300);
+	bool wrong_size = (My_Variables->F_Prop[counter].texture_width != 350)
+		|| (My_Variables->F_Prop[counter].texture_height != 300);
 	if (wrong_size) {
 		ImGui::Text("This image is the wrong size to make a tile...");
-		ImGui::Text("Size is %dx%d", My_Variables->texture_width, My_Variables->texture_height);
+		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].texture_width, 
+									My_Variables->F_Prop[counter].texture_height);
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
@@ -232,9 +221,9 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
 	ImGui::Image(
-		My_Variables->Optimized_Texture[0],
-		ImVec2((float)My_Variables->texture_width,
-		(float)My_Variables->texture_height),
+		My_Variables->F_Prop[counter].Optimized_Texture,
+		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
+		(float)My_Variables->F_Prop[counter].texture_height),
 		My_Variables->uv_min,
 		My_Variables->uv_max,
 		My_Variables->tint_col,
@@ -245,8 +234,8 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 		ImVec2 Origin = ImGui::GetItemRectMin();
 		ImVec2 Top_Left = Origin;
 		ImVec2 Bottom_Right = { 0, 0 };
-		int max_box_x = My_Variables->texture_width / 350;
-		int max_box_y = My_Variables->texture_height / 300;
+		int max_box_x = My_Variables->F_Prop[counter].texture_width/ 350;
+		int max_box_y = My_Variables->F_Prop[counter].texture_height / 300;
 
 		// Draw red boxes to indicate where the tiles will be cut from
 		for (int i = 0; i < max_box_x; i++)
@@ -263,7 +252,8 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 		}
 		// Preview tiles from red boxes
 		if (My_Variables->Preview_Tiles) {
-			ShowRenderPreview(My_Variables, &Top_Left, &Bottom_Right, &Origin, &max_box_x, &max_box_y);
+			ShowRenderPreview(My_Variables, &Top_Left, &Bottom_Right, 
+									&Origin, &max_box_x, &max_box_y, counter);
 		}
 		// Final render
 		if (My_Variables->Render_Window)
@@ -300,11 +290,15 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 	ImGui::End();
 
 }
-void Show_Palette_Window(variables *My_Variables) {
+
+void Show_Palette_Window(variables *My_Variables, int counter) {
 	if (My_Variables->Preview_Tiles)
 	{
+		std::string a = My_Variables->F_Prop[counter].c_name;
+		std::string name = a + " #palette";
 
-		ImGui::Begin("##palette", &My_Variables->Preview_Tiles, ImGuiWindowFlags_NoSavedSettings);
+		ImGui::Begin(name.c_str(), &My_Variables->Preview_Tiles, ImGuiWindowFlags_NoSavedSettings);
+
 		for (int y = 0; y < 16; y++) {
 			for (int x = 0; x < 16; x++) {
 				SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
@@ -321,14 +315,13 @@ void Show_Palette_Window(variables *My_Variables) {
 
 void ShowRenderPreview(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
-	int *max_box_x, int *max_box_y)
+	int *max_box_x, int *max_box_y, int counter)
 {
-	Show_Palette_Window(My_Variables);
+	Show_Palette_Window(My_Variables, counter);
 
 	ImGui::Begin("Preview Window...", &My_Variables->Preview_Tiles, 0);
 	if (ImGui::Button("Render as tiles...")) {
 		//My_Variables->Preview_Tiles = false;
-		
 
 		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
 		//SDL_Rect temp_Rect;
@@ -365,21 +358,20 @@ void ShowRenderPreview(variables *My_Variables,
 
 	// Window to show the tiles split up already
 	if (My_Variables->Preview_Tiles) {
-
 		Top_Left = Origin;
 		for (int y = 0; y < *max_box_y; y++)
 		{
 			for (int x = 0; x < *max_box_x; x++)
 			{
-				Top_Left->x = ((x * 350.0f)) / My_Variables->texture_width;
-				Top_Left->y = ((y * 300.0f)) / My_Variables->texture_height;
+				Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].texture_width;
+				Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].texture_height;
 
-				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->texture_width)),
-					(Top_Left->y + (300.0f / My_Variables->texture_height)) };
+				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
+								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
 
 				ImGui::SameLine();
 				ImGui::Image(
-					My_Variables->Optimized_Texture[0],
+					My_Variables->F_Prop[counter].Optimized_Texture,
 					ImVec2(350, 300),
 					*Top_Left,
 					*Bottom_Right,
@@ -392,26 +384,25 @@ void ShowRenderPreview(variables *My_Variables,
 	ImGui::End();
 }
 
-
-void Open_Context_Window(variables* My_Variables, SDL_Renderer* renderer, int counter) {
+void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter) {
 	if (My_Variables->F_Prop[counter].file_open_window) {
-		if (!My_Variables->Optimized_Texture[counter]) 
+		if (!My_Variables->F_Prop[counter].Optimized_Texture)
 		{
 			SDL_FreeSurface(My_Variables->Temp_Surface);
 			My_Variables->Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables->F_Prop[counter].image, SDL_PIXELFORMAT_RGBA8888, 0);
-			My_Variables->Optimized_Texture[counter] = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
+			My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
 		}
-		if (My_Variables->Optimized_Texture[counter] == NULL) {
+		if (My_Variables->F_Prop[counter].Optimized_Texture == NULL) {
 			printf("Unable to optimize image %s! SDL Error: %s\n",
 				My_Variables->F_Prop[counter].Opened_File, SDL_GetError());
 			My_Variables->F_Prop[counter].file_open_window = false;
 		}
 		else
 		{
-			SDL_QueryTexture(My_Variables->Optimized_Texture[counter],
+			SDL_QueryTexture(My_Variables->F_Prop[counter].Optimized_Texture,
 				NULL, NULL,
-				&My_Variables->texture_width,
-				&My_Variables->texture_height);
+				&My_Variables->F_Prop[counter].texture_width,
+				&My_Variables->F_Prop[counter].texture_height);
 		}
 	}
 }
