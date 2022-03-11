@@ -234,7 +234,7 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 		ImVec2 Origin = ImGui::GetItemRectMin();
 		ImVec2 Top_Left = Origin;
 		ImVec2 Bottom_Right = { 0, 0 };
-		int max_box_x = My_Variables->F_Prop[counter].texture_width/ 350;
+		int max_box_x = My_Variables->F_Prop[counter].texture_width / 350;
 		int max_box_y = My_Variables->F_Prop[counter].texture_height / 300;
 
 		// Draw red boxes to indicate where the tiles will be cut from

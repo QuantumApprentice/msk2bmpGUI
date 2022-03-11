@@ -1,7 +1,7 @@
 #pragma once
 #include <SDL.h>
 struct LF {
-	char * Opened_File;
+	char Opened_File[256];
 	char * c_name;
 	SDL_Surface* image;
 	SDL_Texture* Optimized_Texture = nullptr;
