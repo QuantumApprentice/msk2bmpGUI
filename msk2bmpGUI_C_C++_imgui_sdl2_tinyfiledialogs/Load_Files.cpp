@@ -6,7 +6,7 @@
 
 void Load_Files(LF F_Prop[], int counter)
 {
-	F_Prop[counter].Opened_File = tinyfd_openFileDialog(
+	char *ptr = tinyfd_openFileDialog(
 		"Open files...",
 		"",
 		2,
@@ -14,7 +14,7 @@ void Load_Files(LF F_Prop[], int counter)
 		NULL,
 		1);
 	
-	if (!F_Prop[counter].Opened_File) {
+	if (!ptr) {
 		/*	tinyfd_messageBox(
 			"Error",
 			"No file opened...",
@@ -23,6 +23,7 @@ void Load_Files(LF F_Prop[], int counter)
 			0);		*/
 	}
 	else {
+		memcpy(F_Prop[counter].Opened_File, ptr, 256);
 		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
 		F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
 		if (F_Prop[counter].image == NULL)
