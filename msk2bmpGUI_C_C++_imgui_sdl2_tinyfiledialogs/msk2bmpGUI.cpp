@@ -8,12 +8,12 @@
 // because it provide a rather limited API to the end-user. We provide this backend for the sake of completeness.
 // For a multi-platform app consider using e.g. SDL+DirectX on Windows and SDL+OpenGL on Linux/OSX.
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_sdl.h"
-#include "imgui/imgui_impl_sdlrenderer.h"
-//#include "imgui-docking/imgui.h"
-//#include "imgui-docking/imgui_impl_sdl.h"
-//#include "imgui-docking/imgui_impl_sdlrenderer.h"
+//#include "imgui/imgui.h"
+//#include "imgui/imgui_impl_sdl.h"
+//#include "imgui/imgui_impl_sdlrenderer.h"
+#include "imgui-docking/imgui.h"
+#include "imgui-docking/imgui_impl_sdl.h"
+#include "imgui-docking/imgui_impl_sdlrenderer.h"
 
 #include <SDL.h>
 #include "Load_Files.h"
@@ -124,16 +124,17 @@ int main(int, char**)
 		bool yes = true;
 		// 1. Show demo window
 		//ImGui::ShowDemoWindow(&yes);
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-		ImGui::Begin("DockSpace Demo", &yes, window_flags);
 
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		}
-		ImGui::End();
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		//static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+		//ImGui::Begin("DockSpace Demo", &yes, window_flags);
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+		//if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		//{
+		//	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+		//	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		//}
+		//ImGui::End();
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 		{
@@ -282,10 +283,12 @@ void ShowRenderWindow(variables *My_Variables,
 	std::string name = a + " Preview Window...";
 
 	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
+
 	if (ImGui::Button("Render and save as tiles...")) {
 		//My_Variables->Render_Window = true;
 		Render_and_Save(My_Variables, counter);
 	}
+	
 
 	// Preview window for tiles already converted to palettized format
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
@@ -300,7 +303,6 @@ void ShowRenderWindow(variables *My_Variables,
 				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
 								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
 
-				ImGui::SameLine();
 				ImGui::Image(
 					My_Variables->F_Prop[counter].Optimized_Render_Texture,
 					ImVec2(350, 300),

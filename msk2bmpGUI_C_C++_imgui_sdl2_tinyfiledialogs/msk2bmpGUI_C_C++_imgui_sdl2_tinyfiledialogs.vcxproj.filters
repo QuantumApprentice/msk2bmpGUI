@@ -19,12 +19,6 @@
     <Filter Include="Source Files\imgui-default">
       <UniqueIdentifier>{b833a7f1-20bb-4600-b1d6-7f6f38d06701}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\imgui-docking.h">
-      <UniqueIdentifier>{e7f703f8-f4ae-4b4a-b1a1-c9c961d0c155}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\imgui-default.h">
-      <UniqueIdentifier>{a21acdfc-d10b-4d17-ad9d-39b562ed4103}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tinyfiledialogs.c">
@@ -47,6 +41,27 @@
     </ClCompile>
     <ClCompile Include="Save_Files.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_demo.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_draw.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_impl_sdl.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_impl_sdlrenderer.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_tables.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui-docking\imgui_widgets.cpp">
+      <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
     <ClCompile Include="imgui\imgui.cpp">
       <Filter>Source Files\imgui-default</Filter>
@@ -88,6 +103,30 @@
     </ClInclude>
     <ClInclude Include="Save_Files.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imconfig.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imgui.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imgui_impl_sdl.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imgui_impl_sdlrenderer.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imgui_internal.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imstb_rectpack.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imstb_textedit.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imstb_truetype.h">
+      <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
     <ClInclude Include="imgui\imconfig.h">
       <Filter>Source Files\imgui-default</Filter>
