@@ -55,13 +55,10 @@ char* Save_Files(SDL_Surface *f_surface)
 			1);
 		//return 1;
 	}
-	
 	fwrite(&FRM_Stuff, sizeof(FRM_Stuff), 1, File_ptr);
 	fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
 
 	fclose(File_ptr);
 
-	//printf("a: %s", Save_File_Name);
 	return Save_File_Name;
-
 }
