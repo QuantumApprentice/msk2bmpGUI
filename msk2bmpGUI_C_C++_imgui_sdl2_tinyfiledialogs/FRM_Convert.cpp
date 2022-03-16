@@ -1,16 +1,12 @@
 #include "FRM_Convert.h"
 #include "FRM_Animate.h"
-#include "Save_Files.h"
 
 #include <cstdint>
 #include <fstream>
 #include <vector>
 #include <SDL.h>
 
-void Save_FRM(SDL_Surface *f_surface);
 uint8_t convert_colors(uint8_t bytes);
-
-
 
 // Used to convert Fallout's palette colors to normal values
 uint8_t convert_colors(uint8_t bytes) {
@@ -51,7 +47,6 @@ SDL_Color* loadPalette(char * name)
 	return PaletteColors;
 }
 
-
 SDL_Surface* FRM_Convert(SDL_Surface *surface)
 {
 	struct abgr
@@ -77,6 +72,7 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 	pxlFMT.BytesPerPixel = 1;
 	int k = (surface->w)*(surface->h);
 
+	// TODO: need to figure out what command is best to create a blank surface
 	//Temp_Surface = SDL_CreateRGBSurfaceFrom(surface->pixels, surface->w, surface->h, surface->format->BitsPerPixel, surface->pitch, surface->format->Rmask, surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
 	Temp_Surface = SDL_ConvertSurface(surface, &pxlFMT, 0);
 	//Temp_Surface = SDL_CreateRGBSurface(0, surface->w, surface->h, 8, 0, 0, 0, 0);
@@ -118,19 +114,5 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
 	
-	//SDL_SaveBMP_RW(Temp_Surface, SDL_RWFromFile("temp1.bmp", "wb"), 1);
-	Save_FRM(Temp_Surface);
-
 	return Temp_Surface;
 }
-
-void Save_FRM(SDL_Surface *f_surface) {
-
-
-	Save_Files(f_surface);
-
-
-
-
-}
-
