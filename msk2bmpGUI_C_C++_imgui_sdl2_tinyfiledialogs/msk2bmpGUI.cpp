@@ -11,9 +11,14 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_sdlrenderer.h"
+//#include "imgui-docking/imgui.h"
+//#include "imgui-docking/imgui_impl_sdl.h"
+//#include "imgui-docking/imgui_impl_sdlrenderer.h"
+
 #include <SDL.h>
 #include "Load_Files.h"
 #include "FRM_Convert.h"
+#include "Save_Files.h"
 
 
 #if !SDL_VERSION_ATLEAST(2,0,17)
@@ -25,6 +30,7 @@ struct variables {
 	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
 	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
 	ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+	bool Render_Tiles = false;
 	bool Preview_Tiles = false;
 	bool Render_Window = false;
 	int Render_Width = 0, Render_Height = 0;
@@ -32,17 +38,17 @@ struct variables {
 	SDL_Color *PaletteColors = nullptr;
 
 	SDL_Surface* Temp_Surface = nullptr;
-	SDL_Surface* Final_Render = nullptr;
-	//SDL_Texture* temp_Render = nullptr;
-	struct LF F_Prop[99] {};
+
+	struct LF F_Prop[99]{};
 } My_Variables = {};
 
 void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter);
-void ShowPreviewWindow(variables *My_Variables, int counter);
-void ShowRenderPreview(variables *My_Variables, 
-	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin, 
+void ShowPreviewWindow(variables *My_Variables, int counter, SDL_Renderer* renderer);
+void ShowRenderWindow(variables *My_Variables,
+	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter);
 void Show_Palette_Window(struct variables *My_Variables, int counter);
+void Render_and_Save(variables *My_Variables, int counter);
 
 // Main code
 int main(int, char**)
@@ -60,7 +66,7 @@ int main(int, char**)
 	SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 	SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+SDL_Renderer example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
 
-	// Setup SDL_Renderer instance
+	// Setup SDL_Renderer instance	
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL)
 	{
@@ -86,24 +92,6 @@ int main(int, char**)
 	ImGui_ImplSDL2_InitForSDLRenderer(window, renderer);
 	ImGui_ImplSDLRenderer_Init(renderer);
 
-	// Load Fonts
-	// - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
-	// - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
-	// - If the file cannot be loaded, the function will return NULL. Please handle those errors in your application (e.g. use an assertion, or display an error and quit).
-	// - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
-	// - Read 'docs/FONTS.md' for more instructions and details.
-	// - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-	//io.Fonts->AddFontDefault();
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-	//io.Fonts->AddFontFromFileTTF("../../misc/fonts/ProggyTiny.ttf", 10.0f);
-	//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
-	//IM_ASSERT(font != NULL);
-
-
-
-	bool show_demo_window = true;
 	bool show_another_window = false;
 	bool done = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -125,34 +113,36 @@ int main(int, char**)
 			if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
 				done = true;
 		}
+		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-		// 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-		//if (show_demo_window)
-		//	ImGui::ShowDemoWindow(&show_demo_window);
+
+		bool yes = true;
+		// 1. Show demo window
+		//ImGui::ShowDemoWindow(&yes);
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+		ImGui::Begin("DockSpace Demo", &yes, window_flags);
+
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		}
+		ImGui::End();
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 		{
-			static float f = 0.0f;
 			static int counter = 0;
-
 
 			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
 
-			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-			ImGui::Checkbox("Another Window", &show_another_window);
-
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
 			if (ImGui::Button("Open File..."))                      // Buttons return true when clicked (most widgets return true when edited/activated)
 			{
-				
 				// Assigns image to Load_Files.image and loads palette for the image
 				// TODO: image needs to be less than 1 million pixels (1000x1000)
 				// to be viewable in Titanium FRM viewer, what's the limit in the game?
@@ -161,11 +151,6 @@ int main(int, char**)
 				Image2Texture(&My_Variables, renderer, counter);
 
 				if (My_Variables.F_Prop[counter].c_name) { counter++; }
-
-
-
-
-
 			}
 
 			ImGui::SameLine();
@@ -177,11 +162,10 @@ int main(int, char**)
 			{
 				if (My_Variables.F_Prop[i].file_open_window)
 				{
-					ShowPreviewWindow(&My_Variables, i);
+					ShowPreviewWindow(&My_Variables, i, renderer);
 				}
 			}
 		}
-
 
 		// Rendering
 		ImGui::Render();
@@ -203,20 +187,26 @@ int main(int, char**)
 	return 0;
 }
 
-void ShowPreviewWindow(struct variables *My_Variables, int counter)
+void ShowPreviewWindow(struct variables *My_Variables, int counter, SDL_Renderer* renderer)
 {
-	ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
-	// Check image size to match tile size (350x300 pixels)
 	bool wrong_size = (My_Variables->F_Prop[counter].texture_width != 350)
 		|| (My_Variables->F_Prop[counter].texture_height != 300);
+
+	ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
+	// Check image size to match tile size (350x300 pixels)
 	if (wrong_size) {
 		ImGui::Text("This image is the wrong size to make a tile...");
-		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].texture_width, 
-									My_Variables->F_Prop[counter].texture_height);
+		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].texture_width,
+			My_Variables->F_Prop[counter].texture_height);
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
-			My_Variables->Preview_Tiles = true;
+			My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
+
+			My_Variables->F_Prop[counter].Optimized_Render_Texture
+				= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
+
+			My_Variables->F_Prop[counter].preview_tiles_window = true;
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
@@ -251,53 +241,22 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 			}
 		}
 		// Preview tiles from red boxes
-		if (My_Variables->Preview_Tiles) {
-			ShowRenderPreview(My_Variables, &Top_Left, &Bottom_Right, 
-									&Origin, &max_box_x, &max_box_y, counter);
+		if (My_Variables->F_Prop[counter].preview_tiles_window) {
+
+			ShowRenderWindow(My_Variables, &Top_Left, &Bottom_Right,
+				&Origin, &max_box_x, &max_box_y, counter);
 		}
-		// Final render
-		if (My_Variables->Render_Window)
-		{
-			//SDL_Color* PaletteColors = loadPalette();
-			//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
-			//for (int y = 0; y < 16; y++) {
-			//	for (int x = 0; x < 16; x++) {
-			//		SDL_Color color = PaletteColors[y * 16 + x];
-			//		float r = (float)color.r / 255.0f;
-			//		float g = (float)color.g / 255.0f;
-			//		float b = (float)color.b / 255.0f;
-			//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
-			//		if (x < 15) ImGui::SameLine();
-			//	}
-			//}
-			//ImGui::End();
-
-			//SDL_BlitSurface()
-			//ImGui::Begin("Rendering?");
-
-			//ImGui::Image(temp_Render,
-			//	ImVec2((float)Render_Width,
-			//	(float)Render_Height),
-			//	uv_min,
-			//	uv_max,
-			//	tint_col,
-			//	border_col);
-
-			//ImGui::End();
-		}
-
 	}
 	ImGui::End();
-
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-	if (My_Variables->Preview_Tiles)
+	if (My_Variables->F_Prop[counter].preview_tiles_window)
 	{
 		std::string a = My_Variables->F_Prop[counter].c_name;
 		std::string name = a + " #palette";
 
-		ImGui::Begin(name.c_str(), &My_Variables->Preview_Tiles, ImGuiWindowFlags_NoSavedSettings);
+		ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, ImGuiWindowFlags_NoSavedSettings);
 
 		for (int y = 0; y < 16; y++) {
 			for (int x = 0; x < 16; x++) {
@@ -313,16 +272,54 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
 	}
 }
 
-void ShowRenderPreview(variables *My_Variables,
+void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter)
 {
 	Show_Palette_Window(My_Variables, counter);
 
-	ImGui::Begin("Preview Window...", &My_Variables->Preview_Tiles, 0);
-	if (ImGui::Button("Render as tiles...")) {
-		//My_Variables->Preview_Tiles = false;
+	std::string a = My_Variables->F_Prop[counter].c_name;
+	std::string name = a + " Preview Window...";
 
+	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
+	if (ImGui::Button("Render and save as tiles...")) {
+		//My_Variables->Render_Window = true;
+		Render_and_Save(My_Variables, counter);
+	}
+
+	// Preview window for tiles already converted to palettized format
+	if (My_Variables->F_Prop[counter].preview_tiles_window) {
+		Top_Left = Origin;
+		for (int y = 0; y < *max_box_y; y++)
+		{
+			for (int x = 0; x < *max_box_x; x++)
+			{
+				Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].texture_width;
+				Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].texture_height;
+
+				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
+								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
+
+				ImGui::SameLine();
+				ImGui::Image(
+					My_Variables->F_Prop[counter].Optimized_Render_Texture,
+					ImVec2(350, 300),
+					*Top_Left,
+					*Bottom_Right,
+					My_Variables->tint_col,
+					My_Variables->border_col);
+			}
+			ImGui::NewLine();
+		}
+	}
+	ImGui::End();
+}
+
+// Final render
+void Render_and_Save(variables *My_Variables, int counter)
+{
+	if (My_Variables->F_Prop[counter].preview_tiles_window) {
+		Save_Files(My_Variables->F_Prop[counter].Final_Render);
 		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
 		//SDL_Rect temp_Rect;
 		//temp_Rect.w = 350;
@@ -337,16 +334,10 @@ void ShowRenderPreview(variables *My_Variables,
 		//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
 
 		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-		My_Variables->Final_Render = FRM_Convert(My_Variables->Temp_Surface);
+		//My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
 		//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
-		//SDL_LockSurface(Final_Render);							
-		//memset(Final_Render->pixels, 0, (1400 * 1500));
-		//SDL_UnlockSurface(Final_Render);
 
-		SDL_SaveBMP_RW(My_Variables->Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1);
-		SDL_SaveBMP_RW(My_Variables->Final_Render, SDL_RWFromFile("temp3.bmp", "wb"), 1);
-
-
+	/* SDL_SaveBMP_RW(My_Variables->Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1); */
 
 		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
 		//SDL_QueryTexture(temp_Render,
@@ -354,34 +345,33 @@ void ShowRenderPreview(variables *My_Variables,
 		//	&Render_Width,
 		//	&Render_Height);
 		//Render_Window = true;
+		//SDL_Color* PaletteColors = loadPalette();
+		//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
+		//for (int y = 0; y < 16; y++) {
+		//	for (int x = 0; x < 16; x++) {
+		//		SDL_Color color = PaletteColors[y * 16 + x];
+		//		float r = (float)color.r / 255.0f;
+		//		float g = (float)color.g / 255.0f;
+		//		float b = (float)color.b / 255.0f;
+		//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
+		//		if (x < 15) ImGui::SameLine();
+		//	}
+		//}
+		//ImGui::End();
+
+		//SDL_BlitSurface()
+		//ImGui::Begin("Rendering?");
+
+		//ImGui::Image(temp_Render,
+		//	ImVec2((float)Render_Width,
+		//	(float)Render_Height),
+		//	uv_min,
+		//	uv_max,
+		//	tint_col,
+		//	border_col);
+
+		//ImGui::End();
 	}
-
-	// Window to show the tiles split up already
-	if (My_Variables->Preview_Tiles) {
-		Top_Left = Origin;
-		for (int y = 0; y < *max_box_y; y++)
-		{
-			for (int x = 0; x < *max_box_x; x++)
-			{
-				Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].texture_width;
-				Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].texture_height;
-
-				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
-								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
-
-				ImGui::SameLine();
-				ImGui::Image(
-					My_Variables->F_Prop[counter].Optimized_Texture,
-					ImVec2(350, 300),
-					*Top_Left,
-					*Bottom_Right,
-					My_Variables->tint_col,
-					My_Variables->border_col);
-			}
-			ImGui::NewLine();
-		}
-	}
-	ImGui::End();
 }
 
 void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter) {
