@@ -49,6 +49,8 @@ void ShowRenderWindow(variables *My_Variables,
 	int *max_box_x, int *max_box_y, int counter);
 void Show_Palette_Window(struct variables *My_Variables, int counter);
 void Render_and_Save(variables *My_Variables, int counter);
+void Window_Begin();
+void Window_End();
 
 // Main code
 int main(int, char**)
@@ -114,26 +116,29 @@ int main(int, char**)
 				done = true;
 		}
 		ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		//ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+		//// Update and Render additional Platform Windows
+		//if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		//{
+		//	ImGui::UpdatePlatformWindows();
+		//	ImGui::RenderPlatformWindowsDefault();
+		//}
+		
 		// Start the Dear ImGui frame
 		ImGui_ImplSDLRenderer_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-
 		bool yes = true;
 		// 1. Show demo window
-		//ImGui::ShowDemoWindow(&yes);
+		ImGui::ShowDemoWindow(&yes);
 
 		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 		//static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 		//ImGui::Begin("DockSpace Demo", &yes, window_flags);
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-		//if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		//{
-		//	ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-		//	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		//}
+
 		//ImGui::End();
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
@@ -163,8 +168,12 @@ int main(int, char**)
 			{
 				if (My_Variables.F_Prop[i].file_open_window)
 				{
+					//void Window_Begin();
 					ShowPreviewWindow(&My_Variables, i, renderer);
+					//void Window_End();
+
 				}
+
 			}
 		}
 
@@ -186,6 +195,30 @@ int main(int, char**)
 	SDL_Quit();
 
 	return 0;
+}
+
+void Window_Begin()
+{
+	ImGui_ImplSDLRenderer_NewFrame();
+	ImGui_ImplSDL2_NewFrame();
+	ImGui::NewFrame();
+}
+void Window_End()
+{
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize = My_Variables.uv_max;
+	// Rendering
+	ImGui::Render();
+	ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+
+	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+	{
+		SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
+		SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+		SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+	}
 }
 
 void ShowPreviewWindow(struct variables *My_Variables, int counter, SDL_Renderer* renderer)
