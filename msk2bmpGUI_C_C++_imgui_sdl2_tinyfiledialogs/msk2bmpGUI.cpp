@@ -40,8 +40,8 @@ struct variables {
 } My_Variables = {};
 
 // Function declarations
-void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter);
-void ShowPreviewWindow(variables *My_Variables, int counter, SDL_Renderer* renderer);
+void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int counter);
+void ShowPreviewWindow(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
 void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter);
@@ -175,8 +175,11 @@ int main(int, char**)
 				// to be viewable in Titanium FRM viewer, what's the limit in the game?
 				Load_Files(My_Variables.F_Prop, counter);
 				My_Variables.PaletteColors = loadPalette("file name for palette here");
-				Image2Texture(&My_Variables, renderer, counter);
-
+				Image2Texture(&My_Variables, counter); // renderer, counter);
+				printf("optimized_texture: %d \ttexture_width: %d \ttexture_height: %d", 
+					&My_Variables.F_Prop[counter].Optimized_Texture,
+					My_Variables.F_Prop[counter].texture_width,
+					My_Variables.F_Prop[counter].texture_height);
 				if (My_Variables.F_Prop[counter].c_name) { counter++; }
 			}
 
@@ -191,7 +194,7 @@ int main(int, char**)
 				if (My_Variables.F_Prop[i].file_open_window)
 				{
 					//void Window_Begin();
-					ShowPreviewWindow(&My_Variables, i, renderer);
+					ShowPreviewWindow(&My_Variables, i); // , renderer);
 					//void Window_End();
 
 				}
@@ -274,7 +277,7 @@ int main(int, char**)
 //	}
 //}
 
-void ShowPreviewWindow(struct variables *My_Variables, int counter, SDL_Renderer* renderer)
+void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Renderer* renderer)
 {
 	bool wrong_size = (My_Variables->F_Prop[counter].texture_width != 350)
 		|| (My_Variables->F_Prop[counter].texture_height != 300);
@@ -290,14 +293,14 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter, SDL_Renderer
 		{
 			My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
 
-			My_Variables->F_Prop[counter].Optimized_Render_Texture
-				= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
+			//My_Variables->F_Prop[counter].Optimized_Render_Texture
+			//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
 
 			My_Variables->F_Prop[counter].preview_tiles_window = true;
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
-	ImGui::Image(
+	ImGui::Image((void*)(intptr_t)
 		My_Variables->F_Prop[counter].Optimized_Texture,
 		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
 		(float)My_Variables->F_Prop[counter].texture_height),
@@ -389,7 +392,7 @@ void ShowRenderWindow(variables *My_Variables,
 				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
 								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
 
-				ImGui::Image(
+				ImGui::Image((ImTextureID)
 					My_Variables->F_Prop[counter].Optimized_Render_Texture,
 					ImVec2(350, 300),
 					*Top_Left,
@@ -462,14 +465,47 @@ void Render_and_Save(variables *My_Variables, int counter)
 	}
 }
 
-void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter) {
+void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int counter) {
 	if (My_Variables->F_Prop[counter].file_open_window) {
 		if (!My_Variables->F_Prop[counter].Optimized_Texture)
 		{
 			// Old SDL calls to make image viewable
 			SDL_FreeSurface(My_Variables->Temp_Surface);
 			My_Variables->Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables->F_Prop[counter].image, SDL_PIXELFORMAT_RGBA8888, 0);
-			My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
+			
+			{
+				int bpp;
+				Uint32 Rmask, Gmask, Bmask, Amask;
+				SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ABGR8888, &bpp,
+					&Rmask, &Gmask, &Bmask, &Amask
+				);
+				/* Create surface that will hold pixels passed into OpenGL. */
+				SDL_Surface *img_rgba8888 = SDL_CreateRGBSurface(0,
+					My_Variables->Temp_Surface->w, 
+					My_Variables->Temp_Surface->h, 
+					bpp, Rmask, Gmask, Bmask, Amask
+				);
+				SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
+				SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
+
+				SDL_BlitSurface(My_Variables->Temp_Surface, NULL, img_rgba8888, NULL);
+
+				glGenTextures(1, &My_Variables->F_Prop[counter].Optimized_Texture);
+				glBindTexture(GL_TEXTURE_2D, My_Variables->F_Prop[counter].Optimized_Texture);
+				// Setup filtering parameters for display
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
+					My_Variables->Temp_Surface->w, 
+					My_Variables->Temp_Surface->h, 
+					0, GL_RGBA, GL_UNSIGNED_BYTE, 
+					img_rgba8888->pixels);
+			}
+			
+			//My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
 		}
 		if (My_Variables->F_Prop[counter].Optimized_Texture == NULL) {
 			printf("Unable to optimize image %s! SDL Error: %s\n",
@@ -478,10 +514,13 @@ void Image2Texture(variables* My_Variables, SDL_Renderer* renderer, int counter)
 		}
 		else
 		{
-			SDL_QueryTexture(My_Variables->F_Prop[counter].Optimized_Texture,
-				NULL, NULL,
-				&My_Variables->F_Prop[counter].texture_width,
-				&My_Variables->F_Prop[counter].texture_height);
+			My_Variables->F_Prop[counter].texture_width = My_Variables->Temp_Surface->w;
+			My_Variables->F_Prop[counter].texture_height = My_Variables->Temp_Surface->h;
+
+		//	SDL_QueryTexture((SDL_Texture*)(ImTextureID)My_Variables->F_Prop[counter].Optimized_Texture,
+		//		NULL, NULL,
+		//		&My_Variables->F_Prop[counter].texture_width,
+		//		&My_Variables->F_Prop[counter].texture_height);
 		}
 	}
 }
