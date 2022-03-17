@@ -148,7 +148,6 @@
     <ClCompile Include="imgui-docking\imgui_impl_sdl.cpp" />
     <ClCompile Include="imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="imgui-docking\imgui_widgets.cpp" />
-    <ClCompile Include="ImGui_SDL_Render.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Save_Files.cpp" />
@@ -166,7 +165,6 @@
     <ClInclude Include="imgui-docking\imstb_rectpack.h" />
     <ClInclude Include="imgui-docking\imstb_textedit.h" />
     <ClInclude Include="imgui-docking\imstb_truetype.h" />
-    <ClInclude Include="ImGui_SDL_Render.h" />
     <ClInclude Include="Load_Files.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="tinyfiledialogs.h" />
