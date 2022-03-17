@@ -25,7 +25,9 @@ void Load_Files(LF F_Prop[], int counter)
 	else {
 		memcpy(F_Prop[counter].Opened_File, ptr, 256);
 		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
+
 		F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
+
 		if (F_Prop[counter].image == NULL)
 		{
 			printf("Unable to open image file %s! SDL Error: %s\n",
@@ -33,7 +35,7 @@ void Load_Files(LF F_Prop[], int counter)
 				SDL_GetError());
 		}
 		else
-		{//Convert surface to screen format
+		{// Set display window to open
 			F_Prop[counter].file_open_window = true;
 		}
 	}
