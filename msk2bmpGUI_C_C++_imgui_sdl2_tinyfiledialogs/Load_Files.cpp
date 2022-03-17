@@ -26,6 +26,8 @@ void Load_Files(LF F_Prop[], int counter)
 		memcpy(F_Prop[counter].Opened_File, ptr, 256);
 		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
 
+		
+
 		F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
 
 		if (F_Prop[counter].image == NULL)

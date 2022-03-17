@@ -1,11 +1,14 @@
 #pragma once
 #include <SDL.h>
+#include <SDL_opengl.h>
 struct LF {
 	char Opened_File[256];
 	char * c_name;
 	SDL_Surface* image;
 	SDL_Surface* Final_Render = nullptr;
-	SDL_Texture* Optimized_Texture = nullptr;
+	//SDL_Texture* Optimized_Texture = nullptr;
+	GLuint  Optimized_Texture = 0;
+
 	SDL_Texture* Optimized_Render_Texture = nullptr;
 	int texture_width = 0, texture_height = 0;
 
