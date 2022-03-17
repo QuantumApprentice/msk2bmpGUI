@@ -13,7 +13,6 @@
 #include "imgui-docking/imgui.h"
 #include "imgui-docking/imgui_impl_sdl.h"
 #include "imgui-docking/imgui_impl_opengl2.h"
-#include "ImGui_SDL_Render.h"
 #include <stdio.h>
 #include <iostream>
 #include <SDL.h>
@@ -75,7 +74,7 @@ int main(int, char**)
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
-	// Setup SDL_Renderer instance	
+	// Setup SDL_Renderer instance		-- to delete when I fix opengl stuff
 	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
 	if (renderer == NULL)
 	{
@@ -109,7 +108,7 @@ int main(int, char**)
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL2_Init();
-	ImGui_ImplSDLRenderer_Init(renderer);
+	//ImGui_ImplSDLRenderer_Init(renderer);
 
 
     // Load Fonts
@@ -208,7 +207,7 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
         //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
         ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
-		ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+		//ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
         // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
@@ -222,8 +221,6 @@ int main(int, char**)
             SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
         }
 
-		SDL_SetRenderDrawColor(renderer, (Uint8)(clear_color.x * 255), (Uint8)(clear_color.y * 255), (Uint8)(clear_color.z * 255), (Uint8)(clear_color.w * 255));
-		SDL_RenderClear(renderer);
 		//SDL_RenderPresent(renderer);
         SDL_GL_SwapWindow(window);
     }
@@ -234,7 +231,7 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(gl_context);
-	SDL_DestroyRenderer(renderer);
+	SDL_DestroyRenderer(renderer);	// to delete when opengl stuff is working
     SDL_DestroyWindow(window);
     SDL_Quit();
 

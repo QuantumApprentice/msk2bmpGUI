@@ -63,9 +63,6 @@
     <ClCompile Include="imgui-docking\imgui_impl_opengl2.cpp">
       <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui_SDL_Render.cpp">
-      <Filter>Source Files\imgui-default</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -109,9 +106,6 @@
     </ClInclude>
     <ClInclude Include="imgui-docking\imgui_impl_opengl2.h">
       <Filter>Source Files\imgui-docking</Filter>
-    </ClInclude>
-    <ClInclude Include="ImGui_SDL_Render.h">
-      <Filter>Source Files\imgui-default</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
