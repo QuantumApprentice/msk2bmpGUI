@@ -469,10 +469,11 @@ void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int coun
 	if (My_Variables->F_Prop[counter].file_open_window) {
 		if (!My_Variables->F_Prop[counter].Optimized_Texture)
 		{
-			// Old SDL calls to make image viewable
 			SDL_FreeSurface(My_Variables->Temp_Surface);
 			My_Variables->Temp_Surface = SDL_ConvertSurfaceFormat(My_Variables->F_Prop[counter].image, SDL_PIXELFORMAT_RGBA8888, 0);
-			
+			// Old SDL calls to convert surface to texture
+			//My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
+
 			{
 				int bpp;
 				Uint32 Rmask, Gmask, Bmask, Amask;
@@ -505,7 +506,6 @@ void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int coun
 					img_rgba8888->pixels);
 			}
 			
-			//My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
 		}
 		if (My_Variables->F_Prop[counter].Optimized_Texture == NULL) {
 			printf("Unable to optimize image %s! SDL Error: %s\n",
