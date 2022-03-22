@@ -144,7 +144,7 @@
     <ClCompile Include="imgui-docking\imgui.cpp" />
     <ClCompile Include="imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="imgui-docking\imgui_draw.cpp" />
-    <ClCompile Include="imgui-docking\imgui_impl_opengl2.cpp" />
+    <ClCompile Include="imgui-docking\imgui_impl_opengl3.cpp" />
     <ClCompile Include="imgui-docking\imgui_impl_sdl.cpp" />
     <ClCompile Include="imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="imgui-docking\imgui_widgets.cpp" />
@@ -159,7 +159,8 @@
     <ClInclude Include="FRM_Convert.h" />
     <ClInclude Include="imgui-docking\imconfig.h" />
     <ClInclude Include="imgui-docking\imgui.h" />
-    <ClInclude Include="imgui-docking\imgui_impl_opengl2.h" />
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="imgui-docking\imgui_impl_sdl.h" />
     <ClInclude Include="imgui-docking\imgui_internal.h" />
     <ClInclude Include="imgui-docking\imstb_rectpack.h" />

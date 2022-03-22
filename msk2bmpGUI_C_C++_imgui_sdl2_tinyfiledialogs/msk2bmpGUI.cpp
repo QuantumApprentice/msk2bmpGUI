@@ -12,7 +12,8 @@
 //#include "imgui/imgui_impl_sdlrenderer.h"
 #include "imgui-docking/imgui.h"
 #include "imgui-docking/imgui_impl_sdl.h"
-#include "imgui-docking/imgui_impl_opengl2.h"
+//#include "imgui-docking/imgui_impl_opengl2.h"
+#include "imgui-docking/imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <iostream>
 #include <SDL.h>
@@ -47,6 +48,7 @@ void ShowRenderWindow(variables *My_Variables,
 	int *max_box_x, int *max_box_y, int counter);
 void Show_Palette_Window(struct variables *My_Variables, int counter);
 void Render_and_Save(variables *My_Variables, int counter);
+void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 //void Window_Begin();
 //void Window_End();
 
@@ -62,25 +64,30 @@ int main(int, char**)
         return -1;
     }
 
+	// GL 3.0 + GLSL 130
+	const char* glsl_version = "#version 330 core";
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+
     // Setup window
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
 	// Setup SDL_Renderer instance		-- to delete when I fix opengl stuff
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-	if (renderer == NULL)
-	{
-		SDL_Log("Error creating SDL_Renderer!");
-		return false;
-	}
+	//SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
+	//if (renderer == NULL)
+	//{
+	//	SDL_Log("Error creating SDL_Renderer!");
+	//	return false;
+	//}
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -107,7 +114,7 @@ int main(int, char**)
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
-    ImGui_ImplOpenGL2_Init();
+    ImGui_ImplOpenGL3_Init(glsl_version);
 	//ImGui_ImplSDLRenderer_Init(renderer);
 
 
@@ -150,7 +157,7 @@ int main(int, char**)
         }
 
         // Start the Dear ImGui frame
-        ImGui_ImplOpenGL2_NewFrame();
+        ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
@@ -176,10 +183,10 @@ int main(int, char**)
 				Load_Files(My_Variables.F_Prop, counter);
 				My_Variables.PaletteColors = loadPalette("file name for palette here");
 				Image2Texture(&My_Variables, counter); // renderer, counter);
-				printf("optimized_texture: %d \ttexture_width: %d \ttexture_height: %d", 
-					&My_Variables.F_Prop[counter].Optimized_Texture,
-					My_Variables.F_Prop[counter].texture_width,
-					My_Variables.F_Prop[counter].texture_height);
+				//printf("optimized_texture: %d \ttexture_width: %d \ttexture_height: %d", 
+				//	&My_Variables.F_Prop[counter].Optimized_Texture,
+				//	My_Variables.F_Prop[counter].texture_width,
+				//	My_Variables.F_Prop[counter].texture_height);
 				if (My_Variables.F_Prop[counter].c_name) { counter++; }
 			}
 
@@ -209,7 +216,7 @@ int main(int, char**)
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
-        ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		//ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
@@ -229,12 +236,12 @@ int main(int, char**)
     }
 
     // Cleanup
-    ImGui_ImplOpenGL2_Shutdown();
+    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(gl_context);
-	SDL_DestroyRenderer(renderer);	// to delete when opengl stuff is working
+	//SDL_DestroyRenderer(renderer);	// to delete when opengl stuff is working
     SDL_DestroyWindow(window);
     SDL_Quit();
 
@@ -291,7 +298,11 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
-			My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
+			My_Variables->F_Prop[counter].Final_Render = My_Variables->Temp_Surface;//FRM_Convert(My_Variables->Temp_Surface);
+
+			SDL_to_OpenGl(
+				My_Variables->F_Prop[counter].Final_Render, 
+				&My_Variables->F_Prop[counter].Optimized_Render_Texture);
 
 			//My_Variables->F_Prop[counter].Optimized_Render_Texture
 			//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
@@ -300,7 +311,7 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
-	ImGui::Image((void*)(intptr_t)
+	ImGui::Image((ImTextureID)//(void*)(intptr_t)
 		My_Variables->F_Prop[counter].Optimized_Texture,
 		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
 		(float)My_Variables->F_Prop[counter].texture_height),
@@ -374,10 +385,22 @@ void ShowRenderWindow(variables *My_Variables,
 	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
 
 	if (ImGui::Button("Render and save as tiles...")) {
-		//My_Variables->Render_Window = true;
+		My_Variables->Render_Window = true;
 		Render_and_Save(My_Variables, counter);
 	}
-
+	ImGui::Image((ImTextureID)
+		My_Variables->F_Prop[counter].Optimized_Render_Texture,
+		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
+		(float)My_Variables->F_Prop[counter].texture_height),
+		My_Variables->uv_min,
+		My_Variables->uv_max,
+		My_Variables->tint_col,
+		My_Variables->border_col);
+		//ImVec2(350, 300),
+		//*Top_Left,
+		//*Bottom_Right,
+		//My_Variables->tint_col,
+		//My_Variables->border_col);
 
 	// Preview window for tiles already converted to palettized format
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
@@ -465,7 +488,7 @@ void Render_and_Save(variables *My_Variables, int counter)
 	}
 }
 
-void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int counter) {
+void Image2Texture(variables* My_Variables, int counter) {
 	if (My_Variables->F_Prop[counter].file_open_window) {
 		if (!My_Variables->F_Prop[counter].Optimized_Texture)
 		{
@@ -474,37 +497,7 @@ void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int coun
 			// Old SDL calls to convert surface to texture
 			//My_Variables->F_Prop[counter].Optimized_Texture = SDL_CreateTextureFromSurface(renderer, My_Variables->Temp_Surface);
 
-			{
-				int bpp;
-				Uint32 Rmask, Gmask, Bmask, Amask;
-				SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ABGR8888, &bpp,
-					&Rmask, &Gmask, &Bmask, &Amask
-				);
-				/* Create surface that will hold pixels passed into OpenGL. */
-				SDL_Surface *img_rgba8888 = SDL_CreateRGBSurface(0,
-					My_Variables->Temp_Surface->w, 
-					My_Variables->Temp_Surface->h, 
-					bpp, Rmask, Gmask, Bmask, Amask
-				);
-				SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
-				SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
-
-				SDL_BlitSurface(My_Variables->Temp_Surface, NULL, img_rgba8888, NULL);
-
-				glGenTextures(1, &My_Variables->F_Prop[counter].Optimized_Texture);
-				glBindTexture(GL_TEXTURE_2D, My_Variables->F_Prop[counter].Optimized_Texture);
-				// Setup filtering parameters for display
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-					My_Variables->Temp_Surface->w, 
-					My_Variables->Temp_Surface->h, 
-					0, GL_RGBA, GL_UNSIGNED_BYTE, 
-					img_rgba8888->pixels);
-			}
+			SDL_to_OpenGl(My_Variables->Temp_Surface, &My_Variables->F_Prop[counter].Optimized_Texture);
 			
 		}
 		if (My_Variables->F_Prop[counter].Optimized_Texture == NULL) {
@@ -516,11 +509,44 @@ void Image2Texture(variables* My_Variables, /*SDL_Renderer* renderer,*/ int coun
 		{
 			My_Variables->F_Prop[counter].texture_width = My_Variables->Temp_Surface->w;
 			My_Variables->F_Prop[counter].texture_height = My_Variables->Temp_Surface->h;
-
-		//	SDL_QueryTexture((SDL_Texture*)(ImTextureID)My_Variables->F_Prop[counter].Optimized_Texture,
-		//		NULL, NULL,
-		//		&My_Variables->F_Prop[counter].texture_width,
-		//		&My_Variables->F_Prop[counter].texture_height);
 		}
+	}
+} 
+
+void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *Optimized_Texture)
+{
+	// OpenGL conversion from surface to texture - needs to be own function
+	{
+		int bpp;
+		Uint32 Rmask, Gmask, Bmask, Amask;
+		SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ABGR8888, &bpp,
+			&Rmask, &Gmask, &Bmask, &Amask
+		);
+		/* Create surface that will hold pixels passed into OpenGL. */
+		SDL_Surface *img_rgba8888 = SDL_CreateRGBSurface(0,
+			Temp_Surface->w,
+			Temp_Surface->h,
+			bpp, Rmask, Gmask, Bmask, Amask
+		);
+
+		//SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
+		//SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
+
+		SDL_BlitSurface(Temp_Surface, NULL, img_rgba8888, NULL);
+
+		glGenTextures(1, Optimized_Texture);
+		glBindTexture(GL_TEXTURE_2D, *Optimized_Texture);
+
+		// Setup filtering parameters for display
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+			Temp_Surface->w,
+			Temp_Surface->h,
+			0, GL_RGBA, GL_UNSIGNED_BYTE,
+			img_rgba8888->pixels);
 	}
 }

@@ -60,7 +60,7 @@
     <ClCompile Include="imgui-docking\imgui_widgets.cpp">
       <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
-    <ClCompile Include="imgui-docking\imgui_impl_opengl2.cpp">
+    <ClCompile Include="imgui-docking\imgui_impl_opengl3.cpp">
       <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
   </ItemGroup>
@@ -104,7 +104,10 @@
     <ClInclude Include="imgui-docking\imstb_truetype.h">
       <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
-    <ClInclude Include="imgui-docking\imgui_impl_opengl2.h">
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3.h">
+      <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3_loader.h">
       <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
   </ItemGroup>
