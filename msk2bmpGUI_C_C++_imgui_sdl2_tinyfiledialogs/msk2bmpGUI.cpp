@@ -3,26 +3,24 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-// **DO NOT USE THIS CODE IF YOUR CODE/ENGINE IS USING MODERN OPENGL (SHADERS, VBO, VAO, etc.)**
-// **Prefer using the code in the example_sdl_opengl3/ folder**
-// See imgui_impl_sdl.cpp for details.
+// ImGui header files
+//#include "glad.h"
 
-//#include "imgui/imgui.h"
-//#include "imgui/imgui_impl_sdl.h"
-//#include "imgui/imgui_impl_sdlrenderer.h"
 #include "imgui-docking/imgui.h"
 #include "imgui-docking/imgui_impl_sdl.h"
-//#include "imgui-docking/imgui_impl_opengl2.h"
 #include "imgui-docking/imgui_impl_opengl3.h"
 #include <stdio.h>
-#include <iostream>
 #include <SDL.h>
 #include <SDL_opengl.h>
 // My header files
+#include <iostream>
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 #include "Save_Files.h"
-	// Our state
+#include <fstream>
+#include <sstream>
+
+// Our state
 struct variables {
 	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
@@ -71,7 +69,7 @@ int main(int, char**)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 
-    // Setup window
+	// Create window with graphics context
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -80,14 +78,6 @@ int main(int, char**)
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
     SDL_GL_SetSwapInterval(1); // Enable vsync
-
-	// Setup SDL_Renderer instance		-- to delete when I fix opengl stuff
-	//SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED);
-	//if (renderer == NULL)
-	//{
-	//	SDL_Log("Error creating SDL_Renderer!");
-	//	return false;
-	//}
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -115,8 +105,6 @@ int main(int, char**)
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
-	//ImGui_ImplSDLRenderer_Init(renderer);
-
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -182,11 +170,8 @@ int main(int, char**)
 				// to be viewable in Titanium FRM viewer, what's the limit in the game?
 				Load_Files(My_Variables.F_Prop, counter);
 				My_Variables.PaletteColors = loadPalette("file name for palette here");
-				Image2Texture(&My_Variables, counter); // renderer, counter);
-				//printf("optimized_texture: %d \ttexture_width: %d \ttexture_height: %d", 
-				//	&My_Variables.F_Prop[counter].Optimized_Texture,
-				//	My_Variables.F_Prop[counter].texture_width,
-				//	My_Variables.F_Prop[counter].texture_height);
+				Image2Texture(&My_Variables, counter);
+
 				if (My_Variables.F_Prop[counter].c_name) { counter++; }
 			}
 
@@ -217,7 +202,6 @@ int main(int, char**)
         glClear(GL_COLOR_BUFFER_BIT);
         //glUseProgram(0); // You may want this if using this code in an OpenGL 3+ context where shaders may be bound
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		//ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
 
         // Update and Render additional Platform Windows
         // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
@@ -231,7 +215,6 @@ int main(int, char**)
             SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
         }
 
-		//SDL_RenderPresent(renderer);
         SDL_GL_SwapWindow(window);
     }
 
@@ -241,7 +224,6 @@ int main(int, char**)
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(gl_context);
-	//SDL_DestroyRenderer(renderer);	// to delete when opengl stuff is working
     SDL_DestroyWindow(window);
     SDL_Quit();
 
@@ -298,11 +280,30 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
-			My_Variables->F_Prop[counter].Final_Render = My_Variables->Temp_Surface;//FRM_Convert(My_Variables->Temp_Surface);
+			//My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
+			
 
-			SDL_to_OpenGl(
-				My_Variables->F_Prop[counter].Final_Render, 
-				&My_Variables->F_Prop[counter].Optimized_Render_Texture);
+			std::ifstream t("Palette_Shader.vert");
+			std::stringstream buffer;
+			buffer << t.rdbuf();
+			std::string str = buffer.str();
+
+			GLuint vertexShader;
+			//vertexShader = glCreateShader(GL_VERTEX_SHADER);
+			//glShaderSource(vertexShader, 1, (GLchar* const*)str.c_str(), NULL);
+			//glCompileShader(vertexShader);
+
+			int success;
+			char infoLog[512];
+			//glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+			//if (!success) {
+			//	glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+			//	std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+			//}
+
+			//SDL_to_OpenGl(
+			//	My_Variables->F_Prop[counter].Final_Render, 
+			//	&My_Variables->F_Prop[counter].Optimized_Render_Texture);
 
 			//My_Variables->F_Prop[counter].Optimized_Render_Texture
 			//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);

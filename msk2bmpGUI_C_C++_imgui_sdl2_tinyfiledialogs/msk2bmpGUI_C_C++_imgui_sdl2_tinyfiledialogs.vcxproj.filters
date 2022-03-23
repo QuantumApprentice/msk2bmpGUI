@@ -111,4 +111,9 @@
       <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Palette_Shader.vert">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
