@@ -113,6 +113,15 @@ SDL_Surface* FRM_Convert(SDL_Surface *surface)
 		((uint8_t*)Temp_Surface->pixels)[i]  = w_PaletteColor;
 		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
-	
 	return Temp_Surface;
+}
+
+
+void Palette_to_Texture()
+{
+	char buffer[512];
+	FILE *palette_test;
+	palette_test = fopen("Palette_Shader.vert", "rb");
+
+	fread(buffer, sizeof(palette_test), 1, palette_test);
 }

@@ -71,29 +71,30 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -101,10 +102,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -114,12 +116,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -129,12 +132,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;glad.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -169,6 +173,9 @@
     <ClInclude Include="Load_Files.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="tinyfiledialogs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Palette_Shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
