@@ -4,14 +4,13 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 // ImGui header files
-//#include "glad.h"
-
 #include "imgui-docking/imgui.h"
 #include "imgui-docking/imgui_impl_sdl.h"
 #include "imgui-docking/imgui_impl_opengl3.h"
 #include <stdio.h>
 #include <SDL.h>
-#include <SDL_opengl.h>
+#include <glad/glad.h>
+//#include <SDL_opengl.h>
 // My header files
 #include <iostream>
 #include "Load_Files.h"
@@ -61,6 +60,7 @@ int main(int, char**)
         printf("Error: %s\n", SDL_GetError());
         return -1;
     }
+	SDL_GL_LoadLibrary(NULL);
 
 	// GL 3.0 + GLSL 130
 	const char* glsl_version = "#version 330 core";
@@ -77,7 +77,20 @@ int main(int, char**)
     SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+		printf("Glad Loader failed?...%s", SDL_GetVideoDriver);
+		exit(-1);
+	}
+	else
+	{
+		printf("Vendor: %s\n", glGetString(GL_VENDOR));
+		printf("Renderer: %s\n", glGetString(GL_RENDERER));
+		printf("Version: %s\n", glGetString(GL_VERSION));
+		printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	}
+
+	SDL_GL_SetSwapInterval(1); // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -282,24 +295,75 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		{
 			//My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
 			
-
 			std::ifstream t("Palette_Shader.vert");
 			std::stringstream buffer;
 			buffer << t.rdbuf();
 			std::string str = buffer.str();
+			const char * temp_str = str.c_str();
 
 			GLuint vertexShader;
-			//vertexShader = glCreateShader(GL_VERTEX_SHADER);
-			//glShaderSource(vertexShader, 1, (GLchar* const*)str.c_str(), NULL);
-			//glCompileShader(vertexShader);
+			vertexShader = glCreateShader(GL_VERTEX_SHADER);
+			glShaderSource(vertexShader, 1, &temp_str, NULL);
+			glCompileShader(vertexShader);
+			// Error checking
+				int success;
+				char infoLog[512];
+				glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+				if (!success) {
+					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+				}
+			
+			GLuint program = glCreateProgram();
 
-			int success;
-			char infoLog[512];
-			//glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-			//if (!success) {
-			//	glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			//	std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-			//}
+			GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+			/* 
+			uniform vec4 palette; 
+			in vec2 v_texCoord; 
+			out vec4 finalcolor; 
+			void main()
+			{ finalcolor=texelFetch(img0,xy,0).r; }
+
+			in vec2 a_position; 
+			in vec2 a_texCoord; 
+			out vec2 v_texCoord; 
+			void main() 
+			{ v_texCoord = a_texCoord; }
+			*/	
+			
+			char * source = 
+				"uniform vec4 palette;						\
+				in vec2 v_texCoord;							\
+				out vec4 finalcolor;						\
+				void main()									\
+				{finalcolor = texelFetch(img0, xy, 0).r;}";
+			
+			glShaderSource(fragmentShader, 1, &source, 0);		
+			// Error checking
+				glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+				if (success == GL_FALSE)
+				{
+					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+				}
+
+			glAttachShader(program, vertexShader);
+			glAttachShader(program, fragmentShader);
+			glLinkProgram(program);
+
+			GLint isLinked = 0;
+			glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+			if (!isLinked) {
+				glGetProgramInfoLog(program, 512, NULL, infoLog);
+			}
+			glDeleteProgram(program);
+			glDeleteShader(vertexShader);
+			glDeleteShader(fragmentShader);
+
+			glDetachShader(program, vertexShader);
+			//glUniform4fv();
+
+
 
 			//SDL_to_OpenGl(
 			//	My_Variables->F_Prop[counter].Final_Render, 
