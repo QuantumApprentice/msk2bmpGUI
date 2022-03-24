@@ -16,7 +16,7 @@
     <Filter Include="Source Files\imgui-docking">
       <UniqueIdentifier>{7c94c1f2-0c93-4599-9c50-94ff8e1a9127}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\imgui-default">
+    <Filter Include="Source Files\OpenGL">
       <UniqueIdentifier>{b833a7f1-20bb-4600-b1d6-7f6f38d06701}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -62,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="imgui-docking\imgui_impl_opengl3.cpp">
       <Filter>Source Files\imgui-docking</Filter>
+    </ClCompile>
+    <ClCompile Include="glad\src\glad.c">
+      <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -113,7 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Palette_Shader.vert">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\OpenGL</Filter>
     </None>
   </ItemGroup>
 </Project>
