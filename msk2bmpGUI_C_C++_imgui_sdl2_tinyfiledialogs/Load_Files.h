@@ -1,9 +1,12 @@
 #pragma once
 #include <SDL.h>
-#include <SDL_opengl.h>
+//#include <SDL_opengl.h>
+#include <glad/glad.h>
+
 struct LF {
 	char Opened_File[256];
 	char * c_name;
+	char * extension;
 	SDL_Surface* image = nullptr;
 	SDL_Surface* Final_Render = nullptr;
 	//SDL_Texture* Optimized_Texture = nullptr;
@@ -14,6 +17,7 @@ struct LF {
 
 	bool file_open_window;
 	bool preview_tiles_window;
-	char * FilterPattern1[2] = { "*.bmp" , "*.png" };
+	char * FilterPattern1[3] = { "*.bmp" , "*.png", "*.frm" };
 };
 void Load_Files(LF[], int);
+void FRM_Load(LF*);

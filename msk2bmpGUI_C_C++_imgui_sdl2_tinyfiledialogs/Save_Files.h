@@ -1,2 +1,2 @@
 #pragma once
-char* Save_Files(SDL_Surface *f_surface);
+char* Save_FRM(SDL_Surface *f_surface);

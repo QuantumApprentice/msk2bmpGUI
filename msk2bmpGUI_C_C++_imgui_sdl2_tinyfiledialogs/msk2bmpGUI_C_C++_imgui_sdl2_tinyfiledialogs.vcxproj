@@ -146,6 +146,7 @@
     <ClCompile Include="FRM_Animate.cpp" />
     <ClCompile Include="FRM_Convert.cpp" />
     <ClCompile Include="glad\src\glad.c" />
+    <ClCompile Include="Image2Texture.cpp" />
     <ClCompile Include="imgui-docking\imgui.cpp" />
     <ClCompile Include="imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="imgui-docking\imgui_draw.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="B_Endian.h" />
     <ClInclude Include="FRM_Animate.h" />
     <ClInclude Include="FRM_Convert.h" />
+    <ClInclude Include="Image2Texture.h" />
     <ClInclude Include="imgui-docking\imconfig.h" />
     <ClInclude Include="imgui-docking\imgui.h" />
     <ClInclude Include="imgui-docking\imgui_impl_opengl3.h" />
