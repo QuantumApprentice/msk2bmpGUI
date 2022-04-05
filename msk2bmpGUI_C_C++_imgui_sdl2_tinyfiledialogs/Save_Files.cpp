@@ -24,7 +24,7 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-char* Save_Files(SDL_Surface *f_surface)
+char* Save_FRM(SDL_Surface *f_surface)
 {
 	FRM_Header FRM_Stuff;
 	FRM_Stuff.Frame_0_Height = B_Endian::write_u16(f_surface->h);
