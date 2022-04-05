@@ -19,6 +19,9 @@
     <Filter Include="Source Files\OpenGL">
       <UniqueIdentifier>{b833a7f1-20bb-4600-b1d6-7f6f38d06701}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Image2Texture">
+      <UniqueIdentifier>{53b58c10-480a-4117-981d-daa7d99c3e11}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tinyfiledialogs.c">
@@ -66,6 +69,9 @@
     <ClCompile Include="glad\src\glad.c">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="Image2Texture.cpp">
+      <Filter>Source Files\Image2Texture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -112,6 +118,9 @@
     </ClInclude>
     <ClInclude Include="imgui-docking\imgui_impl_opengl3_loader.h">
       <Filter>Source Files\imgui-docking</Filter>
+    </ClInclude>
+    <ClInclude Include="Image2Texture.h">
+      <Filter>Source Files\Image2Texture</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
