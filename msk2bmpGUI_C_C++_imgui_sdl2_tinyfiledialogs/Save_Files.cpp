@@ -26,15 +26,15 @@ typedef struct {
 
 char* Save_FRM(SDL_Surface *f_surface)
 {
-	FRM_Header FRM_Stuff;
-	FRM_Stuff.Frame_0_Height = B_Endian::write_u16(f_surface->h);
-	FRM_Stuff.Frame_0_Width  = B_Endian::write_u16(f_surface->w);
-	FRM_Stuff.Frame_Area	 = B_Endian::write_u32(f_surface->h * f_surface->w);
-	FRM_Stuff.Frame_0_Size	 = B_Endian::write_u32(f_surface->h * f_surface->w);
+	FRM_Header FRM_Header;
+	FRM_Header.Frame_0_Height = B_Endian::write_u16(f_surface->h);
+	FRM_Header.Frame_0_Width  = B_Endian::write_u16(f_surface->w);
+	FRM_Header.Frame_Area	 = B_Endian::write_u32(f_surface->h * f_surface->w);
+	FRM_Header.Frame_0_Size	 = B_Endian::write_u32(f_surface->h * f_surface->w);
 
 	FILE * File_ptr;
 	char * Save_File_Name;
-	char * lFilterPatterns[2] = { "*.BMP", "*.FRM" };
+	char * lFilterPatterns[2] = { "", "*.FRM" };
 	Save_File_Name = tinyfd_saveFileDialog(
 		"default_name",
 		"temp001.FRM",
@@ -55,10 +55,47 @@ char* Save_FRM(SDL_Surface *f_surface)
 			1);
 		//return 1;
 	}
-	fwrite(&FRM_Stuff, sizeof(FRM_Stuff), 1, File_ptr);
+	fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 	fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
 
 	fclose(File_ptr);
+
+	return Save_File_Name;
+}
+
+char* Save_IMG(SDL_Surface *b_surface)
+{
+
+
+	FILE * File_ptr;
+	char * Save_File_Name;
+	char * lFilterPatterns[2] = { "*.BMP", "" };
+	Save_File_Name = tinyfd_saveFileDialog(
+		"default_name",
+		"temp001.BMP",
+		2,
+		lFilterPatterns,
+		nullptr
+	);
+	if (!Save_File_Name) {};
+
+	//fopen_s(&File_ptr, Save_File_Name, "wb");
+
+	//if (!File_ptr) {
+	//	tinyfd_messageBox(
+	//		"Error",
+	//		"Can not open this file in write mode",
+	//		"ok",
+	//		"error",
+	//		1);
+	//	//return 1;
+	//}
+	SDL_SaveBMP(b_surface, Save_File_Name);
+
+	//fwrite(&IMG_Header, sizeof(IMG_Header), 1, File_ptr);
+	//fwrite(b_surface->pixels, (b_surface->h * b_surface->w), 1, File_ptr);
+
+	//fclose(File_ptr);
 
 	return Save_File_Name;
 }
