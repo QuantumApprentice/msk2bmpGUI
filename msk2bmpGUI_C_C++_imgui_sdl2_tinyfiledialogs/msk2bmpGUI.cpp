@@ -30,7 +30,9 @@ void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter);
 void Show_Palette_Window(struct variables *My_Variables, int counter);
-void Render_and_Save(variables *My_Variables, int counter);
+void Render_and_Save_FRM(variables *My_Variables, int counter);
+void Render_and_Save_IMG(variables *My_Variables, int counter);
+
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 
 //void Window_Begin();
@@ -170,7 +172,10 @@ int main(int, char**)
 				// TODO: image needs to be less than 1 million pixels (1000x1000)
 				// to be viewable in Titanium FRM viewer, what's the limit in the game?
 				Load_Files(My_Variables.F_Prop, counter);
-				My_Variables.PaletteColors = loadPalette("file name for palette here");
+				if (My_Variables.PaletteColors == NULL)
+				{
+					My_Variables.PaletteColors = loadPalette("file name for palette here");
+				}
 				Image2Texture(&My_Variables, counter);
 
 
@@ -410,24 +415,27 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-	if (My_Variables->F_Prop[counter].preview_tiles_window)
+	if (My_Variables->F_Prop[0].preview_tiles_window == false) 
 	{
-		std::string a = My_Variables->F_Prop[counter].c_name;
-		std::string name = a + " #palette";
+		if (My_Variables->F_Prop[counter].preview_tiles_window)
+		{
+			std::string a = My_Variables->F_Prop[counter].c_name;
+			std::string name = a + " #palette";
 
-		ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, ImGuiWindowFlags_NoSavedSettings);
+			ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, ImGuiWindowFlags_NoSavedSettings);
 
-		for (int y = 0; y < 16; y++) {
-			for (int x = 0; x < 16; x++) {
-				SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
-				float r = (float)color.r / 255.0f;
-				float g = (float)color.g / 255.0f;
-				float b = (float)color.b / 255.0f;
-				ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
-				if (x < 15) ImGui::SameLine();
+			for (int y = 0; y < 16; y++) {
+				for (int x = 0; x < 16; x++) {
+					SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
+					float r = (float)color.r / 255.0f;
+					float g = (float)color.g / 255.0f;
+					float b = (float)color.b / 255.0f;
+					ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
+					if (x < 15) ImGui::SameLine();
+				}
 			}
+			ImGui::End();
 		}
-		ImGui::End();
 	}
 }
 
@@ -442,9 +450,16 @@ void ShowRenderWindow(variables *My_Variables,
 
 	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
 
-	if (ImGui::Button("Render and save as tiles...")) {
+	if (ImGui::Button("Render and save...")) {
 		My_Variables->Render_Window = true;
-		Render_and_Save(My_Variables, counter);
+		if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
+		{
+			Render_and_Save_IMG(My_Variables, counter);
+		}
+		else
+		{
+			Render_and_Save_FRM(My_Variables, counter);
+		}
 	}
 	ImGui::Image((ImTextureID)
 		My_Variables->F_Prop[counter].Optimized_Render_Texture,
@@ -488,7 +503,14 @@ void ShowRenderWindow(variables *My_Variables,
 }
 
 // Final render
-void Render_and_Save(variables *My_Variables, int counter)
+void Render_and_Save_IMG(variables *My_Variables, int counter)
+{
+	if (My_Variables->F_Prop[counter].preview_tiles_window) {
+		Save_IMG(My_Variables->F_Prop[counter].image);
+	}
+}
+
+void Render_and_Save_FRM(variables *My_Variables, int counter)
 {
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
 		Save_FRM(My_Variables->F_Prop[counter].Final_Render);
