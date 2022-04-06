@@ -20,4 +20,3 @@ struct LF {
 	char * FilterPattern1[3] = { "*.bmp" , "*.png", "*.frm" };
 };
 void Load_Files(LF[], int);
-void FRM_Load(LF*);
