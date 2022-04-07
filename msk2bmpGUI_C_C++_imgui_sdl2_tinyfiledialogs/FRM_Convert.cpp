@@ -63,6 +63,7 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 	SDL_Palette myPalette;
 	SDL_PixelFormat pxlFMT;
 	SDL_Surface* Temp_Surface;
+	int k = 0;
 	myPalette.ncolors = 256;
 	myPalette.colors = loadPalette("default");
 
@@ -70,12 +71,17 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 	pxlFMT.palette = &myPalette;
 	pxlFMT.BitsPerPixel = 8;
 	pxlFMT.BytesPerPixel = 1;
-	int k = (surface->w)*(surface->h);
+	if (surface->format->BitsPerPixel > 8)
+	{
+		k = (surface->w)*(surface->h);
+	}
+	else
+	{
+		k = (surface->w)*(surface->h)/4;
+	}
 
 	// TODO: need to figure out what command is best to create a blank surface
-	//Temp_Surface = SDL_CreateRGBSurfaceFrom(surface->pixels, surface->w, surface->h, surface->format->BitsPerPixel, surface->pitch, surface->format->Rmask, surface->format->Gmask, surface->format->Bmask, surface->format->Amask);
 	Temp_Surface = SDL_ConvertSurface(surface, &pxlFMT, 0);
-	//Temp_Surface = SDL_CreateRGBSurface(0, surface->w, surface->h, 8, 0, 0, 0, 0);
 
 	if (!Temp_Surface) {
 		printf("Error: %s", SDL_GetError());
@@ -111,7 +117,6 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 		if (i == 1000000)	{ printf("loop #: %d\n", i); }
 		if (i == 2000000)	{ printf("loop #: %d\n", i); }
 		((uint8_t*)Temp_Surface->pixels)[i]  = w_PaletteColor;
-		//printf("w_PaletteColor: %d\n", w_PaletteColor);
 	}
 	return Temp_Surface;
 }
@@ -124,19 +129,19 @@ SDL_Surface* Load_Pal_Image(char *File_Name)
 	SDL_PixelFormat pxlFMT_UnPal;
 
 	// File open stuff
-	FILE *ptr = fopen(File_Name, "rb");
-	fseek(ptr, 0x3E, SEEK_SET);
+	FILE *File_ptr = fopen(File_Name, "rb");
+	fseek(File_ptr, 0x3E, SEEK_SET);
 
-	unsigned short frame_width = 0;
-	fread(&frame_width, 2, 1, ptr);
+	uint16_t frame_width = 0;
+	fread(&frame_width, 2, 1, File_ptr);
 	frame_width = B_Endian::write_u16(frame_width);
-	unsigned short frame_height = 0;
-	fread(&frame_height, 2, 1, ptr);
+	uint16_t frame_height = 0;
+	fread(&frame_height, 2, 1, File_ptr);
 	frame_height = B_Endian::write_u16(frame_height);
-	unsigned int frame_size = 0;
-	fread(&frame_size, 4, 1, ptr);
+	uint32_t frame_size = 0;
+	fread(&frame_size, 4, 1, File_ptr);
 	frame_size = B_Endian::write_u32(frame_size);
-	fseek(ptr, 0x4A, SEEK_SET);
+	fseek(File_ptr, 0x4A, SEEK_SET);
 	
 	// 8 bit palleted stuff here
 	myPalette.ncolors = 256;
@@ -156,15 +161,15 @@ SDL_Surface* Load_Pal_Image(char *File_Name)
 	}
 	printf("Error: %s\n", SDL_GetError());
 
-	fread(Paletted_Surface->pixels, frame_size, 1, ptr);
-
+	// Read in the pixels from the FRM file to the surface
+	fread(Paletted_Surface->pixels, frame_size, 1, File_ptr);
 
 	// 32 bit pixel format stuff below
 	SDL_Surface* Output_Surface = SDL_CreateRGBSurface(0, frame_width, frame_height, 32, 0, 0, 0, 0);
 	pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 	pxlFMT_UnPal.palette = NULL;
 	pxlFMT_UnPal.BitsPerPixel = 32;
-	pxlFMT_UnPal.BytesPerPixel = 4; // BytesPerPixel = BitsPerPixel/4 (raised to nearest power of 2)
+	pxlFMT_UnPal.BytesPerPixel = 4; // BytesPerPixel = BitsPerPixel/8 (raised to nearest power of 2)
 
 	// TODO: need to figure out what command is best to create a blank surface
 	Output_Surface = SDL_ConvertSurface(Paletted_Surface, &pxlFMT_UnPal, 0);
@@ -176,9 +181,22 @@ SDL_Surface* Load_Pal_Image(char *File_Name)
 }
 
 
+SDL_Surface* Display_Palettized_Image(SDL_Surface* Surface)
+{
+	uint16_t frame_width = Surface->w;
+	uint16_t frame_height = Surface->h;
 
+	SDL_PixelFormat pxlFMT_UnPal;
+	SDL_Surface* Output_Surface 
+		= SDL_CreateRGBSurface(0, frame_width, frame_height, 32, 0, 0, 0, 0);
+	pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+	pxlFMT_UnPal.palette = NULL;
+	pxlFMT_UnPal.BitsPerPixel = 32;
+	pxlFMT_UnPal.BytesPerPixel = 4;
+	Output_Surface = SDL_ConvertSurface(Surface, &pxlFMT_UnPal, 0);
 
-
+	return Output_Surface;
+}
 
 
 

@@ -5,3 +5,4 @@
 SDL_Color* loadPalette(char * name);
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface);
 SDL_Surface* Load_Pal_Image(char *File_Name);
+SDL_Surface* Display_Palettized_Image(SDL_Surface* Render_Surface);

@@ -24,7 +24,6 @@
 struct variables My_Variables = {};
 
 // Function declarations
-void Image2Texture(variables* My_Variables, int counter);
 void ShowPreviewWindow(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
 void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
@@ -176,8 +175,9 @@ int main(int, char**)
 				{
 					My_Variables.PaletteColors = loadPalette("file name for palette here");
 				}
-				Image2Texture(&My_Variables, counter);
-
+				Image2Texture(My_Variables.F_Prop[counter].image, 
+					&My_Variables.F_Prop[counter].Optimized_Texture,
+					&My_Variables.F_Prop[counter].file_open_window);
 
 				if (My_Variables.F_Prop[counter].c_name) { counter++; }
 			}
@@ -282,30 +282,37 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 	// Check image size to match tile size (350x300 pixels)
 	if (wrong_size) {
 		ImGui::Text("This image is the wrong size to make a tile...");
-		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].texture_width,
-			My_Variables->F_Prop[counter].texture_height);
+		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].image->w,
+			My_Variables->F_Prop[counter].image->h);
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
-			My_Variables->F_Prop[counter].Final_Render = FRM_Color_Convert(My_Variables->Temp_Surface);
+			My_Variables->Temp_Surface
+				= FRM_Color_Convert(My_Variables->F_Prop[counter].image);
 
-			SDL_to_OpenGl(
-				My_Variables->F_Prop[counter].Final_Render, 
-				&My_Variables->F_Prop[counter].Optimized_Render_Texture);
+			My_Variables->F_Prop[counter].Final_Render
+				= Display_Palettized_Image(My_Variables->Temp_Surface);
 
+			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
+				&My_Variables->F_Prop[counter].preview_tiles_window);
+			//SDL_to_OpenGl(
+			//	My_Variables->F_Prop[counter].Final_Render,
+			//	&My_Variables->F_Prop[counter].Optimized_Render_Texture);
 
-			
-			std::ifstream t("Palette_Shader.vert");
-			std::stringstream buffer;
-			buffer << t.rdbuf();
-			std::string str = buffer.str();
-			const char * temp_str = str.c_str();
+			// OpenGL stuff below here
+			{
+				std::ifstream t("Palette_Shader.vert");
+				std::stringstream buffer;
+				buffer << t.rdbuf();
+				std::string str = buffer.str();
+				const char * temp_str = str.c_str();
 
-			GLuint vertexShader;
-			vertexShader = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(vertexShader, 1, &temp_str, NULL);
-			glCompileShader(vertexShader);
-			// Error checking
+				GLuint vertexShader;
+				vertexShader = glCreateShader(GL_VERTEX_SHADER);
+				glShaderSource(vertexShader, 1, &temp_str, NULL);
+				glCompileShader(vertexShader);
+				// Error checking
 				int success;
 				char infoLog[512];
 				glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
@@ -313,33 +320,33 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 				}
-			
-			GLuint program = glCreateProgram();
 
-			GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-			/* 
-			uniform vec4 palette; 
-			in vec2 v_texCoord; 
-			out vec4 finalcolor; 
-			void main()
-			{ finalcolor=texelFetch(img0,xy,0).r; }
+				GLuint program = glCreateProgram();
 
-			in vec2 a_position; 
-			in vec2 a_texCoord; 
-			out vec2 v_texCoord; 
-			void main() 
-			{ v_texCoord = a_texCoord; }
-			*/	
-			
-			char * source = 
-				"uniform vec4 palette;						\
+				GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+				/*
+				uniform vec4 palette;
+				in vec2 v_texCoord;
+				out vec4 finalcolor;
+				void main()
+				{ finalcolor=texelFetch(img0,xy,0).r; }
+
+				in vec2 a_position;
+				in vec2 a_texCoord;
+				out vec2 v_texCoord;
+				void main()
+				{ v_texCoord = a_texCoord; }
+				*/
+
+				char * source =
+					"uniform vec4 palette;						\
 				in vec2 v_texCoord;							\
 				out vec4 finalcolor;						\
 				void main()									\
 				{finalcolor = texelFetch(img0, xy, 0).r;}";
-			
-			glShaderSource(fragmentShader, 1, &source, 0);		
-			// Error checking
+
+				glShaderSource(fragmentShader, 1, &source, 0);
+				// Error checking
 				glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 				if (success == GL_FALSE)
 				{
@@ -347,37 +354,33 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 				}
 
-			glAttachShader(program, vertexShader);
-			glAttachShader(program, fragmentShader);
-			glLinkProgram(program);
+				glAttachShader(program, vertexShader);
+				glAttachShader(program, fragmentShader);
+				glLinkProgram(program);
 
-			GLint isLinked = 0;
-			glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-			if (!isLinked) {
-				glGetProgramInfoLog(program, 512, NULL, infoLog);
+				GLint isLinked = 0;
+				glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+				if (!isLinked) {
+					glGetProgramInfoLog(program, 512, NULL, infoLog);
+				}
+				glDeleteProgram(program);
+				glDeleteShader(vertexShader);
+				glDeleteShader(fragmentShader);
+
+				glDetachShader(program, vertexShader);
+				//glUniform4fv();
+
+				//My_Variables->F_Prop[counter].Optimized_Render_Texture
+				//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
 			}
-			glDeleteProgram(program);
-			glDeleteShader(vertexShader);
-			glDeleteShader(fragmentShader);
-
-			glDetachShader(program, vertexShader);
-			//glUniform4fv();
-
-
-
-
-
-			//My_Variables->F_Prop[counter].Optimized_Render_Texture
-			//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
-
 			My_Variables->F_Prop[counter].preview_tiles_window = true;
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
-	ImGui::Image((ImTextureID)//(void*)(intptr_t)
-		My_Variables->F_Prop[counter].Optimized_Texture,
-		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
-		(float)My_Variables->F_Prop[counter].texture_height),
+	ImGui::Image(
+		(ImTextureID)My_Variables->F_Prop[counter].Optimized_Texture,
+		ImVec2((float)My_Variables->F_Prop[counter].image->w,
+		(float)My_Variables->F_Prop[counter].image->h),
 		My_Variables->uv_min,
 		My_Variables->uv_max,
 		My_Variables->tint_col,
@@ -461,10 +464,11 @@ void ShowRenderWindow(variables *My_Variables,
 			Render_and_Save_FRM(My_Variables, counter);
 		}
 	}
+
 	ImGui::Image((ImTextureID)
 		My_Variables->F_Prop[counter].Optimized_Render_Texture,
-		ImVec2((float)My_Variables->F_Prop[counter].texture_width,
-		(float)My_Variables->F_Prop[counter].texture_height),
+		ImVec2((float)My_Variables->F_Prop[counter].image->w,
+		(float)My_Variables->F_Prop[counter].image->h),
 		My_Variables->uv_min,
 		My_Variables->uv_max,
 		My_Variables->tint_col,
