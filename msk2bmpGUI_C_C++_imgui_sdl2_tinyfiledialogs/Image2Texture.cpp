@@ -4,29 +4,22 @@
 #include <glad/glad.h>
 
 
-void Image2Texture(variables* My_Variables, int counter) {
-	if (My_Variables->F_Prop[counter].file_open_window) {
-		if (!My_Variables->F_Prop[counter].Optimized_Texture)
-		{
-			SDL_FreeSurface(My_Variables->Temp_Surface);
-			My_Variables->Temp_Surface = SDL_ConvertSurfaceFormat(
-				My_Variables->F_Prop[counter].image,
-				SDL_PIXELFORMAT_RGBA8888, 0);
+void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
+{
+	SDL_Surface* Temp_Surface = NULL;
+	if (surface)
+	{
+		//SDL_FreeSurface(Temp_Surface);
+		Temp_Surface = SDL_ConvertSurfaceFormat(
+			surface,
+			SDL_PIXELFORMAT_RGBA8888, 0);
 
-			SDL_to_OpenGl(My_Variables->Temp_Surface,
-				&My_Variables->F_Prop[counter].Optimized_Texture);
-
-		}
-		if (My_Variables->F_Prop[counter].Optimized_Texture == NULL) {
-			printf("Unable to optimize image %s! SDL Error: %s\n",
-				My_Variables->F_Prop[counter].Opened_File, SDL_GetError());
-			My_Variables->F_Prop[counter].file_open_window = false;
-		}
-		else
-		{
-			My_Variables->F_Prop[counter].texture_width = My_Variables->Temp_Surface->w;
-			My_Variables->F_Prop[counter].texture_height = My_Variables->Temp_Surface->h;
-		}
+		SDL_to_OpenGl(Temp_Surface, texture);
+		*window = true;
+	}
+	if (texture == NULL) {
+		printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
+		window = false;
 	}
 }
 
@@ -48,8 +41,9 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *Optimized_Texture)
 
 		//SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
 		//SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
-
 		SDL_BlitSurface(Temp_Surface, NULL, img_rgba8888, NULL);
+		
+		printf("glError: %d\n", glGetError());
 
 		glGenTextures(1, Optimized_Texture);
 		glBindTexture(GL_TEXTURE_2D, *Optimized_Texture);
