@@ -8,6 +8,7 @@ struct LF {
 	char * c_name;
 	char * extension;
 	SDL_Surface* image = nullptr;
+	SDL_Surface* Pal_Surface = nullptr;
 	SDL_Surface* Final_Render = nullptr;
 	//SDL_Texture* Optimized_Texture = nullptr;
 	GLuint Optimized_Texture = 0;
