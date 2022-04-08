@@ -52,77 +52,133 @@ SDL_Color* loadPalette(char * name)
 // Converts the color space to Fallout's paletted format
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 {
-	struct abgr
+	// Convert all surfaces to 32bit RGBA8888 format for easy conversion
+	SDL_PixelFormat pxlFMT_UnPal;
+	pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+	pxlFMT_UnPal.palette = NULL;
+	pxlFMT_UnPal.BitsPerPixel = 32;
+	pxlFMT_UnPal.BytesPerPixel = 4;
+	SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, &pxlFMT_UnPal, 0);
+	if (!Surface_32) {
+		printf("Error: %s", SDL_GetError());
+	}
+
+	// Setup for palettizing image
+	SDL_Palette myPalette;
+	SDL_PixelFormat pxlFMT_Pal;
+	SDL_Surface* Surface_8;
+	int k = 0;
+	k = (surface->w)*(surface->h);
+
+	myPalette.ncolors = 256;
+	myPalette.colors = loadPalette("default");
+
+	// Convert image to palettized surface
+	pxlFMT_Pal = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+	pxlFMT_Pal.palette = &myPalette;
+	pxlFMT_Pal.BitsPerPixel = 8;
+	pxlFMT_Pal.BytesPerPixel = 1;
+	Surface_8 = SDL_ConvertSurface(surface, &pxlFMT_Pal, 0);
+	if (!Surface_8) {
+		printf("Error: %s", SDL_GetError());
+	}
+	bool SDL = false;
+	if (SDL == true) {
+		SDL_Color_Match(Surface_32,
+			k,
+			&pxlFMT_Pal,
+			Surface_8);
+	}
+	else
+	{
+		Euclidian_Distance_Color_Match(k, Surface_32, Surface_8);
+	}
+	return Surface_8;
+}
+
+void SDL_Color_Match(SDL_Surface* Surface_32,
+					int k, 
+					SDL_PixelFormat* pxlFMT_Pal,
+					SDL_Surface* Surface_8)
+{
+	uint8_t w_PaletteColor;
+	struct Pxl_Info_32 {
+		uint8_t a;
+		uint8_t b;
+		uint8_t g;
+		uint8_t r;
+	}abgr{};
+
+	// Convert image color to indexed palette
+	for (int i = 0; i < k; i++)
+	{
+		memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + i, sizeof(Pxl_Info_32));
+		w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
+
+		if (i == 100) { printf("loop #: %d\n", i); }
+		if (i == 1000) { printf("loop #: %d\n", i); }
+		if (i == 10000) { printf("loop #: %d\n", i); }
+		if (i == 100000) { printf("loop #: %d\n", i); }
+		if (i == 1000000) { printf("loop #: %d\n", i); }
+		if (i == 2000000) { printf("loop #: %d\n", i); }
+		((uint8_t*)Surface_8->pixels)[i] = w_PaletteColor;
+	}
+}
+
+void Euclidian_Distance_Color_Match(int k,
+				SDL_Surface* Surface_32,
+				SDL_Surface* Surface_8)
+{
+	uint8_t w_PaletteColor;
+	int w_smallest;
+	struct Pxl_Info_32 
 	{
 		uint8_t a;
 		uint8_t b;
 		uint8_t g;
 		uint8_t r;
-	} abgr_;
-	
-	SDL_Palette myPalette;
-	SDL_PixelFormat pxlFMT;
-	SDL_Surface* Temp_Surface;
-	int k = 0;
-	myPalette.ncolors = 256;
-	myPalette.colors = loadPalette("default");
+	}abgr{};
 
-	pxlFMT = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-	pxlFMT.palette = &myPalette;
-	pxlFMT.BitsPerPixel = 8;
-	pxlFMT.BytesPerPixel = 1;
-	if (surface->format->BitsPerPixel > 8)
+	int s;
+	int t;
+	int u;
+	int v;
+	int w;
+
+	for (int i = 0; i < k; i++)
 	{
-		k = (surface->w)*(surface->h);
+		w_smallest = INT_MAX;
+		memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + i, sizeof(Pxl_Info_32));
+		for (int j = 0; j < 256; j++)
+		{
+			s = (abgr.r - PaletteColors[j].r);
+			t = (abgr.g - PaletteColors[j].g);
+			u = (abgr.b - PaletteColors[j].b);
+			v = (abgr.a - PaletteColors[j].a);
+			s *= s;
+			t *= t;
+			u *= u;
+			v *= v;
+			w = sqrt(s + t + u + v);
+			if (w < w_smallest) {
+				w_smallest = w;
+				w_PaletteColor = j;
+			}
+		}
+		if (i == 100) { printf("loop #: %d\n", i); }
+		if (i == 1000) { printf("loop #: %d\n", i); }
+		if (i == 10000) { printf("loop #: %d\n", i); }
+		if (i == 100000) { printf("loop #: %d\n", i); }
+		if (i == 1000000) { printf("loop #: %d\n", i); }
+		if (i == 2000000) { printf("loop #: %d\n", i); }
+		((uint8_t*)Surface_8->pixels)[i] = w_PaletteColor;
 	}
-	else
-	{
-		k = (surface->w)*(surface->h)/4;
-	}
-
-	// TODO: need to figure out what command is best to create a blank surface
-	Temp_Surface = SDL_ConvertSurface(surface, &pxlFMT, 0);
-
-	if (!Temp_Surface) {
-		printf("Error: %s", SDL_GetError());
-	}
-
-	for (int i = 0; i < k; i++) 
-	{
-		memcpy(&abgr_, (abgr*)surface->pixels + i, sizeof(abgr));
-		int w_smallest = INT_MAX;
-		uint8_t w_PaletteColor;
-		w_PaletteColor = SDL_MapRGBA(&pxlFMT, abgr_.r, abgr_.g, abgr_.b, abgr_.a);
-		//for (int j = 0; j < 256; j++)
-		//{
-		//	int s = (abgr_.r - PaletteColors[j].r);
-		//	int t = (abgr_.g - PaletteColors[j].g);
-		//	int u = (abgr_.b - PaletteColors[j].b);
-		//	int v = (abgr_.a - PaletteColors[j].a);
-		//	s *= s;
-		//	t *= t;
-		//	u *= u;
-		//	v *= v;
-		//	int w = sqrt(s + t + u + v);
-		//	if (w < w_smallest) { 
-		//		w_smallest = w; 
-		//		w_PaletteColor = j;
-		//	}
-		//	//printf("stuv: %d %d %d %d", s, t, u, v);
-		//}
-		if (i == 100)		{ printf("loop #: %d\n", i); }
-		if (i == 1000)		{ printf("loop #: %d\n", i); }
-		if (i == 10000)		{ printf("loop #: %d\n", i); }
-		if (i == 100000)	{ printf("loop #: %d\n", i); }
-		if (i == 1000000)	{ printf("loop #: %d\n", i); }
-		if (i == 2000000)	{ printf("loop #: %d\n", i); }
-		((uint8_t*)Temp_Surface->pixels)[i]  = w_PaletteColor;
-	}
-	return Temp_Surface;
 }
 
+
+
 // Convert FRM color to standard 32bit? maybe?
-SDL_Surface* Load_Pal_Image(char *File_Name)
+SDL_Surface* Load_FRM_Image(char *File_Name)
 {
 	SDL_Palette myPalette;
 	SDL_PixelFormat pxlFMT_Pal;
@@ -153,13 +209,10 @@ SDL_Surface* Load_Pal_Image(char *File_Name)
 
 	SDL_Surface* Paletted_Surface = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
 	Paletted_Surface = SDL_ConvertSurface(Paletted_Surface, &pxlFMT_Pal, 0);
-	printf("Error: %s\n", SDL_GetError());
 
-	if (!Paletted_Surface)
-	{
+	if (!Paletted_Surface) {
 		printf("Error: %s\n", SDL_GetError());
 	}
-	printf("Error: %s\n", SDL_GetError());
 
 	// Read in the pixels from the FRM file to the surface
 	fread(Paletted_Surface->pixels, frame_size, 1, File_ptr);
@@ -180,7 +233,6 @@ SDL_Surface* Load_Pal_Image(char *File_Name)
 	return Output_Surface;
 }
 
-
 SDL_Surface* Display_Palettized_Image(SDL_Surface* Surface)
 {
 	uint16_t frame_width = Surface->w;
@@ -195,10 +247,25 @@ SDL_Surface* Display_Palettized_Image(SDL_Surface* Surface)
 	pxlFMT_UnPal.BytesPerPixel = 4;
 	Output_Surface = SDL_ConvertSurface(Surface, &pxlFMT_UnPal, 0);
 
+	if (!Output_Surface) {
+		printf("Error: %s", SDL_GetError());
+	}
 	return Output_Surface;
 }
 
-
+//// Might need to use templates or #define for something like this
+//struct Pxl_Info* Pxl_Size_Selector(SDL_Surface* surface)
+//{
+//	if (surface->format->BitsPerPixel == 8)
+//	{
+//		struct Pxl_Info_8* Pxl_Infoa;
+//		return (Pxl_Info*)Pxl_Infoa;
+//	}
+//	else
+//	{
+//		k = (surface->w)*(surface->h) / 4;
+//	}
+//}
 
 
 
