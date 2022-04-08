@@ -65,9 +65,7 @@ char* Save_FRM(SDL_Surface *f_surface)
 
 char* Save_IMG(SDL_Surface *b_surface)
 {
-
-
-	FILE * File_ptr;
+	//FILE * File_ptr;
 	char * Save_File_Name;
 	char * lFilterPatterns[2] = { "*.BMP", "" };
 	Save_File_Name = tinyfd_saveFileDialog(

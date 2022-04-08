@@ -287,11 +287,11 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		ImGui::Text("It needs to be 350x300 pixels");
 		if (ImGui::Button("Preview Tiles"))
 		{
-			My_Variables->Temp_Surface
+			My_Variables->F_Prop[counter].Pal_Surface
 				= FRM_Color_Convert(My_Variables->F_Prop[counter].image);
 
 			My_Variables->F_Prop[counter].Final_Render
-				= Display_Palettized_Image(My_Variables->Temp_Surface);
+				= Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
 
 			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
 				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
@@ -517,7 +517,7 @@ void Render_and_Save_IMG(variables *My_Variables, int counter)
 void Render_and_Save_FRM(variables *My_Variables, int counter)
 {
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
-		Save_FRM(My_Variables->F_Prop[counter].Final_Render);
+		Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
 		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
 		//SDL_Rect temp_Rect;
 		//temp_Rect.w = 350;
