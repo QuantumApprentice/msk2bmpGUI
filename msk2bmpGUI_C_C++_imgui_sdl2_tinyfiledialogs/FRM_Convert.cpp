@@ -7,6 +7,22 @@
 #include <vector>
 #include <SDL.h>
 
+struct Pxl_Info_32
+{
+	uint8_t a;
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+}abgr{};
+
+struct Pxl_Err
+{
+	int a;
+	int b;
+	int g;
+	int r;
+}err{ 0 };
+
 uint8_t convert_colors(uint8_t bytes);
 
 // Used to convert Fallout's palette colors to normal values
@@ -82,7 +98,9 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 	if (!Surface_8) {
 		printf("Error: %s", SDL_GetError());
 	}
-	bool SDL = false;
+	//switch to change between euclidian and sdl color match algorithms
+	bool SDL = true;
+
 	if (SDL == true) {
 		SDL_Color_Match(Surface_32,
 			k,
@@ -91,7 +109,7 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface)
 	}
 	else
 	{
-		Euclidian_Distance_Color_Match(k, Surface_32, Surface_8);
+		Euclidian_Distance_Color_Match(Surface_32, Surface_8);
 	}
 	return Surface_8;
 }
@@ -102,18 +120,19 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
 					SDL_Surface* Surface_8)
 {
 	uint8_t w_PaletteColor;
-	struct Pxl_Info_32 {
-		uint8_t a;
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-	}abgr{};
+	//struct Pxl_Info_32 {
+	//	uint8_t a;
+	//	uint8_t b;
+	//	uint8_t g;
+	//	uint8_t r;
+	//}abgr{};
 
 	// Convert image color to indexed palette
 	for (int i = 0; i < k; i++)
 	{
 		memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + i, sizeof(Pxl_Info_32));
 		w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
+
 
 		if (i == 100) { printf("loop #: %d\n", i); }
 		if (i == 1000) { printf("loop #: %d\n", i); }
@@ -125,19 +144,13 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
 	}
 }
 
-void Euclidian_Distance_Color_Match(int k,
+void Euclidian_Distance_Color_Match(
 				SDL_Surface* Surface_32,
 				SDL_Surface* Surface_8)
 {
 	uint8_t w_PaletteColor;
 	int w_smallest;
-	struct Pxl_Info_32 
-	{
-		uint8_t a;
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-	}abgr{};
+
 
 	int s;
 	int t;
@@ -145,34 +158,135 @@ void Euclidian_Distance_Color_Match(int k,
 	int v;
 	int w;
 
-	for (int i = 0; i < k; i++)
+	int pixel_idx = 0;
+
+	for (int y = 0; y < Surface_32->h-1; y++)
 	{
-		w_smallest = INT_MAX;
-		memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + i, sizeof(Pxl_Info_32));
-		for (int j = 0; j < 256; j++)
+		for (int x = 0; x < Surface_32->w-1; x++)
 		{
-			s = (abgr.r - PaletteColors[j].r);
-			t = (abgr.g - PaletteColors[j].g);
-			u = (abgr.b - PaletteColors[j].b);
-			v = (abgr.a - PaletteColors[j].a);
-			s *= s;
-			t *= t;
-			u *= u;
-			v *= v;
-			w = sqrt(s + t + u + v);
-			if (w < w_smallest) {
-				w_smallest = w;
-				w_PaletteColor = j;
+			int i = (Surface_32->w * y) + x;
+			w_smallest = INT_MAX;
+			memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + i, sizeof(Pxl_Info_32));
+
+			for (int j = 0; j < 256; j++)
+			{
+				s = abgr.r - PaletteColors[j].r;
+				t = abgr.g - PaletteColors[j].g;
+				u = abgr.b - PaletteColors[j].b;
+				v = abgr.a - PaletteColors[j].a;
+
+				s *= s;
+				t *= t;
+				u *= u;
+				v *= v;
+				w = sqrt(s + t + u + v);
+
+				if (w < w_smallest) {
+					w_smallest = w;
+					w_PaletteColor = j;
+				}
+
+				if (j == 255) 
+				{
+					err.r = abgr.r - PaletteColors[w_PaletteColor].r;
+					err.g = abgr.g - PaletteColors[w_PaletteColor].g;
+					err.b = abgr.b - PaletteColors[w_PaletteColor].b;
+					err.a = abgr.a - PaletteColors[w_PaletteColor].a;
+
+					if (x + 1 < Surface_32->w)
+					{
+						pixel_idx = (Surface_32->w * (y + 0)) + (x + 1);
+						
+						clamp_function(Surface_32, &err, pixel_idx, 7);
+		
+					}
+					if ((x - 1 < 0) && (y + 1 < Surface_32->h))
+					{
+						pixel_idx = (Surface_32->w * (y + 1)) + (x - 1);
+
+						clamp_function(Surface_32, &err, pixel_idx, 3);
+					}
+					if (y + 1 < Surface_32->h)
+					{
+						pixel_idx = (Surface_32->w * (y + 1)) + (x + 0);
+
+						clamp_function(Surface_32, &err, pixel_idx, 5);
+					}
+					if ((x + 1 < Surface_32->w) && (y + 1 < Surface_32->h))
+					{
+					pixel_idx = (Surface_32->w * (y + 1)) + (x + 1);
+
+					clamp_function(Surface_32, &err, pixel_idx, 1);
+					}
+				}
 			}
+			if (i == 100) { printf("loop #: %d\n", i); }
+			if (i == 1000) { printf("loop #: %d\n", i); }
+			if (i == 10000) { printf("loop #: %d\n", i); }
+			if (i == 100000) { printf("loop #: %d\n", i); }
+			if (i == 1000000) { printf("loop #: %d\n", i); }
+			if (i == 2000000) { printf("loop #: %d\n", i); }
+			((uint8_t*)Surface_8->pixels)[i] = w_PaletteColor;
 		}
-		if (i == 100) { printf("loop #: %d\n", i); }
-		if (i == 1000) { printf("loop #: %d\n", i); }
-		if (i == 10000) { printf("loop #: %d\n", i); }
-		if (i == 100000) { printf("loop #: %d\n", i); }
-		if (i == 1000000) { printf("loop #: %d\n", i); }
-		if (i == 2000000) { printf("loop #: %d\n", i); }
-		((uint8_t*)Surface_8->pixels)[i] = w_PaletteColor;
 	}
+}
+
+void clamp_function(SDL_Surface *Surface_32, 
+					struct Pxl_Err *err, 
+					int pixel_idx,
+					int factor)
+
+{	
+	memcpy(&abgr, (Pxl_Info_32*)Surface_32->pixels + pixel_idx, sizeof(Pxl_Info_32));
+	//------------------ r
+	if ((abgr.r + err->r * factor/16) > 255)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->r = 255;
+	}
+	else 
+	if ((abgr.r + err->r * factor/16) < 0)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->r = 0;
+	}
+	else
+	((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->r += err->r * factor / 16;
+	
+	//------------------ g
+	if ((abgr.g + err->g * factor / 16) > 255)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->g = 255;
+	}
+	else
+	if ((abgr.g + err->g * factor / 16) < 0)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->g = 0;
+	}
+	else
+	((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->g += err->g * factor / 16;
+	//------------------ b
+	if ((abgr.b + err->b * factor / 16) > 255)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->b = 255;
+	}
+	else
+	if ((abgr.b + err->b * factor / 16) < 0)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->b = 0;
+	}
+	else
+	((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->b += err->b * factor / 16;
+	//------------------ a
+	if ((abgr.a + err->a * factor / 16) > 255)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->a = 255;
+	}
+	else
+	if ((abgr.a + err->a * factor / 16) < 0)
+	{
+		((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->a = 0;
+	}
+	else
+	((Pxl_Info_32*)Surface_32->pixels + (pixel_idx))->a += err->a * factor / 16;
 }
 
 

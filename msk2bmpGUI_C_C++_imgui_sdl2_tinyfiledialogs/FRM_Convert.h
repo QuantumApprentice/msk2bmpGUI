@@ -10,6 +10,10 @@ void SDL_Color_Match(SDL_Surface* Convert,
 	int k,
 	SDL_PixelFormat* pxlFMT_Pal,
 	SDL_Surface* Temp_Surface);
-void Euclidian_Distance_Color_Match(int k,
+void Euclidian_Distance_Color_Match(
 	SDL_Surface* Convert,
 	SDL_Surface* Temp_Surface);
+void clamp_function(SDL_Surface *Surface_32,
+	struct Pxl_Err *err,
+	int pixel_idx,
+	int factor);
