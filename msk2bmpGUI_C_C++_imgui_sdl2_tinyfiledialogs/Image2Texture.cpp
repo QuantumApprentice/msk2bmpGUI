@@ -3,16 +3,14 @@
 #include <stdio.h>
 #include <glad/glad.h>
 
-
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
 	SDL_Surface* Temp_Surface = NULL;
 	if (surface)
 	{
 		//SDL_FreeSurface(Temp_Surface);
-		Temp_Surface = SDL_ConvertSurfaceFormat(
-			surface,
-			SDL_PIXELFORMAT_RGBA8888, 0);
+		Temp_Surface = 
+			SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
 
 		SDL_to_OpenGl(Temp_Surface, texture);
 		*window = true;
@@ -23,7 +21,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 	}
 }
 
-void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *Optimized_Texture)
+void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
 {
 	// OpenGL conversion from surface to texture - needs to be own function
 	{
@@ -45,8 +43,8 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *Optimized_Texture)
 		
 		printf("glError: %d\n", glGetError());
 
-		glGenTextures(1, Optimized_Texture);
-		glBindTexture(GL_TEXTURE_2D, *Optimized_Texture);
+		glGenTextures(1, texture);
+		glBindTexture(GL_TEXTURE_2D, *texture);
 
 		// Setup filtering parameters for display
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
