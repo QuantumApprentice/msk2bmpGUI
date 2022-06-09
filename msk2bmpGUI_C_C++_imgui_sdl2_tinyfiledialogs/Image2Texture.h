@@ -13,7 +13,6 @@ struct variables {
 	int Render_Width = 0, Render_Height = 0;
 
 	SDL_Color *PaletteColors = nullptr;
-
 	SDL_Surface* Temp_Surface = nullptr;
 
 	struct LF F_Prop[99]{};
