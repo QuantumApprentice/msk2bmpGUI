@@ -296,83 +296,87 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
 				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
 				&My_Variables->F_Prop[counter].preview_tiles_window);
-			//SDL_to_OpenGl(
-			//	My_Variables->F_Prop[counter].Final_Render,
-			//	&My_Variables->F_Prop[counter].Optimized_Render_Texture);
-			//
+
+			//--------------------------------------------------------------
+			SDL_to_OpenGl(
+				My_Variables->F_Prop[counter].Final_Render,
+				&My_Variables->F_Prop[counter].Optimized_Render_Texture);
+			
 			// OpenGL stuff below here
-			//{
-			//	std::ifstream t("Palette_Shader.vert");
-			//	std::stringstream buffer;
-			//	buffer << t.rdbuf();
-			//	std::string str = buffer.str();
-			//	const char * temp_str = str.c_str();
-			//
-			//	GLuint vertexShader;
-			//	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-			//	glShaderSource(vertexShader, 1, &temp_str, NULL);
-			//	glCompileShader(vertexShader);
-			//	// Error checking
-			//	int success;
-			//	char infoLog[512];
-			//	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-			//	if (!success) {
-			//		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			//		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-			//	}
-			//
-			//	GLuint program = glCreateProgram();
-			//
-			//	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-			//	/*
-			//	uniform vec4 palette;
-			//	in vec2 v_texCoord;
-			//	out vec4 finalcolor;
-			//	void main()
-			//	{ finalcolor=texelFetch(img0,xy,0).r; }
-			//
-			//	in vec2 a_position;
-			//	in vec2 a_texCoord;
-			//	out vec2 v_texCoord;
-			//	void main()
-			//	{ v_texCoord = a_texCoord; }
-			//	*/
-			//
-			//	char * source =
-			//		"uniform vec4 palette;						\
-			//	in vec2 v_texCoord;							\
-			//	out vec4 finalcolor;						\
-			//	void main()									\
-			//	{finalcolor = texelFetch(img0, xy, 0).r;}";
-			//
-			//	glShaderSource(fragmentShader, 1, &source, 0);
-			//	// Error checking
-			//	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-			//	if (success == GL_FALSE)
-			//	{
-			//		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-			//		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-			//	}
-			//
-			//	glAttachShader(program, vertexShader);
-			//	glAttachShader(program, fragmentShader);
-			//	glLinkProgram(program);
-			//
-			//	GLint isLinked = 0;
-			//	glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-			//	if (!isLinked) {
-			//		glGetProgramInfoLog(program, 512, NULL, infoLog);
-			//	}
-			//	glDeleteProgram(program);
-			//	glDeleteShader(vertexShader);
-			//	glDeleteShader(fragmentShader);
-			//
-			//	glDetachShader(program, vertexShader);
-			//	//glUniform4fv();
-			//
-			//	//My_Variables->F_Prop[counter].Optimized_Render_Texture
-			//	//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
-			//}
+			{
+				std::ifstream t("Palette_Shader.vert");
+				std::stringstream buffer;
+				buffer << t.rdbuf();
+				std::string str = buffer.str();
+				const char * temp_str = str.c_str();
+			
+				GLuint vertexShader;
+				vertexShader = glCreateShader(GL_VERTEX_SHADER);
+				glShaderSource(vertexShader, 1, &temp_str, NULL);
+				glCompileShader(vertexShader);
+				// Error checking
+				int success;
+				char infoLog[512];
+				glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+				if (!success) {
+					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+				}
+			
+				GLuint program = glCreateProgram();
+			
+				GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+				/*
+				uniform vec4 palette;
+				in vec2 v_texCoord;
+				out vec4 finalcolor;
+				void main()
+				{ finalcolor=texelFetch(img0,xy,0).r; }
+			
+				in vec2 a_position;
+				in vec2 a_texCoord;
+				out vec2 v_texCoord;
+				void main()
+				{ v_texCoord = a_texCoord; }
+				*/
+			
+				char * source =
+					"uniform vec4 palette;						\
+				in vec2 v_texCoord;							\
+				out vec4 finalcolor;						\
+				void main()									\
+				{finalcolor = texelFetch(img0, xy, 0).r;}";
+			
+				glShaderSource(fragmentShader, 1, &source, 0);
+				// Error checking
+				glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+				if (success == GL_FALSE)
+				{
+					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+				}
+			
+				glAttachShader(program, vertexShader);
+				glAttachShader(program, fragmentShader);
+				glLinkProgram(program);
+			
+				GLint isLinked = 0;
+				glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+				if (!isLinked) {
+					glGetProgramInfoLog(program, 512, NULL, infoLog);
+				}
+				glDeleteProgram(program);
+				glDeleteShader(vertexShader);
+				glDeleteShader(fragmentShader);
+			
+				glDetachShader(program, vertexShader);
+				//glUniform4fv();
+			
+				//My_Variables->F_Prop[counter].Optimized_Render_Texture
+				//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
+			}
+			//--------------------------------------------------------------
+
 			My_Variables->F_Prop[counter].preview_tiles_window = true;
 		}
 		if (ImGui::Button("Preview Tiles - Euclidian color match"))
