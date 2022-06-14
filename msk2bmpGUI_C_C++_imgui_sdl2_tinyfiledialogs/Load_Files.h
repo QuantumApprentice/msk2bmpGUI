@@ -10,7 +10,7 @@ struct LF {
 	SDL_Surface* image = nullptr;
 	SDL_Surface* Pal_Surface = nullptr;
 	SDL_Surface* Final_Render = nullptr;
-	//SDL_Texture* Optimized_Texture = nullptr;
+
 	GLuint Optimized_Texture = 0;
 	GLuint Optimized_Render_Texture = 0;
 
