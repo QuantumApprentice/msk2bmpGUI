@@ -163,7 +163,7 @@ int main(int, char**)
 		{
 			static int counter = 0;
 
-			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("Hello, world!");  // Create a window called "Hello, world!" and append into it.
 
 			if (ImGui::Button("Load Files...")) 
 			{
@@ -273,10 +273,10 @@ int main(int, char**)
 //	}
 //}
 
-void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Renderer* renderer)
+void ShowPreviewWindow(struct variables *My_Variables, int counter)
 {
-	bool wrong_size = (My_Variables->F_Prop[counter].texture_width != 350)
-		|| (My_Variables->F_Prop[counter].texture_height != 300);
+	bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
+		|| (My_Variables->F_Prop[counter].image->h != 300);
 
 	ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
 	// Check image size to match tile size (350x300 pixels)
@@ -297,86 +297,6 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
 				&My_Variables->F_Prop[counter].preview_tiles_window);
 
-			//--------------------------------------------------------------
-			SDL_to_OpenGl(
-				My_Variables->F_Prop[counter].Final_Render,
-				&My_Variables->F_Prop[counter].Optimized_Render_Texture);
-			
-			// OpenGL stuff below here
-			{
-				std::ifstream t("Palette_Shader.vert");
-				std::stringstream buffer;
-				buffer << t.rdbuf();
-				std::string str = buffer.str();
-				const char * temp_str = str.c_str();
-			
-				GLuint vertexShader;
-				vertexShader = glCreateShader(GL_VERTEX_SHADER);
-				glShaderSource(vertexShader, 1, &temp_str, NULL);
-				glCompileShader(vertexShader);
-				// Error checking
-				int success;
-				char infoLog[512];
-				glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-				if (!success) {
-					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-				}
-			
-				GLuint program = glCreateProgram();
-			
-				GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-				/*
-				uniform vec4 palette;
-				in vec2 v_texCoord;
-				out vec4 finalcolor;
-				void main()
-				{ finalcolor=texelFetch(img0,xy,0).r; }
-			
-				in vec2 a_position;
-				in vec2 a_texCoord;
-				out vec2 v_texCoord;
-				void main()
-				{ v_texCoord = a_texCoord; }
-				*/
-			
-				char * source =
-					"uniform vec4 palette;						\
-				in vec2 v_texCoord;							\
-				out vec4 finalcolor;						\
-				void main()									\
-				{finalcolor = texelFetch(img0, xy, 0).r;}";
-			
-				glShaderSource(fragmentShader, 1, &source, 0);
-				// Error checking
-				glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-				if (success == GL_FALSE)
-				{
-					glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-					std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-				}
-			
-				glAttachShader(program, vertexShader);
-				glAttachShader(program, fragmentShader);
-				glLinkProgram(program);
-			
-				GLint isLinked = 0;
-				glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-				if (!isLinked) {
-					glGetProgramInfoLog(program, 512, NULL, infoLog);
-				}
-				glDeleteProgram(program);
-				glDeleteShader(vertexShader);
-				glDeleteShader(fragmentShader);
-			
-				glDetachShader(program, vertexShader);
-				//glUniform4fv();
-			
-				//My_Variables->F_Prop[counter].Optimized_Render_Texture
-				//	= SDL_CreateTextureFromSurface(renderer, My_Variables->F_Prop[counter].Final_Render);
-			}
-			//--------------------------------------------------------------
-
 			My_Variables->F_Prop[counter].preview_tiles_window = true;
 		}
 		if (ImGui::Button("Preview Tiles - Euclidian color match"))
@@ -390,6 +310,9 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
 				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
 				&My_Variables->F_Prop[counter].preview_tiles_window);
+
+			My_Variables->F_Prop[counter].preview_tiles_window = true;
+
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
@@ -407,8 +330,8 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 		ImVec2 Origin = ImGui::GetItemRectMin();
 		ImVec2 Top_Left = Origin;
 		ImVec2 Bottom_Right = { 0, 0 };
-		int max_box_x = My_Variables->F_Prop[counter].texture_width / 350;
-		int max_box_y = My_Variables->F_Prop[counter].texture_height / 300;
+		int max_box_x = My_Variables->F_Prop[counter].image->w / 350;
+		int max_box_y = My_Variables->F_Prop[counter].image->h / 300;
 
 		// Draw red boxes to indicate where the tiles will be cut from
 		for (int i = 0; i < max_box_x; i++)
@@ -434,8 +357,6 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter) //, SDL_Rend
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-	if (My_Variables->F_Prop[0].preview_tiles_window == false) 
-	{
 		if (My_Variables->F_Prop[counter].preview_tiles_window)
 		{
 			std::string a = My_Variables->F_Prop[counter].c_name;
@@ -457,13 +378,14 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
 			}
 			ImGui::End();
 		}
-	}
+	
 }
 
 void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter)
 {
+	// TODO: make Show_Palette_Window automatically dock somewhere
 	Show_Palette_Window(My_Variables, counter);
 
 	std::string a = My_Variables->F_Prop[counter].c_name;
@@ -471,7 +393,7 @@ void ShowRenderWindow(variables *My_Variables,
 
 	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
 
-	if (ImGui::Button("Render and save...")) {
+	if (ImGui::Button("Render and save Map Tiles...")) {
 		My_Variables->Render_Window = true;
 		if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
 		{
@@ -483,32 +405,28 @@ void ShowRenderWindow(variables *My_Variables,
 		}
 	}
 
-	ImGui::Image((ImTextureID)
-		My_Variables->F_Prop[counter].Optimized_Render_Texture,
-		ImVec2((float)My_Variables->F_Prop[counter].image->w,
-			   (float)My_Variables->F_Prop[counter].image->h),
-		My_Variables->uv_min,
-		My_Variables->uv_max,
-		My_Variables->tint_col,
-		My_Variables->border_col);
-		//ImVec2(350, 300),
-		//*Top_Left,
-		//*Bottom_Right,
-		//My_Variables->tint_col,
-		//My_Variables->border_col);
+	//Show full image first?
+	//ImGui::Image((ImTextureID)
+	//	My_Variables->F_Prop[counter].Optimized_Render_Texture,
+	//	ImVec2((float)My_Variables->F_Prop[counter].image->w,
+	//		   (float)My_Variables->F_Prop[counter].image->h),
+	//	My_Variables->uv_min,
+	//	My_Variables->uv_max,
+	//	My_Variables->tint_col,
+	//	My_Variables->border_col);
 
-	// Preview window for tiles already converted to palettized format
+	// Preview window for tiles already converted to palettized and dithered format
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
 		Top_Left = Origin;
 		for (int y = 0; y < *max_box_y; y++)
 		{
 			for (int x = 0; x < *max_box_x; x++)
 			{
-				Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].texture_width;
-				Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].texture_height;
+				Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].image->w;
+				Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].image->h;
 
-				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].texture_width)),
-								(Top_Left->y + (300.0f / My_Variables->F_Prop[counter].texture_height)) };
+				*Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].image->w)),
+								  (Top_Left->y + (300.0f / My_Variables->F_Prop[counter].image->h)) };
 
 				ImGui::Image((ImTextureID)
 					My_Variables->F_Prop[counter].Optimized_Render_Texture,
@@ -517,6 +435,8 @@ void ShowRenderWindow(variables *My_Variables,
 					*Bottom_Right,
 					My_Variables->tint_col,
 					My_Variables->border_col);
+
+				ImGui::SameLine();
 			}
 			ImGui::NewLine();
 		}
@@ -535,7 +455,12 @@ void Render_and_Save_IMG(variables *My_Variables, int counter)
 void Render_and_Save_FRM(variables *My_Variables, int counter)
 {
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
+		// Saves the full image and does not cut into tiles
 		Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
+		//--------------------------------------------------
+		
+		Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface);
+
 		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
 		//SDL_Rect temp_Rect;
 		//temp_Rect.w = 350;
