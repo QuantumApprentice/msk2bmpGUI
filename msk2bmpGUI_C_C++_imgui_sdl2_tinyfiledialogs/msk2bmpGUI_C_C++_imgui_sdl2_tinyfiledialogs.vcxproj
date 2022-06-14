@@ -69,15 +69,32 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -85,9 +102,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,11 +116,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -111,18 +132,53 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>SDL2_image.lib;SDL2.lib;SDL2main.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="B_Endian.cpp" />
+    <ClCompile Include="FRM_Animate.cpp" />
+    <ClCompile Include="FRM_Convert.cpp" />
+    <ClCompile Include="glad\src\glad.c" />
+    <ClCompile Include="Image2Texture.cpp" />
+    <ClCompile Include="imgui-docking\imgui.cpp" />
+    <ClCompile Include="imgui-docking\imgui_demo.cpp" />
+    <ClCompile Include="imgui-docking\imgui_draw.cpp" />
+    <ClCompile Include="imgui-docking\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui-docking\imgui_impl_sdl.cpp" />
+    <ClCompile Include="imgui-docking\imgui_tables.cpp" />
+    <ClCompile Include="imgui-docking\imgui_widgets.cpp" />
     <ClCompile Include="msk2bmpGUI.cpp" />
+    <ClCompile Include="Load_Files.cpp" />
+    <ClCompile Include="Save_Files.cpp" />
+    <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="imgui.h" />
+    <ClInclude Include="B_Endian.h" />
+    <ClInclude Include="FRM_Animate.h" />
+    <ClInclude Include="FRM_Convert.h" />
+    <ClInclude Include="Image2Texture.h" />
+    <ClInclude Include="imgui-docking\imconfig.h" />
+    <ClInclude Include="imgui-docking\imgui.h" />
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3.h" />
+    <ClInclude Include="imgui-docking\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="imgui-docking\imgui_impl_sdl.h" />
+    <ClInclude Include="imgui-docking\imgui_internal.h" />
+    <ClInclude Include="imgui-docking\imstb_rectpack.h" />
+    <ClInclude Include="imgui-docking\imstb_textedit.h" />
+    <ClInclude Include="imgui-docking\imstb_truetype.h" />
+    <ClInclude Include="Load_Files.h" />
+    <ClInclude Include="Save_Files.h" />
+    <ClInclude Include="tinyfiledialogs.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Palette_Shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
