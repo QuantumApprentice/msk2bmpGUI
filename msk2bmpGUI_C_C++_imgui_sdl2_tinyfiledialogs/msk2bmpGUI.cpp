@@ -405,16 +405,6 @@ void ShowRenderWindow(variables *My_Variables,
 		}
 	}
 
-	//Show full image first?
-	//ImGui::Image((ImTextureID)
-	//	My_Variables->F_Prop[counter].Optimized_Render_Texture,
-	//	ImVec2((float)My_Variables->F_Prop[counter].image->w,
-	//		   (float)My_Variables->F_Prop[counter].image->h),
-	//	My_Variables->uv_min,
-	//	My_Variables->uv_max,
-	//	My_Variables->tint_col,
-	//	My_Variables->border_col);
-
 	// Preview window for tiles already converted to palettized and dithered format
 	if (My_Variables->F_Prop[counter].preview_tiles_window) {
 		Top_Left = Origin;
@@ -458,60 +448,9 @@ void Render_and_Save_FRM(variables *My_Variables, int counter)
 		// Saves the full image and does not cut into tiles
 		Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
 		//--------------------------------------------------
-		
+		// Saves the full image after being cut into correct sized tiles
 		Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface);
-
-		//Final_Render = SDL_CreateRGBSurface(NULL, 350, 300, 32, 0, 0, 0, 0);
-		//SDL_Rect temp_Rect;
-		//temp_Rect.w = 350;
-		//temp_Rect.h = 300;
-		//temp_Rect.x = 0;
-		//temp_Rect.y = 0;
-
-		//SDL_BlitSurface(Temp_Surface,
-		//	&temp_Rect,
-		//	Final_Render,
-		//	&temp_Rect);
-		//SDL_SaveBMP(Final_Render, "wrldmp00.bmp");
-
-		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-		//My_Variables->F_Prop[counter].Final_Render = FRM_Convert(My_Variables->Temp_Surface);
-		//Temp_Surface = SDL_ConvertSurfaceFormat(Final_Render, SDL_PIXELFORMAT_RGBA8888, 0);
-
-	/* SDL_SaveBMP_RW(My_Variables->Temp_Surface, SDL_RWFromFile("temp2.bmp", "wb"), 1); */
-
-		//temp_Render = SDL_CreateTextureFromSurface(renderer, Final_Render);
-		//SDL_QueryTexture(temp_Render,
-		//	NULL, NULL,
-		//	&Render_Width,
-		//	&Render_Height);
-		//Render_Window = true;
-		//SDL_Color* PaletteColors = loadPalette();
-		//ImGui::Begin("##palette", 0, ImGuiWindowFlags_NoSavedSettings);
-		//for (int y = 0; y < 16; y++) {
-		//	for (int x = 0; x < 16; x++) {
-		//		SDL_Color color = PaletteColors[y * 16 + x];
-		//		float r = (float)color.r / 255.0f;
-		//		float g = (float)color.g / 255.0f;
-		//		float b = (float)color.b / 255.0f;
-		//		ImGui::ColorButton("", ImVec4(r, g, b, 1.0f));
-		//		if (x < 15) ImGui::SameLine();
-		//	}
-		//}
-		//ImGui::End();
-
-		//SDL_BlitSurface()
-		//ImGui::Begin("Rendering?");
-
-		//ImGui::Image(temp_Render,
-		//	ImVec2((float)Render_Width,
-		//	(float)Render_Height),
-		//	uv_min,
-		//	uv_max,
-		//	tint_col,
-		//	border_col);
-
-		//ImGui::End();
+		//--------------------------------------------------
 	}
 }
 
