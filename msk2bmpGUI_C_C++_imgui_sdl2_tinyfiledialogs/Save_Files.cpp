@@ -74,19 +74,21 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 	FRM_Header.Frame_Area =		B_Endian::write_u32(300 * 350);
 	FRM_Header.Frame_0_Size =   B_Endian::write_u32(300 * 350);
 
+	//tinyfd_selectFolderDialog()
+
+
 	int num_tiles_x = PAL_surface->w / 350;
 	int num_tiles_y = PAL_surface->h / 300;
 	char Save_File_Name[256];
 	int q = 1;
+
 	for (int y = 0; y < num_tiles_y; y++)
 	{
 		for (int x = 0; x < num_tiles_x; x++)
 		{
 			//-------save file
 			FILE * File_ptr;
-
 			sprintf(Save_File_Name, "temp00%d.FRM", q++);
-
 			fopen_s(&File_ptr, Save_File_Name, "wb");
 
 			if (!File_ptr) {
