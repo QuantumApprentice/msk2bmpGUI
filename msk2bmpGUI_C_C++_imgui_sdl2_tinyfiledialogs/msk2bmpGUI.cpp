@@ -24,18 +24,20 @@
 struct variables My_Variables = {};
 
 // Function declarations
-void ShowPreviewWindow(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
+void Show_Preview_Window(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
 void ShowRenderWindow(variables *My_Variables,
 	ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
 	int *max_box_x, int *max_box_y, int counter);
+void Show_Image_Render(variables *My_Variables, int counter);
+
 void Show_Palette_Window(struct variables *My_Variables, int counter);
 void Render_and_Save_FRM(variables *My_Variables, int counter);
 void Render_and_Save_IMG(variables *My_Variables, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
+void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match);
+void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match);
 
-//void Window_Begin();
-//void Window_End();
 
 // Main code
 int main(int, char**)
@@ -192,9 +194,7 @@ int main(int, char**)
 			{
 				if (My_Variables.F_Prop[i].file_open_window)
 				{
-					//void Window_Begin();
-					ShowPreviewWindow(&My_Variables, i); // , renderer);
-					//void Window_End();
+					Show_Preview_Window(&My_Variables, i);
 
 				}
 
@@ -273,7 +273,7 @@ int main(int, char**)
 //	}
 //}
 
-void ShowPreviewWindow(struct variables *My_Variables, int counter)
+void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
 	bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
 		|| (My_Variables->F_Prop[counter].image->h != 300);
@@ -285,34 +285,17 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 		ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].image->w,
 									 My_Variables->F_Prop[counter].image->h);
 		ImGui::Text("It needs to be 350x300 pixels");
-		if (ImGui::Button("Preview Tiles - SDL color match"))
-		{
-			My_Variables->F_Prop[counter].Pal_Surface
-				= FRM_Color_Convert(My_Variables->F_Prop[counter].image, true);
-
-			My_Variables->F_Prop[counter].Final_Render
-				= Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
-
-			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
-				&My_Variables->F_Prop[counter].preview_tiles_window);
-
-			My_Variables->F_Prop[counter].preview_tiles_window = true;
+		if (ImGui::Button("Preview Tiles - SDL color match")) {
+			Preview_Tiles_Shortcut(My_Variables, counter, true);
 		}
-		if (ImGui::Button("Preview Tiles - Euclidian color match"))
-		{
-			My_Variables->F_Prop[counter].Pal_Surface
-				= FRM_Color_Convert(My_Variables->F_Prop[counter].image, false);
-
-			My_Variables->F_Prop[counter].Final_Render
-				= Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
-
-			Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-				&My_Variables->F_Prop[counter].Optimized_Render_Texture,
-				&My_Variables->F_Prop[counter].preview_tiles_window);
-
-			My_Variables->F_Prop[counter].preview_tiles_window = true;
-
+		if (ImGui::Button("Preview Tiles - Euclidian color match"))	{
+			Preview_Tiles_Shortcut(My_Variables, counter, false);
+		}
+		if (ImGui::Button("Preview as Image - SDL color match")) {
+			Preview_Image_Shortcut(My_Variables, counter, true);
+		}
+		if (ImGui::Button("Preview as Image - Euclidian color match")) {
+			Preview_Image_Shortcut(My_Variables, counter, false);
 		}
 	}
 	ImGui::Text(My_Variables->F_Prop[counter].c_name);
@@ -351,6 +334,10 @@ void ShowPreviewWindow(struct variables *My_Variables, int counter)
 
 			ShowRenderWindow(My_Variables, &Top_Left, &Bottom_Right,
 				&Origin, &max_box_x, &max_box_y, counter);
+		}
+		// Preview full image
+		if (My_Variables->F_Prop[counter].preview_image_window) {
+			Show_Image_Render(My_Variables, counter);
 		}
 	}
 	ImGui::End();
@@ -393,7 +380,7 @@ void ShowRenderWindow(variables *My_Variables,
 
 	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
 
-	if (ImGui::Button("Render and save Map Tiles...")) {
+	if (ImGui::Button("Save as Map Tiles...")) {
 		My_Variables->Render_Window = true;
 		if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
 		{
@@ -401,7 +388,7 @@ void ShowRenderWindow(variables *My_Variables,
 		}
 		else
 		{
-			Render_and_Save_FRM(My_Variables, counter);
+			Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface);
 		}
 	}
 
@@ -434,6 +421,40 @@ void ShowRenderWindow(variables *My_Variables,
 	ImGui::End();
 }
 
+void Show_Image_Render(variables *My_Variables, int counter)
+{
+	// TODO: make Show_Palette_Window automatically dock somewhere
+	Show_Palette_Window(My_Variables, counter);
+
+	std::string a = My_Variables->F_Prop[counter].c_name;
+	std::string name = a + " Preview Window...";
+
+	ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_image_window, 0);
+	if (ImGui::Button("Save as Image...")) {
+
+		My_Variables->F_Prop[counter].preview_image_window = true;
+
+		if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
+		{
+			Render_and_Save_IMG(My_Variables, counter);
+		}
+		else
+		{
+			Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
+		}
+	}
+	ImVec2 Origin = ImGui::GetItemRectMin();
+	ImVec2 Top_Left = Origin;
+	ImVec2 Bottom_Right = { 0, 0 };
+	Bottom_Right = ImVec2(Top_Left.x + (My_Variables->F_Prop[counter].image->w),
+						  Top_Left.y + (My_Variables->F_Prop[counter].image->h));
+
+	ImGui::Image((ImTextureID)
+		My_Variables->F_Prop[counter].Optimized_Render_Texture,
+		ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+	ImGui::End();
+}
+
 // Final render
 void Render_and_Save_IMG(variables *My_Variables, int counter)
 {
@@ -448,9 +469,35 @@ void Render_and_Save_FRM(variables *My_Variables, int counter)
 		// Saves the full image and does not cut into tiles
 		Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
 		//--------------------------------------------------
-		// Saves the full image after being cut into correct sized tiles
-		Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface);
-		//--------------------------------------------------
 	}
 }
 
+void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match)
+{
+	My_Variables->F_Prop[counter].Pal_Surface
+		= FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
+
+	My_Variables->F_Prop[counter].Final_Render
+		= Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
+
+	Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+		&My_Variables->F_Prop[counter].Optimized_Render_Texture,
+		&My_Variables->F_Prop[counter].preview_tiles_window);
+
+	My_Variables->F_Prop[counter].preview_tiles_window = true;
+}
+
+void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match)
+{
+	My_Variables->F_Prop[counter].Pal_Surface
+		= FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
+
+	My_Variables->F_Prop[counter].Final_Render
+		= Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
+
+	Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+		&My_Variables->F_Prop[counter].Optimized_Render_Texture,
+		&My_Variables->F_Prop[counter].preview_image_window);
+
+	My_Variables->F_Prop[counter].preview_image_window = true;
+}
