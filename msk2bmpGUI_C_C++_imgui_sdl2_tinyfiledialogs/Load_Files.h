@@ -18,6 +18,7 @@ struct LF {
 
 	bool file_open_window;
 	bool preview_tiles_window;
+	bool preview_image_window;
 	char * FilterPattern1[3] = { "*.bmp" , "*.png", "*.frm" };
 };
 void Load_Files(LF[], int);
