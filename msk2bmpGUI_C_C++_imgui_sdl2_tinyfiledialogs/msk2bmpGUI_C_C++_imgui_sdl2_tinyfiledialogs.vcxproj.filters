@@ -72,6 +72,9 @@
     <ClCompile Include="Image2Texture.cpp">
       <Filter>Source Files\Image2Texture</Filter>
     </ClCompile>
+    <ClCompile Include="Save_Settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -121,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="Image2Texture.h">
       <Filter>Source Files\Image2Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Save_Settings.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

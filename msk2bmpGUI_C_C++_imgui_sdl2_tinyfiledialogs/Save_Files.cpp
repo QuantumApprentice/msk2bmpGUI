@@ -5,6 +5,7 @@
 #include "tinyfiledialogs.h"
 #include "B_Endian.h"
 #include "imgui-docking/imgui.h"
+#include "Save_Settings.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -79,11 +80,20 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 	char Save_File_Name[256];
 	int q = 0;
 	
-	char * folder_name;
+	char * folder_name = NULL;
 
-	folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+	if(folder_name != NULL) 
+	{
+		folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
+	}
+	else
+	{
+		folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+	}
 
-	
+
+
+
 
 	if (!folder_name) {}
 	else
