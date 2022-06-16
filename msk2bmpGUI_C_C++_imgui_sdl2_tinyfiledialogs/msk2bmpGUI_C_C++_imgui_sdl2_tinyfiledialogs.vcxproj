@@ -157,6 +157,7 @@
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Save_Files.cpp" />
+    <ClCompile Include="Save_Settings.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +176,7 @@
     <ClInclude Include="imgui-docking\imstb_truetype.h" />
     <ClInclude Include="Load_Files.h" />
     <ClInclude Include="Save_Files.h" />
+    <ClInclude Include="Save_Settings.h" />
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <ItemGroup>
