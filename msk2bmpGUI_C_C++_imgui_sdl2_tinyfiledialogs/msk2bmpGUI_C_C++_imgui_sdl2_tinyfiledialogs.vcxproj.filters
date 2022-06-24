@@ -36,13 +36,7 @@
     <ClCompile Include="FRM_Convert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="B_Endian.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="FRM_Animate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Save_Files.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui-docking\imgui.cpp">
@@ -72,7 +66,13 @@
     <ClCompile Include="Image2Texture.cpp">
       <Filter>Source Files\Image2Texture</Filter>
     </ClCompile>
-    <ClCompile Include="Save_Settings.cpp">
+    <ClCompile Include="Save_Files.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="B_Endian.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Load_Settings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -125,8 +125,8 @@
     <ClInclude Include="Image2Texture.h">
       <Filter>Source Files\Image2Texture</Filter>
     </ClInclude>
-    <ClInclude Include="Save_Settings.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="Load_Settings.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
