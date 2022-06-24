@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <cstdint>
 #include <SDL.h>
+#include <filesystem>
+
 #include "Save_Files.h"
 #include "tinyfiledialogs.h"
 #include "B_Endian.h"
 #include "imgui-docking/imgui.h"
-#include "Save_Settings.h"
+#include "Load_Settings.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -77,57 +79,43 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 
 	int num_tiles_x = PAL_surface->w / 350;
 	int num_tiles_y = PAL_surface->h / 300;
-	char Save_File_Name[256];
 	int q = 0;
-	
-	char * folder_name = NULL;
 
-	if(folder_name != NULL) 
+	char Save_File_Name[256];
+	char * folder_name = Save_File_Name;
+	FILE * File_ptr = NULL;
+
+	folder_name = write_config(folder_name);
+	if (folder_name == NULL) { return; }
+
+	for (int y = 0; y < num_tiles_y; y++)
 	{
-		folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
-	}
-	else
-	{
-		folder_name = tinyfd_selectFolderDialog(NULL, NULL);
-	}
-
-
-
-
-
-	if (!folder_name) {}
-	else
-	{
-		for (int y = 0; y < num_tiles_y; y++)
+		for (int x = 0; x < num_tiles_x; x++)
 		{
-			for (int x = 0; x < num_tiles_x; x++)
-			{
-				//-------save file
-				FILE * File_ptr;
-				sprintf(Save_File_Name, "%s\\wrldmp%02d.FRM", folder_name, q++);
-				fopen_s(&File_ptr, Save_File_Name, "wb");
+			//-------save file
+			sprintf(Save_File_Name, "%s\\wrldmp%02d.FRM", folder_name, q++);
+			fopen_s(&File_ptr, Save_File_Name, "wb");
 
-				if (!File_ptr) {
-					tinyfd_messageBox(
-						"Error",
-						"Can not open this file in write mode",
-						"ok",
-						"error",
-						1);
-					//return 1;
-				}
-				//save header
-				fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
-
-				int pixel_pointer = y * 300 * PAL_surface->pitch + x * 350;
-				for (int pixel_i = 0; pixel_i < 350; pixel_i++)
-				{
-					//write out one row of pixels in each loop
-					fwrite((uint8_t*)PAL_surface->pixels + pixel_pointer, 350, 1, File_ptr);
-					pixel_pointer += PAL_surface->pitch;
-				}
-				fclose(File_ptr);
+			if (!File_ptr) {
+				tinyfd_messageBox(
+					"Error",
+					"Can not open this file in write mode",
+					"ok",
+					"error",
+					1);
+				//return 1;
 			}
+			//save header
+			fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+
+			int pixel_pointer = y * 300 * PAL_surface->pitch + x * 350;
+			for (int pixel_i = 0; pixel_i < 350; pixel_i++)
+			{
+				//write out one row of pixels in each loop
+				fwrite((uint8_t*)PAL_surface->pixels + pixel_pointer, 350, 1, File_ptr);
+				pixel_pointer += PAL_surface->pitch;
+			}
+			fclose(File_ptr);
 		}
 	}
 }
@@ -169,4 +157,54 @@ char* Save_IMG(SDL_Surface *b_surface)
 		//fclose(File_ptr);
 	}
 	return Save_File_Name;
+}
+
+char* write_config(char* folder_name)
+{
+	FILE * config_file_ptr = NULL;
+	fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
+
+	if (!config_file_ptr) {
+
+		folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+
+		fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+		fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
+		fclose(config_file_ptr);
+		return folder_name;
+	}
+	else
+	{
+		int i = 0;
+		while (!feof(config_file_ptr)) {
+			fread(&folder_name[i++], 1, 1, config_file_ptr);
+		}
+		folder_name[i-1] = '\0';
+		fclose(config_file_ptr);
+
+		if (folder_name != NULL)
+		{
+			folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
+
+			if (folder_name == NULL) { return NULL; }
+			else {
+				fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+				fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
+				fclose(config_file_ptr);
+				return folder_name;
+			}
+		}
+		else
+		{
+			folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+
+			if (folder_name == NULL) { return NULL; }
+			else {
+				fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+				fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
+				fclose(config_file_ptr);
+				return folder_name;
+			}
+		}
+	}
 }

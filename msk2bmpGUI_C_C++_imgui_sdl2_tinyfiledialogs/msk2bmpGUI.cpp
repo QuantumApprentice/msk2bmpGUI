@@ -19,9 +19,11 @@
 #include "Image2Texture.h"
 #include <fstream>
 #include <sstream>
+#include "Load_Settings.h"
 
 // Our state
 struct variables My_Variables = {};
+struct user_info user_info;
 
 // Function declarations
 void Show_Preview_Window(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
@@ -38,10 +40,12 @@ void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match);
 void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match);
 
-
 // Main code
 int main(int, char**)
 {
+
+	LoadFileData(&user_info);
+
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
