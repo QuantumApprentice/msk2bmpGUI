@@ -130,7 +130,7 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     // Our state
-    bool show_demo_window = true;
+    bool show_demo_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
@@ -169,7 +169,7 @@ int main(int, char**)
 		{
 			static int counter = 0;
 
-			ImGui::Begin("Hello, world!");  // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("File Info");  // Create a window called "Hello, world!" and append into it.
 
 			if (ImGui::Button("Load Files...")) 
 			{
@@ -199,12 +199,9 @@ int main(int, char**)
 				if (My_Variables.F_Prop[i].file_open_window)
 				{
 					Show_Preview_Window(&My_Variables, i);
-
 				}
-
 			}
         }
-
 
         // Rendering
         ImGui::Render();
@@ -353,6 +350,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
 			std::string a = My_Variables->F_Prop[counter].c_name;
 			std::string name = a + " #palette";
 
+			ImGui::SetNextWindowPos(ImVec2(100,100), ImGuiCond_FirstUseEver);
 			ImGui::Begin(name.c_str(), 
 				&My_Variables->F_Prop[counter].preview_tiles_window, 
 				ImGuiWindowFlags_NoSavedSettings);
