@@ -134,50 +134,6 @@ void store_config_info(struct config_data *config_data, struct user_info *user_i
 }
 
 
-
-//void parse_cell(char *file_data, size_t size, int *char_ptr)
-//{
-//	int length;
-//	while (*char_ptr < size)
-//	{
-//		switch (file_data[*char_ptr])
-//		{
-//		case ',': case '\r': case '\n': 
-//			{
-//				return;
-//			}
-//		default:
-//			{
-//				length++;
-//				*char_ptr++;
-//				break;
-//			}
-//		}
-//	}
-//}
-//void parse_key(char *file_data, size_t size, int *char_ptr)
-//{
-//	int length;
-//	while (*char_ptr < size)
-//	{
-//		switch (file_data[*char_ptr])
-//		{
-//		case ',': case '\r': case '\n':
-//			{
-//				return;
-//			}
-//		case '=':
-//			{
-//				(*char_ptr)++;
-//			}
-//		default:
-//			{
-//				length++;
-//				break;
-//			}
-//		}
-//	}
-//}
 //#include "imgui-docking/imgui_internal.h"
 //void Settings::Init()
 //{
