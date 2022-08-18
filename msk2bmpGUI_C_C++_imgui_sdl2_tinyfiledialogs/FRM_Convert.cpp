@@ -52,7 +52,7 @@ SDL_Color* loadPalette(char * name)
 	}
 
 	uint8_t r, g, b;
-	printf("Palette size: %d\n", 256);
+	//printf("Palette size: %d\n", 256);
 
 	for (int i = 0; i < 256; i++)
 	{
@@ -62,10 +62,6 @@ SDL_Color* loadPalette(char * name)
 		r = convert_colors(bytes[0]);
 		g = convert_colors(bytes[1]);
 		b = convert_colors(bytes[2]);
-		//r = B_Endian::read_u8(f);
-		//g = B_Endian::read_u8(f);
-		//b = B_Endian::read_u8(f);
-		//printf("RGB: %d, %d, %d\n", r, g, b);
 		PaletteColors[i] = SDL_Color{ r, g, b };
 	}
 	return PaletteColors;
