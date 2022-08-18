@@ -132,6 +132,10 @@ int main(int, char**)
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    // used to reset the default layout back to original
+    bool firstframe = true;
+
+
 
     // Main loop
     bool done = false;
@@ -158,26 +162,71 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        bool show_demo_window = false;
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+        //bool show_demo_window = false;
+        //if (show_demo_window)
+        //    ImGui::ShowDemoWindow(&show_demo_window);
 
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        //static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-        ImGuiID d_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-        ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-        //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
+        {
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
 
-        ImVec2 dockspace_size = ImVec2(1280, 500);
-        ImGui::DockBuilderRemoveNode(dockspace_id); // Clear out existing layout
-        ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
-        ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
+            //ImGui::SetNextWindowPos(viewport->WorkPos);
+            //ImGui::SetNextWindowSize(viewport->WorkSize);
+            //ImGui::SetNextWindowViewport(viewport->ID);
 
-        ImGuiID dock_id_prop = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, .5f, NULL, &dockspace_id);
-        ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, .1f, NULL, &dockspace_id);
-        ImGui::DockBuilderDockWindow("Mesh", dock_id_prop);
-        //ImGui::DockBuilderDockWindow("File Info", dock_id_bottom);
-        ImGui::DockBuilderFinish(dockspace_id);
+            //ImGuiWindowFlags host_window_flags = 0;
+            //host_window_flags |= ImGuiWindowFlags_NoTitleBar
+            //                    | ImGuiWindowFlags_NoCollapse
+            //                    | ImGuiWindowFlags_NoResize
+            //                    | ImGuiWindowFlags_NoMove
+            //                    | ImGuiWindowFlags_NoDocking
+            //                    | ImGuiWindowFlags_NoBringToFrontOnFocus
+            //                    | ImGuiWindowFlags_NoNavFocus;
+
+            //char label[32];
+            //ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", viewport->ID);
+
+            //ImGui::Begin(label, NULL, host_window_flags);
+            bool * t = NULL;
+            bool r = true;
+            t = &r;
+            //ImGui::Begin("test", t, 0);
+            ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+            //ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+
+            if (firstframe) {
+                firstframe = false;
+                ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
+                ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
+
+                ImGuiID dock_main_id = dockspace_id; // This variable will track the document node, however we are not using it here as we aren't docking anything into it.
+                ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.35f, NULL, &dock_main_id);
+                ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
+                ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
+                //ImGuiID dock_id_center = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDockNodeFlags_DockSpace, 0.5f, NULL, &dock_main_id);
+
+                ImGui::DockBuilderDockWindow("File Info", dock_id_left);
+                ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
+                ImGui::DockBuilderDockWindow("###preview", dock_id_right);
+                //ImGui::DockBuilderDockWindow("###Render", dock_id_center);
+
+                ImGui::DockBuilderFinish(dockspace_id);
+            }
+        //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
+
+        //ImGui::End(); 
+        }
+
+        //{
+        //    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        //    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+        //    ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        //    //ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+        //    //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+        //    //ImVec2 dockspace_size = ImVec2(100, 100);
+        //    //ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
+        //    //ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
+        //    ImGui::DockBuilderFinish(dockspace_id);
+        //}
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
@@ -204,12 +253,13 @@ int main(int, char**)
             ImGui::Text("counter = %d", counter);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+            ImGui::End();
+
             // TODO: make Show_Palette_Window automatically dock somewhere
             My_Variables.PaletteColors = loadPalette("file name for palette here");
             My_Variables.F_Prop[counter].preview_tiles_window = true;
             Show_Palette_Window(&My_Variables, counter);
 
-            ImGui::End();
 
             for (int i = 0; i < counter; i++)
             {
@@ -259,14 +309,17 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
     bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
         || (My_Variables->F_Prop[counter].image->h != 300);
+    std::string a = My_Variables->F_Prop[counter].c_name;
+    std::string name = a + "###preview";
 
-    ImGui::Begin(My_Variables->F_Prop[counter].c_name, (&My_Variables->F_Prop[counter].file_open_window), 0);
+    ImGui::Begin(name.c_str(), (&My_Variables->F_Prop[counter].file_open_window), 0);
     // Check image size to match tile size (350x300 pixels)
     if (wrong_size) {
         ImGui::Text("This image is the wrong size to make a tile...");
-        ImGui::Text("Size is %dx%d", My_Variables->F_Prop[counter].image->w,
-            My_Variables->F_Prop[counter].image->h);
-        ImGui::Text("It needs to be 350x300 pixels");
+        ImGui::Text("Size is %dx%d", 
+                    My_Variables->F_Prop[counter].image->w,
+                    My_Variables->F_Prop[counter].image->h);
+        ImGui::Text("It needs to be a multiple of 350x300 pixels");
         if (ImGui::Button("Preview Tiles - SDL color match")) {
             Preview_Tiles_Shortcut(My_Variables, counter, true);
         }
@@ -332,20 +385,8 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
         std::string name = "Default Fallout palette ###palette";
 
         //////////////////////////////////////////////////////////////////////////////////////////
-        //w->DockId = ImGui::DockContextGenNodeID(g);
-        //ImGui::BeginDocked(w, nullptr);
-        //ImGuiContext* ctx = GImGui;
-        //ImGuiContext& g = *ctx;
-        //ImGuiWindow* w = g.CurrentWindow;
-        //ImGuiDockNode* dn = g.;
-
-        ImGuiID dockspace_id = ImGui::GetWindowDockID();
-        ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
-        //ImGui::DockContextQueueDock(ctx, w, );
-        //ImGui::SetNextWindowSize(ImVec2(100, 100));
-        //ImGui::SetNextWindowPos(ImVec2(0, 500), ImGuiCond_Once, ImVec2(0,0));
-        //ImGui::SetNextWindowClass(&temp_class);
-        //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+        //ImGuiID dockspace_id = ImGui::GetWindowDockID();
+        //ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
         //TODO
         ImGui::Begin(name.c_str(),
             &My_Variables->F_Prop[counter].preview_tiles_window);
@@ -370,10 +411,12 @@ void ShowRenderWindow(variables *My_Variables,
     int *max_box_x, int *max_box_y, int counter)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
-    std::string name = a + " Preview Window...";
+    std::string name = a + " Preview...###Render";
+
+    ImGuiID dockspace_id = ImGui::GetMainViewport()->ID;  //ImGui::GetID("DockSpace");
+    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
 
     ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
-
     if (ImGui::Button("Save as Map Tiles...")) {
         My_Variables->Render_Window = true;
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
