@@ -16,26 +16,27 @@ struct config_data {
 	char val_buffer[256];
 } config_data;
 
-void LoadFileData(struct user_info *user_info)
+void Load_Config(struct user_info *user_info)
 {
 	char buffer[256];
 	//uint8_t *fileData;
 	char* file_data;
 
 	FILE * config_file_ptr = NULL;
-	fopen_s(&config_file_ptr, "config\\msk2bmpGUIa.cfg", "rt");
+	fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
 
 	if (!config_file_ptr) {
-		fopen_s(&config_file_ptr, "config\\msk2bmpGUIa.cfg", "wt");
-		//TODO add something to sprintf call to include the default save path somehow
-		sprintf(buffer, "Default_Save_Path=");
-		fwrite(buffer, strlen(buffer), 1, config_file_ptr);
-		fclose(config_file_ptr);
+        write_cfg_file(user_info);
+		//fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+  //      //TODO add something to sprintf call to include the default save path somehow
+		//sprintf(buffer, "Default_Save_Path=\nDefault_Game_Path=");
+		//fwrite(buffer, strlen(buffer), 1, config_file_ptr);
+		//fclose(config_file_ptr);
 	}
 	else
 	{
 		size_t size;
-		size = std::filesystem::file_size("config\\msk2bmpGUIa.cfg");
+		size = std::filesystem::file_size("config\\msk2bmpGUI.cfg");
 
 		file_data = (char*)malloc(size);
 		fread(file_data, size, 1, config_file_ptr);
@@ -54,6 +55,7 @@ void parse_data(char * file_data, size_t size, struct user_info *user_info)
 		{
 		case '\r': case '\n':
 		{
+            config_data.char_ptr++;
 			parse_key(file_data, size, &config_data);
 			break;
 		}
@@ -126,41 +128,23 @@ void parse_value(char *file_data, size_t size, struct config_data *config_data, 
 }
 void store_config_info(struct config_data *config_data, struct user_info *user_info)
 {
-	if (strncmp(config_data->key_buffer,"Default_Save_Path", sizeof(config_data->val_buffer)) == 0)
+	if (strncmp(config_data->key_buffer, "Default_Save_Path", sizeof(config_data->val_buffer)) == 0)
 	{
-		user_info->default_save_path = (char*)malloc(sizeof(config_data->val_buffer));
 		strncpy(user_info->default_save_path, config_data->val_buffer, sizeof(config_data->val_buffer));
 	}
+    if (strncmp(config_data->key_buffer, "Default_Game_Path", sizeof(config_data->val_buffer)) == 0)
+    {
+        strncpy(user_info->default_game_path, config_data->val_buffer, sizeof(config_data->val_buffer));
+    }
 }
 
-
-//#include "imgui-docking/imgui_internal.h"
-//void Settings::Init()
-//{
-//	ImGuiSettingsHandler iniHandler;
-//	iniHandler.TypeName = "UserSettings";
-//	iniHandler.TypeHash = ImHashStr(iniHandler.TypeName);
-//	iniHandler.ClearAllFn = ClearAllHandler;
-//	iniHandler.ReadOpenFn = ReadOpenHandler;
-//	iniHandler.ReadLineFn = ReadLineHandler;
-//	iniHandler.ApplyAllFn = ApplyAllHandler;
-//	iniHandler.WriteAllFn = WriteAllHandler;
-//	ImGui::GetCurrentContext()->SettingsHandlers.push_back(iniHandler);
-//}
-//void Settings::ClearAllHandler(ImGuiContext* ctx, ImGuiSettingsHandler* settings)
-//{
-//}
-//void* Settings::ReadOpenHandler(ImGuiContext* ctx, ImGuiSettingsHandler* hndlr, const char* name)
-//{
-//	return NULL;
-//}
-//void Settings::ReadLineHandler(ImGuiContext*, ImGuiSettingsHandler*, void* entry, const char* line)
-//{
-//	"this is a test string";
-//}
-//void Settings::ApplyAllHandler(ImGuiContext* ctx, ImGuiSettingsHandler*)
-//{
-//}
-//void Settings::WriteAllHandler(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buf)
-//{
-//}
+void write_cfg_file(struct user_info* user_info)
+{
+    FILE * config_file_ptr = NULL;
+    fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+    fwrite("Default_Save_Path=", strlen("Default_Save_Path="), 1, config_file_ptr);
+    fwrite(user_info->default_save_path, strlen(user_info->default_save_path), 1, config_file_ptr);
+    fwrite("\nDefault_Game_Path=", strlen("\nDefault_Game_Path="), 1, config_file_ptr);
+    fwrite(user_info->default_game_path, strlen(user_info->default_game_path), 1, config_file_ptr);
+    fclose(config_file_ptr);
+}

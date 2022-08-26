@@ -31,21 +31,24 @@ void Show_Preview_Window(variables *My_Variables, int counter); //, SDL_Renderer
 void ShowRenderWindow(variables *My_Variables,
     ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
     int *max_box_x, int *max_box_y, int counter);
-void Show_Image_Render(variables *My_Variables, int counter);
+void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables, int counter);
 void Render_and_Save_FRM(variables *My_Variables, int counter);
-void Render_and_Save_IMG(variables *My_Variables, int counter);
+void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match);
 void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match);
 
+static void ShowMainMenuBar(int* counter);
+void Open_Files(int* counter);
+void Set_Default_Path(struct user_info* user_info);
+
 // Main code
 int main(int, char**)
 {
-
-    LoadFileData(&user_info);
+    Load_Config(&user_info);
 
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
@@ -135,8 +138,6 @@ int main(int, char**)
     // used to reset the default layout back to original
     bool firstframe = true;
 
-
-
     // Main loop
     bool done = false;
     while (!done)
@@ -162,91 +163,51 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        //bool show_demo_window = false;
-        //if (show_demo_window)
-        //    ImGui::ShowDemoWindow(&show_demo_window);
+        bool show_demo_window = false;
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
 
-        {
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-
-            //ImGui::SetNextWindowPos(viewport->WorkPos);
-            //ImGui::SetNextWindowSize(viewport->WorkSize);
-            //ImGui::SetNextWindowViewport(viewport->ID);
-
-            //ImGuiWindowFlags host_window_flags = 0;
-            //host_window_flags |= ImGuiWindowFlags_NoTitleBar
-            //                    | ImGuiWindowFlags_NoCollapse
-            //                    | ImGuiWindowFlags_NoResize
-            //                    | ImGuiWindowFlags_NoMove
-            //                    | ImGuiWindowFlags_NoDocking
-            //                    | ImGuiWindowFlags_NoBringToFrontOnFocus
-            //                    | ImGuiWindowFlags_NoNavFocus;
-
-            //char label[32];
-            //ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", viewport->ID);
-
-            //ImGui::Begin(label, NULL, host_window_flags);
+            //ImGuiViewport* viewport = ImGui::GetMainViewport();
             bool * t = NULL;
             bool r = true;
             t = &r;
-            //ImGui::Begin("test", t, 0);
             ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-            //ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+            ImGuiID dock_id_right = 0;
+            static int counter = 0;
+            ShowMainMenuBar(&counter);
 
             if (firstframe) {
                 firstframe = false;
                 ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
                 ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
-                ImGuiID dock_main_id = dockspace_id; // This variable will track the document node, however we are not using it here as we aren't docking anything into it.
+                ImGuiID dock_main_id = dockspace_id; // This variable will track the docking node.
                 ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.35f, NULL, &dock_main_id);
                 ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
                 ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
-                //ImGuiID dock_id_center = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDockNodeFlags_DockSpace, 0.5f, NULL, &dock_main_id);
 
-                ImGui::DockBuilderDockWindow("File Info", dock_id_left);
+                ImGui::DockBuilderDockWindow("###file", dock_id_left);
                 ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
-                ImGui::DockBuilderDockWindow("###preview", dock_id_right);
-                //ImGui::DockBuilderDockWindow("###Render", dock_id_center);
+                ImGui::DockBuilderDockWindow("###preview00", dock_id_right);
+                ImGui::DockBuilderDockWindow("###render00", dock_main_id);
 
+                for (int i = 1; i <= 99; i++) {
+                    char buff[12];
+                    sprintf(buff, "###render%02d", i);
+                    char buff2[13];
+                    sprintf(buff2, "###preview%02d", i);
+
+                    ImGui::DockBuilderDockWindow(buff, dock_main_id);
+                    ImGui::DockBuilderDockWindow(buff2, dock_id_right);
+                }
                 ImGui::DockBuilderFinish(dockspace_id);
             }
-        //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
-
-        //ImGui::End(); 
-        }
-
-        //{
-        //    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        //    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-        //    ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-        //    //ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-        //    //ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-        //    //ImVec2 dockspace_size = ImVec2(100, 100);
-        //    //ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
-        //    //ImGui::DockBuilderSetNodeSize(dockspace_id, dockspace_size);
-        //    ImGui::DockBuilderFinish(dockspace_id);
-        //}
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
-            static int counter = 0;
-            ImGui::Begin("File Info");  // Create a window and append into it.
-            if (ImGui::Button("Load Files..."))
-            {
-                // Assigns image to Load_Files.image and loads palette for the image
-                // TODO: image needs to be less than 1 million pixels (1000x1000)
-                // to be viewable in Titanium FRM viewer, what's the limit in the game?
-                Load_Files(My_Variables.F_Prop, counter);
-                if (My_Variables.PaletteColors == NULL)
-                {
-                    My_Variables.PaletteColors = loadPalette("file name for palette here");
-                }
-                Image2Texture(My_Variables.F_Prop[counter].image,
-                    &My_Variables.F_Prop[counter].Optimized_Texture,
-                    &My_Variables.F_Prop[counter].file_open_window);
-
-                if (My_Variables.F_Prop[counter].c_name) { counter++; }
+            ImGui::Begin("File Info###file");  // Create a window and append into it.
+            if (ImGui::Button("Load Files...")) { 
+                Open_Files(&counter);
             }
 
             ImGui::SameLine();
@@ -263,6 +224,11 @@ int main(int, char**)
 
             for (int i = 0; i < counter; i++)
             {
+
+                //char buff2[13];
+                //sprintf(buff2, "###preview%02d", i);
+                //ImGuiID dockspace_id = ImGui::GetID(buff2);
+                //ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
                     Show_Preview_Window(&My_Variables, i);
@@ -304,13 +270,19 @@ int main(int, char**)
     return 0;
 }
 
-
 void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
     bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
         || (My_Variables->F_Prop[counter].image->h != 300);
     std::string a = My_Variables->F_Prop[counter].c_name;
-    std::string name = a + "###preview";
+    char b[3];
+    sprintf(b, "%02d", counter);
+    std::string name = a + "###preview" + b;
+
+    //if (counter >= 01) {
+    //    ImGuiID dockspace_id = ImGui::GetID("###preview00");
+    //    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
+    //}
 
     ImGui::Begin(name.c_str(), (&My_Variables->F_Prop[counter].file_open_window), 0);
     // Check image size to match tile size (350x300 pixels)
@@ -372,7 +344,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
         }
         // Preview full image
         if (My_Variables->F_Prop[counter].preview_image_window) {
-            Show_Image_Render(My_Variables, counter);
+            Show_Image_Render(My_Variables, &user_info, counter);
         }
     }
     ImGui::End();
@@ -411,21 +383,25 @@ void ShowRenderWindow(variables *My_Variables,
     int *max_box_x, int *max_box_y, int counter)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
-    std::string name = a + " Preview...###Render";
+    char b[3];
+    sprintf(b, "%02d", counter);
+    std::string name = a + " Preview...###render" + b;
 
-    ImGuiID dockspace_id = ImGui::GetMainViewport()->ID;  //ImGui::GetID("DockSpace");
-    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
+    //if (counter >= 01) {
+    //    ImGuiID dockspace_id = ImGui::GetID("###render00");
+    //    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
+    //}
 
     ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
     if (ImGui::Button("Save as Map Tiles...")) {
         My_Variables->Render_Window = true;
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
         {
-            Render_and_Save_IMG(My_Variables, counter);
+            Render_and_Save_IMG(My_Variables, &user_info, counter);
         }
         else
         {
-            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface);
+            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
         }
     }
 
@@ -458,7 +434,7 @@ void ShowRenderWindow(variables *My_Variables,
     ImGui::End();
 }
 
-void Show_Image_Render(variables *My_Variables, int counter)
+void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter)
 {
     // TODO: make Show_Palette_Window automatically dock somewhere
     Show_Palette_Window(My_Variables, counter);
@@ -473,7 +449,7 @@ void Show_Image_Render(variables *My_Variables, int counter)
 
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
         {
-            Render_and_Save_IMG(My_Variables, counter);
+            Render_and_Save_IMG(My_Variables, user_info, counter);
         }
         else
         {
@@ -493,10 +469,10 @@ void Show_Image_Render(variables *My_Variables, int counter)
 }
 
 // Final render
-void Render_and_Save_IMG(variables *My_Variables, int counter)
+void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
 {
     if (My_Variables->F_Prop[counter].preview_tiles_window) {
-        Save_IMG(My_Variables->F_Prop[counter].image);
+        Save_IMG(My_Variables->F_Prop[counter].image, user_info);
     }
 }
 
@@ -538,3 +514,47 @@ void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_mat
 
     My_Variables->F_Prop[counter].preview_image_window = true;
 }
+
+static void ShowMainMenuBar(int* counter)
+{
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            ImGui::MenuItem("(demo menu)", NULL, false, false);
+            if (ImGui::MenuItem("New")) {}
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(counter); }
+            if (ImGui::MenuItem("Default Fallout Path")) { Set_Default_Path(&user_info); }
+            //if (ImGui::BeginMenu("Open Recent")) {}
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Edit"))
+        {
+            if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+            if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+            ImGui::Separator();
+            if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+            if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+            if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+}
+
+void Open_Files(int* counter) {
+        // Assigns image to Load_Files.image and loads palette for the image
+        // TODO: image needs to be less than 1 million pixels (1000x1000)
+        // to be viewable in Titanium FRM viewer, what's the limit in the game?
+        Load_Files(My_Variables.F_Prop, *counter);
+        if (My_Variables.PaletteColors == NULL)
+        {
+            My_Variables.PaletteColors = loadPalette("file name for palette here");
+        }
+        Image2Texture(My_Variables.F_Prop[*counter].image,
+            &My_Variables.F_Prop[*counter].Optimized_Texture,
+            &My_Variables.F_Prop[*counter].file_open_window);
+
+        if (My_Variables.F_Prop[*counter].c_name) { (*counter)++; }
+}
+

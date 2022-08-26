@@ -9,6 +9,9 @@
 #include "imgui-docking/imgui.h"
 #include "Load_Settings.h"
 
+void Set_Default_Path(user_info* user_info);
+void write_cfg_file(user_info* user_info);
+
 #pragma pack(push, 1)
 typedef struct {
 	uint32_t version = B_Endian::write_u32(4);					// 0x0000
@@ -28,6 +31,7 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
+
 char* Save_FRM(SDL_Surface *f_surface)
 {
 	FRM_Header FRM_Header;
@@ -36,7 +40,7 @@ char* Save_FRM(SDL_Surface *f_surface)
 	FRM_Header.Frame_Area	 = B_Endian::write_u32(f_surface->h * f_surface->w);
 	FRM_Header.Frame_0_Size	 = B_Endian::write_u32(f_surface->h * f_surface->w);
 
-	FILE * File_ptr;
+	FILE * File_ptr = NULL;
 	char * Save_File_Name;
 	char * lFilterPatterns[2] = { "", "*.FRM" };
 	Save_File_Name = tinyfd_saveFileDialog(
@@ -49,7 +53,6 @@ char* Save_FRM(SDL_Surface *f_surface)
 	if (Save_File_Name == NULL) {}
 	else
 	{
-		fopen_s(&File_ptr, Save_File_Name, "wb");
 		if (!File_ptr) {
 			tinyfd_messageBox(
 				"Error",
@@ -60,7 +63,8 @@ char* Save_FRM(SDL_Surface *f_surface)
 			//return 1;
 		}
 
-		fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+        fopen_s(&File_ptr, Save_File_Name, "wb");
+        fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 		fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
 
 		fclose(File_ptr);
@@ -69,7 +73,7 @@ char* Save_FRM(SDL_Surface *f_surface)
 	return Save_File_Name;
 }
 
-void Save_FRM_tiles(SDL_Surface *PAL_surface)
+void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 {
 	FRM_Header FRM_Header;
 	FRM_Header.Frame_0_Height = B_Endian::write_u16(300);
@@ -82,10 +86,11 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 	int q = 0;
 
 	char Save_File_Name[256];
-	char * folder_name = Save_File_Name;
+    char * folder_name = user_info->default_save_path;
 	FILE * File_ptr = NULL;
 
-	folder_name = write_config(folder_name);
+    folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
+
 	if (folder_name == NULL) { return; }
 
 	for (int y = 0; y < num_tiles_y; y++)
@@ -103,7 +108,6 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 					"ok",
 					"error",
 					1);
-				//return 1;
 			}
 			//save header
 			fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
@@ -120,15 +124,18 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface)
 	}
 }
 
-char* Save_IMG(SDL_Surface *b_surface)
+char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 {
 	//FILE * File_ptr;
+#define BUFFSIZE 256
 	char * Save_File_Name;
 	char * lFilterPatterns[2] = { "*.BMP", "" };
+    char buffer[BUFFSIZE];
+    snprintf(buffer, BUFFSIZE, "%s\\temp001.bmp", user_info->default_save_path);
 
 	Save_File_Name = tinyfd_saveFileDialog(
 		"default_name",
-		"temp001.BMP",
+		buffer,
 		2,
 		lFilterPatterns,
 		nullptr
@@ -138,73 +145,64 @@ char* Save_IMG(SDL_Surface *b_surface)
 	else
 	{
 		SDL_SaveBMP(b_surface, Save_File_Name);
-
-		//fopen_s(&File_ptr, Save_File_Name, "wb");
-
-		//if (!File_ptr) {
-		//	tinyfd_messageBox(
-		//		"Error",
-		//		"Can not open this file in write mode",
-		//		"ok",
-		//		"error",
-		//		1);
-		//	//return 1;
-		//}
-
-		//fwrite(&IMG_Header, sizeof(IMG_Header), 1, File_ptr);
-		//fwrite(b_surface->pixels, (b_surface->h * b_surface->w), 1, File_ptr);
-
-		//fclose(File_ptr);
+        strcpy(user_info->default_save_path, Save_File_Name);
 	}
 	return Save_File_Name;
 }
 
-char* write_config(char* folder_name)
+char* check_cfg_file(char* folder_name, user_info* user_info)
 {
 	FILE * config_file_ptr = NULL;
 	fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
 
 	if (!config_file_ptr) {
 
-		folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+		folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
 
-		fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-		fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
-		fclose(config_file_ptr);
+        write_cfg_file(user_info);
 		return folder_name;
 	}
 	else
 	{
-		int i = 0;
-		while (!feof(config_file_ptr)) {
-			fread(&folder_name[i++], 1, 1, config_file_ptr);
-		}
-		folder_name[i-1] = '\0';
-		fclose(config_file_ptr);
-
-		if (folder_name != NULL)
+        fclose(config_file_ptr);
+		if (strcmp(folder_name, ""))
 		{
 			folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
-
-			if (folder_name == NULL) { return NULL; }
-			else {
-				fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-				fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
-				fclose(config_file_ptr);
-				return folder_name;
-			}
+			return folder_name;
 		}
 		else
 		{
 			folder_name = tinyfd_selectFolderDialog(NULL, NULL);
-
-			if (folder_name == NULL) { return NULL; }
-			else {
-				fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-				fwrite(folder_name, strlen(folder_name), 1, config_file_ptr);
-				fclose(config_file_ptr);
-				return folder_name;
-			}
+			return folder_name;
 		}
 	}
+}
+
+void Set_Default_Path(user_info* user_info)
+{
+    char *ptr = user_info->default_game_path;
+    if (ptr) {
+        ptr = check_cfg_file(ptr, user_info);
+        if (!ptr) { return; }
+
+        strcpy(user_info->default_game_path, ptr);
+        if (!strcmp(user_info->default_save_path, "\0")) {
+            strcpy(user_info->default_save_path, ptr);
+        }
+        write_cfg_file(user_info);
+    }
+    else {
+        ptr = user_info->default_save_path;
+
+        if (!ptr) {
+            ptr = check_cfg_file(ptr, user_info);
+            if (!ptr) { return; }
+            strcpy(user_info->default_game_path, ptr);
+            strcpy(user_info->default_save_path, ptr);
+        }
+        else {
+            strcpy(user_info->default_game_path, ptr);
+        }
+        write_cfg_file(user_info);
+    }
 }
