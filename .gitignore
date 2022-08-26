@@ -9,3 +9,6 @@ temp/
 
 # ignore that pesky .vs folder
 .vs/
+
+# ignore the .git folder too?
+.git/
