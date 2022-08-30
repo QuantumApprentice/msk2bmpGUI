@@ -60,7 +60,6 @@ char* Save_FRM(SDL_Surface *f_surface)
 				"ok",
 				"error",
 				1);
-			//return 1;
 		}
 
         fopen_s(&File_ptr, Save_File_Name, "wb");
@@ -85,41 +84,50 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 	int num_tiles_y = PAL_surface->h / 300;
 	int q = 0;
 
-	char Save_File_Name[256];
-    char * folder_name = user_info->default_save_path;
+    char * folder_name = NULL;
+	char Save_File_Name[_MAX_PATH];
+    char buffer[_MAX_PATH];
+
+    if (!strcmp(user_info->default_game_path, "")) {
+        Set_Default_Path(user_info);
+        folder_name = strncpy(buffer, user_info->default_game_path, _MAX_PATH);
+        if (!strcmp(folder_name, "")) { return; }
+    }
+    folder_name = strncpy(buffer, user_info->default_game_path, _MAX_PATH);
+
 	FILE * File_ptr = NULL;
-
-    folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
-
-	if (folder_name == NULL) { return; }
 
 	for (int y = 0; y < num_tiles_y; y++)
 	{
 		for (int x = 0; x < num_tiles_x; x++)
 		{
 			//-------save file
-			sprintf(Save_File_Name, "%s\\wrldmp%02d.FRM", folder_name, q++);
+            sprintf(Save_File_Name, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", folder_name, q++);
 			fopen_s(&File_ptr, Save_File_Name, "wb");
 
 			if (!File_ptr) {
 				tinyfd_messageBox(
 					"Error",
-					"Can not open this file in write mode",
+					"Can not open this file in write mode.\n"
+                    "Make sure the default game path is set.",
 					"ok",
 					"error",
 					1);
+                return;
 			}
-			//save header
-			fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+            else {
+                //save header
+                fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 
-			int pixel_pointer = y * 300 * PAL_surface->pitch + x * 350;
-			for (int pixel_i = 0; pixel_i < 350; pixel_i++)
-			{
-				//write out one row of pixels in each loop
-				fwrite((uint8_t*)PAL_surface->pixels + pixel_pointer, 350, 1, File_ptr);
-				pixel_pointer += PAL_surface->pitch;
-			}
-			fclose(File_ptr);
+                int pixel_pointer = y * 300 * PAL_surface->pitch + x * 350;
+                for (int pixel_i = 0; pixel_i < 350; pixel_i++)
+                {
+                    //write out one row of pixels in each loop
+                    fwrite((uint8_t*)PAL_surface->pixels + pixel_pointer, 350, 1, File_ptr);
+                    pixel_pointer += PAL_surface->pitch;
+                }
+                fclose(File_ptr);
+            }
 		}
 	}
 }
@@ -145,7 +153,7 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 	else
 	{
 		SDL_SaveBMP(b_surface, Save_File_Name);
-        strcpy(user_info->default_save_path, Save_File_Name);
+        strncpy(user_info->default_save_path, Save_File_Name, 256);
 	}
 	return Save_File_Name;
 }

@@ -401,7 +401,7 @@ void ShowRenderWindow(variables *My_Variables,
         }
         else
         {
-            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
+Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
         }
     }
 
