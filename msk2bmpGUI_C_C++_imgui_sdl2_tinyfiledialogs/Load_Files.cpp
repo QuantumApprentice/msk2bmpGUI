@@ -16,14 +16,7 @@ void Load_Files(LF F_Prop[], int counter)
 		NULL,
 		1);
 	
-	if (!ptr) {
-		/*	tinyfd_messageBox(
-			"Error",
-			"No file opened...",
-			"ok",
-			"error",
-			0);		*/
-	}
+    if (!ptr) { return; }
 	else {
 		memcpy(F_Prop[counter].Opened_File, ptr, 256);
 		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
