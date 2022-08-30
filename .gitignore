@@ -8,7 +8,7 @@ temp/
 **/debug/
 
 # ignore that pesky .vs folder
-.vs/*
+.vs/**
 
 # ignore the .git folder too?
 .git/
