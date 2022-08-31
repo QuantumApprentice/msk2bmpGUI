@@ -17,4 +17,8 @@ temp/
 *.slo
 *.lo
 *.o
+*.ipdb
+*.iobj
 *.obj
+*.tlog
+*.log
