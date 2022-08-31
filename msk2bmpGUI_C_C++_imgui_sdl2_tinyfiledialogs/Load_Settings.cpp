@@ -12,13 +12,13 @@ char * folder_name;
 struct config_data {
 	int char_ptr = 0;
 	int column;
-	char key_buffer[256];
-	char val_buffer[256];
+	char key_buffer[_MAX_PATH];
+	char val_buffer[_MAX_PATH];
 } config_data;
 
 void Load_Config(struct user_info *user_info)
 {
-	char buffer[256];
+	char buffer[_MAX_PATH];
 	//uint8_t *fileData;
 	char* file_data;
 
@@ -27,11 +27,6 @@ void Load_Config(struct user_info *user_info)
 
 	if (!config_file_ptr) {
         write_cfg_file(user_info);
-		//fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-    //TODO add something to sprintf call to include the default save path somehow
-		//sprintf(buffer, "Default_Save_Path=\nDefault_Game_Path=");
-		//fwrite(buffer, strlen(buffer), 1, config_file_ptr);
-		//fclose(config_file_ptr);
 	}
 	else
 	{
