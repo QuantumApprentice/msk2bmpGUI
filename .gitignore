@@ -12,3 +12,9 @@ temp/
 
 # ignore the .git folder too?
 .git/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj

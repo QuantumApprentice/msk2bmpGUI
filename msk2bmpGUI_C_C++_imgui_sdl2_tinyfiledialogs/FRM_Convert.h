@@ -5,7 +5,7 @@
 SDL_Color* loadPalette(char * name);
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL);
 SDL_Surface* Load_FRM_Image(char *File_Name);
-SDL_Surface* Display_Palettized_Image(SDL_Surface* Render_Surface);
+SDL_Surface* Unpalettize_Image(SDL_Surface* Render_Surface);
 void SDL_Color_Match(SDL_Surface* Convert,
 	SDL_PixelFormat* pxlFMT_Pal,
 	SDL_Surface* Temp_Surface);

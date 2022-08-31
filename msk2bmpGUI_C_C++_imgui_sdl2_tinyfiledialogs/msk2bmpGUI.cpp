@@ -38,8 +38,7 @@ void Render_and_Save_FRM(variables *My_Variables, int counter);
 void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
-void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match);
-void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match);
+void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter);
 void Open_Files(int* counter);
@@ -188,8 +187,8 @@ int main(int, char**)
 
                 ImGui::DockBuilderDockWindow("###file", dock_id_left);
                 ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
-                ImGui::DockBuilderDockWindow("###preview00", dock_id_right);
-                ImGui::DockBuilderDockWindow("###render00", dock_main_id);
+                ImGui::DockBuilderDockWindow("###preview00", dock_main_id);
+                ImGui::DockBuilderDockWindow("###render00", dock_id_right);
 
                 for (int i = 1; i <= 99; i++) {
                     char buff[12];
@@ -197,8 +196,8 @@ int main(int, char**)
                     char buff2[13];
                     sprintf(buff2, "###preview%02d", i);
 
-                    ImGui::DockBuilderDockWindow(buff, dock_main_id);
-                    ImGui::DockBuilderDockWindow(buff2, dock_id_right);
+                    ImGui::DockBuilderDockWindow(buff, dock_id_right);
+                    ImGui::DockBuilderDockWindow(buff2, dock_main_id);
                 }
                 ImGui::DockBuilderFinish(dockspace_id);
             }
@@ -216,19 +215,11 @@ int main(int, char**)
 
             ImGui::End();
 
-            // TODO: make Show_Palette_Window automatically dock somewhere
             My_Variables.PaletteColors = loadPalette("file name for palette here");
-            My_Variables.F_Prop[counter].preview_tiles_window = true;
             Show_Palette_Window(&My_Variables, counter);
-
 
             for (int i = 0; i < counter; i++)
             {
-
-                //char buff2[13];
-                //sprintf(buff2, "###preview%02d", i);
-                //ImGuiID dockspace_id = ImGui::GetID(buff2);
-                //ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
                     Show_Preview_Window(&My_Variables, i);
@@ -272,17 +263,13 @@ int main(int, char**)
 
 void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
-    bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
-        || (My_Variables->F_Prop[counter].image->h != 300);
     std::string a = My_Variables->F_Prop[counter].c_name;
     char b[3];
     sprintf(b, "%02d", counter);
     std::string name = a + "###preview" + b;
 
-    //if (counter >= 01) {
-    //    ImGuiID dockspace_id = ImGui::GetID("###preview00");
-    //    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
-    //}
+    bool wrong_size = (My_Variables->F_Prop[counter].image->w != 350)
+        || (My_Variables->F_Prop[counter].image->h != 300);
 
     ImGui::Begin(name.c_str(), (&My_Variables->F_Prop[counter].file_open_window), 0);
     // Check image size to match tile size (350x300 pixels)
@@ -292,17 +279,22 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
                     My_Variables->F_Prop[counter].image->w,
                     My_Variables->F_Prop[counter].image->h);
         ImGui::Text("It needs to be a multiple of 350x300 pixels");
+    //Buttons
         if (ImGui::Button("Preview Tiles - SDL color match")) {
-            Preview_Tiles_Shortcut(My_Variables, counter, true);
+            Prep_Image(My_Variables, counter, true, 
+                &My_Variables->F_Prop[counter].preview_tiles_window);
         }
         if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-            Preview_Tiles_Shortcut(My_Variables, counter, false);
+            Prep_Image(My_Variables, counter, false, 
+                &My_Variables->F_Prop[counter].preview_tiles_window);
         }
         if (ImGui::Button("Preview as Image - SDL color match")) {
-            Preview_Image_Shortcut(My_Variables, counter, true);
+            Prep_Image(My_Variables, counter, true, 
+                &My_Variables->F_Prop[counter].preview_image_window);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
-            Preview_Image_Shortcut(My_Variables, counter, false);
+            Prep_Image(My_Variables, counter, false, 
+                &My_Variables->F_Prop[counter].preview_image_window);
         }
     }
     ImGui::Text(My_Variables->F_Prop[counter].c_name);
@@ -330,15 +322,12 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
             {
                 Top_Left.x = Origin.x + (i * 350);
                 Top_Left.y = Origin.y + (j * 300);
-
                 Bottom_Right = { Top_Left.x + 350, Top_Left.y + 300 };
-
                 Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
             }
         }
         // Preview tiles from red boxes
         if (My_Variables->F_Prop[counter].preview_tiles_window) {
-
             ShowRenderWindow(My_Variables, &Top_Left, &Bottom_Right,
                 &Origin, &max_box_x, &max_box_y, counter);
         }
@@ -351,31 +340,22 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-    if (My_Variables->F_Prop[counter].preview_tiles_window)
-    {
-        //std::string a = My_Variables->F_Prop[counter].c_name;
-        std::string name = "Default Fallout palette ###palette";
 
-        //////////////////////////////////////////////////////////////////////////////////////////
-        //ImGuiID dockspace_id = ImGui::GetWindowDockID();
-        //ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
-        //TODO
-        ImGui::Begin(name.c_str(),
-            &My_Variables->F_Prop[counter].preview_tiles_window);
+    bool palette_window = true;
+    std::string name = "Default Fallout palette ###palette";
+    ImGui::Begin(name.c_str(), &palette_window);
 
-        for (int y = 0; y < 16; y++) {
-            for (int x = 0; x < 16; x++) {
-                SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
-                float r = (float)color.r / 255.0f;
-                float g = (float)color.g / 255.0f;
-                float b = (float)color.b / 255.0f;
-                ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
-                if (x < 15) ImGui::SameLine();
-            }
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
+            float r = (float)color.r / 255.0f;
+            float g = (float)color.g / 255.0f;
+            float b = (float)color.b / 255.0f;
+            ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
+            if (x < 15) ImGui::SameLine();
         }
-        ImGui::End();
     }
-
+    ImGui::End();
 }
 
 void ShowRenderWindow(variables *My_Variables,
@@ -387,11 +367,6 @@ void ShowRenderWindow(variables *My_Variables,
     sprintf(b, "%02d", counter);
     std::string name = a + " Preview...###render" + b;
 
-    //if (counter >= 01) {
-    //    ImGuiID dockspace_id = ImGui::GetID("###render00");
-    //    ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_Once);
-    //}
-
     ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
     if (ImGui::Button("Save as Map Tiles...")) {
         My_Variables->Render_Window = true;
@@ -401,7 +376,7 @@ void ShowRenderWindow(variables *My_Variables,
         }
         else
         {
-Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
+            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
         }
     }
 
@@ -436,11 +411,10 @@ Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
 
 void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter)
 {
-    // TODO: make Show_Palette_Window automatically dock somewhere
-    Show_Palette_Window(My_Variables, counter);
-
+    char b[3];
+    sprintf(b, "%02d", counter);
     std::string a = My_Variables->F_Prop[counter].c_name;
-    std::string name = a + " Preview Window...";
+    std::string name = a + " Preview Window...###render" + b;
 
     ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_image_window, 0);
     if (ImGui::Button("Save as Image...")) {
@@ -468,7 +442,7 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
     ImGui::End();
 }
 
-// Final render
+// Final render and save
 void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
 {
     if (My_Variables->F_Prop[counter].preview_tiles_window) {
@@ -485,34 +459,17 @@ void Render_and_Save_FRM(variables *My_Variables, int counter)
     }
 }
 
-void Preview_Tiles_Shortcut(variables *My_Variables, int counter, bool color_match)
-{
+void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
+    //Paletize to 8-bit FO pallet, and dithered
     My_Variables->F_Prop[counter].Pal_Surface
         = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
-
+    //Unpalettize image to new surface for display
     My_Variables->F_Prop[counter].Final_Render
-        = Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
-
+        = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+    //Converts unpalettized image to texture for display, sets window bool to true
     Image2Texture(My_Variables->F_Prop[counter].Final_Render,
         &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        &My_Variables->F_Prop[counter].preview_tiles_window);
-
-    My_Variables->F_Prop[counter].preview_tiles_window = true;
-}
-
-void Preview_Image_Shortcut(variables *My_Variables, int counter, bool color_match)
-{
-    My_Variables->F_Prop[counter].Pal_Surface
-        = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
-
-    My_Variables->F_Prop[counter].Final_Render
-        = Display_Palettized_Image(My_Variables->F_Prop[counter].Pal_Surface);
-
-    Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-        &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        &My_Variables->F_Prop[counter].preview_image_window);
-
-    My_Variables->F_Prop[counter].preview_image_window = true;
+        preview_type);
 }
 
 static void ShowMainMenuBar(int* counter)

@@ -336,14 +336,13 @@ SDL_Surface* Load_FRM_Image(char *File_Name)
 	return Output_Surface;
 }
 
-SDL_Surface* Display_Palettized_Image(SDL_Surface* Surface)
+SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 {
 	uint16_t frame_width = Surface->w;
 	uint16_t frame_height = Surface->h;
 
 	SDL_PixelFormat pxlFMT_UnPal;
 	SDL_Surface* Output_Surface;
-	//Output_Surface = SDL_CreateRGBSurface(0, frame_width, frame_height, 32, 0, 0, 0, 0);
 	pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 	pxlFMT_UnPal.palette = NULL;
 	pxlFMT_UnPal.BitsPerPixel = 32;

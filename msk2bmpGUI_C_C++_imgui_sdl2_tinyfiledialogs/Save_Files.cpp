@@ -90,8 +90,7 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 
     if (!strcmp(user_info->default_game_path, "")) {
         Set_Default_Path(user_info);
-        folder_name = strncpy(buffer, user_info->default_game_path, _MAX_PATH);
-        if (!strcmp(folder_name, "")) { return; }
+        if (!strcmp(user_info->default_game_path, "")) { return; }
     }
     folder_name = strncpy(buffer, user_info->default_game_path, _MAX_PATH);
 
@@ -130,16 +129,15 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
             }
 		}
 	}
+    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
 
 char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 {
-	//FILE * File_ptr;
-#define BUFFSIZE 256
 	char * Save_File_Name;
 	char * lFilterPatterns[2] = { "*.BMP", "" };
-    char buffer[BUFFSIZE];
-    snprintf(buffer, BUFFSIZE, "%s\\temp001.bmp", user_info->default_save_path);
+    char buffer[_MAX_PATH];
+    snprintf(buffer, _MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
 
 	Save_File_Name = tinyfd_saveFileDialog(
 		"default_name",
@@ -153,7 +151,7 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 	else
 	{
 		SDL_SaveBMP(b_surface, Save_File_Name);
-        strncpy(user_info->default_save_path, Save_File_Name, 256);
+        strncpy(user_info->default_save_path, Save_File_Name, _MAX_PATH);
 	}
 	return Save_File_Name;
 }

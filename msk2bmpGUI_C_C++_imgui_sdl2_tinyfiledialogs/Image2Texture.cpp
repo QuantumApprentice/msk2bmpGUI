@@ -17,7 +17,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 	}
 	if (texture == NULL) {
 		printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
-		window = false;
+		*window = false;
 	}
 }
 
