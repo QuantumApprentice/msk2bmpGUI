@@ -31,7 +31,7 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-char* Save_FRM(SDL_Surface *f_surface)
+char* Save_FRM(SDL_Surface *f_surface, user_info* user_info)
 {
 	FRM_Header FRM_Header;
 	FRM_Header.Frame_0_Height   = B_Endian::write_u16(f_surface->h);
@@ -52,8 +52,10 @@ char* Save_FRM(SDL_Surface *f_surface)
 	if (Save_File_Name == NULL) {}
 	else
 	{
-        //TODO: parse Save_File_Name to isolate the directory
-        //strncpy(user_info->default_save_path, Save_File_Name, _MAX_PATH);
+        //parse Save_File_Name to isolate the directory and save in default_save_path
+        std::filesystem::path p(Save_File_Name);
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), _MAX_PATH);
+
         fopen_s(&File_ptr, Save_File_Name, "wb");
         if (!File_ptr) {
             tinyfd_messageBox(
@@ -62,14 +64,16 @@ char* Save_FRM(SDL_Surface *f_surface)
                 "ok",
                 "error",
                 1);
+            return NULL;
 		}
+        else {
+            fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+            //TODO: some image sizes are coming out weird again :(
+            fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
+            //TODO: also want to add animation frames
 
-        fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
-        //TODO: some image sizes are coming out weird again :(
-		fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
-        //TODO: also want to add animation frames
-
-		fclose(File_ptr);
+            fclose(File_ptr);
+        }
 	}
 
 	return Save_File_Name;
@@ -87,24 +91,24 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 	int num_tiles_y = PAL_surface->h / 300;
 	int q = 0;
 
-    char * folder_name = NULL;
 	char Save_File_Name[_MAX_PATH];
     char buffer[_MAX_PATH];
+    FILE * File_ptr = NULL;
+
 
     if (!strcmp(user_info->default_game_path, "")) {
         Set_Default_Path(user_info);
         if (!strcmp(user_info->default_game_path, "")) { return; }
     }
-    folder_name = strncpy(buffer, user_info->default_game_path, _MAX_PATH);
+    strncpy(buffer, user_info->default_game_path, _MAX_PATH);
 
-	FILE * File_ptr = NULL;
 
 	for (int y = 0; y < num_tiles_y; y++)
 	{
 		for (int x = 0; x < num_tiles_x; x++)
 		{
 			//-------save file
-            sprintf(Save_File_Name, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", folder_name, q++);
+            snprintf(Save_File_Name, _MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", buffer, q++);
 			fopen_s(&File_ptr, Save_File_Name, "wb");
 
 			if (!File_ptr) {
@@ -118,6 +122,7 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
                 return;
 			}
             else {
+
                 //save header
                 fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 
@@ -154,6 +159,7 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
     else
     {
         SDL_SaveBMP(b_surface, Save_File_Name);
+
         //parse Save_File_Name to isolate the directory and store in default_save_path
         std::filesystem::path p(Save_File_Name);
         strncpy(user_info->default_save_path, p.parent_path().string().c_str(), _MAX_PATH);

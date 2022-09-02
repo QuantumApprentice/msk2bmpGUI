@@ -12,11 +12,11 @@
 void Load_Files(LF F_Prop[], user_info* user_info, int counter)
 {
     char buffer[_MAX_PATH];
-    snprintf(buffer, _MAX_PATH, "%s\\temp001.bmp", user_info->default_load_path);
+    snprintf(buffer, _MAX_PATH, "%s\\", user_info->default_load_path);
 
 	char *ptr = tinyfd_openFileDialog(
 		"Open files...",
-        user_info->default_load_path,
+        buffer,
 		3,
 		F_Prop[counter].FilterPattern1,
 		NULL,

@@ -34,7 +34,7 @@ void ShowRenderWindow(variables *My_Variables,
 void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables, int counter);
-void Render_and_Save_FRM(variables *My_Variables, int counter);
+void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter);
 void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
@@ -374,7 +374,7 @@ void ShowRenderWindow(variables *My_Variables,
         My_Variables->Render_Window = true;
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
         {
-            Render_and_Save_IMG(My_Variables, &user_info, counter);
+            Save_IMG(My_Variables->F_Prop[counter].image, &user_info);
         }
         else
         {
@@ -425,11 +425,11 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
         {
-            Render_and_Save_IMG(My_Variables, user_info, counter);
+            Save_IMG(My_Variables->F_Prop[counter].image, user_info);
         }
         else
         {
-            Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
+            Save_FRM(My_Variables->F_Prop[counter].Pal_Surface, user_info);
         }
     }
     ImVec2 Origin = ImGui::GetItemRectMin();
@@ -445,21 +445,21 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 }
 
 // Final render and save
-void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
-{
-    if (My_Variables->F_Prop[counter].preview_image_window) {
-        Save_IMG(My_Variables->F_Prop[counter].image, user_info);
-    }
-}
-
-void Render_and_Save_FRM(variables *My_Variables, int counter)
-{   //TODO: add struct user_info* user_info to store default_save_path
-    if (My_Variables->F_Prop[counter].preview_tiles_window) {
-        // Saves the full image and does not cut into tiles
-        Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
-        //--------------------------------------------------
-    }
-}
+//void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
+//{
+//    if (My_Variables->F_Prop[counter].preview_image_window) {
+//        Save_IMG(My_Variables->F_Prop[counter].image, user_info);
+//    }
+//}
+//
+//void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter)
+//{
+//    if (My_Variables->F_Prop[counter].preview_tiles_window) {
+//        // Saves the full image and does not cut into tiles
+//        Save_FRM(My_Variables->F_Prop[counter].Pal_Surface, user_info);
+//        //--------------------------------------------------
+//    }
+//}
 
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
     //Paletize to 8-bit FO pallet, and dithered
