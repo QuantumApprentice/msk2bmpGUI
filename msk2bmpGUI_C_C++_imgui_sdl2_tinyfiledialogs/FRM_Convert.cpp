@@ -117,6 +117,7 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
 	uint8_t w_PaletteColor;
 	Pxl_info_32 abgr;
 	Pxl_err err;
+    int c = 100;
 	// Convert image color to indexed palette
 	for (int y = 0; y < Surface_32->h; y++)
 	{
@@ -138,12 +139,9 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
 
 			limit_dither(Surface_32, &err, pxl_index_arr);
 
-			if (i == 100)		{ printf("SDL loop #: %d\n", i); }
-			if (i == 1000)		{ printf("SDL loop #: %d\n", i); }
-			if (i == 10000)		{ printf("SDL loop #: %d\n", i); }
-			if (i == 100000)	{ printf("SDL loop #: %d\n", i); }
-			if (i == 1000000)	{ printf("SDL loop #: %d\n", i); }
-			if (i == 2000000)	{ printf("SDL loop #: %d\n", i); }
+            //TODO: need to clean this up
+            if (i == c) { printf("SDL color match loop #: %d\n", i);
+                          c *= 10; }
 
 			((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y)+x] = w_PaletteColor;
 		}
@@ -167,6 +165,7 @@ void Euclidian_Distance_Color_Match(
 	int w;
 
 	int pixel_idx = 0;
+    int c = 100;
 
 	for (int y = 0; y < Surface_32->h; y++)
 	{
@@ -208,12 +207,11 @@ void Euclidian_Distance_Color_Match(
 					limit_dither(Surface_32, &err, pxl_index_arr);
 				}
 			}
-			if (i == 100)		{ printf("loop #: %d\n", i); }
-			if (i == 1000)		{ printf("loop #: %d\n", i); }
-			if (i == 10000)		{ printf("loop #: %d\n", i); }
-			if (i == 100000)	{ printf("loop #: %d\n", i); }
-			if (i == 1000000)	{ printf("loop #: %d\n", i); }
-			if (i == 2000000)	{ printf("loop #: %d\n", i); }
+            //TODO: need to clean this up
+            if (i == c) {
+                printf("SDL color match loop #: %d\n", i);
+                c *= 10;
+            }
 
 			((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = w_PaletteColor;
 		}
@@ -354,20 +352,6 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 	}
 	return Output_Surface;
 }
-
-//// Might need to use templates or #define for something like this
-//struct Pxl_Info* Pxl_Size_Selector(SDL_Surface* surface)
-//{
-//	if (surface->format->BitsPerPixel == 8)
-//	{
-//		struct Pxl_Info_8* Pxl_Infoa;
-//		return (Pxl_Info*)Pxl_Infoa;
-//	}
-//	else
-//	{
-//		k = (surface->w)*(surface->h) / 4;
-//	}
-//}
 
 void Palette_to_Texture()
 {

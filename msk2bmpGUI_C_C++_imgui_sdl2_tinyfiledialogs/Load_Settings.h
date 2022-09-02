@@ -1,7 +1,10 @@
 #pragma once
+#include <filesystem>
+
 struct user_info {
-	char default_save_path[256];
-    char default_game_path[256];
+	char default_save_path[_MAX_PATH];
+    char default_game_path[_MAX_PATH];
+    char default_load_path[_MAX_PATH];
 	size_t length;
 };
 

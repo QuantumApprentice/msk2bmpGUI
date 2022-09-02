@@ -1,16 +1,22 @@
-#include "Load_Files.h"
-#include "tinyfiledialogs.h"
-#include "Image2Texture.h"
-#include "FRM_Convert.h"
 #include <stdio.h>
 #include <string.h>
 #include <SDL_image.h>
+#include <filesystem>
 
-void Load_Files(LF F_Prop[], int counter)
+#include "Load_Files.h"
+#include "Load_Settings.h"
+#include "tinyfiledialogs.h"
+#include "Image2Texture.h"
+#include "FRM_Convert.h"
+
+void Load_Files(LF F_Prop[], user_info* user_info, int counter)
 {
+    char buffer[_MAX_PATH];
+    snprintf(buffer, _MAX_PATH, "%s\\temp001.bmp", user_info->default_load_path);
+
 	char *ptr = tinyfd_openFileDialog(
 		"Open files...",
-		"",
+        user_info->default_load_path,
 		3,
 		F_Prop[counter].FilterPattern1,
 		NULL,
@@ -18,9 +24,12 @@ void Load_Files(LF F_Prop[], int counter)
 	
     if (!ptr) { return; }
 	else {
-		memcpy(F_Prop[counter].Opened_File, ptr, 256);
+		memcpy(F_Prop[counter].Opened_File, ptr, _MAX_PATH);
 		F_Prop[counter].c_name = strrchr(F_Prop[counter].Opened_File, '/\\') + 1;
 		F_Prop[counter].extension = strrchr(F_Prop[counter].Opened_File, '.') + 1;
+
+        std::filesystem::path p(ptr);
+        strncpy(user_info->default_load_path, p.parent_path().string().c_str(), _MAX_PATH);
 
 		printf("extension: %s\n", F_Prop[counter].extension);
 		// TODO change strncmp to more secure varient when I figure out what that is :P

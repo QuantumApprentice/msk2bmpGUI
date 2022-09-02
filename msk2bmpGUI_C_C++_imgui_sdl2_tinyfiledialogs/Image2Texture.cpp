@@ -5,11 +5,12 @@
 
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
+    //TODO: Need to work on a zoom feature
 	SDL_Surface* Temp_Surface = NULL;
 	if (surface)
 	{
 		//SDL_FreeSurface(Temp_Surface);
-		Temp_Surface = 
+		Temp_Surface =
 			SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
 
 		SDL_to_OpenGl(Temp_Surface, texture);

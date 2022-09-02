@@ -31,14 +31,13 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-
 char* Save_FRM(SDL_Surface *f_surface)
 {
 	FRM_Header FRM_Header;
-	FRM_Header.Frame_0_Height = B_Endian::write_u16(f_surface->h);
-	FRM_Header.Frame_0_Width  = B_Endian::write_u16(f_surface->w);
-	FRM_Header.Frame_Area	 = B_Endian::write_u32(f_surface->h * f_surface->w);
-	FRM_Header.Frame_0_Size	 = B_Endian::write_u32(f_surface->h * f_surface->w);
+	FRM_Header.Frame_0_Height   = B_Endian::write_u16(f_surface->h);
+	FRM_Header.Frame_0_Width    = B_Endian::write_u16(f_surface->w);
+	FRM_Header.Frame_Area       = B_Endian::write_u32(f_surface->h * f_surface->w);
+	FRM_Header.Frame_0_Size     = B_Endian::write_u32(f_surface->h * f_surface->w);
 
 	FILE * File_ptr = NULL;
 	char * Save_File_Name;
@@ -53,18 +52,22 @@ char* Save_FRM(SDL_Surface *f_surface)
 	if (Save_File_Name == NULL) {}
 	else
 	{
-		if (!File_ptr) {
-			tinyfd_messageBox(
-				"Error",
-				"Can not open this file in write mode",
-				"ok",
-				"error",
-				1);
+        //TODO: parse Save_File_Name to isolate the directory
+        //strncpy(user_info->default_save_path, Save_File_Name, _MAX_PATH);
+        fopen_s(&File_ptr, Save_File_Name, "wb");
+        if (!File_ptr) {
+            tinyfd_messageBox(
+                "Error",
+                "Can not open this file in write mode",
+                "ok",
+                "error",
+                1);
 		}
 
-        fopen_s(&File_ptr, Save_File_Name, "wb");
         fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+        //TODO: some image sizes are coming out weird again :(
 		fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
+        //TODO: also want to add animation frames
 
 		fclose(File_ptr);
 	}
@@ -134,26 +137,28 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 
 char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 {
-	char * Save_File_Name;
-	char * lFilterPatterns[2] = { "*.BMP", "" };
+    char * Save_File_Name;
+    char * lFilterPatterns[2] = { "*.BMP", "" };
     char buffer[_MAX_PATH];
     snprintf(buffer, _MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
 
-	Save_File_Name = tinyfd_saveFileDialog(
-		"default_name",
-		buffer,
-		2,
-		lFilterPatterns,
-		nullptr
-	);
+    Save_File_Name = tinyfd_saveFileDialog(
+        "default_name",
+        buffer,
+        2,
+        lFilterPatterns,
+        nullptr
+    );
 
-	if (!Save_File_Name) {}
-	else
-	{
-		SDL_SaveBMP(b_surface, Save_File_Name);
-        strncpy(user_info->default_save_path, Save_File_Name, _MAX_PATH);
-	}
-	return Save_File_Name;
+    if (!Save_File_Name) {}
+    else
+    {
+        SDL_SaveBMP(b_surface, Save_File_Name);
+        //parse Save_File_Name to isolate the directory and store in default_save_path
+        std::filesystem::path p(Save_File_Name);
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), _MAX_PATH);
+    }
+    return Save_File_Name;
 }
 
 char* check_cfg_file(char* folder_name, user_info* user_info)

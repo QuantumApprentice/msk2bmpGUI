@@ -41,7 +41,7 @@ void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter);
-void Open_Files(int* counter);
+void Open_Files(struct user_info* user_info, int* counter);
 void Set_Default_Path(struct user_info* user_info);
 
 // Main code
@@ -206,7 +206,7 @@ int main(int, char**)
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
             if (ImGui::Button("Load Files...")) { 
-                Open_Files(&counter);
+                Open_Files(&user_info, &counter);
             }
 
             ImGui::SameLine();
@@ -257,6 +257,8 @@ int main(int, char**)
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    write_cfg_file(&user_info);
 
     return 0;
 }
@@ -340,7 +342,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-
+    //TODO: need to add animated colors (FRM_Animate.cpp)
     bool palette_window = true;
     std::string name = "Default Fallout palette ###palette";
     ImGui::Begin(name.c_str(), &palette_window);
@@ -445,13 +447,13 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 // Final render and save
 void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
 {
-    if (My_Variables->F_Prop[counter].preview_tiles_window) {
+    if (My_Variables->F_Prop[counter].preview_image_window) {
         Save_IMG(My_Variables->F_Prop[counter].image, user_info);
     }
 }
 
 void Render_and_Save_FRM(variables *My_Variables, int counter)
-{
+{   //TODO: add struct user_info* user_info to store default_save_path
     if (My_Variables->F_Prop[counter].preview_tiles_window) {
         // Saves the full image and does not cut into tiles
         Save_FRM(My_Variables->F_Prop[counter].Pal_Surface);
@@ -480,7 +482,7 @@ static void ShowMainMenuBar(int* counter)
         {
             ImGui::MenuItem("(demo menu)", NULL, false, false);
             if (ImGui::MenuItem("New")) {}
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(counter); }
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter); }
             if (ImGui::MenuItem("Default Fallout Path")) { Set_Default_Path(&user_info); }
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
@@ -499,11 +501,11 @@ static void ShowMainMenuBar(int* counter)
     }
 }
 
-void Open_Files(int* counter) {
+void Open_Files(struct user_info* user_info, int* counter) {
         // Assigns image to Load_Files.image and loads palette for the image
         // TODO: image needs to be less than 1 million pixels (1000x1000)
         // to be viewable in Titanium FRM viewer, what's the limit in the game?
-        Load_Files(My_Variables.F_Prop, *counter);
+        Load_Files(My_Variables.F_Prop, user_info, *counter);
         if (My_Variables.PaletteColors == NULL)
         {
             My_Variables.PaletteColors = loadPalette("file name for palette here");

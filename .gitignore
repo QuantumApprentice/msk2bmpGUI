@@ -22,3 +22,6 @@ temp/
 *.obj
 *.tlog
 *.log
+
+# ignore the imgui.ini file
+imgui.ini
