@@ -1,4 +1,3 @@
-
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include <stdio.h>
 #include <cstdint>
@@ -8,11 +7,9 @@
 #include "FRM_Animate.h"
 #include "FRM_Convert.h"
 
-
 //typedef uint8_t BYTE;
 typedef Uint8 BYTE;
 typedef uint16_t DWORD;
-
 
 // Palette
 BYTE g_Palette[768];
@@ -86,11 +83,11 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_num, 
 
 void AnimatePalette(SDL_Color * PaletteColors)
 {
-	bool bPaletteChanged = false;
-	DWORD dwCurrentTime = clock();
+    bool bPaletteChanged = false;
+    DWORD dwCurrentTime = clock();
 
-	if (dwCurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
-		// Slime    ///////////////////////////////////////////////////////
+    if (dwCurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
+        // Slime    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwSlimeCurrent, 229, g_nSlime, 3);
 
         // Shoreline    ///////////////////////////////////////////////////////
