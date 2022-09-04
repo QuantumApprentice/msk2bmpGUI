@@ -29,7 +29,6 @@ union Pxl_err {
 	int arr[4];
 };
 
-uint8_t convert_colors(uint8_t bytes);
 
 // Used to convert Fallout's palette colors to normal values
 uint8_t convert_colors(uint8_t bytes) {

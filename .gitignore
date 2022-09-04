@@ -24,4 +24,4 @@ temp/
 *.log
 
 # ignore the imgui.ini file
-imgui.ini
+msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/imgui.ini

@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <SDL.h>
 #include <glad/glad.h>
+#include <fstream>
+#include <sstream>
 //#include <SDL_opengl.h>
 // My header files
 #include <iostream>
@@ -18,9 +20,8 @@
 #include "FRM_Convert.h"
 #include "Save_Files.h"
 #include "Image2Texture.h"
-#include <fstream>
-#include <sstream>
 #include "Load_Settings.h"
+#include "FRM_Animate.h"
 
 // Our state
 struct variables My_Variables = {};
@@ -34,8 +35,8 @@ void ShowRenderWindow(variables *My_Variables,
 void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables, int counter);
-void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter);
-void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
+//void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter);
+//void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
@@ -48,6 +49,7 @@ void Set_Default_Path(struct user_info* user_info);
 int main(int, char**)
 {
     Load_Config(&user_info);
+    My_Variables.PaletteColors = loadPalette("file name for palette here");
 
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
@@ -215,7 +217,6 @@ int main(int, char**)
 
             ImGui::End();
 
-            My_Variables.PaletteColors = loadPalette("file name for palette here");
             Show_Palette_Window(&My_Variables, counter);
 
             for (int i = 0; i < counter; i++)
@@ -355,6 +356,9 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             float b = (float)color.b / 255.0f;
             ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
             if (x < 15) ImGui::SameLine();
+            if (y*16+x >= 229) {
+                AnimatePalette(My_Variables->PaletteColors);
+            }
         }
     }
     ImGui::End();

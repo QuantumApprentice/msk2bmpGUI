@@ -2,6 +2,8 @@
 #include <SDL.h>
 #include "Load_Files.h"
 
+uint8_t convert_colors(uint8_t bytes);
+
 SDL_Color* loadPalette(char * name);
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL);
 SDL_Surface* Load_FRM_Image(char *File_Name);
