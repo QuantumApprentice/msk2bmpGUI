@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="B_Endian.cpp" />
+    <ClCompile Include="Edit_Image.cpp" />
     <ClCompile Include="FRM_Animate.cpp" />
     <ClCompile Include="FRM_Convert.cpp" />
     <ClCompile Include="glad\src\glad.c" />
@@ -166,6 +167,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="B_Endian.h" />
+    <ClInclude Include="Edit_Image.h" />
     <ClInclude Include="FRM_Animate.h" />
     <ClInclude Include="FRM_Convert.h" />
     <ClInclude Include="Image2Texture.h" />

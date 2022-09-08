@@ -22,21 +22,21 @@
 #include "Image2Texture.h"
 #include "Load_Settings.h"
 #include "FRM_Animate.h"
+#include "Edit_Image.h"
 
 // Our state
 struct variables My_Variables = {};
 struct user_info user_info;
 
 // Function declarations
-void Show_Preview_Window(variables *My_Variables, int counter); //, SDL_Renderer* renderer);
+void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
 void ShowRenderWindow(variables *My_Variables,
     ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
     int *max_box_x, int *max_box_y, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
+void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter, SDL_Event* event);
 
 void Show_Palette_Window(struct variables *My_Variables, int counter);
-//void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter);
-//void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
@@ -187,19 +187,23 @@ int main(int, char**)
                 ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
                 ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
 
-                ImGui::DockBuilderDockWindow("###file", dock_id_left);
-                ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
+                ImGui::DockBuilderDockWindow("###file",      dock_id_left);
+                ImGui::DockBuilderDockWindow("###palette",   dock_id_bottom_left);
                 ImGui::DockBuilderDockWindow("###preview00", dock_main_id);
-                ImGui::DockBuilderDockWindow("###render00", dock_id_right);
+                ImGui::DockBuilderDockWindow("###render00",  dock_id_right);
+                ImGui::DockBuilderDockWindow("###edit00",    dock_main_id);
 
                 for (int i = 1; i <= 99; i++) {
-                    char buff[12];
-                    sprintf(buff, "###render%02d", i);
-                    char buff2[13];
-                    sprintf(buff2, "###preview%02d", i);
+                    char buff[13];
+                    sprintf(buff, "###preview%02d", i);
+                    char buff2[12];
+                    sprintf(buff2, "###render%02d", i);
+                    char buff3[10];
+                    sprintf(buff2, "###edit%02d", i);
 
-                    ImGui::DockBuilderDockWindow(buff, dock_id_right);
-                    ImGui::DockBuilderDockWindow(buff2, dock_main_id);
+                    ImGui::DockBuilderDockWindow(buff, dock_main_id);
+                    ImGui::DockBuilderDockWindow(buff2, dock_id_right);
+                    ImGui::DockBuilderDockWindow(buff3, dock_main_id);
                 }
                 ImGui::DockBuilderFinish(dockspace_id);
             }
@@ -223,7 +227,7 @@ int main(int, char**)
             {
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
-                    Show_Preview_Window(&My_Variables, i);
+                    Show_Preview_Window(&My_Variables, i, &event);
                 }
             }
         }
@@ -264,7 +268,7 @@ int main(int, char**)
     return 0;
 }
 
-void Show_Preview_Window(struct variables *My_Variables, int counter)
+void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
     char b[3];
@@ -275,6 +279,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
         || (My_Variables->F_Prop[counter].image->h != 300);
 
     ImGui::Begin(name.c_str(), (&My_Variables->F_Prop[counter].file_open_window), 0);
+
     // Check image size to match tile size (350x300 pixels)
     if (wrong_size) {
         ImGui::Text("This image is the wrong size to make a tile...");
@@ -286,6 +291,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
         if (ImGui::Button("Preview Tiles - SDL color match")) {
             Prep_Image(My_Variables, counter, true, 
                 &My_Variables->F_Prop[counter].preview_tiles_window);
+        }
+        ImGui::SameLine(500);
+        if (ImGui::Button("SDL Convert and Paint")) {
+            Prep_Image(My_Variables, counter, true,
+                &My_Variables->F_Prop[counter].edit_image_window);
         }
         if (ImGui::Button("Preview Tiles - Euclidian color match")) {
             Prep_Image(My_Variables, counter, false, 
@@ -300,6 +310,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
                 &My_Variables->F_Prop[counter].preview_image_window);
         }
     }
+
     ImGui::Text(My_Variables->F_Prop[counter].c_name);
     ImGui::Image(
         (ImTextureID)My_Variables->F_Prop[counter].Optimized_Texture,
@@ -329,6 +340,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
                 Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
             }
         }
+
         // Preview tiles from red boxes
         if (My_Variables->F_Prop[counter].preview_tiles_window) {
             ShowRenderWindow(My_Variables, &Top_Left, &Bottom_Right,
@@ -337,6 +349,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
         // Preview full image
         if (My_Variables->F_Prop[counter].preview_image_window) {
             Show_Image_Render(My_Variables, &user_info, counter);
+        }
+        // Edit full image
+        if (My_Variables->F_Prop[counter].edit_image_window) {
+            Edit_Image_Window(My_Variables, &user_info, counter, event);
         }
     }
     ImGui::End();
@@ -350,13 +366,22 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
 
     for (int y = 0; y < 16; y++) {
         for (int x = 0; x < 16; x++) {
-            SDL_Color color = My_Variables->PaletteColors[y * 16 + x];
+
+            int index = y * 16 + x;
+            SDL_Color color = My_Variables->PaletteColors[index];
             float r = (float)color.r / 255.0f;
             float g = (float)color.g / 255.0f;
             float b = (float)color.b / 255.0f;
-            ImGui::ColorButton("##aa", ImVec4(r, g, b, 1.0f));
+
+            char q[12];
+            snprintf(q, 12, "##aa%d", index);
+            if (ImGui::ColorButton(q, ImVec4(r, g, b, 1.0f))) {
+                My_Variables->Color_Pick = (uint8_t)(index);
+            }
+
             if (x < 15) ImGui::SameLine();
-            if (y*16+x >= 229) {
+
+            if ((index) >= 229) {
                 AnimatePalette(My_Variables->PaletteColors);
             }
         }
@@ -448,35 +473,36 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
     ImGui::End();
 }
 
-// Final render and save
-//void Render_and_Save_IMG(variables *My_Variables, struct user_info* user_info, int counter)
-//{
-//    if (My_Variables->F_Prop[counter].preview_image_window) {
-//        Save_IMG(My_Variables->F_Prop[counter].image, user_info);
-//    }
-//}
-//
-//void Render_and_Save_FRM(variables *My_Variables, struct user_info* user_info, int counter)
-//{
-//    if (My_Variables->F_Prop[counter].preview_tiles_window) {
-//        // Saves the full image and does not cut into tiles
-//        Save_FRM(My_Variables->F_Prop[counter].Pal_Surface, user_info);
-//        //--------------------------------------------------
-//    }
-//}
+void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter, SDL_Event* event) {
+    char b[3];
+    sprintf(b, "%02d", counter);
+    std::string a = My_Variables->F_Prop[counter].c_name;
+    std::string name = a + " Edit Window...###edit" + b;
 
-void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
-    //Paletize to 8-bit FO pallet, and dithered
-    My_Variables->F_Prop[counter].Pal_Surface
-        = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
-    //Unpalettize image to new surface for display
-    My_Variables->F_Prop[counter].Final_Render
-        = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
-    //Converts unpalettized image to texture for display, sets window bool to true
-    Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-        &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        preview_type);
+    ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].edit_image_window, 0);
+    if (ImGui::Button("Save as Map Tiles...")) {
+        Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, user_info);
+    }
+    ImGui::Image(
+        (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
+        ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+
+    Edit_Image(My_Variables, counter, event);
+
+    if (ImGui::Button("Create Mask Tiles...")) {
+        Map_Mask(My_Variables, event, counter);
+        My_Variables->F_Prop[counter].edit_map_mask = true;
+
+    }
+    if (My_Variables->F_Prop[counter].edit_map_mask) {
+        ImGui::Image(
+            (ImTextureID)My_Variables->F_Prop[counter].Map_Mask,
+            ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+    }
+
+    ImGui::End();
 }
+
 
 static void ShowMainMenuBar(int* counter)
 {
@@ -520,4 +546,3 @@ void Open_Files(struct user_info* user_info, int* counter) {
 
         if (My_Variables.F_Prop[*counter].c_name) { (*counter)++; }
 }
-

@@ -8,13 +8,10 @@
 #include "FRM_Convert.h"
 
 //typedef uint8_t BYTE;
-typedef Uint8 BYTE;
+typedef uint8_t BYTE;
 typedef uint16_t DWORD;
 
-// Palette
-BYTE g_Palette[768];
-
-// Palette color arrays
+// Palette color arrays   r,   g,   b
 BYTE g_nSlime[] =     {   0, 108,   0,                              // Slime
                          11, 115,   7,
                          27, 123,  15,
@@ -29,11 +26,11 @@ BYTE g_nFireSlow[] =  { 255,   0,   0,                              // Slow fire
                         147,  43,  11,
                         255, 119,   0,
                         255,  59,   0 };
-BYTE g_nFireFast[] =  { 71,    0,   0,                              // Fast fire
+BYTE g_nFireFast[] =  {  71,   0,   0,                              // Fast fire
                         123,   0,   0,
                         179,   0,   0,
                         123,   0,   0,
-                        71,    0,   0 };
+                         71,   0,   0 };
 BYTE g_nShoreline[] = {  83,  63,  43,                              // Shoreline
                          75,  59,  43,
                          67,  55,  39,
@@ -51,25 +48,32 @@ DWORD g_dwShorelineCurrent  = 0;
 BYTE  g_nBlinkingRedCurrent = 0;
 
 // Time of Last changinge
-DWORD g_dwLastCycleSlow     = 0;
-DWORD g_dwLastCycleMedium   = 0;
-DWORD g_dwLastCycleFast     = 0;
-DWORD g_dwLastCycleVeryFast = 0;
+uint32_t g_dwLastCycleSlow     = 0;
+uint32_t g_dwLastCycleMedium   = 0;
+uint32_t g_dwLastCycleFast     = 0;
+uint32_t g_dwLastCycleVeryFast = 0;
 
 // Current speed factor
 DWORD g_dwCycleSpeedFactor = 1;
 
-void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_num, uint8_t * colors, int count)
+void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors, SDL_Surface* Final_Render) 
+{
+    SDL_Color animated_pixel = PaletteColors[((uint8_t*)PAL_Surface->pixels)[i]];
+    animated_pixel.a = 255;
+    ((SDL_Color*)Final_Render->pixels)[i] = animated_pixel;
+}
+
+void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
 {
     DWORD Current_Frame = *g_dwCurrent;
-    for (int i = count; i >= 0; i--) {
-        PaletteColors[pal_num + i] = SDL_Color {
-                (Uint8)(colors[Current_Frame * 3 + 0]),                        // Red
-                (Uint8)(colors[Current_Frame * 3 + 1]),                        // Green
-                (Uint8)(colors[Current_Frame * 3 + 2])                         // Blue
+    for (int i = cycle_count; i >= 0; i--) {
+        PaletteColors[pal_index + i] = SDL_Color {
+                cycle_colors[Current_Frame * 3 + 0],                        // Red
+                cycle_colors[Current_Frame * 3 + 1],                        // Green
+                cycle_colors[Current_Frame * 3 + 2]                         // Blue
         };
 
-        if (Current_Frame == count)
+        if (Current_Frame == cycle_count)
             Current_Frame = 0;
         else
             Current_Frame++;
@@ -84,15 +88,13 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_num, 
 void AnimatePalette(SDL_Color * PaletteColors)
 {
     bool bPaletteChanged = false;
-    DWORD dwCurrentTime = clock();
+    uint32_t dwCurrentTime = clock();//SDL_GetTicks();
 
     if (dwCurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
         // Slime    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwSlimeCurrent, 229, g_nSlime, 3);
-
         // Shoreline    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwShorelineCurrent, 248, g_nShoreline, 5);
-
         // Fire_slow    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
 
@@ -128,9 +130,9 @@ void AnimatePalette(SDL_Color * PaletteColors)
             g_nBlinkingRed = BYTE(-g_nBlinkingRed);
 
         PaletteColors[254] = SDL_Color{
-                (Uint8)(g_nBlinkingRed + g_nBlinkingRedCurrent),                        // Red
-                (Uint8)(0),                                                             // Green
-                (Uint8)(0)                                                              // Blue
+                (uint8_t)(g_nBlinkingRed + g_nBlinkingRedCurrent),             // Red
+                0,                                                             // Green
+                0                                                              // Blue
         };
 
         g_nBlinkingRedCurrent = g_nBlinkingRed + g_nBlinkingRedCurrent;
