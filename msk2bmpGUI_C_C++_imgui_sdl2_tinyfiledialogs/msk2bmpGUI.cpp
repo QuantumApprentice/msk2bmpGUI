@@ -10,6 +10,9 @@
 #include "imgui-docking/imgui_internal.h"
 #include <stdio.h>
 #include <SDL.h>
+
+#include <SDL_blendmode.h>
+
 #include <glad/glad.h>
 #include <fstream>
 #include <sstream>
@@ -485,19 +488,29 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     }
     ImGui::Image(
         (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+        ImVec2(My_Variables->F_Prop[counter].image->w,
+            My_Variables->F_Prop[counter].image->h));
+    ImVec2 Origin = ImGui::GetItemRectMin();
 
     Edit_Image(My_Variables, counter, event);
 
     if (ImGui::Button("Create Mask Tiles...")) {
-        Map_Mask(My_Variables, event, counter);
+        Create_Map_Mask(My_Variables, event, counter);
         My_Variables->F_Prop[counter].edit_map_mask = true;
-
     }
+
     if (My_Variables->F_Prop[counter].edit_map_mask) {
-        ImGui::Image(
-            (ImTextureID)My_Variables->F_Prop[counter].Map_Mask,
-            ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+
+        ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+
+        int* width = &My_Variables->F_Prop[counter].image->w;
+        int* height = &My_Variables->F_Prop[counter].image->h;
+        ImVec2 Bottom_Right = { *width + Origin.x, *height + Origin.y };
+
+        Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+                             Origin, Bottom_Right);
+
+        Edit_Map_Mask(My_Variables, event, counter);
     }
 
     ImGui::End();

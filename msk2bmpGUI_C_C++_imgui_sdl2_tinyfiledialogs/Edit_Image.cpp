@@ -11,7 +11,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //ImVec2 Top_Left = Origin;
     int width = My_Variables->F_Prop[counter].image->w;
     int height = My_Variables->F_Prop[counter].image->h;
-    int size = My_Variables->F_Prop[counter].Pal_Surface->w * My_Variables->F_Prop[counter].Pal_Surface->h;
+    int size = width * height;
 
     //ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
     //Draw_List->AddRectFilled(Top_Left, Bottom_Right, 0x5f0000ff, 0, ImDrawFlags_Closed);
@@ -30,6 +30,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
                     = My_Variables->Color_Pick;
             }
             //TODO: maybe pass the dithering choice through?
+
             //Unpalettize image to new surface for display
             SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
             My_Variables->F_Prop[counter].Final_Render
@@ -49,31 +50,35 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     Image2Texture(My_Variables->F_Prop[counter].Final_Render,
         &My_Variables->F_Prop[counter].Optimized_Render_Texture,
         &My_Variables->F_Prop[counter].edit_image_window);
-
-
 }
 
-void Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
+void Create_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
 {
-    //SDL_FreeSurface(BB_Surface);
-    //SDL_FreeSurface(My_Variables->F_Prop[counter].Map_Mask);
     int* width = &My_Variables->F_Prop[counter].image->w;
     int* height = &My_Variables->F_Prop[counter].image->h;
-    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, *width, *height, 32, 0, 0, 0, 255);
-    SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
-    for (int i = 0; i < (*width)*(*height); i++)
-    {
-        ((ImVec4*)BB_Surface->pixels)[i] = ImVec4(128, 128, 128, 255);
+
+    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, *width, *height, 32, 0, 0, 0, 0);
+    if (My_Variables->F_Prop[counter].Map_Mask) {
+        SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
+        for (int i = 0; i < (*width)*(*height); i++)
+        {
+            ((SDL_Color*)BB_Surface->pixels)[i] = SDL_Color{ 64, 0, 0, 128 };
+        }
+    }
+    else {
+        printf("Can't allocate surface for some reason...");
     }
 }
 
 void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
 {
-    SDL_FreeSurface(My_Variables->F_Prop[counter].Map_Mask);
     int* width = &My_Variables->F_Prop[counter].image->w;
     int* height = &My_Variables->F_Prop[counter].image->h;
+
+
     ImVec2 Origin = ImGui::GetItemRectMin();
     ImVec2 Bottom_Right = { *width + Origin.x, *height + Origin.y };
+
     SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
 
     float x, y;
@@ -88,10 +93,15 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
 
             for (int i = 0; i < 4; i++)
             {
-                ((uint8_t*)BB_Surface->pixels)[(pitch*(int)y) + (int)x + i] = My_Variables->Color_Pick;
+                ((SDL_Color*)BB_Surface->pixels)[(pitch*(int)y) + (int)x + i] = 
+                    SDL_Color{ 255, 255, 255, 255 };
             }
-
         }
     }
 
+    //SDL_BlitSurface();
+
+    Image2Texture(BB_Surface,
+        &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+        &My_Variables->F_Prop[counter].edit_image_window);
 }
