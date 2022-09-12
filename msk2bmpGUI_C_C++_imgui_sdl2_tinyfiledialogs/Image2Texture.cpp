@@ -32,14 +32,13 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
         int bpp;
         Uint32 Rmask, Gmask, Bmask, Amask;
         SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ABGR8888, &bpp,
-            &Rmask, &Gmask, &Bmask, &Amask
-        );
+            &Rmask, &Gmask, &Bmask, &Amask );
+
         /* Create surface that will hold pixels passed into OpenGL. */
         SDL_Surface *img_rgba8888 = SDL_CreateRGBSurface(0,
             Temp_Surface->w,
             Temp_Surface->h,
-            bpp, Rmask, Gmask, Bmask, Amask
-        );
+            bpp, Rmask, Gmask, Bmask, Amask );
 
         //SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
         //SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
@@ -47,7 +46,9 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
 
         printf("glError: %d\n", glGetError());
 
-        glGenTextures(1, texture);
+        if (!glIsTexture(*texture)) {
+            glGenTextures(1, texture);
+        }
         glBindTexture(GL_TEXTURE_2D, *texture);
 
         // Setup filtering parameters for display

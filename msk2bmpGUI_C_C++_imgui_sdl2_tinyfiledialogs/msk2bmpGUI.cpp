@@ -8,17 +8,18 @@
 #include "imgui-docking/imgui_impl_sdl.h"
 #include "imgui-docking/imgui_impl_opengl3.h"
 #include "imgui-docking/imgui_internal.h"
+
 #include <stdio.h>
 #include <SDL.h>
-
 #include <SDL_blendmode.h>
-
+#include <Windows.h>
 #include <glad/glad.h>
+
 #include <fstream>
 #include <sstream>
-//#include <SDL_opengl.h>
-// My header files
 #include <iostream>
+
+// My header files
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 #include "Save_Files.h"
@@ -47,6 +48,12 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
 static void ShowMainMenuBar(int* counter);
 void Open_Files(struct user_info* user_info, int* counter);
 void Set_Default_Path(struct user_info* user_info);
+
+//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+//    PSTR lpCmdLine, INT nCmdShow)
+//{
+//    return main(0, NULL);
+//}
 
 // Main code
 int main(int, char**)
@@ -202,7 +209,7 @@ int main(int, char**)
                     char buff2[12];
                     sprintf(buff2, "###render%02d", i);
                     char buff3[10];
-                    sprintf(buff2, "###edit%02d", i);
+                    sprintf(buff3, "###edit%02d", i);
 
                     ImGui::DockBuilderDockWindow(buff, dock_main_id);
                     ImGui::DockBuilderDockWindow(buff2, dock_id_right);
@@ -464,15 +471,16 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
             Save_FRM(My_Variables->F_Prop[counter].Pal_Surface, user_info);
         }
     }
-    ImVec2 Origin = ImGui::GetItemRectMin();
-    ImVec2 Top_Left = Origin;
-    ImVec2 Bottom_Right = { 0, 0 };
-    Bottom_Right = ImVec2(Top_Left.x + (My_Variables->F_Prop[counter].image->w),
-        Top_Left.y + (My_Variables->F_Prop[counter].image->h));
+    //ImVec2 Origin = ImGui::GetItemRectMin();
+    //ImVec2 Top_Left = Origin;
+    //ImVec2 Bottom_Right = { 0, 0 };
+    //Bottom_Right = ImVec2(Top_Left.x + (My_Variables->F_Prop[counter].image->w),
+    //                      Top_Left.y + (My_Variables->F_Prop[counter].image->h) );
 
     ImGui::Image((ImTextureID)
         My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w, My_Variables->F_Prop[counter].image->h));
+        ImVec2(My_Variables->F_Prop[counter].image->w, 
+               My_Variables->F_Prop[counter].image->h) );
     ImGui::End();
 }
 
@@ -486,31 +494,36 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     if (ImGui::Button("Save as Map Tiles...")) {
         Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, user_info);
     }
-    ImGui::Image(
-        (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w,
-            My_Variables->F_Prop[counter].image->h));
-    ImVec2 Origin = ImGui::GetItemRectMin();
-
-    Edit_Image(My_Variables, counter, event);
-
+    //TODO: need to make a button that removes the mask tile overlay
     if (ImGui::Button("Create Mask Tiles...")) {
         Create_Map_Mask(My_Variables, event, counter);
         My_Variables->F_Prop[counter].edit_map_mask = true;
     }
 
-    if (My_Variables->F_Prop[counter].edit_map_mask) {
+    ImGui::Image(
+        (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
+        ImVec2(My_Variables->F_Prop[counter].image->w,
+               My_Variables->F_Prop[counter].image->h) );
 
+    ImVec2 Origin = ImGui::GetItemRectMin();
+    if (!My_Variables->F_Prop[counter].edit_map_mask) {
+        Edit_Image(My_Variables, counter, event);
+    }
+    else {
+        if (ImGui::Button("Export Mask Tiles...")) {
+            //TODO: export mask tiles using msk2bmp2020 code
+            Save_Map_Mask();
+        }
         ImDrawList *Draw_List = ImGui::GetWindowDrawList();
 
-        int* width = &My_Variables->F_Prop[counter].image->w;
-        int* height = &My_Variables->F_Prop[counter].image->h;
-        ImVec2 Bottom_Right = { *width + Origin.x, *height + Origin.y };
+        int width =  My_Variables->F_Prop[counter].image->w;
+        int height = My_Variables->F_Prop[counter].image->h;
+        ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
+
+        Edit_Map_Mask(My_Variables, event, counter, Origin);
 
         Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
                              Origin, Bottom_Right);
-
-        Edit_Map_Mask(My_Variables, event, counter);
     }
 
     ImGui::End();

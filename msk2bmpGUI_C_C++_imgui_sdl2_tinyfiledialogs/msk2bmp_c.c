@@ -176,10 +176,10 @@ bool ReadBmpLines(FILE *file, line_array_t vOutput)
 	}
 	else
 	{
-		BitmapWidth = BytesToInt(bmpSubHeader, 4);
-		BitmapHeight = BytesToInt(bmpSubHeader + 4, 4);
+		BitmapWidth  = BytesToInt(bmpSubHeader,      4);
+		BitmapHeight = BytesToInt(bmpSubHeader +  4, 4);
 		BitsPerPixel = BytesToInt(bmpSubHeader + 10, 2);
-		Compression = BytesToInt(bmpSubHeader + 12, 4);
+		Compression  = BytesToInt(bmpSubHeader + 12, 4);
 	}
 	// Sanity Checks - All of these could be dealt with either
 	// With better logic or with an image library.

@@ -54,54 +54,58 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
 void Create_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
 {
-    int* width = &My_Variables->F_Prop[counter].image->w;
-    int* height = &My_Variables->F_Prop[counter].image->h;
+    int width =  My_Variables->F_Prop[counter].image->w;
+    int height = My_Variables->F_Prop[counter].image->h;
 
-    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, *width, *height, 32, 0, 0, 0, 0);
+    if (My_Variables->F_Prop[counter].Map_Mask)
+        { SDL_FreeSurface(My_Variables->F_Prop[counter].Map_Mask); }
+    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+
+    SDL_SetSurfaceBlendMode(My_Variables->F_Prop[counter].Map_Mask, SDL_BLENDMODE_ADD);
+
     if (My_Variables->F_Prop[counter].Map_Mask) {
-        SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
-        for (int i = 0; i < (*width)*(*height); i++)
+        SDL_Surface* MM_Surface = My_Variables->F_Prop[counter].Map_Mask;
+        for (int i = 0; i < (width*height); i++)
         {
-            ((SDL_Color*)BB_Surface->pixels)[i] = SDL_Color{ 64, 0, 0, 128 };
+            ((SDL_Color*)MM_Surface->pixels)[i] = SDL_Color{ 64, 0, 0, 254 };
         }
+        Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+            &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+            &My_Variables->F_Prop[counter].edit_image_window);
     }
     else {
         printf("Can't allocate surface for some reason...");
     }
 }
 
-void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
+void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec2 Origin)
 {
-    int* width = &My_Variables->F_Prop[counter].image->w;
-    int* height = &My_Variables->F_Prop[counter].image->h;
-
-
-    ImVec2 Origin = ImGui::GetItemRectMin();
-    ImVec2 Bottom_Right = { *width + Origin.x, *height + Origin.y };
+    int width =  My_Variables->F_Prop[counter].image->w;
+    int height = My_Variables->F_Prop[counter].image->h;
 
     SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
 
-    float x, y;
-    x = ImGui::GetMousePos().x - Origin.x;
-    y = ImGui::GetMousePos().y - Origin.y;
+    ImVec2 MousePos = ImGui::GetMousePos();
+    int x = (int)(MousePos.x - Origin.x);
+    int y = (int)(MousePos.y - Origin.y);
     int pitch = BB_Surface->pitch;
 
     if (ImGui::IsMouseDown(event->button.button)) {
 
-        if ((0 <= x && x <= *width) && (0 <= y && y <= *height)) {
-            printf("%f, %f\n", x, y);
+        if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
+            //printf("%f, %f\n", x, y);
 
             for (int i = 0; i < 4; i++)
             {
-                ((SDL_Color*)BB_Surface->pixels)[(pitch*(int)y) + (int)x + i] = 
-                    SDL_Color{ 255, 255, 255, 255 };
+                uint8_t* where_i_want_to_draw = 
+                            &((uint8_t*)BB_Surface->pixels)[pitch*y + 4*x + i];
+                ((SDL_Color*)where_i_want_to_draw)[0] = SDL_Color{ 255, 255, 255, 255 };
             }
+            SDL_BlitSurface(My_Variables->F_Prop[counter].Map_Mask, NULL,
+                My_Variables->F_Prop[counter].Final_Render, NULL);
+            Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+                &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+                &My_Variables->F_Prop[counter].edit_image_window);
         }
     }
-
-    //SDL_BlitSurface();
-
-    Image2Texture(BB_Surface,
-        &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-        &My_Variables->F_Prop[counter].edit_image_window);
 }
