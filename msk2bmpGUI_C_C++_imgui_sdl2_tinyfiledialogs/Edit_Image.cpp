@@ -21,14 +21,23 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
         y = ImGui::GetMousePos().y - Origin.y;
         int pitch = My_Variables->F_Prop[counter].Pal_Surface->pitch;
 
+        SDL_Rect rect;
+        rect.x = x;
+        rect.y = y;
+        rect.h = 4;
+        rect.w = 4;
+
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
+            // Mouse position
             printf("%f, %f\n", x, y);
 
-            for (int i = 0; i < 4; i++)
-            {
-                ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[(pitch*(int)y) + (int)x + i]
-                    = My_Variables->Color_Pick;
-            }
+            //SDL_FillRect(My_Variables->F_Prop[counter].Pal_Surface, &rect, My_Variables->Color_Pick);
+
+            //for (int i = 0; i < 4; i++)
+            //{
+            //    ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[(pitch*(int)y) + (int)x + i]
+            //        = My_Variables->Color_Pick;
+            //}
             //TODO: maybe pass the dithering choice through?
 
             //Unpalettize image to new surface for display

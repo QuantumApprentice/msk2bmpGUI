@@ -365,11 +365,12 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             Edit_Image_Window(My_Variables, &user_info, counter, event);
         }
     }
+
     ImGui::End();
 }
 
 void Show_Palette_Window(variables *My_Variables, int counter) {
-    //TODO: need to add animated colors (FRM_Animate.cpp)
+
     bool palette_window = true;
     std::string name = "Default Fallout palette ###palette";
     ImGui::Begin(name.c_str(), &palette_window);
@@ -409,6 +410,7 @@ void ShowRenderWindow(variables *My_Variables,
     std::string name = a + " Preview...###render" + b;
 
     ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
+
     if (ImGui::Button("Save as Map Tiles...")) {
         My_Variables->Render_Window = true;
         if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
@@ -484,49 +486,62 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
     ImGui::End();
 }
 
-void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter, SDL_Event* event) {
+void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter, SDL_Event* event)
+{
     char b[3];
     sprintf(b, "%02d", counter);
     std::string a = My_Variables->F_Prop[counter].c_name;
     std::string name = a + " Edit Window...###edit" + b;
 
-    ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].edit_image_window, 0);
-    if (ImGui::Button("Save as Map Tiles...")) {
-        Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, user_info);
+    if (!ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].edit_image_window, 0))
+    {
+        ImGui::End();
+        return;
     }
-    //TODO: need to make a button that removes the mask tile overlay
-    if (ImGui::Button("Create Mask Tiles...")) {
-        Create_Map_Mask(My_Variables, event, counter);
-        My_Variables->F_Prop[counter].edit_map_mask = true;
-    }
+    else
+    {
+        if (ImGui::Button("Save as Map Tiles...")) {
+            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, user_info);
+        }
 
-    ImGui::Image(
-        (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w,
-               My_Variables->F_Prop[counter].image->h) );
-
-    ImVec2 Origin = ImGui::GetItemRectMin();
-    if (!My_Variables->F_Prop[counter].edit_map_mask) {
-        Edit_Image(My_Variables, counter, event);
-    }
-    else {
+        if (ImGui::Button("Create Mask Tiles...")) {
+            Create_Map_Mask(My_Variables, event, counter);
+            My_Variables->F_Prop[counter].edit_map_mask = true;
+        }
         if (ImGui::Button("Export Mask Tiles...")) {
             //TODO: export mask tiles using msk2bmp2020 code
             Save_Map_Mask();
         }
-        ImDrawList *Draw_List = ImGui::GetWindowDrawList();
 
-        int width =  My_Variables->F_Prop[counter].image->w;
-        int height = My_Variables->F_Prop[counter].image->h;
-        ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
+        ImGui::Image(
+            (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
+            ImVec2(My_Variables->F_Prop[counter].image->w,
+                My_Variables->F_Prop[counter].image->h));
 
-        Edit_Map_Mask(My_Variables, event, counter, Origin);
+        ImVec2 Origin = ImGui::GetItemRectMin();
+        if (!My_Variables->F_Prop[counter].edit_map_mask) {
+            Edit_Image(My_Variables, counter, event);
+        }
+        else {
+            ImDrawList *Draw_List = ImGui::GetWindowDrawList();
 
-        Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-                             Origin, Bottom_Right);
+            int width = My_Variables->F_Prop[counter].image->w;
+            int height = My_Variables->F_Prop[counter].image->h;
+            ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
+
+            Edit_Map_Mask(My_Variables, event, counter, Origin);
+
+            Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+                Origin, Bottom_Right);
+        }
+
+        //Removes the mask tile overlay
+        if (ImGui::Button("Cancel...")) {
+            My_Variables->F_Prop[counter].edit_image_window = false;
+        }
+
+        ImGui::End();
     }
-
-    ImGui::End();
 }
 
 
@@ -543,8 +558,8 @@ static void ShowMainMenuBar(int* counter)
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Edit"))
-        {
+        if (ImGui::BeginMenu("Edit - currently unimplemented, work in progress"))
+        {   //TODO: implement undo tree
             if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
             if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
             ImGui::Separator();

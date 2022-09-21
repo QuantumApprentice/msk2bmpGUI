@@ -12,11 +12,23 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
     if (surface)
     {
         //SDL_FreeSurface(Temp_Surface);
-        Temp_Surface =
-            SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
+        //Temp_Surface =
+        //    SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
+
+        printf("assigning Temp_Surface from Unpalettize surface*");
+
+        Temp_Surface = Unpalettize_Image(surface);
+
+        printf("SDL_to_OpenGL with Temp_Surface and texture*\n");
 
         SDL_to_OpenGl(Temp_Surface, texture);
+
+        printf("SDL_FreeSurface Temp_Surface\n");
+
         SDL_FreeSurface(Temp_Surface);
+
+        //SDL_to_OpenGl(surface, texture);
+
         *window = true;
     }
     if (texture == NULL) {
@@ -29,19 +41,20 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
 {
     // OpenGL conversion from surface to texture - needs to be own function
     {
-        int bpp;
+        int bpp = 0;
         Uint32 Rmask, Gmask, Bmask, Amask;
         SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ABGR8888, &bpp,
             &Rmask, &Gmask, &Bmask, &Amask );
-
+        
         /* Create surface that will hold pixels passed into OpenGL. */
         SDL_Surface *img_rgba8888 = SDL_CreateRGBSurface(0,
             Temp_Surface->w,
             Temp_Surface->h,
-            bpp, Rmask, Gmask, Bmask, Amask );
+            bpp,
+            Rmask, Gmask, Bmask, Amask );
 
         //SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
-        //SDL_SetSurfaceBlendMode(My_Variables->Temp_Surface, SDL_BLENDMODE_NONE);
+        //SDL_SetSurfaceBlendMode(Temp_Surface, SDL_BLENDMODE_NONE);
         SDL_BlitSurface(Temp_Surface, NULL, img_rgba8888, NULL);
 
         printf("glError: %d\n", glGetError());
@@ -58,8 +71,8 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-            Temp_Surface->w,
-            Temp_Surface->h,
+            img_rgba8888->w,
+            img_rgba8888->h ,
             0, GL_RGBA, GL_UNSIGNED_BYTE,
             img_rgba8888->pixels);
         SDL_FreeSurface(img_rgba8888);
@@ -69,12 +82,15 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
     //Paletize to 8-bit FO pallet, and dithered
     SDL_FreeSurface(My_Variables->F_Prop[counter].Pal_Surface);
+
     My_Variables->F_Prop[counter].Pal_Surface
         = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
     //Unpalettize image to new surface for display
     SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+
     My_Variables->F_Prop[counter].Final_Render
         = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+
     //Converts unpalettized image to texture for display, sets window bool to true
     Image2Texture(My_Variables->F_Prop[counter].Final_Render,
         &My_Variables->F_Prop[counter].Optimized_Render_Texture,

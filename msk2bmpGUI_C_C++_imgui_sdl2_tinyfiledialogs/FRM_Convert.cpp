@@ -10,13 +10,13 @@
 #define PALETTE_NUMBER 256
 
 union Pxl_info_32 {
-	struct {
-		uint8_t a;
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-	};
-	uint8_t arr[4];
+    struct {
+        uint8_t a;
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+    };
+    uint8_t arr[4];
 };
 
 union Pxl_err {
@@ -69,38 +69,34 @@ SDL_Color* loadPalette(char * name)
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
-    SDL_PixelFormat pxlFMT_UnPal;
-    pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    pxlFMT_UnPal.palette = NULL;
-    pxlFMT_UnPal.BitsPerPixel = 32;
-    pxlFMT_UnPal.BytesPerPixel = 4;
+    SDL_PixelFormat* pxlFMT_UnPal;
+    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
-    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, &pxlFMT_UnPal, 0);
+    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
     if (!Surface_32) {
         printf("Error: %s", SDL_GetError());
     }
 
     // Setup for palettizing image
     SDL_Palette myPalette;
-    SDL_PixelFormat pxlFMT_Pal;
+    SDL_PixelFormat* pxlFMT_Pal;
     SDL_Surface* Surface_8;
 
     myPalette.ncolors = PALETTE_NUMBER;
     myPalette.colors = loadPalette("default");
 
     // Convert image to palettized surface
-    pxlFMT_Pal = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    pxlFMT_Pal.palette = &myPalette;
-    pxlFMT_Pal.BitsPerPixel = 8;
-    pxlFMT_Pal.BytesPerPixel = 1;
-    Surface_8 = SDL_ConvertSurface(surface, &pxlFMT_Pal, 0);
+    pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    pxlFMT_Pal->palette = &myPalette;
+
+    Surface_8 = SDL_ConvertSurface(surface, pxlFMT_Pal, 0);
     if (!Surface_8) {
         printf("Error: %s", SDL_GetError());
     }
 
     //switch to change between euclidian and sdl color match algorithms
     if (SDL == true) {
-        SDL_Color_Match(Surface_32,	&pxlFMT_Pal, Surface_8);
+        SDL_Color_Match(Surface_32,	pxlFMT_Pal, Surface_8);
     }
     else
     {
@@ -281,8 +277,9 @@ void clamp_dither(SDL_Surface *Surface_32,
 SDL_Surface* Load_FRM_Image(char *File_Name)
 {
     SDL_Palette myPalette;
-    SDL_PixelFormat pxlFMT_Pal;
-    SDL_PixelFormat pxlFMT_UnPal;
+    SDL_PixelFormat* pxlFMT_Pal;
+    SDL_PixelFormat* pxlFMT_UnPal;
+    SDL_Surface* Output_Surface;
 
     // File open stuff
     FILE *File_ptr = fopen(File_Name, "rb");
@@ -297,37 +294,40 @@ SDL_Surface* Load_FRM_Image(char *File_Name)
     uint32_t frame_size = 0;
     fread(&frame_size, 4, 1, File_ptr);
     frame_size = B_Endian::write_u32(frame_size);
-    fseek(File_ptr, 0x4A, SEEK_SET);
 
     // 8 bit palleted stuff here
     myPalette.ncolors = 256;
     myPalette.colors = loadPalette("default");
-    pxlFMT_Pal = *SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    pxlFMT_Pal.palette = &myPalette;
-    pxlFMT_Pal.BitsPerPixel = 8;
-    pxlFMT_Pal.BytesPerPixel = 1;
+    pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    pxlFMT_Pal->palette = &myPalette;
 
+    //TODO: Can I make a new surface with a palette without using SDL_CreateRGBSurface AND SDL_ConvertSurface()?
     SDL_Surface* UnPal_Surface = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
-    SDL_Surface* Pal_Surface   = SDL_ConvertSurface(UnPal_Surface, &pxlFMT_Pal, 0);
+    SDL_Surface* Pal_Surface   = SDL_ConvertSurface(UnPal_Surface, pxlFMT_Pal, 0);
     SDL_FreeSurface(UnPal_Surface);
 
     if (!Pal_Surface) {
         printf("Error: %s\n", SDL_GetError());
     }
 
+    // Seek to starting pixel in file
+    fseek(File_ptr, 0x4A, SEEK_SET);
     // Read in the pixels from the FRM file to the surface
-    fread(Pal_Surface->pixels, frame_size, 1, File_ptr);
 
-    // 32 bit pixel format stuff below
-    SDL_Surface* Output_Surface = SDL_CreateRGBSurface(0, frame_width, frame_height, 32, 0, 0, 0, 0);
+    uint8_t* data = (uint8_t*)Pal_Surface->pixels;
+    int pitch = Pal_Surface->pitch;
 
-    pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    pxlFMT_UnPal.palette = NULL;
-    pxlFMT_UnPal.BitsPerPixel = 32;
-    pxlFMT_UnPal.BytesPerPixel = 4; // BytesPerPixel = BitsPerPixel/8 (raised to nearest power of 2)
+    for (int row = 0; row < frame_height; row++)
+    {
+        int total;
+        total =
+            fread(data, 1, frame_width, File_ptr);
 
-    // TODO: need to figure out what command is best to create a blank surface
-    Output_Surface = SDL_ConvertSurface(Pal_Surface, &pxlFMT_UnPal, 0);
+        data += pitch;
+        printf("%d\n", total);
+    }
+
+    Output_Surface = Unpalettize_Image(Pal_Surface);
     SDL_FreeSurface(Pal_Surface);
 
     if (!Output_Surface) {
@@ -338,26 +338,26 @@ SDL_Surface* Load_FRM_Image(char *File_Name)
 
 SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 {
-    SDL_PixelFormat pxlFMT_UnPal;
-    pxlFMT_UnPal = *SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    pxlFMT_UnPal.palette = NULL;
-    pxlFMT_UnPal.BitsPerPixel = 32;
-    pxlFMT_UnPal.BytesPerPixel = 4;
+    SDL_PixelFormat* pxlFMT_UnPal;
+    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
     SDL_Surface* Output_Surface;
-    Output_Surface = SDL_ConvertSurface(Surface, &pxlFMT_UnPal, 0);
+    Output_Surface = SDL_ConvertSurface(Surface, pxlFMT_UnPal, 0);
+    SDL_FreeFormat(pxlFMT_UnPal);
 
     if (!Output_Surface) {
-        printf("Error: %s", SDL_GetError());
+        printf("\nError: %s", SDL_GetError());
     }
-    return Output_Surface;
+    else {
+        return Output_Surface;
+    }
 }
 
-void Palette_to_Texture()
-{
-    char buffer[512];
-    FILE *palette_test;
-    palette_test = fopen("Palette_Shader.vert", "rb");
-
-    fread(buffer, sizeof(palette_test), 1, palette_test);
-}
+//void Palette_to_Texture()
+//{
+//    char buffer[512];
+//    FILE *palette_test;
+//    palette_test = fopen("Palette_Shader.vert", "rb");
+//
+//    fread(buffer, sizeof(palette_test), 1, palette_test);
+//}
