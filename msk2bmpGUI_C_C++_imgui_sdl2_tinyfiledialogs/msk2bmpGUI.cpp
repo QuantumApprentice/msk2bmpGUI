@@ -1,7 +1,15 @@
+#define _CRTDBG_MAP_ALLOC
+
+#define SET_CRT_DEBUG_FIELD(a) \
+    _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+#define CLEAR_CRT_DEBUG_FIELD(a) \
+    _CrtSetDbgFlag(~(a) & _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+
 // Dear ImGui: standalone example application for SDL2 + OpenGL
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
+
 
 // ImGui header files
 #include "imgui-docking/imgui.h"
@@ -48,6 +56,7 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
 static void ShowMainMenuBar(int* counter);
 void Open_Files(struct user_info* user_info, int* counter);
 void Set_Default_Path(struct user_info* user_info);
+void crash_detector();
 
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 //    PSTR lpCmdLine, INT nCmdShow)
@@ -58,6 +67,20 @@ void Set_Default_Path(struct user_info* user_info);
 // Main code
 int main(int, char**)
 {
+    //bug checking code
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
+
+    SET_CRT_DEBUG_FIELD(_CRTDBG_ALLOC_MEM_DF);
+    SET_CRT_DEBUG_FIELD(_CRTDBG_CHECK_ALWAYS_DF);
+    SET_CRT_DEBUG_FIELD(_CRTDBG_LEAK_CHECK_DF);
+    CLEAR_CRT_DEBUG_FIELD(_CRTDBG_CHECK_CRT_DF);
+    //end of bug checking code
+
     Load_Config(&user_info);
     My_Variables.PaletteColors = loadPalette("file name for palette here");
 
@@ -275,7 +298,17 @@ int main(int, char**)
 
     write_cfg_file(&user_info);
 
+
+
     return 0;
+}
+
+void crash_detector() {
+    printf("Crash detector: \n");
+    if (_CrtDumpMemoryLeaks()) {
+        fflush(stdout);
+        fflush(stderr);
+    }
 }
 
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
@@ -492,6 +525,9 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     sprintf(b, "%02d", counter);
     std::string a = My_Variables->F_Prop[counter].c_name;
     std::string name = a + " Edit Window...###edit" + b;
+
+    //TODO crash detector?
+    //crash_detector();
 
     if (!ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].edit_image_window, 0))
     {

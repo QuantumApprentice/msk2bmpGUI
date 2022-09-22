@@ -15,15 +15,15 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         Temp_Surface =
             SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
 
-        printf("assigning Temp_Surface from Unpalettize surface*");
+        //printf("assigning Temp_Surface from Unpalettize surface*");
 
         //Temp_Surface = Unpalettize_Image(surface);
 
-        printf("SDL_to_OpenGL with Temp_Surface and texture*\n");
+        //printf("SDL_to_OpenGL with Temp_Surface and texture*\n");
 
         SDL_to_OpenGl(Temp_Surface, texture);
 
-        printf("SDL_FreeSurface Temp_Surface\n");
+        //printf("SDL_FreeSurface Temp_Surface\n");
 
         SDL_FreeSurface(Temp_Surface);
 
@@ -85,6 +85,7 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
 
     My_Variables->F_Prop[counter].Pal_Surface
         = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
+
     //Unpalettize image to new surface for display
     SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
 

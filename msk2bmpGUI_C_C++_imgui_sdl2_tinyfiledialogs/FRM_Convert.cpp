@@ -62,6 +62,9 @@ SDL_Color* loadPalette(char * name)
         b = convert_colors(bytes[2]);
         PaletteColors[i] = SDL_Color{ r, g, b };
     }
+
+
+
     return PaletteColors;
 }
 
@@ -78,16 +81,22 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL)
     }
 
     // Setup for palettizing image
-    SDL_Palette myPalette;
     SDL_PixelFormat* pxlFMT_Pal;
     SDL_Surface* Surface_8;
 
-    myPalette.ncolors = PALETTE_NUMBER;
-    myPalette.colors = loadPalette("default");
+
+
+    //myPalette.ncolors = PALETTE_NUMBER;
+    //myPalette.colors = loadPalette("default");
+    SDL_Palette* FO_Palette;
+    FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
+    SDL_SetPaletteColors(FO_Palette, loadPalette("default"), 0, PALETTE_NUMBER);
+
 
     // Convert image to palettized surface
     pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    pxlFMT_Pal->palette = &myPalette;
+    SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
+    //pxlFMT_Pal->palette = &myPalette;
 
     Surface_8 = SDL_ConvertSurface(surface, pxlFMT_Pal, 0);
     //TODO: Here's where the paint problem is
@@ -105,6 +114,10 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL)
     {
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     }
+
+    //SDL_FreeFormat(pxlFMT_Pal);
+    //SDL_FreeFormat(pxlFMT_UnPal);
+    SDL_FreeSurface(Surface_32);
     return Surface_8;
 }
 
@@ -216,7 +229,7 @@ void Euclidian_Distance_Color_Match(
     }
 }
 
-void limit_dither(SDL_Surface *Surface_32,
+void limit_dither(SDL_Surface* Surface_32,
     union Pxl_err *err,
     int **pxl_index_arr)
 {
@@ -334,12 +347,6 @@ SDL_Surface* Load_FRM_Image(char *File_Name)
         //printf("%d\n", total);
     }
 
-    //Output_Surface = Unpalettize_Image(Pal_Surface);
-    //SDL_FreeSurface(Pal_Surface);
-
-    //if (!Output_Surface) {
-    //    printf("Error: %s", SDL_GetError());
-    //}
     //return Output_Surface;
     return Pal_Surface;
 }
@@ -351,7 +358,7 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 
     SDL_Surface* Output_Surface;
     Output_Surface = SDL_ConvertSurface(Surface, pxlFMT_UnPal, 0);
-    SDL_FreeFormat(pxlFMT_UnPal);
+    //SDL_FreeFormat(pxlFMT_UnPal);
 
     if (!Output_Surface) {
         printf("\nError: %s", SDL_GetError());
