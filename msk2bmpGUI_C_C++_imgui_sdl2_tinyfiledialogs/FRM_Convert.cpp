@@ -45,7 +45,7 @@ SDL_Color* loadPalette(char * name)
     std::ifstream f("color.pal", 
         std::ios::in | std::ios::binary);
     if (!f.is_open()) {
-        printf("Error opening color.pal.\n");
+        printf("Error opening color.pal\n");
         return false;
     }
 
@@ -74,7 +74,7 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL)
 
     SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
     if (!Surface_32) {
-        printf("Error: %s", SDL_GetError());
+        printf("Error: %s\n", SDL_GetError());
     }
 
     // Setup for palettizing image
@@ -90,13 +90,16 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, bool SDL)
     pxlFMT_Pal->palette = &myPalette;
 
     Surface_8 = SDL_ConvertSurface(surface, pxlFMT_Pal, 0);
+    //TODO: Here's where the paint problem is
+    //Surface_8->pitch = Surface_8->w;
+
     if (!Surface_8) {
-        printf("Error: %s", SDL_GetError());
+        printf("Error: %s\n", SDL_GetError());
     }
 
     //switch to change between euclidian and sdl color match algorithms
     if (SDL == true) {
-        SDL_Color_Match(Surface_32,	pxlFMT_Pal, Surface_8);
+        SDL_Color_Match(Surface_32, pxlFMT_Pal, Surface_8);
     }
     else
     {
@@ -312,28 +315,33 @@ SDL_Surface* Load_FRM_Image(char *File_Name)
 
     // Seek to starting pixel in file
     fseek(File_ptr, 0x4A, SEEK_SET);
+
     // Read in the pixels from the FRM file to the surface
-
+    // Have to read-in one line at a time to account for
+    // SDL adding a buffer to the pitch
     uint8_t* data = (uint8_t*)Pal_Surface->pixels;
-    int pitch = Pal_Surface->pitch;
 
+    //Pal_Surface->pitch = Pal_Surface->w;
+    //fread(data, frame_height, frame_width, File_ptr);
+
+    int pitch = Pal_Surface->pitch;
     for (int row = 0; row < frame_height; row++)
     {
-        int total;
-        total =
+        //int total;
+        //total =
             fread(data, 1, frame_width, File_ptr);
-
-        data += pitch;
-        printf("%d\n", total);
+            data += pitch;
+        //printf("%d\n", total);
     }
 
-    Output_Surface = Unpalettize_Image(Pal_Surface);
-    SDL_FreeSurface(Pal_Surface);
+    //Output_Surface = Unpalettize_Image(Pal_Surface);
+    //SDL_FreeSurface(Pal_Surface);
 
-    if (!Output_Surface) {
-        printf("Error: %s", SDL_GetError());
-    }
-    return Output_Surface;
+    //if (!Output_Surface) {
+    //    printf("Error: %s", SDL_GetError());
+    //}
+    //return Output_Surface;
+    return Pal_Surface;
 }
 
 SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
@@ -353,7 +361,7 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
     }
 }
 
-//void Palette_to_Texture()
+//void OpenGL_Palette_to_Texture()
 //{
 //    char buffer[512];
 //    FILE *palette_test;

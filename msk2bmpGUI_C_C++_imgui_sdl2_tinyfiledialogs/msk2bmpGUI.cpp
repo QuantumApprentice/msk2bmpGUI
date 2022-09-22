@@ -533,10 +533,13 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
             Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
                 Origin, Bottom_Right);
+            if (ImGui::Button("Cancel Map Mask...")) {
+                My_Variables->F_Prop[counter].edit_map_mask = false;
+            }
         }
 
         //Removes the mask tile overlay
-        if (ImGui::Button("Cancel...")) {
+        if (ImGui::Button("Cancel Editing...")) {
             My_Variables->F_Prop[counter].edit_image_window = false;
         }
 
