@@ -80,7 +80,7 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
 }
 
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
-    //Paletize to 8-bit FO pallet, and dithered
+    //Palettize to 8-bit FO pallet, and dithered
     SDL_FreeSurface(My_Variables->F_Prop[counter].Pal_Surface);
 
     My_Variables->F_Prop[counter].Pal_Surface

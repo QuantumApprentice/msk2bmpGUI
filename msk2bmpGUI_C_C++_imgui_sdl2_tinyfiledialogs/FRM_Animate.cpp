@@ -19,7 +19,7 @@ BYTE g_nSlime[] =     {   0, 108,   0,                              // Slime
 BYTE g_nMonitors[] =  { 107, 107, 111,                              // Monitors
                          99, 103, 127,
                          87, 107, 143,
-                         0,  147, 163,
+                          0, 147, 163,
                         107, 187, 255 };
 BYTE g_nFireSlow[] =  { 255,   0,   0,                              // Slow fire
                         215,   0,   0,
@@ -56,7 +56,7 @@ uint32_t g_dwLastCycleVeryFast = 0;
 // Current speed factor
 DWORD g_dwCycleSpeedFactor = 1;
 
-void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors, SDL_Surface* Final_Render) 
+void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
 {
     SDL_Color animated_pixel = PaletteColors[((uint8_t*)PAL_Surface->pixels)[i]];
     animated_pixel.a = 255;

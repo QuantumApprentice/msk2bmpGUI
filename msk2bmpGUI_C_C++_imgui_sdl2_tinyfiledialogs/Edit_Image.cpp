@@ -9,7 +9,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
     ImVec2 Origin = ImGui::GetItemRectMin();
     //ImVec2 Top_Left = Origin;
-    int width = My_Variables->F_Prop[counter].image->w;
+    int width  = My_Variables->F_Prop[counter].image->w;
     int height = My_Variables->F_Prop[counter].image->h;
     int size = width * height;
 
@@ -29,6 +29,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
             // Mouse position
             //printf("%f, %f\n", x, y);
+            //SDL_MapRGB();
 
             SDL_FillRect(My_Variables->F_Prop[counter].Pal_Surface, &rect, My_Variables->Color_Pick);
 

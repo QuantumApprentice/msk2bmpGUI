@@ -125,9 +125,9 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            int i = (Surface_32->w * y) + x;
+            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
 
-            memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
             w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
 
             err.a = abgr.a - PaletteColors[w_PaletteColor].a;
@@ -173,9 +173,12 @@ void Euclidian_Distance_Color_Match(
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            int i = (Surface_32->w * y) + x;
+            //int i = (Surface_32->w * y) + x;
+            //w_smallest = INT_MAX;
+            //memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
             w_smallest = INT_MAX;
-            memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
 
             for (int j = 0; j < PALETTE_NUMBER; j++)
             {
@@ -227,14 +230,16 @@ void limit_dither(SDL_Surface* Surface_32,
     int x = *pxl_index_arr[0];
     int y = *pxl_index_arr[1];
 
-    if ((x - 1 < 0) || (x + 1 > Surface_32->w)) return;
-    if (y + 1 > Surface_32->h) return;
+    //if ((x - 1 <= 0) || (x + 1 >= Surface_32->w)) return;
+    //if (y + 1 >= Surface_32->h) return;
 
     int pixel_index[4];
-    pixel_index[0] = (Surface_32->w * (y + 0)) + (x + 1);
-    pixel_index[1] = (Surface_32->w * (y + 1)) + (x - 1);
-    pixel_index[2] = (Surface_32->w * (y + 1)) + (x + 0);
-    pixel_index[3] = (Surface_32->w * (y + 1)) + (x + 1);
+    //if it crashes again on dithering, try removing the '=' sign from pixel_index[0] 
+    //and pixel_index[2] and maybe pixel_index[1]?
+    pixel_index[0] = (y + 0 <= Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 0)) + (x + 1) : -1;
+    pixel_index[1] = (y + 1 <  Surface_32->h && x - 1 >= 0            ) ? (Surface_32->w * (y + 1)) + (x - 1) : -1;
+    pixel_index[2] = (y + 1 <  Surface_32->h && x + 0 <= Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 0) : -1;
+    pixel_index[3] = (y + 1 <  Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 1) : -1;
 
     int factor[4];
     factor[0] = 7;
@@ -244,7 +249,9 @@ void limit_dither(SDL_Surface* Surface_32,
 
     for (int i = 0; i < 4; i++)
     {
-        clamp_dither(Surface_32, err, pixel_index[i], factor[i]);
+        if (pixel_index[i] >= 0) {
+            clamp_dither(Surface_32, err, pixel_index[i], factor[i]);
+        }
     }
 }
 
