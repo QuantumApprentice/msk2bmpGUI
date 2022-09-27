@@ -9,7 +9,7 @@
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 
-void Load_Files(LF F_Prop[], user_info* user_info, int counter)
+void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_Color* palette)
 {
     char buffer[_MAX_PATH];
     snprintf(buffer, _MAX_PATH, "%s\\", user_info->default_load_path);
@@ -35,7 +35,8 @@ void Load_Files(LF F_Prop[], user_info* user_info, int counter)
         // TODO change strncmp to more secure varient when I figure out what that is :P
         if (!(strncmp (F_Prop[counter].extension, "FRM", 4)))
         {
-            F_Prop[counter].image = Load_FRM_Image(F_Prop[counter].Opened_File);
+            F_Prop[counter].image = Load_FRM_Image(F_Prop[counter].Opened_File,
+                                                   palette);
         }
         else
         {

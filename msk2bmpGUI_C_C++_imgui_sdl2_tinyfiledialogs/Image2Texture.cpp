@@ -12,12 +12,12 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
     if (surface)
     {
         //SDL_FreeSurface(Temp_Surface);
-        Temp_Surface =
-            SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
+        //Temp_Surface =
+        //    SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
 
         //printf("assigning Temp_Surface from Unpalettize surface*");
 
-        //Temp_Surface = Unpalettize_Image(surface);
+        Temp_Surface = Unpalettize_Image(surface);
 
         //printf("SDL_to_OpenGL with Temp_Surface and texture*\n");
 
@@ -57,7 +57,7 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
         //SDL_SetSurfaceBlendMode(Temp_Surface, SDL_BLENDMODE_NONE);
         SDL_BlitSurface(Temp_Surface, NULL, img_rgba8888, NULL);
 
-        printf("glError: %d\n", glGetError());
+        //printf("glError: %d\n", glGetError());
 
         if (!glIsTexture(*texture)) {
             glGenTextures(1, texture);
@@ -84,7 +84,9 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
     SDL_FreeSurface(My_Variables->F_Prop[counter].Pal_Surface);
 
     My_Variables->F_Prop[counter].Pal_Surface
-        = FRM_Color_Convert(My_Variables->F_Prop[counter].image, color_match);
+        = FRM_Color_Convert(My_Variables->F_Prop[counter].image, 
+                            My_Variables->PaletteColors,
+                            color_match);
 
     //Unpalettize image to new surface for display
     SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);

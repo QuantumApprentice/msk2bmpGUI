@@ -14,7 +14,6 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     int size = width * height;
 
     //ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
-    //Draw_List->AddRectFilled(Top_Left, Bottom_Right, 0x5f0000ff, 0, ImDrawFlags_Closed);
     if (ImGui::IsMouseDown(event->button.button)) {
         float x, y;
         x = ImGui::GetMousePos().x - Origin.x;
@@ -29,7 +28,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
             // Mouse position
-            printf("%f, %f\n", x, y);
+            //printf("%f, %f\n", x, y);
 
             SDL_FillRect(My_Variables->F_Prop[counter].Pal_Surface, &rect, My_Variables->Color_Pick);
 
@@ -49,7 +48,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     }
     for (int i = 0; i < size; i++)
     {
-        if (((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[i] >= 229) {
+        if (((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[i] >= 225) {
             Image_Color_Cycle(
                 My_Variables->F_Prop[counter].Pal_Surface, i,
                 My_Variables->PaletteColors,

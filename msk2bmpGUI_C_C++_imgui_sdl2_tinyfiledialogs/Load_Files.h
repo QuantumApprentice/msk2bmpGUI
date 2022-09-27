@@ -27,4 +27,4 @@ struct LF {
 
     char * FilterPattern1[3] = { "*.bmp" , "*.png", "*.frm" };
 };
-void Load_Files(LF[], struct user_info* user_info, int);
+void Load_Files(LF[], struct user_info* user_info, int, SDL_Color* palette);

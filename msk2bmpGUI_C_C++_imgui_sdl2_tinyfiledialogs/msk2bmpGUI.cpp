@@ -54,7 +54,7 @@ void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter);
-void Open_Files(struct user_info* user_info, int* counter);
+void Open_Files(struct user_info* user_info, int* counter, SDL_Color* palette);
 void Set_Default_Path(struct user_info* user_info);
 void crash_detector();
 
@@ -245,7 +245,7 @@ int main(int, char**)
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
             if (ImGui::Button("Load Files...")) { 
-                Open_Files(&user_info, &counter);
+                Open_Files(&user_info, &counter, My_Variables.PaletteColors);
             }
 
             ImGui::SameLine();
@@ -418,7 +418,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             float b = (float)color.b / 255.0f;
 
             char q[12];
-            snprintf(q, 12, "##aa%d", index);
+            snprintf(q, 12, "%d##aa%d", index);
             if (ImGui::ColorButton(q, ImVec4(r, g, b, 1.0f))) {
                 My_Variables->Color_Pick = (uint8_t)(index);
             }
@@ -592,7 +592,7 @@ static void ShowMainMenuBar(int* counter)
         {
             ImGui::MenuItem("(demo menu)", NULL, false, false);
             if (ImGui::MenuItem("New")) {}
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter); }
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter, My_Variables.PaletteColors); }
             if (ImGui::MenuItem("Default Fallout Path")) { Set_Default_Path(&user_info); }
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
@@ -611,15 +611,16 @@ static void ShowMainMenuBar(int* counter)
     }
 }
 
-void Open_Files(struct user_info* user_info, int* counter) {
+void Open_Files(struct user_info* user_info, int* counter, SDL_Color* palette) {
         // Assigns image to Load_Files.image and loads palette for the image
         // TODO: image needs to be less than 1 million pixels (1000x1000)
         // to be viewable in Titanium FRM viewer, what's the limit in the game?
-        Load_Files(My_Variables.F_Prop, user_info, *counter);
         if (My_Variables.PaletteColors == NULL)
         {
             My_Variables.PaletteColors = loadPalette("file name for palette here");
         }
+        Load_Files(My_Variables.F_Prop, user_info, *counter, palette);
+
         Image2Texture(My_Variables.F_Prop[*counter].image,
             &My_Variables.F_Prop[*counter].Optimized_Texture,
             &My_Variables.F_Prop[*counter].file_open_window);
