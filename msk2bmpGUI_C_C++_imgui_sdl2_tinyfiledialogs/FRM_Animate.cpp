@@ -97,13 +97,10 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index
         (*g_dwCurrent)++;
 }
 
-void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update)
+void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update, uint32_t CurrentTime)
 {
-    *Palette_Update = false;
-    //bool bPaletteChanged = false;
-    uint32_t dwCurrentTime = clock();//SDL_GetTicks();
 
-    if (dwCurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
+    if (CurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
         // Slime    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwSlimeCurrent, 229, g_nSlime, 3);
         // Shoreline    ///////////////////////////////////////////////////////
@@ -111,38 +108,27 @@ void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update)
         // Fire_slow    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
 
-        g_dwLastCycleSlow = dwCurrentTime;
-        //bPaletteChanged = true;
+        g_dwLastCycleSlow = CurrentTime;
         *Palette_Update = true;
     }
 
-    dwCurrentTime = clock();                //GetTickCount();
-
-    if (dwCurrentTime - g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
+    if (CurrentTime - g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
         // Fire_fast    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwFireFastCurrent, 243, g_nFireFast, 4);
 
-        g_dwLastCycleMedium = dwCurrentTime;
-        //bPaletteChanged = true;
+        g_dwLastCycleMedium = CurrentTime;
         *Palette_Update = true;
-
     }
 
-    dwCurrentTime = clock();                //GetTickCount();
-
-    if (dwCurrentTime - g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
+    if (CurrentTime - g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
         // Monitors     ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwMonitorsCurrent, 233, g_nMonitors, 4);
 
-        g_dwLastCycleFast = dwCurrentTime;
-        //bPaletteChanged = true;
+        g_dwLastCycleFast = CurrentTime;
         *Palette_Update = true;
-
     }
 
-    dwCurrentTime = clock();                //GetTickCount();
-
-    if (dwCurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
+    if (CurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
         // Blinking red     ///////////////////////////////////////////////////////
         if ((g_nBlinkingRedCurrent == 0) ||(g_nBlinkingRedCurrent == 60))
             g_nBlinkingRed = BYTE(-g_nBlinkingRed);
@@ -155,8 +141,7 @@ void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update)
 
         g_nBlinkingRedCurrent = g_nBlinkingRed + g_nBlinkingRedCurrent;
 
-        g_dwLastCycleVeryFast = dwCurrentTime;
-        //bPaletteChanged = true;
+        g_dwLastCycleVeryFast = CurrentTime;
         *Palette_Update = true;
 
     }

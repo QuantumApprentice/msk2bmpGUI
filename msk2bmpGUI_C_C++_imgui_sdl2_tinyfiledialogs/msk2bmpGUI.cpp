@@ -191,6 +191,8 @@ int main(int, char**)
                 done = true;
         }
 
+        My_Variables.CurrentTime = clock();
+        My_Variables.Palette_Update = false;
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -408,6 +410,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
     std::string name = "Default Fallout palette ###palette";
     ImGui::Begin(name.c_str(), &palette_window);
 
+
     for (int y = 0; y < 16; y++) {
         for (int x = 0; x < 16; x++) {
 
@@ -426,7 +429,9 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             if (x < 15) ImGui::SameLine();
 
             if ((index) >= 229) {
-                Cycle_Palette(My_Variables->PaletteColors, &My_Variables->Palette_Update);
+                Cycle_Palette(My_Variables->PaletteColors, 
+                             &My_Variables->Palette_Update,
+                              My_Variables->CurrentTime);
             }
         }
     }

@@ -16,6 +16,7 @@ struct variables {
     bool Palette_Update = false;
 
 	int Render_Width = 0, Render_Height = 0;
+    clock_t CurrentTime = 0;
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;

@@ -30,17 +30,8 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
         rect.w = 10;
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
-            // Mouse position
-            //printf("%f, %f\n", x, y);
-            //SDL_MapRGB();
 
             SDL_FillRect(My_Variables->F_Prop[counter].Pal_Surface, &rect, My_Variables->Color_Pick);
-
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[(pitch*(int)y) + (int)x + i]
-            //        = My_Variables->Color_Pick;
-            //}
 
             //TODO: maybe pass the dithering choice through?
 
@@ -78,11 +69,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //}
     //Converts unpalettized image to texture for display, sets window bool to true
 
-    printf("%d", My_Variables->Palette_Update);
-
     if (My_Variables->Palette_Update || image_edited) {
-
-        printf("%d", My_Variables->Palette_Update);
 
         Image2Texture(My_Variables->F_Prop[counter].Final_Render,
             &My_Variables->F_Prop[counter].Optimized_Render_Texture,
