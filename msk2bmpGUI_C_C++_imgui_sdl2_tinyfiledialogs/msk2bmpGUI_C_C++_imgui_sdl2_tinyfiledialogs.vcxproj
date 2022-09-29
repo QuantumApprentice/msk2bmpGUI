@@ -72,10 +72,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+    <TargetName>Q's Crappy Fallout Image Editor</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\lib\x86;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\lib\x86;C:\Users\Destructor\C Programming in 21 Days\glad;$(LibraryPath)</LibraryPath>
+    <TargetName>Q's Crappy Fallout Image Editor</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\Users\Destructor\C Programming in 21 Days\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs\glad\include;C:\Users\Destructor\C Programming in 21 Days\SDL2_image-2.0.5\include;C:\Users\Destructor\C Programming in 21 Days\SDL2-2.0.20\include;$(IncludePath)</IncludePath>

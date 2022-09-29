@@ -143,7 +143,7 @@ void write_cfg_file(struct user_info* user_info)
     FILE * config_file_ptr = NULL;
     fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
 
-    fwrite("Default_Save_Path=",   strlen("Default_Save_Path="),   1, config_file_ptr);
+    fwrite("Default_Save_Path=",   strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(user_info->default_save_path, strlen(user_info->default_save_path), 1, config_file_ptr);
     fwrite("\nDefault_Game_Path=", strlen("\nDefault_Game_Path="), 1, config_file_ptr);
     fwrite(user_info->default_game_path, strlen(user_info->default_game_path), 1, config_file_ptr);

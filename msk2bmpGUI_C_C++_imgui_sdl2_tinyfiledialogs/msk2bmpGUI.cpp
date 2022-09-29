@@ -1,4 +1,5 @@
 #define _CRTDBG_MAP_ALLOC
+//#define SDL_MAIN_HANDLED
 
 #define SET_CRT_DEBUG_FIELD(a) \
     _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
@@ -83,7 +84,9 @@ int main(int, char**)
 
     Load_Config(&user_info);
     My_Variables.PaletteColors = loadPalette("file name for palette here");
+    if (My_Variables.PaletteColors == NULL) {
 
+    }
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
@@ -106,7 +109,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Dear ImGui SDL2+OpenGL3 example", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Q's Crappy Fallout Image Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
 
@@ -191,8 +194,10 @@ int main(int, char**)
                 done = true;
         }
 
+        // Store these variables at frame start for cycling the palette colors
         My_Variables.CurrentTime = clock();
         My_Variables.Palette_Update = false;
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();

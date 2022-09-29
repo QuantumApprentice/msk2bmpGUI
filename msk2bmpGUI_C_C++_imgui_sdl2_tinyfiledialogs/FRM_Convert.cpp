@@ -1,6 +1,7 @@
 #include "FRM_Convert.h"
 #include "FRM_Animate.h"
 #include "B_Endian.h"
+#include "tinyfiledialogs.h"
 
 #include <cstdint>
 #include <fstream>
@@ -45,7 +46,10 @@ SDL_Color* loadPalette(char * name)
         std::ios::in | std::ios::binary);
     if (!f.is_open()) {
         printf("Error opening color.pal\n");
-        return false;
+        tinyfd_messageBox("Error:", 
+                          "Missing color.pal, the default Fallout color palette.",
+                          "ok", "error", 1);
+        return PaletteColors;
     }
 
     uint8_t r, g, b;
