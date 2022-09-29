@@ -12,6 +12,9 @@ struct variables {
 	bool Render_Tiles = false;
 	bool Preview_Tiles = false;
 	bool Render_Window = false;
+
+    bool Palette_Update = false;
+
 	int Render_Width = 0, Render_Height = 0;
 
     //TODO: maybe store the color in config settings?

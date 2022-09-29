@@ -6,6 +6,7 @@
 
 #include "FRM_Animate.h"
 #include "FRM_Convert.h"
+#include "Image2Texture.h"
 
 //typedef uint8_t BYTE;
 typedef uint8_t BYTE;
@@ -60,7 +61,18 @@ void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors
 {
     SDL_Color animated_pixel = PaletteColors[((uint8_t*)PAL_Surface->pixels)[i]];
     animated_pixel.a = 255;
+    //TODO: Here's where the real pixel skewing problem comes from?
     ((SDL_Color*)Final_Render->pixels)[i] = animated_pixel;
+}
+
+void Image_Color_Cycle2(uint8_t pal_color, int x, int y, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
+{
+    SDL_Color animated_pixel = PaletteColors[pal_color];
+    animated_pixel.a = 255;
+    int pitch = Final_Render->pitch;
+    int width = Final_Render->w;
+    //TODO: Here's where the real pixel skewing problem comes from?
+    ((SDL_Color*)Final_Render->pixels)[width *y + x] = animated_pixel;
 }
 
 void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
@@ -85,9 +97,10 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index
         (*g_dwCurrent)++;
 }
 
-void AnimatePalette(SDL_Color * PaletteColors)
+void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update)
 {
-    bool bPaletteChanged = false;
+    *Palette_Update = false;
+    //bool bPaletteChanged = false;
     uint32_t dwCurrentTime = clock();//SDL_GetTicks();
 
     if (dwCurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
@@ -99,7 +112,8 @@ void AnimatePalette(SDL_Color * PaletteColors)
         Color_Cycle(PaletteColors, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
 
         g_dwLastCycleSlow = dwCurrentTime;
-        bPaletteChanged = true;
+        //bPaletteChanged = true;
+        *Palette_Update = true;
     }
 
     dwCurrentTime = clock();                //GetTickCount();
@@ -109,7 +123,9 @@ void AnimatePalette(SDL_Color * PaletteColors)
         Color_Cycle(PaletteColors, &g_dwFireFastCurrent, 243, g_nFireFast, 4);
 
         g_dwLastCycleMedium = dwCurrentTime;
-        bPaletteChanged = true;
+        //bPaletteChanged = true;
+        *Palette_Update = true;
+
     }
 
     dwCurrentTime = clock();                //GetTickCount();
@@ -119,7 +135,9 @@ void AnimatePalette(SDL_Color * PaletteColors)
         Color_Cycle(PaletteColors, &g_dwMonitorsCurrent, 233, g_nMonitors, 4);
 
         g_dwLastCycleFast = dwCurrentTime;
-        bPaletteChanged = true;
+        //bPaletteChanged = true;
+        *Palette_Update = true;
+
     }
 
     dwCurrentTime = clock();                //GetTickCount();
@@ -138,10 +156,12 @@ void AnimatePalette(SDL_Color * PaletteColors)
         g_nBlinkingRedCurrent = g_nBlinkingRed + g_nBlinkingRedCurrent;
 
         g_dwLastCycleVeryFast = dwCurrentTime;
-        bPaletteChanged = true;
+        //bPaletteChanged = true;
+        *Palette_Update = true;
+
     }
 
-    if (bPaletteChanged) {
-    //  UpdatePalette();
-    }
+    //if (bPaletteChanged) {
+    ////  UpdatePalette();
+    //}
 }

@@ -236,9 +236,9 @@ void limit_dither(SDL_Surface* Surface_32,
     int pixel_index[4];
     //if it crashes again on dithering, try removing the '=' sign from pixel_index[0] 
     //and pixel_index[2] and maybe pixel_index[1]?
-    pixel_index[0] = (y + 0 <= Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 0)) + (x + 1) : -1;
+    pixel_index[0] = (y + 0 <  Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 0)) + (x + 1) : -1;
     pixel_index[1] = (y + 1 <  Surface_32->h && x - 1 >= 0            ) ? (Surface_32->w * (y + 1)) + (x - 1) : -1;
-    pixel_index[2] = (y + 1 <  Surface_32->h && x + 0 <= Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 0) : -1;
+    pixel_index[2] = (y + 1 <  Surface_32->h && x + 0 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 0) : -1;
     pixel_index[3] = (y + 1 <  Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 1) : -1;
 
     int factor[4];

@@ -4,5 +4,6 @@ void Color_Cycle(SDL_Color * PaletteColors,
                     int pal_num, 
                     uint8_t * colors, 
                     int count);
-void AnimatePalette(SDL_Color * PaletteColors);
+void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update);
 void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors, SDL_Surface* Final_Render);
+void Image_Color_Cycle2(uint8_t pal_color, int x, int y, SDL_Color* PaletteColors, SDL_Surface* Final_Render);

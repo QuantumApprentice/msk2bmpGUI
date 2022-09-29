@@ -418,7 +418,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             float b = (float)color.b / 255.0f;
 
             char q[12];
-            snprintf(q, 12, "%d##aa%d", index);
+            snprintf(q, 12, "%d##aa%d", index, index);
             if (ImGui::ColorButton(q, ImVec4(r, g, b, 1.0f))) {
                 My_Variables->Color_Pick = (uint8_t)(index);
             }
@@ -426,7 +426,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             if (x < 15) ImGui::SameLine();
 
             if ((index) >= 229) {
-                AnimatePalette(My_Variables->PaletteColors);
+                Cycle_Palette(My_Variables->PaletteColors, &My_Variables->Palette_Update);
             }
         }
     }

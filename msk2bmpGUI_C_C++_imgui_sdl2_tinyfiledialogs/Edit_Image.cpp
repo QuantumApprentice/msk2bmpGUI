@@ -12,19 +12,22 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     int width  = My_Variables->F_Prop[counter].image->w;
     int height = My_Variables->F_Prop[counter].image->h;
     int size = width * height;
+    //int pitch = My_Variables->F_Prop[counter].image->pitch;
+    int pitch = (My_Variables->F_Prop[counter].Pal_Surface->pitch);
+    bool image_edited = false;
 
     //ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
     if (ImGui::IsMouseDown(event->button.button)) {
+        image_edited = true;
         float x, y;
         x = ImGui::GetMousePos().x - Origin.x;
         y = ImGui::GetMousePos().y - Origin.y;
-        int pitch = (My_Variables->F_Prop[counter].Pal_Surface->pitch);
 
         SDL_Rect rect;
         rect.x = x;
         rect.y = y;
-        rect.h = 4;
-        rect.w = 4;
+        rect.h = 10;
+        rect.w = 10;
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
             // Mouse position
@@ -47,19 +50,44 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
                 = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
         }
     }
-    for (int i = 0; i < size; i++)
+
+    uint8_t pal_color = 255;
+    for (int x = 0; x < width; x++)
     {
-        if (((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[i] >= 225) {
-            Image_Color_Cycle(
-                My_Variables->F_Prop[counter].Pal_Surface, i,
-                My_Variables->PaletteColors,
-                My_Variables->F_Prop[counter].Final_Render);
+        for (int y = 0; y < height; y++)
+        {
+            pal_color = ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[pitch*y + x];
+            if (pal_color >= 225)
+            {
+                Image_Color_Cycle2(pal_color, x, y,
+                                   My_Variables->PaletteColors,
+                                   My_Variables->F_Prop[counter].Final_Render);
+            }
         }
     }
+
+    //for (int i = 0; i < size; i++)
+    //{
+    //    if (((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[i] >= 225)
+    //    {
+    //        Image_Color_Cycle(
+    //            My_Variables->F_Prop[counter].Pal_Surface, i,
+    //            My_Variables->PaletteColors,
+    //            My_Variables->F_Prop[counter].Final_Render);
+    //    }
+    //}
     //Converts unpalettized image to texture for display, sets window bool to true
-    Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-        &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        &My_Variables->F_Prop[counter].edit_image_window);
+
+    printf("%d", My_Variables->Palette_Update);
+
+    if (My_Variables->Palette_Update || image_edited) {
+
+        printf("%d", My_Variables->Palette_Update);
+
+        Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+            &My_Variables->F_Prop[counter].Optimized_Render_Texture,
+            &My_Variables->F_Prop[counter].edit_image_window);
+    }
 }
 
 void Create_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
