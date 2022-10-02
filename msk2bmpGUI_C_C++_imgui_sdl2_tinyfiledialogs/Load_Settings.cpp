@@ -22,6 +22,8 @@ void Load_Config(struct user_info *user_info)
     //uint8_t *fileData;
     char* file_data;
 
+    //TODO: Need to be able to check if directory exists,
+    //      and create it if it doesn't
     FILE * config_file_ptr = NULL;
     fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
 

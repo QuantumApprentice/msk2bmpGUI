@@ -625,6 +625,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_Color* palette) {
         // Assigns image to Load_Files.image and loads palette for the image
         // TODO: image needs to be less than 1 million pixels (1000x1000)
         // to be viewable in Titanium FRM viewer, what's the limit in the game?
+    //TODO: Need to add wide character support
         if (My_Variables.PaletteColors == NULL)
         {
             My_Variables.PaletteColors = loadPalette("file name for palette here");

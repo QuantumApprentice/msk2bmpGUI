@@ -68,11 +68,23 @@ void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors
 void Image_Color_Cycle2(uint8_t pal_color, int x, int y, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
 {
     SDL_Color animated_pixel = PaletteColors[pal_color];
+    struct abgr {
+        uint8_t a;
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+    } pxl;
+    pxl.a = 255;
+    pxl.b = animated_pixel.b;
+    pxl.g = animated_pixel.g;
+    pxl.r = animated_pixel.r;
+
     animated_pixel.a = 255;
     int pitch = Final_Render->pitch;
     int width = Final_Render->w;
-    //TODO: Here's where the real pixel skewing problem comes from?
-    ((SDL_Color*)Final_Render->pixels)[width *y + x] = animated_pixel;
+    //TODO: Is this where the color not animating problem is too?
+    //((SDL_Color*)Final_Render->pixels)[width *y + x] = animated_pixel;
+    ((abgr*)Final_Render->pixels)[width *y + x] = pxl;
 }
 
 void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)

@@ -15,15 +15,9 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         //Temp_Surface =
         //    SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_RGBA8888, 0);
 
-        //printf("assigning Temp_Surface from Unpalettize surface*");
-
         Temp_Surface = Unpalettize_Image(surface);
 
-        //printf("SDL_to_OpenGL with Temp_Surface and texture*\n");
-
         SDL_to_OpenGl(Temp_Surface, texture);
-
-        //printf("SDL_FreeSurface Temp_Surface\n");
 
         SDL_FreeSurface(Temp_Surface);
 
