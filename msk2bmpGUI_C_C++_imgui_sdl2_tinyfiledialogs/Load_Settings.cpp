@@ -7,27 +7,38 @@
 #include <map>
 #include <variant>
 #include <filesystem>
+#include <sys/stat.h>
 
 char * folder_name;
+
 struct config_data {
     int char_ptr = 0;
     int column;
-    char key_buffer[_MAX_PATH];
-    char val_buffer[_MAX_PATH];
+    //regular char buffers
+    char key_buffer[MAX_KEY];
+    char val_buffer[MAX_PATH];
+
 } config_data;
 
 void Load_Config(struct user_info *user_info)
 {
-    char buffer[_MAX_PATH];
-    //uint8_t *fileData;
+    //regular char
+    char buffer[MAX_PATH];
     char* file_data;
 
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
     FILE * config_file_ptr = NULL;
-    fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
+    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"rb");
 
     if (!config_file_ptr) {
+        //check if directory exists
+        //struct stat stats;
+        //stat("config\\msk2bmpGUI.cfg", &stats);
+        //if(S_IFDIR(stats.st_mode))
+
+
+
         write_cfg_file(user_info);
     }
     else
@@ -44,6 +55,7 @@ void Load_Config(struct user_info *user_info)
     }
 }
 
+//normal char version
 void parse_data(char * file_data, size_t size, struct user_info *user_info)
 {
     while (config_data.char_ptr < size)
@@ -83,7 +95,8 @@ void parse_key(char *file_data, size_t size, struct config_data *config_data)
         {
         case '\r': case '\n': case '=':
         {
-        	return;
+            config_data->key_buffer[i++] = '\0';
+            return;
         }
         }
         config_data->key_buffer[i++] = file_data[config_data->char_ptr++];
@@ -97,7 +110,7 @@ void parse_comment(char *file_data, size_t size, struct config_data *config_data
         {
         case '\r': case '\n':
         {
-        	return;
+            return;
         }
         }
         config_data->char_ptr++;
@@ -113,16 +126,102 @@ void parse_value(char *file_data, size_t size, struct config_data *config_data, 
         {
         case '\r': case '\n':
         {
-        	store_config_info(config_data, user_info);
-        	return;
+            config_data->val_buffer[i++] = '\0';
+            store_config_info(config_data, user_info);
+            return;
         }
         case ';':
         { return; }
         }
         config_data->val_buffer[i++] = file_data[config_data->char_ptr++];
     }
+    config_data->val_buffer[i++] = '\0';
     store_config_info(config_data, user_info);
 }
+
+
+////wide character version
+//void parse_data(wchar_t* file_data, size_t size, struct user_info *user_info)
+//{
+//    while (config_data.char_ptr < size)
+//    {
+//        switch (file_data[config_data.char_ptr])
+//        {
+//        case '\r': case '\n':
+//        {
+//            config_data.char_ptr++;
+//            parse_key(file_data, size, &config_data);
+//            break;
+//        }
+//        case ';':
+//        {
+//            parse_comment(file_data, size, &config_data);
+//            break;
+//        }
+//        case '=':
+//        {
+//            parse_value(file_data, size, &config_data, user_info);
+//            break;
+//        }
+//        default:
+//        {
+//            parse_key(file_data, size, &config_data);
+//            break;
+//        }
+//        }
+//    }
+//}
+//
+//void parse_key(wchar_t *file_data, size_t size, struct config_data *config_data)
+//{
+//    int i = 0;
+//    while (config_data->char_ptr < size)
+//    {
+//        switch (file_data[config_data->char_ptr])
+//        {
+//        case '\r': case '\n': case '=':
+//        {
+//            return;
+//        }
+//        }
+//        config_data->key_buffer[i++] = file_data[config_data->char_ptr++];
+//    }
+//}
+//
+//void parse_comment(wchar_t *file_data, size_t size, struct config_data *config_data)
+//{
+//    while (config_data->char_ptr < size)
+//    {
+//        switch (file_data[config_data->char_ptr])
+//        {
+//        case '\r': case '\n':
+//        {
+//        	return;
+//        }
+//        }
+//        config_data->char_ptr++;
+//    }
+//}
+//void parse_value(wchar_t *file_data, size_t size, struct config_data *config_data, struct user_info *user_info)
+//{
+//    int i = 0;
+//    config_data->char_ptr++;
+//    while (config_data->char_ptr < size)
+//    {
+//        switch (file_data[config_data->char_ptr])
+//        {
+//        case '\r': case '\n':
+//        {
+//        	store_config_info(config_data, user_info);
+//        	return;
+//        }
+//        case ';':
+//        { return; }
+//        }
+//        config_data->val_buffer[i++] = file_data[config_data->char_ptr++];
+//    }
+//    store_config_info(config_data, user_info);
+//}
 
 void store_config_info(struct config_data *config_data, struct user_info *user_info)
 {
@@ -143,13 +242,14 @@ void store_config_info(struct config_data *config_data, struct user_info *user_i
 void write_cfg_file(struct user_info* user_info)
 {
     FILE * config_file_ptr = NULL;
-    fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+    //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
+    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"wb");
 
     fwrite("Default_Save_Path=",   strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(user_info->default_save_path, strlen(user_info->default_save_path), 1, config_file_ptr);
-    fwrite("\nDefault_Game_Path=", strlen("\nDefault_Game_Path="), 1, config_file_ptr);
+    fwrite("\r\nDefault_Game_Path=", strlen("\nDefault_Game_Path="), 1, config_file_ptr);
     fwrite(user_info->default_game_path, strlen(user_info->default_game_path), 1, config_file_ptr);
-    fwrite("\nDefault_Load_Path=", strlen("\nDefault_Load_Path="), 1, config_file_ptr);
+    fwrite("\r\nDefault_Load_Path=", strlen("\nDefault_Load_Path="), 1, config_file_ptr);
     fwrite(user_info->default_load_path, strlen(user_info->default_load_path), 1, config_file_ptr);
 
     fclose(config_file_ptr);

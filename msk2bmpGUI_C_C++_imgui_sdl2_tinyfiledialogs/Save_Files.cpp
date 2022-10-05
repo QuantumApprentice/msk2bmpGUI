@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <SDL.h>
 #include <filesystem>
+#include <Windows.h>
 
 #include "Save_Files.h"
 #include "tinyfiledialogs.h"
@@ -53,11 +54,17 @@ char* Save_FRM(SDL_Surface *f_surface, user_info* user_info)
     else
     {
         //parse Save_File_Name to isolate the directory and save in default_save_path
-        std::filesystem::path p(Save_File_Name);
-        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), _MAX_PATH);
+        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+
+        //std::filesystem::path p(Save_File_Name);
+        std::filesystem::path p(w_save_name);
+
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
         //TODO: check for existing file first
-        fopen_s(&File_ptr, Save_File_Name, "wb");
+        //fopen_s(&File_ptr, Save_File_Name, "wb");
+        _wfopen_s(&File_ptr, w_save_name, L"wb");
+
         if (!File_ptr) {
             tinyfd_messageBox(
                 "Error",
@@ -92,8 +99,8 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
     int num_tiles_y = PAL_surface->h / 300;
     int q = 0;
     
-    char Save_File_Name[_MAX_PATH];
-    char buffer[_MAX_PATH];
+    char Save_File_Name[MAX_PATH];
+    char buffer[MAX_PATH];
     FILE * File_ptr = NULL;
 
 
@@ -101,7 +108,7 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
         Set_Default_Path(user_info);
         if (!strcmp(user_info->default_game_path, "")) { return; }
     }
-    strncpy(buffer, user_info->default_game_path, _MAX_PATH);
+    strncpy(buffer, user_info->default_game_path, MAX_PATH);
 
     //TODO: check for existing file first
     for (int y = 0; y < num_tiles_y; y++)
@@ -109,8 +116,10 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
         for (int x = 0; x < num_tiles_x; x++)
         {
             //-------save file
-            snprintf(Save_File_Name, _MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", buffer, q++);
-            fopen_s(&File_ptr, Save_File_Name, "wb");
+            snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", buffer, q++);
+            // Wide character stuff follows...
+            wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+            _wfopen_s(&File_ptr, w_save_name, L"wb");
 
             if (!File_ptr) {
                 tinyfd_messageBox(
@@ -123,7 +132,6 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
                 return;
             }
             else {
-
                 //save header
                 fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 
@@ -145,8 +153,8 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 {
     char * Save_File_Name;
     char * lFilterPatterns[2] = { "*.BMP", "" };
-    char buffer[_MAX_PATH];
-    snprintf(buffer, _MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
+    char buffer[MAX_PATH];
+    snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
 
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
@@ -164,7 +172,7 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 
         //parse Save_File_Name to isolate the directory and store in default_save_path
         std::filesystem::path p(Save_File_Name);
-        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), _MAX_PATH);
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
     }
     return Save_File_Name;
 }
@@ -172,8 +180,9 @@ char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
 char* check_cfg_file(char* folder_name, user_info* user_info)
 {
     FILE * config_file_ptr = NULL;
-    fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "rt");
-    
+    //wide character stuff
+    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"rb");
+
     if (!config_file_ptr) {
         folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
 

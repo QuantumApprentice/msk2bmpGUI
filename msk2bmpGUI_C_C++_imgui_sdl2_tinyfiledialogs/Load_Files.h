@@ -1,11 +1,13 @@
 #pragma once
 #include <SDL.h>
 #include <filesystem>
-//#include <SDL_opengl.h>
 #include <glad/glad.h>
+//#include <SDL_opengl.h>
+
+#include "Load_Settings.h"
 
 struct LF {
-    char Opened_File[_MAX_PATH];
+    char Opened_File[MAX_PATH];
     char * c_name;
     char * extension;
     SDL_Surface* image = nullptr;
@@ -24,7 +26,5 @@ struct LF {
     bool preview_image_window;
     bool edit_image_window;
     bool edit_map_mask = false;
-
-    char * FilterPattern1[3] = { "*.bmp" , "*.png", "*.frm" };
 };
 void Load_Files(LF[], struct user_info* user_info, int, SDL_Color* palette);
