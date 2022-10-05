@@ -7,7 +7,7 @@
 #include <map>
 #include <variant>
 #include <filesystem>
-#include <sys/stat.h>
+//#include <sys/stat.h>
 
 char * folder_name;
 
@@ -29,17 +29,32 @@ void Load_Config(struct user_info *user_info)
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
     FILE * config_file_ptr = NULL;
+    errno_t error =
     _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"rb");
 
     if (!config_file_ptr) {
         //check if directory exists
+        
+    //// C version of the code using <sys/stats.h>
         //struct stat stats;
-        //stat("config\\msk2bmpGUI.cfg", &stats);
-        //if(S_IFDIR(stats.st_mode))
+        //stat("config\\", &stats);
+        //if (stats.st_mode & S_IFDIR) {
+        //    write_cfg_file(user_info);
+        //}
+        //else {
+        //    std::filesystem::create_directory("config\\");
+        //    write_cfg_file(user_info);
+        //}
 
-
-
-        write_cfg_file(user_info);
+        std::filesystem::path p("config\\");
+        if (std::filesystem::is_directory(p)) {
+            write_cfg_file(user_info);
+  
+        }
+        else {
+            std::filesystem::create_directory("config\\");
+            write_cfg_file(user_info);
+        }
     }
     else
     {
@@ -247,9 +262,9 @@ void write_cfg_file(struct user_info* user_info)
 
     fwrite("Default_Save_Path=",   strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(user_info->default_save_path, strlen(user_info->default_save_path), 1, config_file_ptr);
-    fwrite("\r\nDefault_Game_Path=", strlen("\nDefault_Game_Path="), 1, config_file_ptr);
+    fwrite("\r\nDefault_Game_Path=", strlen("\r\nDefault_Game_Path="), 1, config_file_ptr);
     fwrite(user_info->default_game_path, strlen(user_info->default_game_path), 1, config_file_ptr);
-    fwrite("\r\nDefault_Load_Path=", strlen("\nDefault_Load_Path="), 1, config_file_ptr);
+    fwrite("\r\nDefault_Load_Path=", strlen("\r\nDefault_Load_Path="), 1, config_file_ptr);
     fwrite(user_info->default_load_path, strlen(user_info->default_load_path), 1, config_file_ptr);
 
     fclose(config_file_ptr);
