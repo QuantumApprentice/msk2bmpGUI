@@ -27,6 +27,6 @@ struct variables {
 };
 
 //void Image2Texture(variables* My_Variables, int counter);
-void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window);
+void Image2Texture(SDL_Surface* surface,      GLuint* texture,      bool* window);
 void SDL_to_OpenGl(SDL_Surface* Temp_Surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);

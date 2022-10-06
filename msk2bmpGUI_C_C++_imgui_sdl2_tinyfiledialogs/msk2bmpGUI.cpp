@@ -443,7 +443,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
     ImGui::End();
 }
 
-void ShowRenderWindow(variables *My_Variables,
+void Preview_Tiles_Window(variables *My_Variables,
     ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
     int *max_box_x, int *max_box_y, int counter)
 {
@@ -556,7 +556,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
         }
         if (ImGui::Button("Export Mask Tiles...")) {
             //TODO: export mask tiles using msk2bmp2020 code
-            Save_Map_Mask();
+            Save_Map_Mask(My_Variables->F_Prop[counter].Map_Mask, user_info);
         }
 
         ImGui::Image(
@@ -578,7 +578,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             Edit_Map_Mask(My_Variables, event, counter, Origin);
 
             Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-                Origin, Bottom_Right);
+                Origin, Bottom_Right, { 0,0 }, { 1, 1 }, IM_COL32(255, 255, 255, 255));
             if (ImGui::Button("Cancel Map Mask...")) {
                 My_Variables->F_Prop[counter].edit_map_mask = false;
             }

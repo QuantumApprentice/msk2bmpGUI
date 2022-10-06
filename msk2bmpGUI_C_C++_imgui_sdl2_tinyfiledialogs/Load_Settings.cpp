@@ -42,6 +42,7 @@ void Load_Config(struct user_info *user_info)
         //    write_cfg_file(user_info);
         //}
         //else {
+        //    mkdir();
         //    std::filesystem::create_directory("config\\");
         //    write_cfg_file(user_info);
         //}

@@ -45,7 +45,7 @@ void SDL_to_OpenGl(SDL_Surface *Temp_Surface, GLuint *texture)
             Temp_Surface->w,
             Temp_Surface->h,
             bpp,
-            Rmask, Gmask, Bmask, Amask );
+            Rmask, Gmask, Bmask, Amask);
 
         //SDL_SetSurfaceAlphaMod(My_Variables->Temp_Surface, 0xFF);
         //SDL_SetSurfaceBlendMode(Temp_Surface, SDL_BLENDMODE_NONE);

@@ -137,6 +137,9 @@
     <ClInclude Include="Edit_Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Save_Mask.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Palette_Shader.vert">

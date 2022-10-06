@@ -3,6 +3,7 @@
 #include "Edit_Image.h"
 #include "imgui-docking/imgui.h"
 #include "FRM_Animate.h"
+#include <stdlib.h>
 
 void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //ImDrawList *Draw_List = ImGui::GetWindowDrawList();
@@ -84,17 +85,32 @@ void Create_Map_Mask(variables* My_Variables, SDL_Event* event, int counter)
 
     if (My_Variables->F_Prop[counter].Map_Mask)
         { SDL_FreeSurface(My_Variables->F_Prop[counter].Map_Mask); }
-    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
-
-    SDL_SetSurfaceBlendMode(My_Variables->F_Prop[counter].Map_Mask, SDL_BLENDMODE_ADD);
+    //My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurfaceWithFormat(
+                                                SDL_SWSURFACE,
+                                                width, height, 1,
+                                                SDL_PIXELFORMAT_INDEX1MSB);
+    //SDL_SetSurfaceBlendMode(My_Variables->F_Prop[counter].Map_Mask, SDL_BLENDMODE_ADD);
 
     if (My_Variables->F_Prop[counter].Map_Mask) {
+
         SDL_Surface* MM_Surface = My_Variables->F_Prop[counter].Map_Mask;
-        for (int i = 0; i < (width*height); i++)
+        for (int i = 0; i < (width*height/8); i++)
         {
-            ((SDL_Color*)MM_Surface->pixels)[i] = SDL_Color{ 64, 0, 0, 254 };
+            ((uint8_t*)MM_Surface->pixels)[i] = rand() % 255;
+            //uint8_t byte =
+            //    (rand() % 2 << 0) |
+            //    (rand() % 2 << 1) |
+            //    (rand() % 2 << 2) |
+            //    (rand() % 2 << 3) |
+            //    (rand() % 2 << 4) |
+            //    (rand() % 2 << 5) |
+            //    (rand() % 2 << 6) |
+            //    (rand() % 2 << 7);
+            //((uint8_t*)MM_Surface->pixels)[i] = byte;
         }
-        Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+
+        Image2Texture(My_Variables->F_Prop[counter].Map_Mask,
             &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
             &My_Variables->F_Prop[counter].edit_image_window);
     }
@@ -115,6 +131,12 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     int y = (int)(MousePos.y - Origin.y);
     int pitch = BB_Surface->pitch;
 
+    SDL_Rect rect;
+    rect.x = x;
+    rect.y = y;
+    rect.h = 10;
+    rect.w = 10;
+
     if (ImGui::IsMouseDown(event->button.button)) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
@@ -123,8 +145,9 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
             for (int i = 0; i < 4; i++)
             {
                 uint8_t* where_i_want_to_draw = 
-                            &((uint8_t*)BB_Surface->pixels)[pitch*y + 4*x + i];
-                ((SDL_Color*)where_i_want_to_draw)[0] = SDL_Color{ 255, 255, 255, 255 };
+                            &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
+                //SDL_FillRect(My_Variables->F_Prop[counter].Map_Mask, &rect, 255);
+                ((uint8_t*)where_i_want_to_draw)[0] = 255;
             }
             SDL_BlitSurface(My_Variables->F_Prop[counter].Map_Mask, NULL,
                 My_Variables->F_Prop[counter].Final_Render, NULL);

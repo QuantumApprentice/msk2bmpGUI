@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "Save_Mask.h"
+
 // Windows BITMAPINFOHEADER format, for historical reasons
 char bmpHeader[62] = {
     // Offset 0x00000000 to 0x00000061
@@ -31,15 +33,7 @@ char bmpHeader[62] = {
     0xFF, 0xFF, 0xFF, 0x00  // 1
 };
 
-#define MAX_LINES 300
-#define writelines(arg1, arg2) fwrite(arg2, MAX_LINES * 44, 1, arg1)
 
-typedef char line_array_t[MAX_LINES][44];
-
-bool IsBMPFile(FILE *infile);
-bool ReadBmpLines(FILE *file, line_array_t vOutput);			// same as below
-void ReadMskLines(FILE *file, char vOutput[MAX_LINES][44]);
-int BytesToInt(char *C, int numBytes);
 
 // Lines of bits. Essentially the raw MSK file.
 line_array_t inputLines;
