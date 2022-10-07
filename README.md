@@ -6,10 +6,11 @@ I originally planned, but it's turning out quite nicely.
 
 A special "Thank You!" goes out to several people in the 
 community who helped in the developement of this Image Editing tool:
-#### BakerStaunch
-#### DandyMcGee
-#### MonotoneZombie
-#### ...and a ton of other people who 
+BakerStaunch
+DandyMcGee
+MonotoneZombie
+
+...and a ton of other people who 
    I will eventually list when I 
    remember them all :P
    Thank you everyone!
@@ -24,9 +25,11 @@ Loading a compatible image (jpg, png, bmp) or Fallout FRM file
 will open a second window with a preview of this image.
 The red squares indicate how the image will be tiled if it's
 supposed to be an overworld map.
+
 --Currently only a single frame of an FRM will be displayed,
   Plans are to expand this to display all frames, and to allow
   each frame to be edited individually.
+  
 --FRM's that use color cycling currently don't display correctly,
   Plans are to add color cycling to this image display too.
 
