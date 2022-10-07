@@ -15,6 +15,7 @@ MonotoneZombie
    Thank you everyone!
 
 Ok so here's how "Q's (version) Fallout Image Editor" works:
+
 The program currently opens with a very simple "Load files..." 
 button and the full default Fallout palette including the 
 upper cycling colors.
