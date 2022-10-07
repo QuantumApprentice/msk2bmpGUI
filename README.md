@@ -25,17 +25,17 @@ Loading a compatible image (jpg, png, bmp) or Fallout FRM file
 will open a second window with a preview of this image.
 The red squares indicate how the image will be tiled if it's
 supposed to be an overworld map.
---Currently only a single frame of an FRM will be displayed,
+- Currently only a single frame of an FRM will be displayed,
   Plans are to expand this to display all frames, and to allow
   each frame to be edited individually.
---FRM's that use color cycling currently don't display correctly,
+- FRM's that use color cycling currently don't display correctly,
   Plans are to add color cycling to this image display too.
 
 Once the image is loaded there are several buttons above the image
 with conversion and editing options.
---These buttons are currently fairly generic and mostly apply to
+- These buttons are currently fairly generic and mostly apply to
   non-FRM images, 
-  Plans are to make them context specific with dropdowns for the
+ - Plans are to make them context specific with dropdowns for the
   alternative color matching profiles (to include dithering options).
 
 ### *Preview Tiles*
@@ -53,7 +53,7 @@ Fallout Path" configuration, under the "data/art/interface" folder,
 with the appropriately numbered name for the tile, .
 If the "Default Fallout Path" is not set yet, a warning will pop
 up asking the user to set it.
---This implementation is currently very simple, and will automatically
+- This implementation is currently very simple, and will automatically
   overwrite any map tile images that may already be there.
   Plans are to add warning checks if files already exist, as well as 
   directory checks (might crash if "data/art/interface" doesn't exist).
@@ -66,7 +66,7 @@ with the selected color matching and dithering options applied to it.
 The "Save as Image..." button at the top will export the full image 
 with all the post processing (palettizing/color matching/dithering) 
 applied to it.
---*Note* Currently images are only saved as either BMP or FRM, and
+- *Note* Currently images are only saved as either BMP or FRM, and
   which one it saves as is set by the original image's extension.
   ie: FRM's can only be saved as BMP, and all other compatible image
   types can only be saved as FRM.
@@ -80,12 +80,12 @@ Finally, the "Convert and Paint" button will apply the post processing
 to paint on.
 You can change the color of the paint tool by clicking on one of the
 predefined palette colors in the Fallout palette menu.
---Currently the only implemented paint tool is a single fill-rect tool
+- Currently the only implemented paint tool is a single fill-rect tool
   with pre-defined values for the size
   Plans are to add some controls for the size of the tool, and hopefully
   other painting tools (specifically select and fill, gradient fill, 
   eraser, and maybe some shape fill/masking fill).
---Building this paint tool will probably take the longest, and is only
+- Building this paint tool will probably take the longest, and is only
   useful for single frame images right now, though I am interested in
   ideas to make editing multiple frame animations more convenient.
   
@@ -100,7 +100,7 @@ across some portion of the map.
 The only real examples of this in either game is the west coast:
 The ocean area is masked off using a mask tile, preventing the player
 from swimming to the Oil Rig in Fallout 2 (and not much else in Fallout).
---Currently this editing window can only be used to draw in single pixels,
+- Currently this editing window can only be used to draw in single pixels,
   and the export functions don't work yet.
   Plans are to add a fill function and maybe some line drawing functions
   to provide borders for the fill operation.
