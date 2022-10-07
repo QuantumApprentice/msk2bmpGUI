@@ -9,7 +9,6 @@ community who helped in the developement of this Image Editing tool:
 BakerStaunch
 DandyMcGee
 MonotoneZombie
-
 ...and a ton of other people who 
    I will eventually list when I 
    remember them all :P
@@ -20,16 +19,14 @@ The program currently opens with a very simple "Load files..."
 button and the full default Fallout palette including the 
 upper cycling colors.
 
-*Load File*
+### *Load File*
 Loading a compatible image (jpg, png, bmp) or Fallout FRM file
 will open a second window with a preview of this image.
 The red squares indicate how the image will be tiled if it's
 supposed to be an overworld map.
-
 --Currently only a single frame of an FRM will be displayed,
   Plans are to expand this to display all frames, and to allow
   each frame to be edited individually.
-  
 --FRM's that use color cycling currently don't display correctly,
   Plans are to add color cycling to this image display too.
 
@@ -40,7 +37,7 @@ with conversion and editing options.
   Plans are to make them context specific with dropdowns for the
   alternative color matching profiles (to include dithering options).
 
-*Preview Tiles*
+### *Preview Tiles*
 The "Preview Tiles" buttons are intended to be used to make Fallout's
 overworld map tiles from the image provided, by splitting it up into
 the correct sized tiles (according to the red squares overlapping the
@@ -60,11 +57,11 @@ up asking the user to set it.
   Plans are to add warning checks if files already exist, as well as 
   directory checks (might crash if "data/art/interface" doesn't exist).
   
-*Preview as Image*
+### *Preview as Image*
 "Preview as Image" buttons will display the image in its entirety
 with the selected color matching and dithering options applied to it.
 
-*Save as Image*
+### *Save as Image*
 The "Save as Image..." button at the top will export the full image 
 with all the post processing (palettizing/color matching/dithering) 
 applied to it.
@@ -76,7 +73,7 @@ applied to it.
   on the extension the user picks in the save file dialogue window.
   (And hopefully also matching the extension in the filename itself).
 
-*Convert and Paint*
+### *Convert and Paint*
 Finally, the "Convert and Paint" button will apply the post processing
 (palettizing/color matching/dithering) to the image and creates a layer
 to paint on.
@@ -91,7 +88,7 @@ predefined palette colors in the Fallout palette menu.
   useful for single frame images right now, though I am interested in
   ideas to make editing multiple frame animations more convenient.
   
-*Create Mask Tiles* (partially implemented)
+### *Create Mask Tiles* (partially implemented)
 The "Create Mask Tiles" button will open an editing layer on top of 
 the original image (with partial transparency) which can only be painted
 in black an white.
@@ -113,7 +110,7 @@ The "Export Mask Tiles" button is currently unimplemented.
   Should work similar to the "Save as Map Tiles" button.
   
   
-*Other Features*
+### *Other Features*
 --Wide Character Support--
 The first alpha release of this tool doesn't yet support wide characters
 (languages that use an alphabet other than the English one).
