@@ -6,10 +6,10 @@ I originally planned, but it's turning out quite nicely.
 
 A special "Thank You!" goes out to several people in the 
 community who helped in the developement of this Image Editing tool:
-### BakerStaunch
-### DandyMcGee
-### MonotoneZombie
-### ...and a ton of other people who 
+#### BakerStaunch
+#### DandyMcGee
+#### MonotoneZombie
+#### ...and a ton of other people who 
    I will eventually list when I 
    remember them all :P
    Thank you everyone!
