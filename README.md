@@ -106,7 +106,7 @@ from swimming to the Oil Rig in Fallout 2 (and not much else in Fallout).
   to provide borders for the fill operation.
 
 The "Export Mask Tiles" button is currently unimplemented.
---Currently working on this one, hoping to have it available for the next
+- Currently working on this one, hoping to have it available for the next
   alpha release.
   Should work similar to the "Save as Map Tiles" button.
   
@@ -155,7 +155,7 @@ and you don't have to if they're the same number as the original
 game, but it might be a neat feature and may cut down on some
 of the learning curve for modding.
 
-*Final Thoughts*
+## *Final Thoughts*
 Well, those are all the things I've got working so far, and 
 a few things I'd like to get working in the future.
 Hope the modding community finds this useful, and any support
