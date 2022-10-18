@@ -58,6 +58,9 @@ int Save_Mask(bool isBMP, int argc, const char ** argv)
     char *TargetExtension = { "" };
 
     // Load Input File
+    //TODO: modify IsBMPFile() check to switch between
+    //      files dropped on here and surfaces passed
+    //      in from the converter
     bool bBMP2MSK;
     if (!isBMP) {
         bBMP2MSK = IsBMPFile(infile);
@@ -88,6 +91,7 @@ int Save_Mask(bool isBMP, int argc, const char ** argv)
     // These ones will end up flipping the 
     // image until they are addressed in ReadBmpLines)
 
+    //TODO: is flipping necessary for binary SDL surface?
     if (bFlipVertical)
     {
         for (int i = 0; i < MAX_LINES / 2; i++)
@@ -108,6 +112,8 @@ int Save_Mask(bool isBMP, int argc, const char ** argv)
     strncpy(&sOutputFileName[y - 4], TargetExtension, 3);
 
     // Write Output File
+    //TODO: this needs a little cleanup
+    //      and probably refactor into a helper function
     FILE *fb;
     fb = fopen(sOutputFileName, "wb");
     FILE *outfile = fb;
@@ -133,10 +139,16 @@ void ReadMskLines(FILE *file, char vOutput[MAX_LINES][44])
     // information and so any line-by-line 
     // processing will have to figure out 
     // (or be told) the length of the line.
+
+    //TODO: may need alternate function
+    //      44*8 = 352, not sure if it works
+    //      with the SDL surface the same way
     fseek(file, 0, SEEK_SET);
     fread(vOutput, MAX_LINES * 44, 1, file);
 }
 
+//TODO: need to handle switching between dropped
+//      bmp files and SDL surface files
 bool IsBMPFile(FILE *infile)
 {
     // Super lazy - is the first character a "B"?

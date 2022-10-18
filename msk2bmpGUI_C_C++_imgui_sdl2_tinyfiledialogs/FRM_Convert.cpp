@@ -68,12 +68,15 @@ SDL_Color* loadPalette(char * name)
     return PaletteColors;
 }
 
-#define PALETTE_NUMBER 228
+#define PALETTE_NUMBER 256
 // Converts the color space to Fallout's paletted format
 SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_Color* palette, bool SDL)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
     SDL_PixelFormat* pxlFMT_UnPal;
+    //TODO: swap SDL_PIXELFORMAT_RGBA8888 to SDL_PIXELFORMAT_ABGR8888
+    //      for more consistent color handling,
+    //      need to modify all the color matching stuff to match this change
     pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
 
     SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
@@ -86,8 +89,8 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_Color* palette, bool SD
     SDL_Surface* Surface_8;
 
     SDL_Palette* FO_Palette;
-    FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
-    SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
+    FO_Palette = SDL_AllocPalette(228);
+    SDL_SetPaletteColors(FO_Palette, palette, 0, 228);
 
     // Convert image to palettized surface
     pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
@@ -356,7 +359,7 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_Color* palette)
 SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 {
     SDL_PixelFormat* pxlFMT_UnPal;
-    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
 
     SDL_Surface* Output_Surface;
     Output_Surface = SDL_ConvertSurface(Surface, pxlFMT_UnPal, 0);

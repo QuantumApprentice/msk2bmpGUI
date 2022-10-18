@@ -198,11 +198,12 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
     }
     strncpy(path, user_info->default_game_path, MAX_PATH);
 
-    //TODO: check for existing file first
     for (int y = 0; y < num_tiles_y; y++)
     {
         for (int x = 0; x < num_tiles_x; x++)
         {
+            //check for existing file first
+            //TODO: Make this section a helper function
             wchar_t* w_save_name = Create_File_Name(false, Save_File_Name, path, q);
 
             if (_wfopen_s(&File_ptr, w_save_name, L"rb")) {
@@ -264,6 +265,8 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
                         SDL_PIXELFORMAT_INDEX1MSB);
 
                 int pixel_pointer = y * 300 * surface->pitch + x * 350;
+                //TODO: split the surface up into 350x300 pixel surfaces
+                //      and pass them to Save_Mask()
             //    for (int pixel_i = 0; pixel_i < 350; pixel_i++)
             //    {
                     //SDL_BlitSurface();
@@ -282,6 +285,7 @@ wchar_t* Create_File_Name(bool type, char* Save_File_Name, char* path, int q)
 {
 
     //-------save file
+    //TODO: move q++ outside if check
     if (type == FRM) {
         snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, q++);
     }
