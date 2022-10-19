@@ -27,4 +27,4 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
 };
-void Load_Files(LF[], struct user_info* user_info, int, SDL_Color* palette);
+void Load_Files(LF[], struct user_info* user_info, int, SDL_PixelFormat* pxlFMT);

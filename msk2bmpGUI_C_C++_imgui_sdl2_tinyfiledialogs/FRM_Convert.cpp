@@ -39,8 +39,11 @@ uint8_t convert_colors(uint8_t bytes) {
     }
 }
 
-SDL_Color PaletteColors[256];
-SDL_Color* loadPalette(char * name)
+#define PALETTE_NUMBER 256
+#define PALETTE_FLAT 228
+SDL_Color PaletteColors[PALETTE_NUMBER];
+
+SDL_PixelFormat* loadPalette(char * name)
 {
     std::ifstream f("color.pal", 
         std::ios::in | std::ios::binary);
@@ -49,7 +52,7 @@ SDL_Color* loadPalette(char * name)
         tinyfd_messageBox("Error:", 
                           "Missing color.pal, the default Fallout color palette.",
                           "ok", "error", 1);
-        return PaletteColors;
+        return NULL;
     }
 
     uint8_t r, g, b;
@@ -65,14 +68,24 @@ SDL_Color* loadPalette(char * name)
         b = convert_colors(bytes[2]);
         PaletteColors[i] = SDL_Color{ r, g, b };
     }
-    return PaletteColors;
+
+    SDL_Palette* FO_Palette;
+    SDL_PixelFormat* pxlFMT_FO_Pal;
+    FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
+    SDL_SetPaletteColors(FO_Palette, PaletteColors, 0, PALETTE_NUMBER);
+    pxlFMT_FO_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    SDL_SetPixelFormatPalette(pxlFMT_FO_Pal, FO_Palette);
+
+
+    return pxlFMT_FO_Pal;
 }
 
-#define PALETTE_NUMBER 256
+
 // Converts the color space to Fallout's paletted format
-SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_Color* palette, bool SDL)
+SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool SDL)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
+    SDL_Surface* Surface_8;
     SDL_PixelFormat* pxlFMT_UnPal;
     //TODO: swap SDL_PIXELFORMAT_RGBA8888 to SDL_PIXELFORMAT_ABGR8888
     //      for more consistent color handling,
@@ -85,20 +98,23 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_Color* palette, bool SD
     }
 
     // Setup for palettizing image
-    SDL_PixelFormat* pxlFMT_Pal;
-    SDL_Surface* Surface_8;
+    //SDL_Palette* FO_Palette;
+    //SDL_PixelFormat* pxlFMT_Pal;
+    //FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
+    //SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
+    //pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    //SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
 
-    SDL_Palette* FO_Palette;
-    FO_Palette = SDL_AllocPalette(228);
-    SDL_SetPaletteColors(FO_Palette, palette, 0, 228);
+    Surface_8 = SDL_ConvertSurface(surface, pxlFMT, 0);
 
-    // Convert image to palettized surface
-    pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
-
-    Surface_8 = SDL_ConvertSurface(surface, pxlFMT_Pal, 0);
     //TODO: Here's where the paint problem is
-    //Surface_8->pitch = Surface_8->w;
+    //create new palette just for color matching (w/o the cycling colors)
+    SDL_Palette* Temp_Palette;
+    SDL_PixelFormat* pxlFMT_Temp;
+    Temp_Palette = SDL_AllocPalette(PALETTE_FLAT);
+    SDL_SetPaletteColors(Temp_Palette, pxlFMT->palette->colors, 0, PALETTE_FLAT);
+    pxlFMT_Temp = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    SDL_SetPixelFormatPalette(pxlFMT_Temp, Temp_Palette);
 
     if (!Surface_8) {
         printf("Error: %s\n", SDL_GetError());
@@ -106,14 +122,14 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_Color* palette, bool SD
 
     //switch to change between euclidian and sdl color match algorithms
     if (SDL == true) {
-        SDL_Color_Match(Surface_32, pxlFMT_Pal, Surface_8);
+        SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
     }
     else
     {
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     }
 
-    //SDL_FreeFormat(pxlFMT_Pal);
+    SDL_FreeFormat(pxlFMT_Temp);
     SDL_FreeFormat(pxlFMT_UnPal);
     SDL_FreeSurface(Surface_32);
     return Surface_8;
@@ -187,7 +203,7 @@ void Euclidian_Distance_Color_Match(
             w_smallest = INT_MAX;
             memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
 
-            for (int j = 0; j < PALETTE_NUMBER; j++)
+            for (int j = 0; j < PALETTE_FLAT; j++)
             {
                 s = abgr.r - PaletteColors[j].r;
                 t = abgr.g - PaletteColors[j].g;
@@ -205,7 +221,7 @@ void Euclidian_Distance_Color_Match(
                     w_PaletteColor = j;
                 }
 
-                if (j == 256 - 1)
+                if (j == PALETTE_FLAT - 1)
                 {
                     err.r = abgr.r - PaletteColors[w_PaletteColor].r;
                     err.g = abgr.g - PaletteColors[w_PaletteColor].g;
@@ -295,7 +311,7 @@ void clamp_dither(SDL_Surface *Surface_32,
 }
 
 // Convert FRM color to standard 32bit
-SDL_Surface* Load_FRM_Image(char *File_Name, SDL_Color* palette)
+SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
 {
     // File open stuff
     FILE *File_ptr = fopen(File_Name, "rb");
@@ -312,20 +328,16 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_Color* palette)
     frame_size = B_Endian::write_u32(frame_size);
 
     // 8 bit palleted stuff here
-    SDL_PixelFormat* pxlFMT_Pal;
-    //SDL_PixelFormat* pxlFMT_UnPal;
-
-    SDL_Palette* FO_Palette;
-    FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
-    SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
-
-    // Convert image to palettized surface
-    pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
+    //SDL_PixelFormat* pxlFMT_Pal;
+    //SDL_Palette* FO_Palette;
+    //FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
+    //SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
+    //pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
+    //SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
 
     //TODO: Can I make a new surface with a palette without using SDL_CreateRGBSurface AND SDL_ConvertSurface()?
     SDL_Surface* Surface_8   = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
-    SDL_Surface* Pal_Surface = SDL_ConvertSurface(Surface_8, pxlFMT_Pal, 0);
+    SDL_Surface* Pal_Surface = SDL_ConvertSurface(Surface_8, pxlFMT, 0);
     SDL_FreeSurface(Surface_8);
 
     if (!Pal_Surface) {

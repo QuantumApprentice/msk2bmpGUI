@@ -55,7 +55,7 @@ void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter);
-void Open_Files(struct user_info* user_info, int* counter, SDL_Color* palette);
+void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT);
 void Set_Default_Path(struct user_info* user_info);
 void crash_detector();
 
@@ -83,10 +83,9 @@ int main(int, char**)
     //end of bug checking code
 
     Load_Config(&user_info);
-    My_Variables.PaletteColors = loadPalette("file name for palette here");
-    if (My_Variables.PaletteColors == NULL) {
+    //My_Variables.PaletteColors = loadPalette("file name for palette here");
+    My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
 
-    }
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
@@ -208,51 +207,51 @@ int main(int, char**)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-            //ImGuiViewport* viewport = ImGui::GetMainViewport();
-            bool * t = NULL;
-            bool r = true;
-            t = &r;
-            ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-            ImGuiID dock_id_right = 0;
-            static int counter = 0;
-            ShowMainMenuBar(&counter);
+        //ImGuiViewport* viewport = ImGui::GetMainViewport();
+        bool * t = NULL;
+        bool r = true;
+        t = &r;
+        ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        ImGuiID dock_id_right = 0;
+        static int counter = 0;
+        ShowMainMenuBar(&counter);
 
-            if (firstframe) {
-                firstframe = false;
-                ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
-                ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
+        if (firstframe) {
+            firstframe = false;
+            ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
+            ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
-                ImGuiID dock_main_id = dockspace_id; // This variable will track the docking node.
-                ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.35f, NULL, &dock_main_id);
-                ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
-                ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
+            ImGuiID dock_main_id = dockspace_id; // This variable will track the docking node.
+            ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.35f, NULL, &dock_main_id);
+            ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
+            ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
 
-                ImGui::DockBuilderDockWindow("###file",      dock_id_left);
-                ImGui::DockBuilderDockWindow("###palette",   dock_id_bottom_left);
-                ImGui::DockBuilderDockWindow("###preview00", dock_main_id);
-                ImGui::DockBuilderDockWindow("###render00",  dock_id_right);
-                ImGui::DockBuilderDockWindow("###edit00",    dock_main_id);
+            ImGui::DockBuilderDockWindow("###file", dock_id_left);
+            ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
+            ImGui::DockBuilderDockWindow("###preview00", dock_main_id);
+            ImGui::DockBuilderDockWindow("###render00", dock_id_right);
+            ImGui::DockBuilderDockWindow("###edit00", dock_main_id);
 
-                for (int i = 1; i <= 99; i++) {
-                    char buff[13];
-                    sprintf(buff, "###preview%02d", i);
-                    char buff2[12];
-                    sprintf(buff2, "###render%02d", i);
-                    char buff3[10];
-                    sprintf(buff3, "###edit%02d", i);
+            for (int i = 1; i <= 99; i++) {
+                char buff[13];
+                sprintf(buff, "###preview%02d", i);
+                char buff2[12];
+                sprintf(buff2, "###render%02d", i);
+                char buff3[10];
+                sprintf(buff3, "###edit%02d", i);
 
-                    ImGui::DockBuilderDockWindow(buff, dock_main_id);
-                    ImGui::DockBuilderDockWindow(buff2, dock_id_right);
-                    ImGui::DockBuilderDockWindow(buff3, dock_main_id);
-                }
-                ImGui::DockBuilderFinish(dockspace_id);
+                ImGui::DockBuilderDockWindow(buff, dock_main_id);
+                ImGui::DockBuilderDockWindow(buff2, dock_id_right);
+                ImGui::DockBuilderDockWindow(buff3, dock_main_id);
             }
+            ImGui::DockBuilderFinish(dockspace_id);
+        }
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
-            if (ImGui::Button("Load Files...")) { 
-                Open_Files(&user_info, &counter, My_Variables.PaletteColors);
+            if (ImGui::Button("Load Files...")) {
+                Open_Files(&user_info, &counter, My_Variables.pxlFMT_FO_Pal);
             }
 
             ImGui::SameLine();
@@ -333,13 +332,13 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     // Check image size to match tile size (350x300 pixels)
     if (wrong_size) {
         ImGui::Text("This image is the wrong size to make a tile...");
-        ImGui::Text("Size is %dx%d", 
-                    My_Variables->F_Prop[counter].image->w,
-                    My_Variables->F_Prop[counter].image->h);
+        ImGui::Text("Size is %dx%d",
+            My_Variables->F_Prop[counter].image->w,
+            My_Variables->F_Prop[counter].image->h);
         ImGui::Text("It needs to be a multiple of 350x300 pixels");
-    //Buttons
+        //Buttons
         if (ImGui::Button("Preview Tiles - SDL color match")) {
-            Prep_Image(My_Variables, counter, true, 
+            Prep_Image(My_Variables, counter, true,
                 &My_Variables->F_Prop[counter].preview_tiles_window);
         }
         ImGui::SameLine(500);
@@ -348,15 +347,20 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 &My_Variables->F_Prop[counter].edit_image_window);
         }
         if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-            Prep_Image(My_Variables, counter, false, 
+            Prep_Image(My_Variables, counter, false,
                 &My_Variables->F_Prop[counter].preview_tiles_window);
         }
+        ImGui::SameLine(500);
+        if (ImGui::Button("Euclidian Convert and Paint")) {
+            Prep_Image(My_Variables, counter, false,
+                &My_Variables->F_Prop[counter].edit_image_window);
+        }
         if (ImGui::Button("Preview as Image - SDL color match")) {
-            Prep_Image(My_Variables, counter, true, 
+            Prep_Image(My_Variables, counter, true,
                 &My_Variables->F_Prop[counter].preview_image_window);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
-            Prep_Image(My_Variables, counter, false, 
+            Prep_Image(My_Variables, counter, false,
                 &My_Variables->F_Prop[counter].preview_image_window);
         }
     }
@@ -420,7 +424,7 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
         for (int x = 0; x < 16; x++) {
 
             int index = y * 16 + x;
-            SDL_Color color = My_Variables->PaletteColors[index];
+            SDL_Color color = My_Variables->pxlFMT_FO_Pal->palette->colors[index];
             float r = (float)color.r / 255.0f;
             float g = (float)color.g / 255.0f;
             float b = (float)color.b / 255.0f;
@@ -434,9 +438,9 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             if (x < 15) ImGui::SameLine();
 
             if ((index) >= 229) {
-                Cycle_Palette(My_Variables->PaletteColors, 
-                             &My_Variables->Palette_Update,
-                              My_Variables->CurrentTime);
+                Cycle_Palette(My_Variables->pxlFMT_FO_Pal->palette,
+                    &My_Variables->Palette_Update,
+                    My_Variables->CurrentTime);
             }
         }
     }
@@ -524,8 +528,8 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 
     ImGui::Image((ImTextureID)
         My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w, 
-               My_Variables->F_Prop[counter].image->h) );
+        ImVec2(My_Variables->F_Prop[counter].image->w,
+            My_Variables->F_Prop[counter].image->h));
     ImGui::End();
 }
 
@@ -561,8 +565,8 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
             ImGui::Image(
                 (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-                      ImVec2(My_Variables->F_Prop[counter].image->w,
-                             My_Variables->F_Prop[counter].image->h));
+                ImVec2(My_Variables->F_Prop[counter].image->w,
+                    My_Variables->F_Prop[counter].image->h));
 
             Edit_Image(My_Variables, counter, event);
 
@@ -576,8 +580,8 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
             ImGui::Image(
                 (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-                      ImVec2(My_Variables->F_Prop[counter].image->w,
-                             My_Variables->F_Prop[counter].image->h));
+                ImVec2(My_Variables->F_Prop[counter].image->w,
+                    My_Variables->F_Prop[counter].image->h));
 
             ImDrawList *Draw_List = ImGui::GetWindowDrawList();
             ImVec2 Origin = ImGui::GetItemRectMin();
@@ -621,8 +625,8 @@ static void ShowMainMenuBar(int* counter)
         if (ImGui::BeginMenu("File"))
         {
             ImGui::MenuItem("(demo menu)", NULL, false, false);
-            if (ImGui::MenuItem("New")) {/*TODO: add a new file option w/blank surfaces*/}
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter, My_Variables.PaletteColors); }
+            if (ImGui::MenuItem("New")) {/*TODO: add a new file option w/blank surfaces*/ }
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter, My_Variables.pxlFMT_FO_Pal); }
             if (ImGui::MenuItem("Default Fallout Path")) { Set_Default_Path(&user_info); }
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
@@ -641,20 +645,20 @@ static void ShowMainMenuBar(int* counter)
     }
 }
 
-void Open_Files(struct user_info* user_info, int* counter, SDL_Color* palette) {
-        // Assigns image to Load_Files.image and loads palette for the image
-        // TODO: image needs to be less than 1 million pixels (1000x1000)
-        // to be viewable in Titanium FRM viewer, what's the limit in the game?
-    //TODO: Need to add wide character support
-        if (My_Variables.PaletteColors == NULL)
-        {
-            My_Variables.PaletteColors = loadPalette("file name for palette here");
-        }
-        Load_Files(My_Variables.F_Prop, user_info, *counter, palette);
+void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT) {
+    // Assigns image to Load_Files.image and loads palette for the image
+    // TODO: image needs to be less than 1 million pixels (1000x1000)
+    // to be viewable in Titanium FRM viewer, what's the limit in the game?
+//TODO: Need to add wide character support
+    if (My_Variables.pxlFMT_FO_Pal == NULL)
+    {
+        My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
+    }
+    Load_Files(My_Variables.F_Prop, user_info, *counter, My_Variables.pxlFMT_FO_Pal);
 
-        Image2Texture(My_Variables.F_Prop[*counter].image,
-            &My_Variables.F_Prop[*counter].Optimized_Texture,
-            &My_Variables.F_Prop[*counter].file_open_window);
+    Image2Texture(My_Variables.F_Prop[*counter].image,
+        &My_Variables.F_Prop[*counter].Optimized_Texture,
+        &My_Variables.F_Prop[*counter].file_open_window);
 
-        if (My_Variables.F_Prop[*counter].c_name) { (*counter)++; }
+    if (My_Variables.F_Prop[*counter].c_name) { (*counter)++; }
 }

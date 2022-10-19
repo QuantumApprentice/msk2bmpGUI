@@ -20,7 +20,9 @@ struct variables {
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
-	SDL_Color *PaletteColors = nullptr;
+	//SDL_Color *PaletteColors = nullptr;
+    SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
+
 	SDL_Surface* Temp_Surface = nullptr;
 
 	struct LF F_Prop[99]{};

@@ -9,7 +9,7 @@
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 
-void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_Color* palette)
+void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_PixelFormat* pxlFMT)
 {
     char buffer[MAX_PATH];
     snprintf(buffer, MAX_PATH, "%s\\", user_info->default_load_path);
@@ -37,7 +37,7 @@ void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_Color* palet
         if (!(strncmp (F_Prop[counter].extension, "FRM", 4)))
         {
             F_Prop[counter].image = Load_FRM_Image(F_Prop[counter].Opened_File,
-                                                   palette);
+                                                   pxlFMT);
         }
         else
         {

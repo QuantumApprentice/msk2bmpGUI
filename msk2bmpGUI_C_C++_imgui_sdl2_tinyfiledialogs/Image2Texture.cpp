@@ -88,7 +88,8 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
 
     My_Variables->F_Prop[counter].Pal_Surface
         = FRM_Color_Convert(My_Variables->F_Prop[counter].image, 
-                            My_Variables->PaletteColors,
+                            //My_Variables->PaletteColors,
+                            My_Variables->pxlFMT_FO_Pal,
                             color_match);
 
     //Unpalettize image to new surface for display

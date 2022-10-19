@@ -57,15 +57,9 @@ uint32_t g_dwLastCycleVeryFast = 0;
 // Current speed factor
 DWORD g_dwCycleSpeedFactor = 1;
 
-//void Image_Color_Cycle(SDL_Surface* PAL_Surface, int i, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
-//{
-//    SDL_Color animated_pixel = PaletteColors[((uint8_t*)PAL_Surface->pixels)[i]];
-//    animated_pixel.a = 255;
-//    //TODO: Here's where the real pixel skewing problem comes from?
-//    ((SDL_Color*)Final_Render->pixels)[i] = animated_pixel;
-//}
-
-void Image_Color_Cycle2(uint8_t pal_color, int x, int y, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
+///*Image_Color_Cycle not used any more, 
+///delete after getting the other color cycling to work*/
+void Image_Color_Cycle(uint8_t pal_color, int x, int y, SDL_Color* PaletteColors, SDL_Surface* Final_Render)
 {
     SDL_Color animated_pixel = PaletteColors[pal_color];
 
@@ -100,9 +94,9 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index
         (*g_dwCurrent)++;
 }
 
-void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update, uint32_t CurrentTime)
+void Cycle_Palette(SDL_Palette* palette, bool* Palette_Update, uint32_t CurrentTime)
 {
-
+    SDL_Color* PaletteColors = palette->colors;
     if (CurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
         // Slime    ///////////////////////////////////////////////////////
         Color_Cycle(PaletteColors, &g_dwSlimeCurrent, 229, g_nSlime, 3);
@@ -146,10 +140,9 @@ void Cycle_Palette(SDL_Color * PaletteColors, bool* Palette_Update, uint32_t Cur
 
         g_dwLastCycleVeryFast = CurrentTime;
         *Palette_Update = true;
-
     }
 
-    //if (bPaletteChanged) {
-    ////  UpdatePalette();
-    //}
+    if (*Palette_Update) {
+        SDL_SetPaletteColors(palette, &PaletteColors[228], 228, 28);
+    }
 }

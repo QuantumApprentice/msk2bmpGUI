@@ -36,6 +36,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
             //TODO: maybe pass the dithering choice through?
 
+            ///*old code, moved to Palette_Update section*/
             ////Unpalettize image to new surface for display
             //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
             //My_Variables->F_Prop[counter].Final_Render
@@ -43,11 +44,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
         }
     }
 
-    SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
-                         My_Variables->PaletteColors, 0, 256);
-
-
-
+    ///*old but working color cycling method*/
     //uint8_t pal_color = 255;
     //for (int x = 0; x < width; x++)
     //{
@@ -56,30 +53,21 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //        pal_color = ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[pitch*y + x];
     //        if (pal_color >= 225)
     //        {
-    //            Image_Color_Cycle2(pal_color, x, y,
+    //            Image_Color_Cycle(pal_color, x, y,
     //                               My_Variables->PaletteColors,
     //                               My_Variables->F_Prop[counter].Final_Render);
     //        }
     //    }
     //}
 
-    ///*early color cycling implementation, might need to remove*/
-    //for (int i = 0; i < size; i++)
-    //{
-    //    if (((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[i] >= 225)
-    //    {
-    //        Image_Color_Cycle(
-    //            My_Variables->F_Prop[counter].Pal_Surface, i,
-    //            My_Variables->PaletteColors,
-    //            My_Variables->F_Prop[counter].Final_Render);
-    //    }
-    //}
     //Converts unpalettized image to texture for display, sets window bool to true
-
-
     if (My_Variables->Palette_Update || image_edited) {
+        //SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
+        //    My_Variables->PaletteColors, 0, 256);
+
         //Unpalettize image to new surface for display
         SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+
         My_Variables->F_Prop[counter].Final_Render
             = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
 
@@ -135,7 +123,8 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     int height = My_Variables->F_Prop[counter].image->h;
 
     SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
-
+    Uint32 white = SDL_MapRGB(My_Variables->F_Prop[counter].Map_Mask->format,
+        255, 255, 255);
 
     ImVec2 MousePos = ImGui::GetMousePos();
     int x = (int)(MousePos.x - Origin.x);
@@ -148,19 +137,19 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     rect.h = 10;
     rect.w = 10;
 
-    Uint32 color = SDL_MapRGB(My_Variables->F_Prop[counter].Map_Mask->format,
-                               255, 255, 255);
+
+    //if (My_Variables->Palette_Update) {
+    //    SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
+    //        My_Variables->PaletteColors, 0, 256);
+    //}
 
     if (ImGui::IsMouseDown(event->button.button)) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
-            //printf("%f, %f\n", x, y);
 
+            SDL_FillRect(My_Variables->F_Prop[counter].Map_Mask, &rect, white);
 
-            SDL_FillRect(My_Variables->F_Prop[counter].Map_Mask, &rect, color);
-
-
-            ///recopy Pal_Surface to Final_Render each time to allow 
+            ///re-copy Pal_Surface to Final_Render each time to allow 
             ///transparency through the mask surface painting
             SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
             My_Variables->F_Prop[counter].Final_Render =
@@ -176,17 +165,18 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
             ///*TODO: This stuff didn't work, delete it when done*/
             //for (int i = 0; i < 4; i++)
             //{
-            ///*TODO: two problems with this method: */
-            //      pixel addressing skips by 8 pixels at a time,
-            //      and SDL_FillRect() doesn't work
+            ///*TODO: two problems with this method:
+            ///       pixel addressing skips by 8 pixels at a time,
+            ///       and SDL_FillRect() doesn't work*/
             //    uint8_t* where_i_want_to_draw = 
             //                &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
             //    ((uint8_t*)where_i_want_to_draw)[0] = 255;
             //}
-            ///*OpenGl stuff didn't work either :(
+            ///*OpenGl stuff didn't work either :*/
             //opengl_stuff();
         }
     }
+
 }
 
 
