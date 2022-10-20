@@ -82,37 +82,37 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 }
 
 //TODO: need to simplify My_Variables to accept F_Prop[counter] instead
-void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* preview_type) {
+void Prep_Image(LF* file_info, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window) {
     //Palettize to 8-bit FO pallet, and dithered
-    SDL_FreeSurface(My_Variables->F_Prop[counter].Pal_Surface);
+    SDL_FreeSurface(file_info->Pal_Surface);
 
-    if (My_Variables->F_Prop[counter].type == FRM) {
+    if (file_info->type == FRM) {
 
-        My_Variables->F_Prop[counter].Pal_Surface
-            = SDL_ConvertSurface(My_Variables->F_Prop[counter].image,
-                                 My_Variables->F_Prop[counter].image->format,
+        file_info->Pal_Surface
+            = SDL_ConvertSurface(file_info->image,
+                                 file_info->image->format,
                                  0);
-        SDL_SetPixelFormatPalette(My_Variables->F_Prop[counter].Pal_Surface->format,
-                                  My_Variables->pxlFMT_FO_Pal->palette);
-            //SDL_BlitSurface
-            //SDL_DuplicateSurface(My_Variables->F_Prop[counter].image);
+        SDL_SetPixelFormatPalette(file_info->Pal_Surface->format,
+                                  pxlFMT_FO_Pal->palette);
+    }
+    else if (file_info->type == MSK) {
+        //TODO: Handle MSK file types
     }
     else {
-        My_Variables->F_Prop[counter].Pal_Surface
-            = FRM_Color_Convert(My_Variables->F_Prop[counter].image,
-                                //My_Variables->PaletteColors,
-                                My_Variables->pxlFMT_FO_Pal,
+        file_info->Pal_Surface
+            = FRM_Color_Convert(file_info->image,
+                                pxlFMT_FO_Pal,
                                 color_match);
     }
 
     //Unpalettize image to new surface for display
-    SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+    SDL_FreeSurface(file_info->Final_Render);
 
-    My_Variables->F_Prop[counter].Final_Render
-        = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+    file_info->Final_Render
+        = Unpalettize_Image(file_info->Pal_Surface);
 
     //Converts unpalettized image to texture for display, sets window bool to true
-    Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-        &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        preview_type);
+    Image2Texture(file_info->Final_Render,
+                 &file_info->Optimized_Render_Texture,
+                  window);
 }

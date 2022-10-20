@@ -9,7 +9,7 @@
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 
-void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_PixelFormat* pxlFMT)
+void Load_Files(LF* F_Prop, user_info* user_info, int counter, SDL_PixelFormat* pxlFMT)
 {
     char buffer[MAX_PATH];
     snprintf(buffer, MAX_PATH, "%s\\", user_info->default_load_path);
@@ -49,8 +49,9 @@ void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_PixelFormat*
         else
         {
             F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
-            //TODO: add another type for other generic image types
+            //TODO: add another type for other generic image types?
             //      (other than MSK files)
+            F_Prop[counter].type = other;
         }
 
 
@@ -60,9 +61,9 @@ void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_PixelFormat*
                 F_Prop[counter].Opened_File,
                 SDL_GetError());
         }
-        else
-        {// Set display window to open
-        	F_Prop[counter].file_open_window = true;
-        }
+        //else
+        //{// Set display window to open
+        //	F_Prop[counter].file_open_window = true;
+        //}
     }
 }

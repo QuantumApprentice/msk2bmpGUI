@@ -98,13 +98,6 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bo
     }
 
     // Setup for palettizing image
-    //SDL_Palette* FO_Palette;
-    //SDL_PixelFormat* pxlFMT_Pal;
-    //FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
-    //SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
-    //pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    //SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
-
     Surface_8 = SDL_ConvertSurface(surface, pxlFMT, 0);
     //Force Surface_8 to use the global palette instead of allowing SDL to use a copy
     SDL_SetPixelFormatPalette(Surface_8->format, pxlFMT->palette);
@@ -329,14 +322,7 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
         fread(&frame_size, 4, 1, File_ptr);
     frame_size = B_Endian::write_u32(frame_size);
 
-    // 8 bit palleted stuff here
-    //SDL_PixelFormat* pxlFMT_Pal;
-    //SDL_Palette* FO_Palette;
-    //FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
-    //SDL_SetPaletteColors(FO_Palette, palette, 0, PALETTE_NUMBER);
-    //pxlFMT_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    //SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
-
+    //8 bit palleted stuff here
     //TODO: Can I make a new surface with a palette without using SDL_CreateRGBSurface AND SDL_ConvertSurface()?
     SDL_Surface* Surface_8   = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
     SDL_Surface* Pal_Surface = SDL_ConvertSurface(Surface_8, pxlFMT, 0);

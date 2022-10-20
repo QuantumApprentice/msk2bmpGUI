@@ -6,6 +6,7 @@
 
 #include "Load_Settings.h"
 
+//File info
 struct LF {
     char Opened_File[MAX_PATH];
     char * c_name;
@@ -28,4 +29,4 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
 };
-void Load_Files(LF[], struct user_info* user_info, int, SDL_PixelFormat* pxlFMT);
+void Load_Files(LF* F_Prop, struct user_info* user_info, int, SDL_PixelFormat* pxlFMT);

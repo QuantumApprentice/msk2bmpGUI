@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Edit_Image.h"
 #include "imgui-docking/imgui.h"
 #include "FRM_Animate.h"
-#include <stdlib.h>
+#include "Load_Files.h"
 
 void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //ImDrawList *Draw_List = ImGui::GetWindowDrawList();
@@ -62,7 +63,7 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
     //Converts unpalettized image to texture for display, sets window bool to true
     if (My_Variables->Palette_Update || image_edited) {
-        Update_Palette(My_Variables, counter, false);
+        Update_Palette(&My_Variables->F_Prop[counter], false);
 
         //SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
         //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
@@ -139,7 +140,6 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     rect.h = 10;
     rect.w = 10;
 
-
     //if (My_Variables->Palette_Update) {
     //    SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
     //        My_Variables->PaletteColors, 0, 256);
@@ -154,11 +154,11 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
 
 
             ///*TODO: This stuff didn't work, delete it when done*/
-            //for (int i = 0; i < 4; i++)
-            //{
             ///*TODO: two problems with this method:
             ///       pixel addressing skips by 8 pixels at a time,
             ///       and SDL_FillRect() doesn't work*/
+            //for (int i = 0; i < 4; i++)
+            //{
             //    uint8_t* where_i_want_to_draw = 
             //                &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
             //    ((uint8_t*)where_i_want_to_draw)[0] = 255;
@@ -171,7 +171,7 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     if (My_Variables->Palette_Update) {
         ///re-copy Pal_Surface to Final_Render each time to allow 
         ///transparency through the mask surface painting
-        Update_Palette(My_Variables, counter, true);
+        Update_Palette(&My_Variables->F_Prop[counter], true);
 
 
         //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
@@ -180,32 +180,66 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
         /////
 
         //CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
-        //    My_Variables->F_Prop[counter].Final_Render);
+        //          My_Variables->F_Prop[counter].Final_Render);
 
         //SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
-        //    &My_Variables->F_Prop[counter].Optimized_Render_Texture);
+        //             &My_Variables->F_Prop[counter].Optimized_Render_Texture);
     }
 }
 
-void Update_Palette(variables* My_Variables, int counter, bool blend) {
-        //Unpalettize image to new surface for display
-        SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+//void Update_Palette(variables* My_Variables, int counter, bool blend) {
+//        //Unpalettize image to new surface for display
+//        SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+//
+//        My_Variables->F_Prop[counter].Final_Render
+//            = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+//
+//        if (blend) {
+//            CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
+//                My_Variables->F_Prop[counter].Final_Render);
+//            SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
+//                &My_Variables->F_Prop[counter].Optimized_Render_Texture);
+//        }
+//        else {
+//            Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+//                &My_Variables->F_Prop[counter].Optimized_Render_Texture,
+//                &My_Variables->F_Prop[counter].edit_image_window);
+//        }
+//}
 
-        My_Variables->F_Prop[counter].Final_Render
-            = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+//bool blend - true = blend surfaces
+void Update_Palette(struct LF* files, bool blend) {
+    //Unpalettize image to new surface for display
+    SDL_FreeSurface(files->Final_Render);
 
-        if (blend) {
-            CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
-                My_Variables->F_Prop[counter].Final_Render);
-            SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
-                &My_Variables->F_Prop[counter].Optimized_Render_Texture);
-        }
-        else {
-            Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-                &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-                &My_Variables->F_Prop[counter].edit_image_window);
-        }
+    files->Final_Render
+        = Unpalettize_Image(files->Pal_Surface);
+
+    if (blend) {
+        CPU_Blend(    files->Map_Mask,
+                      files->Final_Render);
+        SDL_to_OpenGl(files->Final_Render,
+                     &files->Optimized_Render_Texture);
+    }
+    else {
+        //Image2Texture(files->Final_Render,
+        //             &files->Optimized_Render_Texture,
+        //             &files->edit_image_window);
+        SDL_to_OpenGl(files->Final_Render,
+            &files->Optimized_Render_Texture);
+    }
 }
+
+void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT) {
+    SDL_Surface* Temp_Surface;
+    ////Force image to use the global palette instead of allowing SDL to use a copy
+    SDL_SetPixelFormatPalette(surface->format, pxlFMT->palette);
+    Temp_Surface = Unpalettize_Image(surface);
+    SDL_to_OpenGl(Temp_Surface,
+                  texture);
+    SDL_FreeSurface(Temp_Surface);
+}
+
 
 
 void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
@@ -240,17 +274,7 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
                     r, g, b, a);
 
                 ((Uint32*)img_surface->pixels)[position] = color_wAlpha;
-
-
-
             }
-
-
-
-
-
-
-
         }
     }
 }

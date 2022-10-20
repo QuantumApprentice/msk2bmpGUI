@@ -13,7 +13,8 @@ struct user_info {
 
 enum img_type {
     MSK = 0,
-    FRM = 1
+    FRM = 1,
+    other = 2
 };
 
 void Load_Config    (struct user_info *user_info);
