@@ -38,12 +38,22 @@ void Load_Files(LF F_Prop[], user_info* user_info, int counter, SDL_PixelFormat*
         {
             F_Prop[counter].image = Load_FRM_Image(F_Prop[counter].Opened_File,
                                                    pxlFMT);
+            F_Prop[counter].type = FRM;
+        }
+        else if(!(strncmp (F_Prop[counter].extension, "MSK", 4)))
+        {
+            //TODO: add something that tracks if it's MSK files when loading
+            //      Also add something that _handles_ MSK files
+            F_Prop[counter].type = MSK;
         }
         else
         {
             F_Prop[counter].image = IMG_Load(F_Prop[counter].Opened_File);
+            //TODO: add another type for other generic image types
+            //      (other than MSK files)
         }
-        
+
+
         if (F_Prop[counter].image == NULL)
         {
             printf("Unable to open image file %s! SDL Error: %s\n",

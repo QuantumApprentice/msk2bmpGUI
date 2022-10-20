@@ -366,6 +366,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 
     ImGui::Text(My_Variables->F_Prop[counter].c_name);
+
+    //if (My_Variables->Palette_Update) {
+    //    Update_Palette(My_Variables, counter, false);
+    //}
     ImGui::Image(
         (ImTextureID)My_Variables->F_Prop[counter].Optimized_Texture,
         ImVec2((float)My_Variables->F_Prop[counter].image->w,
@@ -444,6 +448,11 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
             }
         }
     }
+    if (My_Variables->Palette_Update) {
+        SDL_SetPaletteColors(My_Variables->pxlFMT_FO_Pal->palette,
+            &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
+    }
+
     ImGui::End();
 }
 

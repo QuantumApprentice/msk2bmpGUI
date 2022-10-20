@@ -86,11 +86,24 @@ void Prep_Image(variables* My_Variables, int counter, bool color_match, bool* pr
     //Palettize to 8-bit FO pallet, and dithered
     SDL_FreeSurface(My_Variables->F_Prop[counter].Pal_Surface);
 
-    My_Variables->F_Prop[counter].Pal_Surface
-        = FRM_Color_Convert(My_Variables->F_Prop[counter].image, 
-                            //My_Variables->PaletteColors,
-                            My_Variables->pxlFMT_FO_Pal,
-                            color_match);
+    if (My_Variables->F_Prop[counter].type == FRM) {
+
+        My_Variables->F_Prop[counter].Pal_Surface
+            = SDL_ConvertSurface(My_Variables->F_Prop[counter].image,
+                                 My_Variables->F_Prop[counter].image->format,
+                                 0);
+        SDL_SetPixelFormatPalette(My_Variables->F_Prop[counter].Pal_Surface->format,
+                                  My_Variables->pxlFMT_FO_Pal->palette);
+            //SDL_BlitSurface
+            //SDL_DuplicateSurface(My_Variables->F_Prop[counter].image);
+    }
+    else {
+        My_Variables->F_Prop[counter].Pal_Surface
+            = FRM_Color_Convert(My_Variables->F_Prop[counter].image,
+                                //My_Variables->PaletteColors,
+                                My_Variables->pxlFMT_FO_Pal,
+                                color_match);
+    }
 
     //Unpalettize image to new surface for display
     SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);

@@ -166,7 +166,7 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
     FRM_Header.Frame_Area             = B_Endian::write_u32(300 * 350);
     FRM_Header.Frame_0_Size           = B_Endian::write_u32(300 * 350);
 
-    Split_to_Tiles(PAL_surface, user_info, true, &FRM_Header);
+    Split_to_Tiles(PAL_surface, user_info, FRM, &FRM_Header);
 
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
@@ -175,20 +175,21 @@ void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
     FRM_Header* header = 0;
-    Split_to_Tiles(MSK_surface, user_info, false, header);
+    Split_to_Tiles(MSK_surface, user_info, MSK, header);
 
 
 }
 
-void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type, FRM_Header* FRM_Header)
+void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
 {
     int num_tiles_x = surface->w / 350;
     int num_tiles_y = surface->h / 300;
-    int q = 0;
+    int tile_num = 0;
 
     char Save_File_Name[MAX_PATH];
     char path[MAX_PATH];
     char* alt_path;
+    char * lFilterPatterns[2] = { "*.FRM", "" };
     FILE * File_ptr = NULL;
 
 
@@ -204,28 +205,62 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
         {
             //check for existing file first
             //TODO: Make this section a helper function
-            wchar_t* w_save_name = Create_File_Name(false, Save_File_Name, path, q);
+            wchar_t* w_save_name = Create_File_Name(FRM, Save_File_Name, path, tile_num);
+            char buffer[MAX_PATH];
+            strncpy_s(buffer, MAX_PATH, Save_File_Name, MAX_PATH);
 
-            if (_wfopen_s(&File_ptr, w_save_name, L"rb")) {
+            errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
+
+            //handles the case where the file exists
+            if (error == 0) {
                 fclose(File_ptr);
+
                 int choice =
-                tinyfd_messageBox(
+                    tinyfd_messageBox(
                         "Warning",
                         "File already exists,\n"
                         "Overwrite?",
                         "yesnocancel",
                         "warning",
                         2);
-                if      (choice == 0) { return; }
+                if (choice == 0) { return; }
                 else if (choice == 1) {}
                 else if (choice == 2) {
                     alt_path = tinyfd_selectFolderDialog(NULL, path);
                     //strncpy(path, alt_path, MAX_PATH);
-                    //wchar_t* w_save_name = Create_File_Name(false, Save_File_Name, path, q);
-                    wchar_t* w_save_name = Create_File_Name(false, Save_File_Name, alt_path, q);
+                    //w_save_name = Create_File_Name(false, Save_File_Name, path, tile_num);
+                    w_save_name = Create_File_Name(type, Save_File_Name, alt_path, tile_num);
+
+                }
+            }
+            //handles the case where the file OR directory don't exist
+            else {
+                printf("%s", strerror(error));
+
+                int choice =
+                    tinyfd_messageBox(
+                        "Warning",
+                        strerror(error),
+                        "yesnocancel",
+                        "warning",
+                        2);
+
+                char* save_file = tinyfd_saveFileDialog(
+                    "default_name",
+                    Save_File_Name,
+                    2,
+                    lFilterPatterns,
+                    nullptr);
+
+                if (save_file == NULL) {
+                    return;
+                }
+                else {
+                    w_save_name = tinyfd_utf8to16(Save_File_Name);
                 }
             }
 
+            // FRM = 1, MSK = 0
             if (type == FRM)
             {
                 _wfopen_s(&File_ptr, w_save_name, L"wb");
@@ -242,10 +277,10 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
                 }
                 else {
                     //save header
-                    fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+                    fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
 
-                    int pixel_pointer = y * 300 * surface->pitch + x * 350;
-                    for (int pixel_i = 0; pixel_i < 350; pixel_i++)
+                    int pixel_pointer = surface->pitch * y * 300 + x * 350;
+                    for (int pixel_i = 0; pixel_i < 300; pixel_i++)
                     {
                         //write out one row of pixels in each loop
                         fwrite((uint8_t*)surface->pixels + pixel_pointer, 350, 1, File_ptr);
@@ -264,9 +299,9 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
                         350, 300, 1, 
                         SDL_PIXELFORMAT_INDEX1MSB);
 
-                int pixel_pointer = y * 300 * surface->pitch + x * 350;
-                //TODO: split the surface up into 350x300 pixel surfaces
-                //      and pass them to Save_Mask()
+                int pixel_pointer = surface->pitch * y * 300 + x * 350;
+            //TODO: split the surface up into 350x300 pixel surfaces
+            //      and pass them to Save_Mask()
             //    for (int pixel_i = 0; pixel_i < 350; pixel_i++)
             //    {
                     //SDL_BlitSurface();
@@ -281,17 +316,18 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type
 }
 
 // Help create a filename based on the directory and export file type
-wchar_t* Create_File_Name(bool type, char* Save_File_Name, char* path, int q)
+// bool type: FRM = 1, MSK = 0
+wchar_t* Create_File_Name(img_type type, char* Save_File_Name, char* path, int tile_num)
 {
 
     //-------save file
-    //TODO: move q++ outside if check
+    //TODO: move tile_num++ outside if check
     if (type == FRM) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, q++);
+        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, tile_num++);
     }
     else
     if (type == MSK) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\wrldmp%02d.MSK", path, q++);
+        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\data\\wrldmp%02d.MSK", path, tile_num++);
     }
 
     // Wide character stuff follows...

@@ -1,4 +1,5 @@
 #pragma once
+#include "Load_Settings.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -19,15 +20,11 @@ typedef struct {
 } FRM_Header;
 #pragma pack(pop)
 
-enum flag {
-    MSK = 0,
-    FRM = 1
-};
 
 char* Save_FRM(SDL_Surface *f_surface, struct user_info* user_info);
 char* Save_IMG(SDL_Surface *b_surface, struct user_info* user_info);
 void Save_FRM_tiles(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info);
 
-wchar_t* Create_File_Name(bool type, char* Save_File_Name, char* buffer, int q);
-void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, bool type, FRM_Header* FRM_Header);
+wchar_t* Create_File_Name(img_type type, char* Save_File_Name, char* buffer, int q);
+void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* FRM_Header);

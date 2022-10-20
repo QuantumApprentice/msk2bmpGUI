@@ -11,6 +11,11 @@ struct user_info {
     size_t length;
 };
 
+enum img_type {
+    MSK = 0,
+    FRM = 1
+};
+
 void Load_Config    (struct user_info *user_info);
 void write_cfg_file (struct user_info* user_info);
 

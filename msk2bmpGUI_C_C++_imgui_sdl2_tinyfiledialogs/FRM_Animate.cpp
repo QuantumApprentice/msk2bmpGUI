@@ -142,7 +142,8 @@ void Cycle_Palette(SDL_Palette* palette, bool* Palette_Update, uint32_t CurrentT
         *Palette_Update = true;
     }
 
-    if (*Palette_Update) {
-        SDL_SetPaletteColors(palette, &PaletteColors[228], 228, 28);
-    }
+    ///*moved to outside cycle call in Show_Palette_Window
+    //if (*Palette_Update) {
+    //    SDL_SetPaletteColors(palette, &PaletteColors[228], 228, 28);
+    //}
 }

@@ -62,18 +62,20 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
     //Converts unpalettized image to texture for display, sets window bool to true
     if (My_Variables->Palette_Update || image_edited) {
+        Update_Palette(My_Variables, counter, false);
+
         //SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
-        //    My_Variables->PaletteColors, 0, 256);
+        //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
 
         //Unpalettize image to new surface for display
-        SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+        //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
 
-        My_Variables->F_Prop[counter].Final_Render
-            = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+        //My_Variables->F_Prop[counter].Final_Render
+        //    = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
 
-        Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-            &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-            &My_Variables->F_Prop[counter].edit_image_window);
+        //Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+        //    &My_Variables->F_Prop[counter].Optimized_Render_Texture,
+        //    &My_Variables->F_Prop[counter].edit_image_window);
     }
 }
 
@@ -148,19 +150,8 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
 
             SDL_FillRect(My_Variables->F_Prop[counter].Map_Mask, &rect, white);
+            My_Variables->Palette_Update = true;
 
-            ///re-copy Pal_Surface to Final_Render each time to allow 
-            ///transparency through the mask surface painting
-            SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
-            My_Variables->F_Prop[counter].Final_Render =
-                Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
-            ///
-
-            CPU_Blend(My_Variables->F_Prop[counter].Map_Mask, 
-                      My_Variables->F_Prop[counter].Final_Render);
-
-            SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
-                         &My_Variables->F_Prop[counter].Optimized_Render_Texture);
 
             ///*TODO: This stuff didn't work, delete it when done*/
             //for (int i = 0; i < 4; i++)
@@ -177,6 +168,43 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
         }
     }
 
+    if (My_Variables->Palette_Update) {
+        ///re-copy Pal_Surface to Final_Render each time to allow 
+        ///transparency through the mask surface painting
+        Update_Palette(My_Variables, counter, true);
+
+
+        //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+        //My_Variables->F_Prop[counter].Final_Render =
+        //    Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+        /////
+
+        //CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
+        //    My_Variables->F_Prop[counter].Final_Render);
+
+        //SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
+        //    &My_Variables->F_Prop[counter].Optimized_Render_Texture);
+    }
+}
+
+void Update_Palette(variables* My_Variables, int counter, bool blend) {
+        //Unpalettize image to new surface for display
+        SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+
+        My_Variables->F_Prop[counter].Final_Render
+            = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+
+        if (blend) {
+            CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
+                My_Variables->F_Prop[counter].Final_Render);
+            SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
+                &My_Variables->F_Prop[counter].Optimized_Render_Texture);
+        }
+        else {
+            Image2Texture(My_Variables->F_Prop[counter].Final_Render,
+                &My_Variables->F_Prop[counter].Optimized_Render_Texture,
+                &My_Variables->F_Prop[counter].edit_image_window);
+        }
 }
 
 

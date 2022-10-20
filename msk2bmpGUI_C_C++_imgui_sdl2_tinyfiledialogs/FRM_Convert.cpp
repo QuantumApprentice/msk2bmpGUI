@@ -106,6 +106,8 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bo
     //SDL_SetPixelFormatPalette(pxlFMT_Pal, FO_Palette);
 
     Surface_8 = SDL_ConvertSurface(surface, pxlFMT, 0);
+    //Force Surface_8 to use the global palette instead of allowing SDL to use a copy
+    SDL_SetPixelFormatPalette(Surface_8->format, pxlFMT->palette);
 
     //TODO: Here's where the paint problem is
     //create new palette just for color matching (w/o the cycling colors)
@@ -339,6 +341,7 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
     SDL_Surface* Surface_8   = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
     SDL_Surface* Pal_Surface = SDL_ConvertSurface(Surface_8, pxlFMT, 0);
     SDL_FreeSurface(Surface_8);
+    SDL_SetPixelFormatPalette(Pal_Surface->format, pxlFMT->palette);
 
     if (!Pal_Surface) {
         printf("Error: %s\n", SDL_GetError());

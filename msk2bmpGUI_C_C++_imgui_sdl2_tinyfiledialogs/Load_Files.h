@@ -21,6 +21,7 @@ struct LF {
 
     int texture_width = 0, texture_height = 0;
 
+    img_type type;
     bool file_open_window;
     bool preview_tiles_window;
     bool preview_image_window;
