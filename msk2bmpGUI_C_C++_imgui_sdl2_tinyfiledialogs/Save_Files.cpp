@@ -177,8 +177,7 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
 void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
-    FRM_Header* header = 0;
-    Split_to_Tiles(MSK_surface, user_info, MSK, header);
+    Split_to_Tiles(MSK_surface, user_info, MSK, NULL);
 
 
 }
@@ -205,15 +204,12 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
     {
         for (int x = 0; x < num_tiles_x; x++)
         {
-            //check for existing file first
-            //TODO: Make this section a helper function
-
             char buffer[MAX_PATH];
             strncpy_s(buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
 
+            //check for existing file first
             check_file(type, File_ptr, path, buffer, tile_num, Save_File_Name);
             if (buffer == NULL) { return; }
-
 
             wchar_t* w_save_name = tinyfd_utf8to16(buffer);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
@@ -244,13 +240,11 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                     }
                     fclose(File_ptr);
                 }
+///////////////////////////////////////////////////////////////////////////
                 if (type == MSK)
                 {
-                    //const int total = (num_tiles_x*num_tiles_y);
-                    //SDL_Surface* Surface_Array = new SDL_Surface[total];
                 //TODO: split the surface up into 350x300 pixel surfaces
                 //      and pass them to Save_Mask()
-                        ///////////////////////////////////////////////////////////////////////////
                     uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
                     uint8_t *outp = out_buffer;
 
@@ -284,7 +278,8 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                         bitmask = 0;
                     }
                     writelines(File_ptr, out_buffer);
-                    ///////////////////////////////////////////////////////////////////////////
+                    fclose(File_ptr);
+///////////////////////////////////////////////////////////////////////////
                                     ///*Blit combination not supported :(
                                     /// looks like SDL can't convert anything to binary bitmap
                                     //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
@@ -302,14 +297,14 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                 }
             }
         }
-        tile_num++;
+    tile_num++;
     }
 }
 
 void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name)
 {
     char * alt_path;
-    char * lFilterPatterns[2] = { "*.FRM", "" };
+    char * lFilterPatterns[3] = { "*.FRM", "*.MSK", "" };
 
     wchar_t* w_save_name = tinyfd_utf8to16(buffer);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
@@ -367,7 +362,8 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
             int choice =
                 tinyfd_messageBox(
                     "Warning",
-                    "Directory doesn't exist,\nChoose a different location?",
+                    "Directory doesnt exist. And escaping the apostrophe doesnt work :(\n"
+                    "Choose a different location?",
                     "okcancel",
                     "warning",
                     2);
@@ -376,9 +372,14 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
                 return;
             }
             if (choice == 1) {
+                //char name[13];
+                //if (type == MSK) { strcpy(name, "wrldmp00.MSK"); }
+                //if (type == FRM) { strcpy(name, "wrldmp00.FRM"); }
+                //snprintf(path, MAX_PATH, name, MAX_PATH);
+
                 char* save_file = tinyfd_saveFileDialog(
-                    "default_name",
-                    path,
+                    "Warning",
+                    buffer,
                     2,
                     lFilterPatterns,
                     nullptr);
