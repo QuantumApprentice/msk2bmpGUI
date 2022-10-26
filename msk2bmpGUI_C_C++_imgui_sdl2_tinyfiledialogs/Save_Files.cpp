@@ -4,6 +4,9 @@
 #include <filesystem>
 #include <Windows.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include "B_Endian.h"
 #include "Save_Files.h"
 #include "tinyfiledialogs.h"
@@ -185,11 +188,10 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
     int num_tiles_x = surface->w / 350;
     int num_tiles_y = surface->h / 300;
     int tile_num = 0;
-
-    char Save_File_Name[MAX_PATH];
     char path[MAX_PATH];
-    char* alt_path;
-    char * lFilterPatterns[2] = { "*.FRM", "" };
+    char Save_File_Name[MAX_PATH];
+
+
     FILE * File_ptr = NULL;
 
 
@@ -205,77 +207,31 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
         {
             //check for existing file first
             //TODO: Make this section a helper function
-            wchar_t* w_save_name = Create_File_Name(FRM, Save_File_Name, path, tile_num);
+
             char buffer[MAX_PATH];
-            strncpy_s(buffer, MAX_PATH, Save_File_Name, MAX_PATH);
+            strncpy_s(buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
 
-            errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
+            check_file(type, File_ptr, path, buffer, tile_num, Save_File_Name);
+            if (buffer == NULL) { return; }
 
-            //handles the case where the file exists
-            if (error == 0) {
-                fclose(File_ptr);
 
-                int choice =
-                    tinyfd_messageBox(
-                        "Warning",
-                        "File already exists,\n"
-                        "Overwrite?",
-                        "yesnocancel",
-                        "warning",
-                        2);
-                if (choice == 0) { return; }
-                else if (choice == 1) {}
-                else if (choice == 2) {
-                    alt_path = tinyfd_selectFolderDialog(NULL, path);
-                    //strncpy(path, alt_path, MAX_PATH);
-                    //w_save_name = Create_File_Name(false, Save_File_Name, path, tile_num);
-                    w_save_name = Create_File_Name(type, Save_File_Name, alt_path, tile_num);
+            wchar_t* w_save_name = tinyfd_utf8to16(buffer);
+            _wfopen_s(&File_ptr, w_save_name, L"wb");
 
-                }
+            if (!File_ptr) {
+                tinyfd_messageBox(
+                    "Error",
+                    "Can not open this file in write mode.\n"
+                    "Make sure the default game path is set.",
+                    "ok",
+                    "error",
+                    1);
+                return;
             }
-            //handles the case where the file OR directory don't exist
             else {
-                printf("%s", strerror(error));
-
-                int choice =
-                    tinyfd_messageBox(
-                        "Warning",
-                        strerror(error),
-                        "yesnocancel",
-                        "warning",
-                        2);
-
-                char* save_file = tinyfd_saveFileDialog(
-                    "default_name",
-                    Save_File_Name,
-                    2,
-                    lFilterPatterns,
-                    nullptr);
-
-                if (save_file == NULL) {
-                    return;
-                }
-                else {
-                    w_save_name = tinyfd_utf8to16(Save_File_Name);
-                }
-            }
-
-            // FRM = 1, MSK = 0
-            if (type == FRM)
-            {
-                _wfopen_s(&File_ptr, w_save_name, L"wb");
-
-                if (!File_ptr) {
-                    tinyfd_messageBox(
-                        "Error",
-                        "Can not open this file in write mode.\n"
-                        "Make sure the default game path is set.",
-                        "ok",
-                        "error",
-                        1);
-                    return;
-                }
-                else {
+                // FRM = 1, MSK = 0
+                if (type == FRM)
+                {
                     //save header
                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
 
@@ -288,48 +244,176 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                     }
                     fclose(File_ptr);
                 }
+                if (type == MSK)
+                {
+                    //const int total = (num_tiles_x*num_tiles_y);
+                    //SDL_Surface* Surface_Array = new SDL_Surface[total];
+                //TODO: split the surface up into 350x300 pixel surfaces
+                //      and pass them to Save_Mask()
+                        ///////////////////////////////////////////////////////////////////////////
+                    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
+                    uint8_t *outp = out_buffer;
+
+                    int shift = 0;
+                    uint8_t bitmask = 0;
+                    bool mask_1_or_0;
+
+                    int pixel_pointer = surface->pitch * y * 300 + x * 350;
+                    for (int pxl_y = 299; pxl_y >= 0; pxl_y--)
+                    {
+                        for (int pxl_x = 0; pxl_x < 350; pxl_x++)
+                        {
+                            bitmask <<= 1;
+                            mask_1_or_0 =
+                                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
+                                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
+                                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
+                            bitmask |= mask_1_or_0;
+                            if (++shift == 8)
+                            {
+                                *outp = bitmask;
+                                ++outp;
+                                shift = 0;
+                                bitmask = 0;
+                            }
+                        }
+                        bitmask <<= 2 /* final shift */;
+                        *outp = bitmask;
+                        ++outp;
+                        shift = 0;
+                        bitmask = 0;
+                    }
+                    writelines(File_ptr, out_buffer);
+                    ///////////////////////////////////////////////////////////////////////////
+                                    ///*Blit combination not supported :(
+                                    /// looks like SDL can't convert anything to binary bitmap
+                                    //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
+                                    // 350, 300 };
+                                    //SDL_Rect dst = { 0,0, 350, 300 };
+                                    //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
+                                    //binary_bitmap = SDL_ConvertSurface(surface, pxlfmt, 0);
+                                    //binary_bitmap = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_INDEX1MSB, 0);
+                                    //printf(SDL_GetError());
+                                    //int error = SDL_BlitSurface(surface, &tile, binary_bitmap, &dst);
+                                    //if (error != 0)
+                                    //{
+                                    //    printf(SDL_GetError());
+                                    //}
+                }
             }
-            else
-            if (type == MSK) {
-                //const int total = (num_tiles_x*num_tiles_y);
-                //SDL_Surface* Surface_Array = new SDL_Surface[total];
-                SDL_Surface * binary_bitmap = 
-                    SDL_CreateRGBSurfaceWithFormat(
-                        SDL_SWSURFACE,
-                        350, 300, 1, 
-                        SDL_PIXELFORMAT_INDEX1MSB);
+        }
+        tile_num++;
+    }
+}
 
-                int pixel_pointer = surface->pitch * y * 300 + x * 350;
-            //TODO: split the surface up into 350x300 pixel surfaces
-            //      and pass them to Save_Mask()
-            //    for (int pixel_i = 0; pixel_i < 350; pixel_i++)
-            //    {
-                    //SDL_BlitSurface();
-                    //Save_Mask();
-            //        memccpy()
-            //    }
+void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name)
+{
+    char * alt_path;
+    char * lFilterPatterns[2] = { "*.FRM", "" };
 
-            //    Save_Mask(false, );
+    wchar_t* w_save_name = tinyfd_utf8to16(buffer);
+    errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
+
+    //handles the case where the file exists
+    if (error == 0) {
+        fclose(File_ptr);
+
+        int choice =
+            tinyfd_messageBox(
+                "Warning",
+                "File already exists,\n"
+                "Overwrite?",
+                "yesnocancel",
+                "warning",
+                2);
+        if      (choice == 0) { 
+                    buffer = { 0 };
+                    return; }
+        else if (choice == 1) {}
+        else if (choice == 2) {
+            //TODO: check if this works
+            alt_path = tinyfd_selectFolderDialog(NULL, path);
+            strncpy_s(buffer, MAX_PATH, Create_File_Name(type, alt_path, tile_num, Save_File_Name), MAX_PATH);
+        }
+    }
+    //handles the case where the DIRECTORY doesn't exist
+    else {
+        char* ptr;
+        char temp[MAX_PATH];
+        strncpy_s(temp, MAX_PATH, buffer, MAX_PATH);
+        ptr = strrchr(temp, '\\');
+        *ptr = '\0';
+
+///////////////////////////////////////////////////////////////////////////
+//another way to check if directory exists
+//#include <sys/stat.h> //stat 
+//#include <stdbool.h>  //bool type 
+        //bool file_exists(const char* filename) 
+        //{ 
+        //    struct stat buffer; 
+        //    return (stat(filename, &buffer) == 0); 
+        //}
+///////////////////////////////////////////////////////////////////////////
+
+
+        struct __stat64 stat_info; 
+        error = _wstat64(tinyfd_utf8to16(temp), &stat_info);
+        if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0)
+        { 
+            /* dir_path exists and is a directory */ 
+            return;
+        }
+        else {
+            int choice =
+                tinyfd_messageBox(
+                    "Warning",
+                    "Directory doesn't exist,\nChoose a different location?",
+                    "okcancel",
+                    "warning",
+                    2);
+            if (choice == 0) {
+                buffer = { 0 };
+                return;
+            }
+            if (choice == 1) {
+                char* save_file = tinyfd_saveFileDialog(
+                    "default_name",
+                    path,
+                    2,
+                    lFilterPatterns,
+                    nullptr);
+
+                if (save_file == NULL) {
+                    buffer = { 0 };
+                    return;
+                }
+                else {
+                    //TODO: check if this works
+                    strncpy_s(buffer, MAX_PATH, save_file, MAX_PATH);
+                }
             }
         }
     }
+
 }
 
 // Help create a filename based on the directory and export file type
 // bool type: FRM = 1, MSK = 0
-wchar_t* Create_File_Name(img_type type, char* Save_File_Name, char* path, int tile_num)
+char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name)
 {
 
     //-------save file
     //TODO: move tile_num++ outside if check
     if (type == FRM) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, tile_num++);
+        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, tile_num);
     }
     else
     if (type == MSK) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\data\\wrldmp%02d.MSK", path, tile_num++);
+        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\data\\wrldmp%02d.MSK", path, tile_num);
     }
 
     // Wide character stuff follows...
-     return tinyfd_utf8to16(Save_File_Name);
+     //return tinyfd_utf8to16(Save_File_Name);
+    //just return the filename?
+    return Save_File_Name;
 }

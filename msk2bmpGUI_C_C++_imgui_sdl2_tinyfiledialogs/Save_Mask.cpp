@@ -131,7 +131,7 @@ int Save_Mask(bool isBMP, int argc, const char ** argv)
 
 void ReadMskLines(FILE *file, char vOutput[MAX_LINES][44])
 {
-    // Each line in a MSK file is 44 bytes. 
+    // Each line in an MSK file is 44 bytes. 
     // Obviously, this isn't flexible if a 
     // different use case is needed. 
     // Although it is important to note that 

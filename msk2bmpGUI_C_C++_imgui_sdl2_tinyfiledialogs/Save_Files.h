@@ -26,5 +26,6 @@ char* Save_IMG(SDL_Surface *b_surface, struct user_info* user_info);
 void Save_FRM_tiles(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info);
 
-wchar_t* Create_File_Name(img_type type, char* Save_File_Name, char* buffer, int q);
+char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name);
 void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* FRM_Header);
+void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name);

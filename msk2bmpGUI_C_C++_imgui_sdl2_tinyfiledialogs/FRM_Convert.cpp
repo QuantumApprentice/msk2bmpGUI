@@ -131,8 +131,8 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bo
 }
 
 void SDL_Color_Match(SDL_Surface* Surface_32,
-                    SDL_PixelFormat* pxlFMT_Pal,
-                    SDL_Surface* Surface_8)
+                     SDL_PixelFormat* pxlFMT_Pal,
+                     SDL_Surface* Surface_8)
 {
     uint8_t w_PaletteColor;
     Pxl_info_32 abgr;
@@ -146,24 +146,34 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
             int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
 
             memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
-            w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
+        // Convert any pixel with partial alpha to full alpha for FRM
+        //      FRM's use index 0 to indicate transparancy
+            if(abgr.a < 255) {
+                ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
+            }
+        // Palletize and dither non-alpha pixels
+            else {
+                w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
 
-            err.a = abgr.a - PaletteColors[w_PaletteColor].a;
-            err.b = abgr.b - PaletteColors[w_PaletteColor].b;
-            err.g = abgr.g - PaletteColors[w_PaletteColor].g;
-            err.r = abgr.r - PaletteColors[w_PaletteColor].r;
+                err.a = abgr.a - PaletteColors[w_PaletteColor].a;
+                err.b = abgr.b - PaletteColors[w_PaletteColor].b;
+                err.g = abgr.g - PaletteColors[w_PaletteColor].g;
+                err.r = abgr.r - PaletteColors[w_PaletteColor].r;
 
-            int* pxl_index_arr[2];
-            pxl_index_arr[0] = &x;
-            pxl_index_arr[1] = &y;
+                int* pxl_index_arr[2];
+                pxl_index_arr[0] = &x;
+                pxl_index_arr[1] = &y;
 
-            limit_dither(Surface_32, &err, pxl_index_arr);
+                limit_dither(Surface_32, &err, pxl_index_arr);
 
-            //TODO: need to clean this up
-            if (i == c) { printf("SDL color match loop #: %d\n", i);
-                          c *= 10; }
+                //TODO: need to clean this up
+                if (i == c) {
+                    printf("SDL color match loop #: %d\n", i);
+                    c *= 10;
+                }
 
-            ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y)+x] = w_PaletteColor;
+                ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = w_PaletteColor;
+            }
         }
     }
 }
@@ -194,40 +204,46 @@ void Euclidian_Distance_Color_Match(
             //int i = (Surface_32->w * y) + x;
             //w_smallest = INT_MAX;
             //memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+
             int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
             w_smallest = INT_MAX;
             memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
 
-            for (int j = 0; j < PALETTE_FLAT; j++)
-            {
-                s = abgr.r - PaletteColors[j].r;
-                t = abgr.g - PaletteColors[j].g;
-                u = abgr.b - PaletteColors[j].b;
-                v = abgr.a - PaletteColors[j].a;
-
-                s *= s;
-                t *= t;
-                u *= u;
-                v *= v;
-                w = sqrt(s + t + u + v);
-
-                if (w < w_smallest) {
-                    w_smallest = w;
-                    w_PaletteColor = j;
-                }
-
-                if (j == PALETTE_FLAT - 1)
+            if (abgr.a < 255) {
+                ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
+            }
+            else {
+                for (int j = 0; j < PALETTE_FLAT; j++)
                 {
-                    err.r = abgr.r - PaletteColors[w_PaletteColor].r;
-                    err.g = abgr.g - PaletteColors[w_PaletteColor].g;
-                    err.b = abgr.b - PaletteColors[w_PaletteColor].b;
-                    err.a = abgr.a - PaletteColors[w_PaletteColor].a;
+                    s = abgr.r - PaletteColors[j].r;
+                    t = abgr.g - PaletteColors[j].g;
+                    u = abgr.b - PaletteColors[j].b;
+                    v = abgr.a - PaletteColors[j].a;
 
-                    int* pxl_index_arr[2];
-                    pxl_index_arr[0] = &x;
-                    pxl_index_arr[1] = &y;
+                    s *= s;
+                    t *= t;
+                    u *= u;
+                    v *= v;
+                    w = sqrt(s + t + u + v);
 
-                    limit_dither(Surface_32, &err, pxl_index_arr);
+                    if (w < w_smallest) {
+                        w_smallest = w;
+                        w_PaletteColor = j;
+                    }
+
+                    if (j == PALETTE_FLAT - 1)
+                    {
+                        err.r = abgr.r - PaletteColors[w_PaletteColor].r;
+                        err.g = abgr.g - PaletteColors[w_PaletteColor].g;
+                        err.b = abgr.b - PaletteColors[w_PaletteColor].b;
+                        err.a = abgr.a - PaletteColors[w_PaletteColor].a;
+
+                        int* pxl_index_arr[2];
+                        pxl_index_arr[0] = &x;
+                        pxl_index_arr[1] = &y;
+
+                        limit_dither(Surface_32, &err, pxl_index_arr);
+                    }
                 }
             }
             //TODO: need to clean this up
