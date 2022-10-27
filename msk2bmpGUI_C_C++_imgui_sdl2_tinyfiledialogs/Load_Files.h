@@ -29,4 +29,4 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
 };
-void Load_Files(LF* F_Prop, struct user_info* user_info, int, SDL_PixelFormat* pxlFMT);
+void Load_Files(LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);

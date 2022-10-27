@@ -2,9 +2,9 @@
 #include <SDL.h>
 #include "Image2Texture.h"
 
-void Edit_Image(variables* My_Variables, int counter, SDL_Event* event);
-void Create_Map_Mask(variables* My_Variables, int counter);
-void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec2 Origin);
+void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick);
+void Create_Map_Mask(LF* F_Prop);
+void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin);
 void CPU_Blend(SDL_Surface* surface1, SDL_Surface* surface2);
 void Update_Palette(struct LF* files, bool blend);
 //void Update_Palette2(struct LF* files, SDL_PixelFormat* pxlFMT);

@@ -78,7 +78,7 @@
     <ClCompile Include="Edit_Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Save_Mask.cpp">
+    <ClCompile Include="MSK_Convert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -137,7 +137,7 @@
     <ClInclude Include="Edit_Image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Save_Mask.h">
+    <ClInclude Include="MSK_Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

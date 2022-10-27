@@ -12,7 +12,7 @@
 #include "tinyfiledialogs.h"
 #include "imgui-docking/imgui.h"
 #include "Load_Settings.h"
-#include "Save_Mask.h"
+#include "MSK_Convert.h"
 
 void Set_Default_Path(user_info* user_info);
 void write_cfg_file(user_info* user_info);
@@ -178,8 +178,6 @@ void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
     Split_to_Tiles(MSK_surface, user_info, MSK, NULL);
-
-
 }
 
 void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
@@ -243,46 +241,14 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
 ///////////////////////////////////////////////////////////////////////////
                 if (type == MSK)
                 {
-                //TODO: split the surface up into 350x300 pixel surfaces
+                //Split the surface up into 350x300 pixel surfaces
                 //      and pass them to Save_Mask()
-                    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
-                    uint8_t *outp = out_buffer;
+                    Save_MSK_Image(surface, File_ptr, x, y);
 
-                    int shift = 0;
-                    uint8_t bitmask = 0;
-                    bool mask_1_or_0;
-
-                    int pixel_pointer = surface->pitch * y * 300 + x * 350;
-                    for (int pxl_y = 299; pxl_y >= 0; pxl_y--)
-                    {
-                        for (int pxl_x = 0; pxl_x < 350; pxl_x++)
-                        {
-                            bitmask <<= 1;
-                            mask_1_or_0 =
-                                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
-                                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
-                                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
-                            bitmask |= mask_1_or_0;
-                            if (++shift == 8)
-                            {
-                                *outp = bitmask;
-                                ++outp;
-                                shift = 0;
-                                bitmask = 0;
-                            }
-                        }
-                        bitmask <<= 2 /* final shift */;
-                        *outp = bitmask;
-                        ++outp;
-                        shift = 0;
-                        bitmask = 0;
-                    }
-                    writelines(File_ptr, out_buffer);
-                    fclose(File_ptr);
 ///////////////////////////////////////////////////////////////////////////
-                                    ///*Blit combination not supported :(
+                ///*Blit combination not supported :(
                                     /// looks like SDL can't convert anything to binary bitmap
-                                    //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
+                //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
                                     // 350, 300 };
                                     //SDL_Rect dst = { 0,0, 350, 300 };
                                     //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
@@ -340,7 +306,7 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
         *ptr = '\0';
 
 ///////////////////////////////////////////////////////////////////////////
-//another way to check if directory exists
+//another way to check if directory exists?
 //#include <sys/stat.h> //stat 
 //#include <stdbool.h>  //bool type 
         //bool file_exists(const char* filename) 

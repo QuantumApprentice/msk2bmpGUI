@@ -575,7 +575,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     }
     else
     {
-
         if (!My_Variables->F_Prop[counter].edit_map_mask) {
 
             if (ImGui::Button("Save as Map Tiles...")) {
@@ -584,7 +583,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
             if (ImGui::Button("Create Mask Tiles...")) {
                 //TODO: possibly change My_Variables to F_Prop[counter]
-                Create_Map_Mask(My_Variables, counter);
+                Create_Map_Mask(&My_Variables->F_Prop[counter]);
                 My_Variables->F_Prop[counter].edit_map_mask = true;
             }
 
@@ -593,7 +592,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
                 ImVec2(My_Variables->F_Prop[counter].image->w,
                     My_Variables->F_Prop[counter].image->h));
 
-            Edit_Image(My_Variables, counter, event);
+            Edit_Image(&My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
 
         }
         else {
@@ -603,12 +602,13 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
             if (ImGui::Button("Load Mask Tiles...")) {
                 //TODO: load mask tiles
+                Load_Files(&My_Variables->F_Prop[counter], user_info, NULL);
             }
 
             ImGui::Image(
                 (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
                 ImVec2(My_Variables->F_Prop[counter].image->w,
-                       My_Variables->F_Prop[counter].image->h));
+                       My_Variables->F_Prop[counter].image->h) );
 
             ImDrawList *Draw_List = ImGui::GetWindowDrawList();
             ImVec2 Origin = ImGui::GetItemRectMin();
@@ -618,7 +618,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
 
             //TODO: add an export map mask tiles button
-            Edit_Map_Mask(My_Variables, event, counter, Origin);
+            Edit_Map_Mask(&My_Variables->F_Prop[counter], event, &My_Variables->Palette_Update, Origin);
 
             //no alpha value input
             //Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
@@ -681,7 +681,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
     {
         My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     }
-    Load_Files(My_Variables.F_Prop, user_info, *counter, My_Variables.pxlFMT_FO_Pal);
+    Load_Files(&My_Variables.F_Prop[*counter], user_info, My_Variables.pxlFMT_FO_Pal);
 
     Image2Texture(My_Variables.F_Prop[*counter].image,
                  &My_Variables.F_Prop[*counter].Optimized_Texture,

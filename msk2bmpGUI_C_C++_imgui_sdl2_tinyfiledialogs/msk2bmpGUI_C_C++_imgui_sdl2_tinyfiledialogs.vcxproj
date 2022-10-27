@@ -167,7 +167,7 @@
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Save_Files.cpp" />
-    <ClCompile Include="Save_Mask.cpp" />
+    <ClCompile Include="MSK_Convert.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
@@ -188,7 +188,7 @@
     <ClInclude Include="Load_Files.h" />
     <ClInclude Include="Load_Settings.h" />
     <ClInclude Include="Save_Files.h" />
-    <ClInclude Include="Save_Mask.h" />
+    <ClInclude Include="MSK_Convert.h" />
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <ItemGroup>

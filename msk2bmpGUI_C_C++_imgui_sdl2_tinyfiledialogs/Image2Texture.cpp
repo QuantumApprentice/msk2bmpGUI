@@ -82,37 +82,37 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 }
 
 //TODO: need to simplify My_Variables to accept F_Prop[counter] instead
-void Prep_Image(LF* file_info, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window) {
+void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window) {
     //Palettize to 8-bit FO pallet, and dithered
-    SDL_FreeSurface(file_info->Pal_Surface);
+    SDL_FreeSurface(F_Prop->Pal_Surface);
 
-    if (file_info->type == FRM) {
+    if (F_Prop->type == FRM) {
 
-        file_info->Pal_Surface
-            = SDL_ConvertSurface(file_info->image,
-                                 file_info->image->format,
+        F_Prop->Pal_Surface
+            = SDL_ConvertSurface(F_Prop->image,
+                                 F_Prop->image->format,
                                  0);
-        SDL_SetPixelFormatPalette(file_info->Pal_Surface->format,
+        SDL_SetPixelFormatPalette(F_Prop->Pal_Surface->format,
                                   pxlFMT_FO_Pal->palette);
     }
-    else if (file_info->type == MSK) {
+    else if (F_Prop->type == MSK) {
         //TODO: Handle MSK file types
     }
     else {
-        file_info->Pal_Surface
-            = FRM_Color_Convert(file_info->image,
+        F_Prop->Pal_Surface
+            = FRM_Color_Convert(F_Prop->image,
                                 pxlFMT_FO_Pal,
                                 color_match);
     }
 
     //Unpalettize image to new surface for display
-    SDL_FreeSurface(file_info->Final_Render);
+    SDL_FreeSurface(F_Prop->Final_Render);
 
-    file_info->Final_Render
-        = Unpalettize_Image(file_info->Pal_Surface);
+    F_Prop->Final_Render
+        = Unpalettize_Image(F_Prop->Pal_Surface);
 
     //Converts unpalettized image to texture for display, sets window bool to true
-    Image2Texture(file_info->Final_Render,
-                 &file_info->Optimized_Render_Texture,
+    Image2Texture(F_Prop->Final_Render,
+                 &F_Prop->Optimized_Render_Texture,
                   window);
 }

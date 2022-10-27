@@ -6,16 +6,16 @@
 #include "FRM_Animate.h"
 #include "Load_Files.h"
 
-void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
+void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
     //ImDrawList *Draw_List = ImGui::GetWindowDrawList();
 
     ImVec2 Origin = ImGui::GetItemRectMin();
     //ImVec2 Top_Left = Origin;
-    int width  = My_Variables->F_Prop[counter].image->w;
-    int height = My_Variables->F_Prop[counter].image->h;
+    int width  = F_Prop->image->w;
+    int height = F_Prop->image->h;
     int size = width * height;
-    //int pitch = My_Variables->F_Prop[counter].image->pitch;
-    int pitch = (My_Variables->F_Prop[counter].Pal_Surface->pitch);
+    //int pitch = F_Prop->image->pitch;
+    int pitch = (F_Prop->Pal_Surface->pitch);
     bool image_edited = false;
 
     //ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
@@ -33,15 +33,15 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
 
-            SDL_FillRect(My_Variables->F_Prop[counter].Pal_Surface, &rect, My_Variables->Color_Pick);
+            SDL_FillRect(F_Prop->Pal_Surface, &rect, *Color_Pick);
 
             //TODO: maybe pass the dithering choice through?
 
             ///*old code, moved to Palette_Update section*/
             ////Unpalettize image to new surface for display
-            //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
-            //My_Variables->F_Prop[counter].Final_Render
-            //    = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+            //SDL_FreeSurface(F_Prop->Final_Render);
+            //F_Prop->Final_Render
+            //    = Unpalettize_Image(F_Prop->Pal_Surface);
         }
     }
 
@@ -51,50 +51,50 @@ void Edit_Image(variables* My_Variables, int counter, SDL_Event* event) {
     //{
     //    for (int y = 0; y < height; y++)
     //    {
-    //        pal_color = ((uint8_t*)My_Variables->F_Prop[counter].Pal_Surface->pixels)[pitch*y + x];
+    //        pal_color = ((uint8_t*)F_Prop->Pal_Surface->pixels)[pitch*y + x];
     //        if (pal_color >= 225)
     //        {
     //            Image_Color_Cycle(pal_color, x, y,
     //                               My_Variables->PaletteColors,
-    //                               My_Variables->F_Prop[counter].Final_Render);
+    //                               F_Prop->Final_Render);
     //        }
     //    }
     //}
 
     //Converts unpalettized image to texture for display, sets window bool to true
-    if (My_Variables->Palette_Update || image_edited) {
-        Update_Palette(&My_Variables->F_Prop[counter], false);
+    if (Palette_Update || image_edited) {
+        Update_Palette(F_Prop, false);
 
-        //SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
+        //SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
         //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
 
         //Unpalettize image to new surface for display
-        //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
+        //SDL_FreeSurface(F_Prop->Final_Render);
 
-        //My_Variables->F_Prop[counter].Final_Render
-        //    = Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+        //F_Prop->Final_Render
+        //    = Unpalettize_Image(F_Prop->Pal_Surface);
 
-        //Image2Texture(My_Variables->F_Prop[counter].Final_Render,
-        //    &My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        //    &My_Variables->F_Prop[counter].edit_image_window);
+        //Image2Texture(F_Prop->Final_Render,
+        //    &F_Prop->Optimized_Render_Texture,
+        //    &F_Prop->edit_image_window);
     }
 }
 
-void Create_Map_Mask(variables* My_Variables, int counter)
+void Create_Map_Mask(LF* F_Prop)
 {
-    int width =  My_Variables->F_Prop[counter].image->w;
-    int height = My_Variables->F_Prop[counter].image->h;
+    int width =  F_Prop->image->w;
+    int height = F_Prop->image->h;
 
-    if (My_Variables->F_Prop[counter].Map_Mask)
-        { SDL_FreeSurface(My_Variables->F_Prop[counter].Map_Mask); }
-    My_Variables->F_Prop[counter].Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+    if (F_Prop->Map_Mask)
+        { SDL_FreeSurface(F_Prop->Map_Mask); }
+    F_Prop->Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 
-    if (My_Variables->F_Prop[counter].Map_Mask) {
+    if (F_Prop->Map_Mask) {
 
-        Uint32 color = SDL_MapRGBA(My_Variables->F_Prop[counter].Map_Mask->format,
+        Uint32 color = SDL_MapRGBA(F_Prop->Map_Mask->format,
                                    0, 0, 0, 0);
 
-        SDL_Surface* MM_Surface = My_Variables->F_Prop[counter].Map_Mask;
+        SDL_Surface* MM_Surface = F_Prop->Map_Mask;
         for (int i = 0; i < (width*height); i++)
         {
             ((Uint32*)MM_Surface->pixels)[i] = color; //rand() % 255;
@@ -110,9 +110,9 @@ void Create_Map_Mask(variables* My_Variables, int counter)
             //((uint8_t*)MM_Surface->pixels)[i] = byte;
         }
 
-        Image2Texture(My_Variables->F_Prop[counter].Map_Mask,
-            &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-            &My_Variables->F_Prop[counter].edit_image_window);
+        Image2Texture(F_Prop->Map_Mask,
+            &F_Prop->Optimized_Mask_Texture,
+            &F_Prop->edit_image_window);
     }
     else {
         printf("Can't allocate surface for some reason...");
@@ -120,13 +120,23 @@ void Create_Map_Mask(variables* My_Variables, int counter)
 }
 
 //TODO: change input from My_Variables to F_Prop[]
-void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec2 Origin)
+void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin)
 {
-    int width =  My_Variables->F_Prop[counter].image->w;
-    int height = My_Variables->F_Prop[counter].image->h;
+    int width;
+    int height;
+    //TODO: check this for usefullness later
+    if (F_Prop->Map_Mask->w == 0) {
+        width = F_Prop->image->w;
+        height = F_Prop->image->h;
+    }
+    else {
+        width  = F_Prop->Map_Mask->w;
+        height = F_Prop->Map_Mask->h;
+    }
 
-    SDL_Surface* BB_Surface = My_Variables->F_Prop[counter].Map_Mask;
-    Uint32 white = SDL_MapRGB(My_Variables->F_Prop[counter].Map_Mask->format,
+
+    SDL_Surface* BB_Surface = F_Prop->Map_Mask;
+    Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
         255, 255, 255);
 
     ImVec2 MousePos = ImGui::GetMousePos();
@@ -141,7 +151,7 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
     rect.w = 10;
 
     //if (My_Variables->Palette_Update) {
-    //    SDL_SetPaletteColors(My_Variables->F_Prop[counter].Pal_Surface->format->palette,
+    //    SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
     //        My_Variables->PaletteColors, 0, 256);
     //}
 
@@ -149,8 +159,8 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
 
-            SDL_FillRect(My_Variables->F_Prop[counter].Map_Mask, &rect, white);
-            My_Variables->Palette_Update = true;
+            SDL_FillRect(F_Prop->Map_Mask, &rect, white);
+            *Palette_Update = true;
 
 
             ///*TODO: This stuff didn't work, delete it when done*/
@@ -168,22 +178,22 @@ void Edit_Map_Mask(variables* My_Variables, SDL_Event* event, int counter, ImVec
         }
     }
 
-    if (My_Variables->Palette_Update) {
+    if (*Palette_Update) {
         ///re-copy Pal_Surface to Final_Render each time to allow 
         ///transparency through the mask surface painting
-        Update_Palette(&My_Variables->F_Prop[counter], true);
+        Update_Palette(F_Prop, true);
 
 
-        //SDL_FreeSurface(My_Variables->F_Prop[counter].Final_Render);
-        //My_Variables->F_Prop[counter].Final_Render =
-        //    Unpalettize_Image(My_Variables->F_Prop[counter].Pal_Surface);
+        //SDL_FreeSurface(F_Prop->Final_Render);
+        //F_Prop->Final_Render =
+        //    Unpalettize_Image(F_Prop->Pal_Surface);
         /////
 
-        //CPU_Blend(My_Variables->F_Prop[counter].Map_Mask,
-        //          My_Variables->F_Prop[counter].Final_Render);
+        //CPU_Blend(F_Prop->Map_Mask,
+        //          F_Prop->Final_Render);
 
-        //SDL_to_OpenGl(My_Variables->F_Prop[counter].Final_Render,
-        //             &My_Variables->F_Prop[counter].Optimized_Render_Texture);
+        //SDL_to_OpenGl(F_Prop->Final_Render,
+        //             &F_Prop->Optimized_Render_Texture);
     }
 }
 
