@@ -380,7 +380,6 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 
     SDL_Surface* Output_Surface;
     Output_Surface = SDL_ConvertSurface(Surface, pxlFMT_UnPal, 0);
-    //SDL_FreeFormat(pxlFMT_UnPal);
 
     if (!Output_Surface) {
         printf("\nError: %s", SDL_GetError());

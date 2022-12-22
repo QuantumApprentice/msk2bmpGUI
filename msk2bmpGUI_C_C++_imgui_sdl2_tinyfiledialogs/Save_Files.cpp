@@ -334,15 +334,12 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
                     "warning",
                     2);
             if (choice == 0) {
+                //Cancel =  null out buffer and return
                 buffer = { 0 };
                 return;
             }
             if (choice == 1) {
-                //char name[13];
-                //if (type == MSK) { strcpy(name, "wrldmp00.MSK"); }
-                //if (type == FRM) { strcpy(name, "wrldmp00.FRM"); }
-                //snprintf(path, MAX_PATH, name, MAX_PATH);
-
+                //No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
                 char* save_file = tinyfd_saveFileDialog(
                     "Warning",
                     buffer,
@@ -361,7 +358,6 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
             }
         }
     }
-
 }
 
 // Help create a filename based on the directory and export file type

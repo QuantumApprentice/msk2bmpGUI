@@ -168,6 +168,7 @@
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Save_Files.cpp" />
     <ClCompile Include="MSK_Convert.cpp" />
+    <ClCompile Include="Shader_Stuff.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
   </ItemGroup>
   <ItemGroup>
@@ -189,10 +190,15 @@
     <ClInclude Include="Load_Settings.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="MSK_Convert.h" />
+    <ClInclude Include="Shader_Stuff.h" />
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Palette_Shader.vert" />
+    <None Include="shaders\color_cycle_1D.frag" />
+    <None Include="shaders\color_cycle_2D.frag" />
+    <None Include="shaders\Palette_Shader.vert" />
+    <None Include="shaders\pass_thru_shader.frag" />
+    <None Include="shaders\zoom_shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

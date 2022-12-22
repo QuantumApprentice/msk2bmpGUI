@@ -30,3 +30,4 @@ struct LF {
     bool edit_map_mask = false;
 };
 void Load_Files(LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
+void Load_Edit_MSK(LF* F_Prop, struct user_info* user_info);

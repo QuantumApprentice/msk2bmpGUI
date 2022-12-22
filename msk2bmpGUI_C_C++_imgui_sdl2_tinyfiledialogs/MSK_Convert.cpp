@@ -247,8 +247,10 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     ////convert to regular 32bit surface
     //SDL_PixelFormat* pxlFMT_32 = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
     //SDL_Surface*temp_surface = SDL_ConvertSurfaceFormat(binary_bitmap, SDL_PIXELFORMAT_RGBA8888, 0);
+    printf(SDL_GetError());
 
     SDL_Surface* Mask_Surface = SDL_CreateRGBSurface(0, 350, 300, 32, 0, 0, 0, 0);
+    printf(SDL_GetError());
     //TODO: refactor this and make sure the inputLines buffer
     //      matches the other buffer for exporting
     uint8_t *bin_ptr = (uint8_t*)inputLines;
@@ -256,7 +258,7 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     uint8_t bitmask = 128;
     uint8_t buff = 0;
     bool mask_1_or_0;
-    SDL_Color white = { 255,255,255 };
+    SDL_Color white = { 255,255,255,128 };
 
     for (int pxl_y = 0; pxl_y < 300; pxl_y++)
     {
@@ -285,8 +287,6 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     printf(SDL_GetError());
 
     return Mask_Surface;
-
-
 }
 
 void Save_MSK_Image(SDL_Surface* surface, FILE* File_ptr, int x, int y)
@@ -307,8 +307,8 @@ void Save_MSK_Image(SDL_Surface* surface, FILE* File_ptr, int x, int y)
             bitmask <<= 1;
             mask_1_or_0 =
                 *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
-            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
-            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
+                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
+                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
             bitmask |= mask_1_or_0;
             if (++shift == 8)
             {

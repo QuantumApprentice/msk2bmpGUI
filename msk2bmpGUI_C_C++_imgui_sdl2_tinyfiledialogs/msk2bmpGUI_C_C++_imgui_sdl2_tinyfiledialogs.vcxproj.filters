@@ -19,7 +19,7 @@
     <Filter Include="Source Files\OpenGL">
       <UniqueIdentifier>{b833a7f1-20bb-4600-b1d6-7f6f38d06701}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Image2Texture">
+    <Filter Include="Source Files\OpenGL\Image2Texture">
       <UniqueIdentifier>{53b58c10-480a-4117-981d-daa7d99c3e11}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -64,7 +64,7 @@
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
     <ClCompile Include="Image2Texture.cpp">
-      <Filter>Source Files\Image2Texture</Filter>
+      <Filter>Source Files\OpenGL\Image2Texture</Filter>
     </ClCompile>
     <ClCompile Include="Save_Files.cpp">
       <Filter>Source Files</Filter>
@@ -79,6 +79,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MSK_Convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader_Stuff.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -129,7 +132,7 @@
       <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
     <ClInclude Include="Image2Texture.h">
-      <Filter>Source Files\Image2Texture</Filter>
+      <Filter>Source Files\OpenGL\Image2Texture</Filter>
     </ClInclude>
     <ClInclude Include="Load_Settings.h">
       <Filter>Header Files</Filter>
@@ -140,9 +143,24 @@
     <ClInclude Include="MSK_Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Shader_Stuff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Palette_Shader.vert">
+    <None Include="shaders\Palette_Shader.vert">
+      <Filter>Source Files\OpenGL</Filter>
+    </None>
+    <None Include="shaders\color_cycle_1D.frag">
+      <Filter>Source Files\OpenGL</Filter>
+    </None>
+    <None Include="shaders\color_cycle_2D.frag">
+      <Filter>Source Files\OpenGL</Filter>
+    </None>
+    <None Include="shaders\pass_thru_shader.frag">
+      <Filter>Source Files\OpenGL</Filter>
+    </None>
+    <None Include="shaders\zoom_shader.vert">
       <Filter>Source Files\OpenGL</Filter>
     </None>
   </ItemGroup>

@@ -36,6 +36,7 @@
 #include "Load_Settings.h"
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
+#include "Shader_Stuff.h"
 
 // Our state
 struct variables My_Variables = {};
@@ -52,12 +53,15 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 void Show_Palette_Window(struct variables *My_Variables, int counter);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
-void Prep_Image(LF* file_info, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
+void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter);
 void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT);
 void Set_Default_Path(struct user_info* user_info);
 void crash_detector();
+
+
+
 
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 //    PSTR lpCmdLine, INT nCmdShow)
@@ -169,6 +173,14 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
+    //Init Framebuffer stuff so I can use shaders
+    unsigned int palette_buffer;
+    unsigned int palette_texture;
+    init_framebuffer(&palette_buffer, &palette_texture);
+    mesh giant_triangle = load_giant_triangle();
+    //Shader stuff
+    Shader color_cycle("shaders\zoom_shader.ver", "shaders\color_cycle_1D.frag");
+
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // used to reset the default layout back to original
@@ -178,6 +190,17 @@ int main(int, char**)
     bool done = false;
     while (!done)
     {
+    //-----------------------------------------------------------------------------------------
+        //OpenGL stuff
+        shader_setup(giant_triangle,
+                    (int)io.DisplaySize.x, (int)io.DisplaySize.y,
+                     palette_texture, palette_buffer);
+
+
+
+    //-----------------------------------------------------------------------------------------
+
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -194,7 +217,7 @@ int main(int, char**)
         }
 
         // Store these variables at frame start for cycling the palette colors
-        My_Variables.CurrentTime = clock();
+        My_Variables.CurrentTime    = clock();
         My_Variables.Palette_Update = false;
 
         // Start the Dear ImGui frame
@@ -222,15 +245,15 @@ int main(int, char**)
             ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
             ImGuiID dock_main_id = dockspace_id; // This variable will track the docking node.
-            ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.35f, NULL, &dock_main_id);
-            ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.57f, NULL, &dock_id_left);
-            ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
+            ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(       dock_main_id, ImGuiDir_Left,  0.35f, NULL, &dock_main_id);
+            ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down,  0.57f, NULL, &dock_id_left);
+            ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(      dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
 
-            ImGui::DockBuilderDockWindow("###file", dock_id_left);
-            ImGui::DockBuilderDockWindow("###palette", dock_id_bottom_left);
-            ImGui::DockBuilderDockWindow("###preview00", dock_main_id);
-            ImGui::DockBuilderDockWindow("###render00", dock_id_right);
-            ImGui::DockBuilderDockWindow("###edit00", dock_main_id);
+            ImGui::DockBuilderDockWindow("###file"      , dock_id_left);
+            ImGui::DockBuilderDockWindow("###palette"   , dock_id_bottom_left);
+            ImGui::DockBuilderDockWindow("###preview00" , dock_main_id);
+            ImGui::DockBuilderDockWindow("###render00"  , dock_id_right);
+            ImGui::DockBuilderDockWindow("###edit00"    , dock_main_id);
 
             for (int i = 1; i <= 99; i++) {
                 char buff[13];
@@ -318,92 +341,100 @@ void crash_detector() {
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
 {
     //shortcuts...possibly replace variables* with just LF*
-    LF* file_info = &My_Variables->F_Prop[counter];
+    LF* F_Prop = &My_Variables->F_Prop[counter];
     SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
 
-    std::string a = file_info->c_name;
+    std::string a = F_Prop->c_name;
     char b[3];
     sprintf(b, "%02d", counter);
     std::string name = a + "###preview" + b;
+    bool wrong_size;
 
-    bool wrong_size = (file_info->image->w != 350) ||
-                      (file_info->image->h != 300);
-
-    ImGui::Begin(name.c_str(), (&file_info->file_open_window), 0);
+    if (F_Prop->image == NULL) {
+        wrong_size = NULL;
+    }
+    else {
+        wrong_size = (F_Prop->image->w != 350) ||
+                     (F_Prop->image->h != 300);
+    }
+    ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0);
     //Editing buttons
     //TODO: for some reason map tile's won't edit, need to fix
     if (ImGui::Button("SDL Convert and Paint")) {
-        Prep_Image(file_info,
+        Prep_Image(F_Prop,
                    pxlFMT_FO_Pal,
                    true,
-                  &file_info->edit_image_window);
+                  &F_Prop->edit_image_window);
     }
     if (ImGui::Button("Euclidian Convert and Paint")) {
-        Prep_Image(file_info,
+        Prep_Image(F_Prop,
                    pxlFMT_FO_Pal,
                    false,
-                  &file_info->edit_image_window);
+                  &F_Prop->edit_image_window);
     }
 
     // Check image size to match tile size (350x300 pixels)
     if (wrong_size) {
         ImGui::Text("This image is the wrong size to make a tile...");
         ImGui::Text("Size is %dx%d",
-                    file_info->image->w,
-                    file_info->image->h);
+                    F_Prop->image->w,
+                    F_Prop->image->h);
         ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
         //Buttons
         if (ImGui::Button("Preview Tiles - SDL color match")) {
-            Prep_Image(file_info,
+            Prep_Image(F_Prop,
                        pxlFMT_FO_Pal,
                        true,
-                      &file_info->preview_tiles_window);
+                      &F_Prop->preview_tiles_window);
         }
         if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-            Prep_Image(file_info,
+            Prep_Image(F_Prop,
                        pxlFMT_FO_Pal,
                        false,
-                      &file_info->preview_tiles_window);
+                      &F_Prop->preview_tiles_window);
         }
         if (ImGui::Button("Preview as Image - SDL color match")) {
-            Prep_Image(file_info,
+            Prep_Image(F_Prop,
                        pxlFMT_FO_Pal,
                        true,
-                      &file_info->preview_image_window);
+                      &F_Prop->preview_image_window);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
-            Prep_Image(file_info,
+            Prep_Image(F_Prop,
                        pxlFMT_FO_Pal,
                        false,
-                      &file_info->preview_image_window);
+                      &F_Prop->preview_image_window);
         }
     }
 
-    ImGui::Text(file_info->c_name);
-
+    ImGui::Text(F_Prop->c_name);
     if (My_Variables->Palette_Update) {
-        Update_Palette2(file_info->image, 
-                       &file_info->Optimized_Texture, 
-                        pxlFMT_FO_Pal);
+        if(F_Prop->image == NULL) {}
+        else {
+            Update_Palette2(F_Prop->image,
+                           &F_Prop->Optimized_Texture,
+                            pxlFMT_FO_Pal);
+        }
     }
+
     ImGui::Image(
-        (ImTextureID)file_info->Optimized_Texture,
-        ImVec2((float)file_info->image->w,
-               (float)file_info->image->h),
+        (ImTextureID)F_Prop->Optimized_Texture,
+        ImVec2((float)F_Prop->image->w,
+        (float)F_Prop->image->h),
         My_Variables->uv_min,
         My_Variables->uv_max,
         My_Variables->tint_col,
         My_Variables->border_col);
 
+    // Draw red boxes to indicate where the tiles will be cut from
     if (wrong_size) {
         ImDrawList *Draw_List = ImGui::GetWindowDrawList();
         ImVec2 Origin = ImGui::GetItemRectMin();
         ImVec2 Top_Left = Origin;
         ImVec2 Bottom_Right = { 0, 0 };
-        int max_box_x = file_info->image->w / 350;
-        int max_box_y = file_info->image->h / 300;
+        int max_box_x = F_Prop->image->w / 350;
+        int max_box_y = F_Prop->image->h / 300;
 
-        // Draw red boxes to indicate where the tiles will be cut from
         for (int i = 0; i < max_box_x; i++)
         {
             for (int j = 0; j < max_box_y; j++)
@@ -414,22 +445,20 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
             }
         }
-
         // Preview tiles from red boxes
-        if (file_info->preview_tiles_window) {
+        if (F_Prop->preview_tiles_window) {
             Preview_Tiles_Window(My_Variables, &Top_Left, &Bottom_Right,
                 &Origin, &max_box_x, &max_box_y, counter);
         }
-        // Preview full image
-        if (file_info->preview_image_window) {
-            Show_Image_Render(My_Variables, &user_info, counter);
-        }
-        // Edit full image
-        if (file_info->edit_image_window) {
-            Edit_Image_Window(My_Variables, &user_info, counter, event);
-        }
     }
-
+    // Preview full image
+    if (F_Prop->preview_image_window) {
+        Show_Image_Render(My_Variables, &user_info, counter);
+    }
+    // Edit full image
+    if (F_Prop->edit_image_window) {
+        Edit_Image_Window(My_Variables, &user_info, counter, event);
+    }
     ImGui::End();
 }
 
@@ -582,15 +611,17 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
 
             if (ImGui::Button("Create Mask Tiles...")) {
-                //TODO: possibly change My_Variables to F_Prop[counter]
-                Create_Map_Mask(&My_Variables->F_Prop[counter]);
+                My_Variables->F_Prop[counter].Map_Mask =
+                      Create_Map_Mask(My_Variables->F_Prop[counter].image,
+                                     &My_Variables->F_Prop[counter].Optimized_Mask_Texture,
+                                     &My_Variables->F_Prop[counter].edit_image_window);
                 My_Variables->F_Prop[counter].edit_map_mask = true;
             }
 
             ImGui::Image(
                 (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
                 ImVec2(My_Variables->F_Prop[counter].image->w,
-                    My_Variables->F_Prop[counter].image->h));
+                       My_Variables->F_Prop[counter].image->h));
 
             Edit_Image(&My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
 
@@ -602,7 +633,10 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
             if (ImGui::Button("Load Mask Tiles...")) {
                 //TODO: load mask tiles
-                Load_Files(&My_Variables->F_Prop[counter], user_info, NULL);
+                Load_Edit_MSK(&My_Variables->F_Prop[counter], user_info);
+                //Load_Files(&My_Variables->F_Prop[counter],
+                //            user_info,
+                //            My_Variables->pxlFMT_FO_Pal);
             }
 
             ImGui::Image(
@@ -617,20 +651,18 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             int height = My_Variables->F_Prop[counter].image->h;
             ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
 
-            //TODO: add an export map mask tiles button
             Edit_Map_Mask(&My_Variables->F_Prop[counter], event, &My_Variables->Palette_Update, Origin);
 
             //no alpha value input
             //Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
             //    Origin, Bottom_Right);
-
+            //
             ////modifies alpha value input
             //int alpha = 64;
             //Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
             //              Origin, Bottom_Right, { 0, 0 }, { 1, 1 }, IM_COL32(255, 255, 255, alpha));
 
             if (ImGui::Button("Cancel Map Mask...")) {
-
                 My_Variables->F_Prop[counter].edit_map_mask = false;
             }
         }
@@ -653,8 +685,14 @@ static void ShowMainMenuBar(int* counter)
         {
             ImGui::MenuItem("(demo menu)", NULL, false, false);
             if (ImGui::MenuItem("New")) {/*TODO: add a new file option w/blank surfaces*/ }
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { Open_Files(&user_info, counter, My_Variables.pxlFMT_FO_Pal); }
-            if (ImGui::MenuItem("Default Fallout Path")) { Set_Default_Path(&user_info); }
+            if (ImGui::MenuItem("Open", "Ctrl+O"))
+            { 
+                Open_Files(&user_info, counter, My_Variables.pxlFMT_FO_Pal);
+            }
+            if (ImGui::MenuItem("Default Fallout Path"))
+            {
+                Set_Default_Path(&user_info);
+            }
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
         }
@@ -679,6 +717,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
     if (My_Variables.pxlFMT_FO_Pal == NULL)
     {
+        printf("Error: Palette not loaded...");
         My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     }
     Load_Files(&My_Variables.F_Prop[*counter], user_info, My_Variables.pxlFMT_FO_Pal);

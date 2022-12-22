@@ -8,7 +8,6 @@
 #include "FRM_Convert.h"
 #include "Image2Texture.h"
 
-//typedef uint8_t BYTE;
 typedef uint8_t BYTE;
 typedef uint16_t DWORD;
 

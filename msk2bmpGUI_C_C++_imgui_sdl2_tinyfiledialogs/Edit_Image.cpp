@@ -7,18 +7,14 @@
 #include "Load_Files.h"
 
 void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
-    //ImDrawList *Draw_List = ImGui::GetWindowDrawList();
 
     ImVec2 Origin = ImGui::GetItemRectMin();
-    //ImVec2 Top_Left = Origin;
     int width  = F_Prop->image->w;
     int height = F_Prop->image->h;
-    int size = width * height;
-    //int pitch = F_Prop->image->pitch;
-    int pitch = (F_Prop->Pal_Surface->pitch);
+    //int pitch = (F_Prop->Pal_Surface->pitch);
     bool image_edited = false;
 
-    //ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
+    //TODO: maybe pass the dithering choice through?
     if (ImGui::IsMouseDown(event->button.button)) {
         image_edited = true;
         float x, y;
@@ -26,22 +22,14 @@ void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Colo
         y = ImGui::GetMousePos().y - Origin.y;
 
         SDL_Rect rect;
-        rect.x = x;
-        rect.y = y;
+        rect.x = x-5;
+        rect.y = y-5;
         rect.h = 10;
         rect.w = 10;
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
 
             SDL_FillRect(F_Prop->Pal_Surface, &rect, *Color_Pick);
-
-            //TODO: maybe pass the dithering choice through?
-
-            ///*old code, moved to Palette_Update section*/
-            ////Unpalettize image to new surface for display
-            //SDL_FreeSurface(F_Prop->Final_Render);
-            //F_Prop->Final_Render
-            //    = Unpalettize_Image(F_Prop->Pal_Surface);
         }
     }
 
@@ -67,37 +55,26 @@ void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Colo
 
         //SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
         //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
-
-        //Unpalettize image to new surface for display
-        //SDL_FreeSurface(F_Prop->Final_Render);
-
-        //F_Prop->Final_Render
-        //    = Unpalettize_Image(F_Prop->Pal_Surface);
-
-        //Image2Texture(F_Prop->Final_Render,
-        //    &F_Prop->Optimized_Render_Texture,
-        //    &F_Prop->edit_image_window);
     }
 }
 
-void Create_Map_Mask(LF* F_Prop)
+SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
 {
-    int width =  F_Prop->image->w;
-    int height = F_Prop->image->h;
+    int width  = image->w;
+    int height = image->h;
 
-    if (F_Prop->Map_Mask)
-        { SDL_FreeSurface(F_Prop->Map_Mask); }
-    F_Prop->Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+    //if (Map_Mask)
+    //    { SDL_FreeSurface(Map_Mask); }
+    SDL_Surface* Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 
-    if (F_Prop->Map_Mask) {
+    if (Map_Mask) {
 
-        Uint32 color = SDL_MapRGBA(F_Prop->Map_Mask->format,
+        Uint32 color = SDL_MapRGBA(Map_Mask->format,
                                    0, 0, 0, 0);
 
-        SDL_Surface* MM_Surface = F_Prop->Map_Mask;
         for (int i = 0; i < (width*height); i++)
         {
-            ((Uint32*)MM_Surface->pixels)[i] = color; //rand() % 255;
+            ((Uint32*)Map_Mask->pixels)[i] = color; //rand() % 255;
             //uint8_t byte =
             //    (rand() % 2 << 0) |
             //    (rand() % 2 << 1) |
@@ -110,34 +87,25 @@ void Create_Map_Mask(LF* F_Prop)
             //((uint8_t*)MM_Surface->pixels)[i] = byte;
         }
 
-        Image2Texture(F_Prop->Map_Mask,
-            &F_Prop->Optimized_Mask_Texture,
-            &F_Prop->edit_image_window);
+        Image2Texture(Map_Mask,
+            texture,
+            window);
     }
     else {
         printf("Can't allocate surface for some reason...");
     }
+    return Map_Mask;
 }
 
 //TODO: change input from My_Variables to F_Prop[]
 void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin)
 {
-    int width;
-    int height;
-    //TODO: check this for usefullness later
-    if (F_Prop->Map_Mask->w == 0) {
-        width = F_Prop->image->w;
-        height = F_Prop->image->h;
-    }
-    else {
-        width  = F_Prop->Map_Mask->w;
-        height = F_Prop->Map_Mask->h;
-    }
-
+    int width  = F_Prop->image->w;
+    int height = F_Prop->image->h;
 
     SDL_Surface* BB_Surface = F_Prop->Map_Mask;
     Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
-        255, 255, 255);
+                              255, 255, 255);
 
     ImVec2 MousePos = ImGui::GetMousePos();
     int x = (int)(MousePos.x - Origin.x);
@@ -150,11 +118,6 @@ void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Or
     rect.h = 10;
     rect.w = 10;
 
-    //if (My_Variables->Palette_Update) {
-    //    SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
-    //        My_Variables->PaletteColors, 0, 256);
-    //}
-
     if (ImGui::IsMouseDown(event->button.button)) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
@@ -163,37 +126,28 @@ void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Or
             *Palette_Update = true;
 
 
-            ///*TODO: This stuff didn't work, delete it when done*/
-            ///*TODO: two problems with this method:
+            ///*TODO: This stuff didn't work, delete it when done                   */
+            ///*TODO: two problems with using binary surface:
             ///       pixel addressing skips by 8 pixels at a time,
-            ///       and SDL_FillRect() doesn't work*/
+            ///       and SDL_FillRect() doesn't work                               */
             //for (int i = 0; i < 4; i++)
             //{
             //    uint8_t* where_i_want_to_draw = 
             //                &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
             //    ((uint8_t*)where_i_want_to_draw)[0] = 255;
             //}
-            ///*OpenGl stuff didn't work either :*/
+            ///*OpenGl stuff didn't work either :                                   */
             //opengl_stuff();
         }
     }
 
-    if (*Palette_Update) {
-        ///re-copy Pal_Surface to Final_Render each time to allow 
-        ///transparency through the mask surface painting
+    if (*Palette_Update && (F_Prop->type == FRM)) {
+    ///re-copy Pal_Surface to Final_Render each time to allow 
+    ///transparency through the mask surface painting
         Update_Palette(F_Prop, true);
-
-
-        //SDL_FreeSurface(F_Prop->Final_Render);
-        //F_Prop->Final_Render =
-        //    Unpalettize_Image(F_Prop->Pal_Surface);
-        /////
-
-        //CPU_Blend(F_Prop->Map_Mask,
-        //          F_Prop->Final_Render);
-
-        //SDL_to_OpenGl(F_Prop->Final_Render,
-        //             &F_Prop->Optimized_Render_Texture);
+    }
+    else if (*Palette_Update && (F_Prop->type == MSK)) {
+        Update_Palette(F_Prop, true);
     }
 }
 
@@ -217,14 +171,18 @@ void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Or
 //        }
 //}
 
-//bool blend - true = blend surfaces
+//bool blend == true = blend surfaces
 void Update_Palette(struct LF* files, bool blend) {
-    //Unpalettize image to new surface for display
     SDL_FreeSurface(files->Final_Render);
-
-    files->Final_Render
-        = Unpalettize_Image(files->Pal_Surface);
-
+    if (files->type == MSK) {
+        files->Final_Render =
+            SDL_CreateRGBSurface(0, files->Map_Mask->w, files->Map_Mask->h, 32, 0, 0, 0, 0);
+        SDL_BlitSurface(files->Map_Mask, NULL, files->Final_Render, NULL);
+    }
+    else {
+        //Unpalettize image to new surface for display
+        files->Final_Render = Unpalettize_Image(files->Pal_Surface);
+    }
     if (blend) {
         CPU_Blend(    files->Map_Mask,
                       files->Final_Render);
@@ -242,11 +200,11 @@ void Update_Palette(struct LF* files, bool blend) {
 
 void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT) {
     SDL_Surface* Temp_Surface;
-    ////Force image to use the global palette instead of allowing SDL to use a copy
+    //Force image to use the global palette instead of allowing SDL to use a copy
     SDL_SetPixelFormatPalette(surface->format, pxlFMT->palette);
     Temp_Surface = Unpalettize_Image(surface);
-    SDL_to_OpenGl(Temp_Surface,
-                  texture);
+    SDL_to_OpenGl(Temp_Surface, texture);
+
     SDL_FreeSurface(Temp_Surface);
 }
 
@@ -281,7 +239,7 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
                 a = ((int)a + 255) / 2;
 
                 Uint32 color_wAlpha = SDL_MapRGBA(img_surface->format,
-                    r, g, b, a);
+                                                  r, g, b, a);
 
                 ((Uint32*)img_surface->pixels)[position] = color_wAlpha;
             }
