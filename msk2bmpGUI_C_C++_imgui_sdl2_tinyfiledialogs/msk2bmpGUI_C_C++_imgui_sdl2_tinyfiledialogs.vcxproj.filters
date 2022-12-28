@@ -81,8 +81,11 @@
     <ClCompile Include="MSK_Convert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Shader_Stuff.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="shaders\shader_class.cpp">
+      <Filter>Source Files\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="shaders\Shader_Stuff.cpp">
+      <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -143,7 +146,10 @@
     <ClInclude Include="MSK_Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Shader_Stuff.h">
+    <ClInclude Include="shaders\Shader_Stuff.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shaders\shader_class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

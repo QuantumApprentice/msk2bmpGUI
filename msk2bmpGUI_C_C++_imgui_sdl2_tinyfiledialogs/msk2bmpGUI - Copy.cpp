@@ -36,7 +36,7 @@
 #include "Load_Settings.h"
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
-#include "shaders/Shader_Stuff.h"
+#include "Shader_Stuff.h"
 
 // Our state
 struct variables My_Variables = {};
@@ -72,19 +72,19 @@ void crash_detector();
 // Main code
 int main(int, char**)
 {
-    ////bug checking code
-    //_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-    //_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
-    //_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-    //_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
-    //_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-    //_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
+    //bug checking code
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
 
-    //SET_CRT_DEBUG_FIELD(_CRTDBG_ALLOC_MEM_DF);
-    //SET_CRT_DEBUG_FIELD(_CRTDBG_CHECK_ALWAYS_DF);
-    //SET_CRT_DEBUG_FIELD(_CRTDBG_LEAK_CHECK_DF);
-    //CLEAR_CRT_DEBUG_FIELD(_CRTDBG_CHECK_CRT_DF);
-    ////end of bug checking code
+    SET_CRT_DEBUG_FIELD(_CRTDBG_ALLOC_MEM_DF);
+    SET_CRT_DEBUG_FIELD(_CRTDBG_CHECK_ALWAYS_DF);
+    SET_CRT_DEBUG_FIELD(_CRTDBG_LEAK_CHECK_DF);
+    CLEAR_CRT_DEBUG_FIELD(_CRTDBG_CHECK_CRT_DF);
+    //end of bug checking code
 
     Load_Config(&user_info);
     //My_Variables.PaletteColors = loadPalette("file name for palette here");
@@ -174,10 +174,9 @@ int main(int, char**)
     //IM_ASSERT(font != NULL);
 
     //Init Framebuffer stuff so I can use shaders
-    static int counter = 0;
 
-    init_framebuffer(My_Variables.F_Prop[counter].palette_buffer,
-                     My_Variables.F_Prop[counter].palette_texture,
+    init_framebuffer(&My_Variables.F_Prop[counter]->palette_buffer,
+                     &My_Variables.F_Prop[counter]->palette_texture,
                      800, 600);
     mesh giant_triangle = load_giant_triangle();
     //Shader stuff
@@ -196,8 +195,8 @@ int main(int, char**)
         //OpenGL stuff
         shader_setup(giant_triangle,
                     (int)io.DisplaySize.x, (int)io.DisplaySize.y,
-                     My_Variables.F_Prop[counter].palette_texture,
-                     My_Variables.F_Prop[counter].palette_buffer,
+                     My_Variables.F_Prop[counter]->palette_texture,
+                     My_Variables.F_Prop[counter]->palette_buffer,
                      color_cycle);
 
 
@@ -240,6 +239,7 @@ int main(int, char**)
         t = &r;
         ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         ImGuiID dock_id_right = 0;
+        static int counter = 0;
         ShowMainMenuBar(&counter);
 
         if (firstframe) {

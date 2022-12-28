@@ -41,6 +41,8 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
             F_Prop->image = Load_FRM_Image(F_Prop->Opened_File,
                                                    pxlFMT);
             F_Prop->type = FRM;
+
+
         }
         else if(!(strncmp (F_Prop->extension, "MSK", 4)))
         {

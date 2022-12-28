@@ -1,3 +1,4 @@
+#pragma once
 #include "Shader_Stuff.h"
 
 mesh load_giant_triangle()
@@ -35,7 +36,7 @@ mesh load_giant_triangle()
     return tri_mesh;
 }
 
-void init_framebuffer(unsigned int* framebuffer, unsigned int* texture, int width, int height)
+void init_framebuffer(unsigned int framebuffer, unsigned int texture, int width, int height)
 {
     //random data to start///////////////////////////////////////////////////////////
     int w = width;
@@ -50,10 +51,10 @@ void init_framebuffer(unsigned int* framebuffer, unsigned int* texture, int widt
     }
 
     //start of Framebuffer stuff///////////////////////////////////////////////////////////
-    glDeleteFramebuffers(1, framebuffer);
-    glDeleteTextures(1, texture);
-    glGenTextures(1, texture);
-    glBindTexture(GL_TEXTURE_2D, *texture);
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteTextures(    1, &texture);
+    glGenTextures(       1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -64,10 +65,10 @@ void init_framebuffer(unsigned int* framebuffer, unsigned int* texture, int widt
         w, h,
         0, GL_RGBA, GL_UNSIGNED_BYTE, initialData);
     //framebuffer stuff
-    glGenFramebuffers(1, framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer);
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
     //attach the texture to the framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
     //unbind texture after setting values
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -80,7 +81,7 @@ void init_framebuffer(unsigned int* framebuffer, unsigned int* texture, int widt
     //end of Framebuffer stuff/////////////////////////////////////////////////////////////
 }
 
-void init_textures(unsigned int* texture, int frame_width, int frame_height)
+void init_textures(GLuint* texture, int frame_width, int frame_height)
 {
     glGenTextures(1, texture);
     glBindTexture(GL_TEXTURE_2D, *texture);
@@ -100,15 +101,20 @@ void init_textures(unsigned int* texture, int frame_width, int frame_height)
 }
 
 void shader_setup(mesh triangle, float width, float height,
-                  GLuint texture, GLuint framebuffer)
+                  GLuint texture, GLuint framebuffer, Shader shader)
 {
+    float dimensions[2] = { width, height };
     glBindVertexArray(triangle.VAO);
     glActiveTexture(GL_TEXTURE0);
 
     glViewport(0, 0, width, height);
     glBindTexture(GL_TEXTURE_2D, texture);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    shader.use();
+    glUniform2fv(glGetUniformLocation(shader.ID, "scale"), 1, dimensions);
+    glDrawArrays(GL_TRIANGLES, 0, triangle.vertexCount);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 }
 
@@ -181,12 +187,12 @@ void load_palette_2D(unsigned int* texture)
             }
         }
         {//color cycling stuff
-            uint8_t g_nSlime[] = { 0,   108,   0,   11, 115,   7,     27, 123,  15,     43, 131,  27 };                        // Slime
-            uint8_t g_nMonitors[] = { 107, 107, 111,   99, 103, 127,     87, 107, 143,      0, 147, 163,    107, 187, 255 };  // Monitors
-            uint8_t g_nFireSlow[] = { 255,   0,   0,  215,   0,   0,    147,  43,  11,    255, 119,   0,    255,  59,   0 };            // Slow fire
-            uint8_t g_nFireFast[] = { 71,    0,   0,  123,   0,   0,    179,   0,   0,    123,   0,   0,     71,   0,   0 };                    // Fast fire
-            uint8_t g_nShoreline[] = { 83,   63,  43,   75,  59,  43,     67,  55,  39,     63,  51,  39,     55,  47,  35,   51, 43, 35 }; // Shoreline
-            uint8_t g_nBlinkingRed[] = { 252,   0,   0,  168,   0,   0,     84,   0,   0,      0,   0,   0,     84,   0,   0,   168, 0,  0 };
+            uint8_t g_nSlime[] =        { 0,   108,   0,   11, 115,   7,     27, 123,  15,     43, 131,  27 };                                  // Slime
+            uint8_t g_nMonitors[] =     { 107, 107, 111,   99, 103, 127,     87, 107, 143,      0, 147, 163,    107, 187, 255 };                // Monitors
+            uint8_t g_nFireSlow[] =     { 255,   0,   0,  215,   0,   0,    147,  43,  11,    255, 119,   0,    255,  59,   0 };                // Slow fire
+            uint8_t g_nFireFast[] =     { 71,    0,   0,  123,   0,   0,    179,   0,   0,    123,   0,   0,     71,   0,   0 };                // Fast fire
+            uint8_t g_nShoreline[] =    { 83,   63,  43,   75,  59,  43,     67,  55,  39,     63,  51,  39,     55,  47,  35,   51, 43, 35 };  // Shoreline
+            uint8_t g_nBlinkingRed[] =  { 252,   0,   0,  168,   0,   0,     84,   0,   0,      0,   0,   0,     84,   0,   0,   168, 0,  0 };
 
             int size = 0;
             uint8_t* ptr = data + 229 * 3;

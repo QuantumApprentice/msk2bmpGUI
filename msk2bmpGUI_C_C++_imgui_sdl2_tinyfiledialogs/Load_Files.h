@@ -16,6 +16,10 @@ struct LF {
     SDL_Surface* Final_Render = nullptr;
     SDL_Surface* Map_Mask = nullptr;
 
+    GLuint palette_buffer;
+    GLuint palette_texture;
+    GLuint render_buffer;
+
     GLuint Optimized_Texture = 0;
     GLuint Optimized_Render_Texture = 0;
     GLuint Optimized_Mask_Texture = 0;
