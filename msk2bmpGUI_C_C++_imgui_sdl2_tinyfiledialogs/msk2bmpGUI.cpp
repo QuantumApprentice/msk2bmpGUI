@@ -477,6 +477,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     //                        pxlFMT_FO_Pal);
     //    }
     //}
+
     ImGui::Text(F_Prop->c_name);
     if (My_Variables->Palette_Update) {
         if (F_Prop->type == FRM) {

@@ -173,9 +173,10 @@ void load_palette_2D(unsigned int* texture)
 
 
     FILE *File_ptr;
-    fopen_s(&File_ptr, "images/color.pal", "rb");
+    fopen_s(&File_ptr, "color.pal", "rb");
     if (!File_ptr) {
         printf("error, can't open file");
+        return;
     }
 
     unsigned char* data = (unsigned char*)malloc(768 * 6);
@@ -280,6 +281,9 @@ void draw_to_framebuffer(unsigned int* framebuffer1,    //Palette Framebuffer
                          int frm_height,                //texture height
                          clock_t time)
 {
+
+    load_palette_2D(texture1);
+
     //framebuffer pass
     glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer1);
 
