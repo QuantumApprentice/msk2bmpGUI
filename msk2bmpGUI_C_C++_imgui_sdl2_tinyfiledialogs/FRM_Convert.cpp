@@ -2,9 +2,11 @@
 #include "FRM_Animate.h"
 #include "B_Endian.h"
 #include "tinyfiledialogs.h"
+#include "Load_Files.h"
 
 #include <cstdint>
-#include <fstream>
+#include <iostream>
+//#include <fstream>
 #include <vector>
 #include <SDL.h>
 
@@ -371,6 +373,66 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
     }
 
     return Pal_Surface;
+}
+
+// Convert FRM color to standard 32bit
+void Load_FRM_Image2(char *File_Name, unsigned int* texture, int* texture_width, int* texture_height)
+{
+    glDeleteTextures(1, texture);
+    // load and generate texture
+    glGenTextures(1, texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    // texture filtering settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //fixing alignment issues
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+
+    // File open stuff
+    FILE *File_ptr = fopen(File_Name, "rb");
+    if (File_ptr == NULL) {
+        printf("File not opened?");
+    }
+
+    fseek(File_ptr, 0x3E, SEEK_SET);
+    uint16_t frm_width = 0;
+    fread(&frm_width, 2, 1, File_ptr);
+    frm_width = B_Endian::write_u16(frm_width);
+    uint16_t frm_height = 0;
+    fread(&frm_height, 2, 1, File_ptr);
+    frm_height = B_Endian::write_u16(frm_height);
+    uint32_t frm_size = 0;
+    fread(&frm_size, 4, 1, File_ptr);
+    frm_size = B_Endian::write_u32(frm_size);
+
+    *texture_width  = frm_width;
+    *texture_height = frm_height;
+
+    // Seek to starting pixel in file
+    fseek(File_ptr, 0x4A, SEEK_SET);
+
+    // Read in the pixels from the FRM file to the surface
+    uint8_t* data = (uint8_t*)malloc(frm_size);
+    fread(data, 1, frm_size, File_ptr);
+    fclose(File_ptr);
+
+    // Might have to read-in one line at a time to account for
+    if (data) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        //glGenerateMipmap(GL_TEXTURE_2D);
+        //TODO: control alignment of the image (auto aligned to 4-bytes) when converted to texture
+        //GL_UNPACK_ALIGNMENT
+        //TODO: control alignment of the image (auto aligned to 4-bytes) when read from texture
+        //GL_PACK_ALIGNMENT
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    }
+    else {
+        std::cout << "Failure to communicate..." << std::endl;
+    }
 }
 
 SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)

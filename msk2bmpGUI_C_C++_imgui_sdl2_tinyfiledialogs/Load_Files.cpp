@@ -38,9 +38,22 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
         // TODO change strncmp to more secure varient when I figure out what that is :P
         if (!(strncmp (F_Prop->extension, "FRM", 4)))
         {
-            F_Prop->image = Load_FRM_Image(F_Prop->Opened_File,
-                                                   pxlFMT);
+            ////The old way to load FRM images using SDL_surfaces
+            //F_Prop->image = Load_FRM_Image(F_Prop->Opened_File, pxlFMT);
             F_Prop->type = FRM;
+
+    //The new way to load FRM images using openGL
+    //init framebuffers and textures
+            init_framebuffer(&F_Prop->palette_buffer,
+                             &F_Prop->palette_texture,
+                             800, 600);
+            init_framebuffer(&F_Prop->render_buffer,
+                             &F_Prop->Optimized_Render_Texture,
+                             800, 600);
+
+            Load_FRM_Image2(F_Prop->Opened_File,   &F_Prop->render_texture,
+                           &F_Prop->texture_width, &F_Prop->texture_height);
+
 
 
         }
@@ -80,16 +93,16 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
         }
 
 
-        if (F_Prop->image == NULL)
+        if ((F_Prop->image == NULL) && F_Prop->type != FRM)
         {
             printf("Unable to open image file %s! SDL Error: %s\n",
                 F_Prop->Opened_File,
                 SDL_GetError());
         }
-        //else
-        //{// Set display window to open
-        //	F_Prop->file_open_window = true;
-        //}
+        else
+        {// Set display window to open
+        	F_Prop->file_open_window = true;
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Shader_Stuff.h"
+#include <time.h>
 
 mesh load_giant_triangle()
 {
@@ -36,7 +37,7 @@ mesh load_giant_triangle()
     return tri_mesh;
 }
 
-void init_framebuffer(unsigned int framebuffer, unsigned int texture, int width, int height)
+void init_framebuffer(unsigned int* framebuffer, unsigned int* texture, int width, int height)
 {
     //random data to start///////////////////////////////////////////////////////////
     int w = width;
@@ -51,10 +52,10 @@ void init_framebuffer(unsigned int framebuffer, unsigned int texture, int width,
     }
 
     //start of Framebuffer stuff///////////////////////////////////////////////////////////
-    glDeleteFramebuffers(1, &framebuffer);
-    glDeleteTextures(    1, &texture);
-    glGenTextures(       1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    glDeleteFramebuffers(1, framebuffer);
+    glDeleteTextures(    1, texture);
+    glGenTextures(       1, texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -64,19 +65,21 @@ void init_framebuffer(unsigned int framebuffer, unsigned int texture, int width,
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
         w, h,
         0, GL_RGBA, GL_UNSIGNED_BYTE, initialData);
+
     //framebuffer stuff
-    glGenFramebuffers(1, &framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glGenFramebuffers(1, framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer);
     //attach the texture to the framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-    //unbind texture after setting values
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, *texture, 0);
 
     //check if framebuffer works?
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
     }
+
+    //unbind texture and framebuffer after setting values
+    glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //end of Framebuffer stuff/////////////////////////////////////////////////////////////
 }
@@ -263,4 +266,55 @@ void load_palette_2D(unsigned int* texture)
     else {
         std::cout << "Failure to communicate..." << std::endl;
     }
+}
+
+void draw_to_framebuffer(unsigned int* framebuffer1,    //Palette Framebuffer
+                         unsigned int* framebuffer2,    //Draw to Framebuffer
+                         unsigned int* texture1,        //Palette Texture
+                         unsigned int* texture2,        //FRM texture
+                         Shader* ourShader,             //Shader
+                         mesh* giant_triangle,          //Giant Triangle
+                         float new_zoom,                //Zoom
+                         float* bottom_left_pos,        //corner position
+                         int frm_width,                 //texture width
+                         int frm_height,                //texture height
+                         clock_t time)
+{
+    //framebuffer pass
+    glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer1);
+
+    //Rendering pass
+    glClearColor(0.5f, 0.3f, 0.3, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    //Draw giant_triangle and display textures on it
+        //bind textures
+    glActiveTexture(GL_TEXTURE0);
+    //glBindTexture(GL_TEXTURE_1D, *texture1); //1D palette texture
+    glBindTexture(GL_TEXTURE_2D, *texture1);   //2D palette texture
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, *texture2);   //FRM texture
+
+    //shader
+    ourShader->use();
+    ourShader->setFloat("time", time);
+
+    float sim_dimensions[2] = { frm_width, frm_height };
+
+    glUniform2fv(glGetUniformLocation(ourShader->ID, "scale"), 1, sim_dimensions);
+    glUniform1f (glGetUniformLocation(ourShader->ID, "new_zoom"), new_zoom);
+    glUniform2fv(glGetUniformLocation(ourShader->ID, "bottom_left_pos"), 1, bottom_left_pos);
+
+    //triangle vertices and draw call
+    glBindVertexArray(giant_triangle->VAO);
+    glDrawArrays(GL_TRIANGLES, 0, giant_triangle->vertexCount);
+
+    //Blitting from the draw_framebuffer to the main_buffer
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, *framebuffer1);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, *framebuffer2);
+    glBlitFramebuffer(0, 0, frm_width, frm_height,
+                      0, 0, frm_width, frm_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    //clear framebuffer
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
 }

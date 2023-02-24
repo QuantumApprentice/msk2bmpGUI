@@ -2,6 +2,8 @@
 #include "imgui-docking/imgui.h"
 #include "Load_Files.h"
 #include "FRM_Convert.h"
+#include "shaders/shader_class.h"
+#include "shaders/Shader_Stuff.h"
 
 
 struct variables {
@@ -22,6 +24,15 @@ struct variables {
     uint8_t Color_Pick = 230;
 	//SDL_Color *PaletteColors = nullptr;
     SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
+
+    //Shader stuff
+    Shader color_cycle { "shaders//zoom_shader.vert", "shaders//color_cycle_2D.frag" };
+    mesh giant_triangle;
+
+    float old_zoom = 1.0;
+    float new_zoom = 1.0;
+    float bottom_left_pos[2] = { 0.0, 0.0 };
+    bool panning = false;
 
 	SDL_Surface* Temp_Surface = nullptr;
 

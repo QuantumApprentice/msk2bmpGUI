@@ -19,6 +19,7 @@ struct LF {
     GLuint palette_buffer;
     GLuint palette_texture;
     GLuint render_buffer;
+    GLuint render_texture;
 
     GLuint Optimized_Texture = 0;
     GLuint Optimized_Render_Texture = 0;
@@ -33,5 +34,5 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
 };
-void Load_Files(LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
+void Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
 void Load_Edit_MSK(LF* F_Prop, struct user_info* user_info);

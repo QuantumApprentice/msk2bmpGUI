@@ -21,3 +21,5 @@ void clamp_dither(SDL_Surface *Surface_32,
 void limit_dither(SDL_Surface *Surface_32,
 	union Pxl_err *err,
 	int **pxl_index_arr);
+
+void Load_FRM_Image2(char *File_Name, unsigned int* texture, int* texture_width, int* texture_height);

@@ -1,10 +1,10 @@
-#define _CRTDBG_MAP_ALLOC
-//#define SDL_MAIN_HANDLED
-
-#define SET_CRT_DEBUG_FIELD(a) \
-    _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
-#define CLEAR_CRT_DEBUG_FIELD(a) \
-    _CrtSetDbgFlag(~(a) & _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+//#define _CRTDBG_MAP_ALLOC
+////#define SDL_MAIN_HANDLED
+//
+//#define SET_CRT_DEBUG_FIELD(a) \
+//    _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
+//#define CLEAR_CRT_DEBUG_FIELD(a) \
+//    _CrtSetDbgFlag(~(a) & _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
 
 // Dear ImGui: standalone example application for SDL2 + OpenGL
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+//#include <string_view>
 
 // My header files
 #include "Load_Files.h"
@@ -39,7 +40,6 @@
 #include "shaders/Shader_Stuff.h"
 
 // Our state
-struct variables My_Variables = {};
 struct user_info user_info;
 
 // Function declarations
@@ -55,10 +55,13 @@ void Show_Palette_Window(struct variables *My_Variables, int counter);
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
 
-static void ShowMainMenuBar(int* counter);
-void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT);
+static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
+void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
 void Set_Default_Path(struct user_info* user_info);
 void crash_detector();
+
+struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
+void zoom(float zoom_level, struct position focus_point, float* old_zoom, float new_zoom, float* bottom_left_pos);
 
 
 
@@ -86,9 +89,7 @@ int main(int, char**)
     //CLEAR_CRT_DEBUG_FIELD(_CRTDBG_CHECK_CRT_DF);
     ////end of bug checking code
 
-    Load_Config(&user_info);
-    //My_Variables.PaletteColors = loadPalette("file name for palette here");
-    My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
+
 
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
@@ -131,6 +132,15 @@ int main(int, char**)
 
     SDL_GL_SetSwapInterval(1); // Enable vsync
 
+    //State variables
+    struct variables My_Variables = {};
+    Load_Config(&user_info);
+    //My_Variables.PaletteColors = loadPalette("file name for palette here");
+    My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
+    My_Variables.giant_triangle = load_giant_triangle();
+    //Shader color_cycle("shaders\\zoom_shader.vert", "shaders\\color_cycle_1D.frag");
+
+
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -158,6 +168,7 @@ int main(int, char**)
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
+
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
@@ -173,15 +184,9 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
+    //Shader stuff
     //Init Framebuffer stuff so I can use shaders
     static int counter = 0;
-
-    init_framebuffer(My_Variables.F_Prop[counter].palette_buffer,
-                     My_Variables.F_Prop[counter].palette_texture,
-                     800, 600);
-    mesh giant_triangle = load_giant_triangle();
-    //Shader stuff
-    Shader color_cycle("shaders\\zoom_shader.vert", "shaders\\color_cycle_1D.frag");
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -194,11 +199,11 @@ int main(int, char**)
     {
     //-----------------------------------------------------------------------------------------
         //OpenGL stuff
-        shader_setup(giant_triangle,
-                    (int)io.DisplaySize.x, (int)io.DisplaySize.y,
-                     My_Variables.F_Prop[counter].palette_texture,
-                     My_Variables.F_Prop[counter].palette_buffer,
-                     color_cycle);
+        //shader_setup(My_Variables.giant_triangle,
+        //            (int)io.DisplaySize.x, (int)io.DisplaySize.y,
+        //             My_Variables.F_Prop[counter].palette_texture,
+        //             My_Variables.F_Prop[counter].palette_buffer,
+        //             My_Variables.color_cycle);
 
 
 
@@ -218,6 +223,30 @@ int main(int, char**)
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+            if (event.type == SDL_MOUSEWHEEL) {
+                int wheel_direction = event.wheel.y;
+                printf("wheel.y: %d\n", event.wheel.y);
+                int x_pos, y_pos;
+                SDL_GetMouseState(&x_pos, &y_pos);
+                //static position old_position;
+                position new_position;
+                position normalized_pos;
+
+                variables* MV = &My_Variables;
+
+                MV->old_zoom = MV->new_zoom;
+
+                new_position.x = x_pos;
+                new_position.y = y_pos;
+                position new_texture_coord = mouse_pos_to_texture_coord(new_position, MV->new_zoom,
+                                (int)io.DisplaySize.x, (int)io.DisplaySize.y, MV->bottom_left_pos);
+
+                if (wheel_direction > 0) {
+                    zoom(1.05, new_texture_coord, &MV->old_zoom, MV->new_zoom, MV->bottom_left_pos);
+                } else {
+                    zoom(0.95, new_texture_coord, &MV->old_zoom, MV->new_zoom, MV->bottom_left_pos);
+                }
+            }
         }
 
         // Store these variables at frame start for cycling the palette colors
@@ -234,13 +263,14 @@ int main(int, char**)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
+        //bool * t = NULL;
+        //bool r = true;
+        //t = &r;
+
         //ImGuiViewport* viewport = ImGui::GetMainViewport();
-        bool * t = NULL;
-        bool r = true;
-        t = &r;
         ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
         ImGuiID dock_id_right = 0;
-        ShowMainMenuBar(&counter);
+        ShowMainMenuBar(&counter, &My_Variables);
 
         if (firstframe) {
             firstframe = false;
@@ -277,7 +307,9 @@ int main(int, char**)
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
             if (ImGui::Button("Load Files...")) {
-                Open_Files(&user_info, &counter, My_Variables.pxlFMT_FO_Pal);
+
+        //load files
+                Open_Files(&user_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
             }
 
             ImGui::SameLine();
@@ -331,6 +363,32 @@ int main(int, char**)
     write_cfg_file(&user_info);
 
     return 0;
+}
+
+void zoom(float zoom_level, struct position focus_point, float* old_zoom, float new_zoom, float* bottom_left_pos)
+{
+    *old_zoom = new_zoom;
+    //new_zoom += zoom_level;
+    new_zoom *= zoom_level;
+
+    if (new_zoom < 0.125)
+    {
+        new_zoom = 0.125;
+    }
+
+    bottom_left_pos[0] = focus_point.x - *old_zoom / new_zoom * (focus_point.x - bottom_left_pos[0]);
+    bottom_left_pos[1] = focus_point.y - *old_zoom / new_zoom * (focus_point.y - bottom_left_pos[1]);
+}
+
+struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos)
+{
+    float scale = 1 / new_zoom;
+
+    position absolute_pos;
+    absolute_pos.x = scale * (pos.x / frame_width) + bottom_left_pos[0];
+    absolute_pos.y = scale * (1 - pos.y / frame_height) + bottom_left_pos[1];
+
+    return absolute_pos;
 }
 
 void crash_detector() {
@@ -410,24 +468,57 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         }
     }
 
+    //// Rotate the palette for animation
+    //if (My_Variables->Palette_Update) {
+    //    if(F_Prop->image == NULL) {}
+    //    else {
+    //        Update_Palette2(F_Prop->image,
+    //                       &F_Prop->Optimized_Texture,
+    //                        pxlFMT_FO_Pal);
+    //    }
+    //}
     ImGui::Text(F_Prop->c_name);
     if (My_Variables->Palette_Update) {
-        if(F_Prop->image == NULL) {}
-        else {
-            Update_Palette2(F_Prop->image,
-                           &F_Prop->Optimized_Texture,
-                            pxlFMT_FO_Pal);
+        if (F_Prop->type == FRM) {
+
+            draw_to_framebuffer(&F_Prop->palette_buffer,
+                                &F_Prop->render_buffer,
+                                &F_Prop->palette_texture,
+                                &F_Prop->Optimized_Render_Texture,
+                                &My_Variables->color_cycle,
+                                &My_Variables->giant_triangle,
+                                My_Variables->new_zoom,
+                                My_Variables->bottom_left_pos,
+                                F_Prop->texture_width,
+                                F_Prop->texture_height,
+                                My_Variables->CurrentTime);
         }
+
+        else { }
     }
 
-    ImGui::Image(
-        (ImTextureID)F_Prop->Optimized_Texture,
-        ImVec2((float)F_Prop->image->w,
-        (float)F_Prop->image->h),
-        My_Variables->uv_min,
-        My_Variables->uv_max,
-        My_Variables->tint_col,
-        My_Variables->border_col);
+    if (F_Prop->type == FRM) {
+        ImGui::Image(
+            (ImTextureID)F_Prop->Optimized_Render_Texture,
+            ImVec2((float)F_Prop->texture_width,
+            (float)F_Prop->texture_height),
+            My_Variables->uv_min,
+            My_Variables->uv_max,
+            My_Variables->tint_col,
+            My_Variables->border_col);
+    }
+    else {
+    //old way to load the image
+    //need to simplify to just get width, height
+        ImGui::Image(
+            (ImTextureID)F_Prop->Optimized_Texture,
+            ImVec2((float)F_Prop->image->w,
+            (float)F_Prop->image->h),
+            My_Variables->uv_min,
+            My_Variables->uv_max,
+            My_Variables->tint_col,
+            My_Variables->border_col);
+    }
 
     // Draw red boxes to indicate where the tiles will be cut from
     if (wrong_size) {
@@ -680,7 +771,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 }
 
 
-static void ShowMainMenuBar(int* counter)
+static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 {
     if (ImGui::BeginMainMenuBar())
     {
@@ -690,7 +781,7 @@ static void ShowMainMenuBar(int* counter)
             if (ImGui::MenuItem("New")) {/*TODO: add a new file option w/blank surfaces*/ }
             if (ImGui::MenuItem("Open", "Ctrl+O"))
             { 
-                Open_Files(&user_info, counter, My_Variables.pxlFMT_FO_Pal);
+                Open_Files(&user_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path"))
             {
@@ -714,20 +805,38 @@ static void ShowMainMenuBar(int* counter)
 }
 
 //TODO: Need to test wide character support
-void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT) {
+void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
-    if (My_Variables.pxlFMT_FO_Pal == NULL)
+    if (My_Variables->pxlFMT_FO_Pal == NULL)
     {
         printf("Error: Palette not loaded...");
-        My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
+        My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here");
     }
-    Load_Files(&My_Variables.F_Prop[*counter], user_info, My_Variables.pxlFMT_FO_Pal);
+    Load_Files(&My_Variables->F_Prop[*counter], user_info, My_Variables->pxlFMT_FO_Pal);
 
-    Image2Texture(My_Variables.F_Prop[*counter].image,
-                 &My_Variables.F_Prop[*counter].Optimized_Texture,
-                 &My_Variables.F_Prop[*counter].file_open_window);
+    //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
+    if (My_Variables->F_Prop[*counter].type == FRM)
+    {
 
-    if (My_Variables.F_Prop[*counter].c_name) { (*counter)++; }
+
+        draw_to_framebuffer(&My_Variables->F_Prop[*counter].palette_buffer,
+                            &My_Variables->F_Prop[*counter].render_buffer,
+                            &My_Variables->F_Prop[*counter].palette_texture,
+                            &My_Variables->F_Prop[*counter].render_texture,
+                            &My_Variables->color_cycle,
+                            &My_Variables->giant_triangle,
+                             My_Variables->new_zoom,
+                             My_Variables->bottom_left_pos,
+                             My_Variables->F_Prop[*counter].texture_width,
+                             My_Variables->F_Prop[*counter].texture_height,
+                             My_Variables->CurrentTime);
+    }
+    else {
+        Image2Texture(My_Variables->F_Prop[*counter].image,
+                     &My_Variables->F_Prop[*counter].Optimized_Texture,
+                     &My_Variables->F_Prop[*counter].file_open_window);
+    }
+    if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
 }

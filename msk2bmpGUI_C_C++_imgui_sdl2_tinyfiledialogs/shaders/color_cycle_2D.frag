@@ -6,8 +6,6 @@ in vec2 TexCoord;
 uniform sampler2D Palette;
 uniform sampler2D IndexedColorTexture;
 
-uniform float alpha;
-uniform float beta;
 uniform float time;
 float   last_time;
 float   y = 0;
