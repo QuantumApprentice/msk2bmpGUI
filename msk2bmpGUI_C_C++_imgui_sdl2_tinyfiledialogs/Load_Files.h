@@ -1,9 +1,8 @@
 #pragma once
 #include <SDL.h>
 #include <filesystem>
-#include <glad/glad.h>
-//#include <SDL_opengl.h>
 
+#include "load_FRM_OpenGL.h"
 #include "Load_Settings.h"
 
 //File info
@@ -15,6 +14,8 @@ struct LF {
     SDL_Surface* Pal_Surface = nullptr;
     SDL_Surface* Final_Render = nullptr;
     SDL_Surface* Map_Mask = nullptr;
+
+    image_data img_data;
 
     GLuint palette_buffer;
     GLuint palette_texture;

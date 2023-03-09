@@ -135,7 +135,7 @@ void load_palette_1D(unsigned int* texture)
 
 
     FILE *File_ptr;
-    fopen_s(&File_ptr, "images/color.pal", "rb");
+    fopen_s(&File_ptr, "palette/color.pal", "rb");
     if (!File_ptr) {
         printf("error, can't open file");
     }
@@ -282,7 +282,6 @@ void draw_to_framebuffer(unsigned int* framebuffer1,    //Palette Framebuffer
                          clock_t time)
 {
 
-    load_palette_2D(texture1);
 
     //framebuffer pass
     glBindFramebuffer(GL_FRAMEBUFFER, *framebuffer1);
@@ -301,6 +300,8 @@ void draw_to_framebuffer(unsigned int* framebuffer1,    //Palette Framebuffer
     //shader
     ourShader->use();
     ourShader->setFloat("time", time);
+    //glUniform1i(glGetUniformLocation(ourShader->ID, "Palette"), 0);
+    //ourShader->setInt("IndexedColorTexture", 1);
 
     float sim_dimensions[2] = { frm_width, frm_height };
 

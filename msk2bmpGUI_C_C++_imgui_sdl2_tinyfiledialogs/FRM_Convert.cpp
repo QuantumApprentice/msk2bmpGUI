@@ -47,7 +47,7 @@ SDL_Color PaletteColors[PALETTE_NUMBER];
 
 SDL_PixelFormat* loadPalette(char * name)
 {
-    std::ifstream f("color.pal", 
+    std::ifstream f("palette//color.pal", 
         std::ios::in | std::ios::binary);
     if (!f.is_open()) {
         printf("Error opening color.pal\n");
@@ -376,6 +376,7 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
 }
 
 // Convert FRM color to standard 32bit
+//opengl version -- being replaced by new code today
 void Load_FRM_Image2(char *File_Name, unsigned int* texture, int* texture_width, int* texture_height)
 {
     glDeleteTextures(1, texture);
@@ -451,11 +452,3 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
     }
 }
 
-//void OpenGL_Palette_to_Texture()
-//{
-//    char buffer[512];
-//    FILE *palette_test;
-//    palette_test = fopen("Palette_Shader.vert", "rb");
-//
-//    fread(buffer, sizeof(palette_test), 1, palette_test);
-//}

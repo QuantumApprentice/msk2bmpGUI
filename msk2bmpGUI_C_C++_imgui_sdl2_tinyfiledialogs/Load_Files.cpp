@@ -44,16 +44,18 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
 
     //The new way to load FRM images using openGL
     //init framebuffers and textures
+            
+            load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
+            //Load_FRM_Image2(F_Prop->Opened_File,   &F_Prop->render_texture,
+            //               &F_Prop->texture_width, &F_Prop->texture_height);
 
-            Load_FRM_Image2(F_Prop->Opened_File,   &F_Prop->render_texture,
-                           &F_Prop->texture_width, &F_Prop->texture_height);
-
-            init_framebuffer(&F_Prop->palette_buffer,
-                &F_Prop->palette_texture,
-                F_Prop->texture_width, F_Prop->texture_height);
-            init_framebuffer(&F_Prop->render_buffer,
-                &F_Prop->Optimized_Render_Texture,
-                F_Prop->texture_width, F_Prop->texture_height);
+            //framebuffer stuff should be included in the load_FRM function
+            //init_framebuffer(&F_Prop->palette_buffer,
+            //    &F_Prop->palette_texture,
+            //    F_Prop->texture_width, F_Prop->texture_height);
+            //init_framebuffer(&F_Prop->render_buffer,
+            //    &F_Prop->Optimized_Render_Texture,
+            //    F_Prop->texture_width, F_Prop->texture_height);
 
 
 

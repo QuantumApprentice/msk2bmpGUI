@@ -39,6 +39,8 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
         }
         glBindTexture(GL_TEXTURE_2D, *texture);
 
+        //shader->use();
+
         // Setup filtering parameters for display
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -85,6 +87,8 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
 
     if (F_Prop->type == FRM) {
 
+    //TODO: all this FRM convert stuff is broken right now
+    //because the FRM is being animated as a texture
         F_Prop->Pal_Surface
             = SDL_ConvertSurface(F_Prop->image,
                                  F_Prop->image->format,

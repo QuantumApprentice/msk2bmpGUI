@@ -3,7 +3,7 @@
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 #include "shaders/shader_class.h"
-#include "shaders/Shader_Stuff.h"
+//#include "shaders/Shader_Stuff.h"
 
 
 struct variables {
@@ -24,9 +24,13 @@ struct variables {
     uint8_t Color_Pick = 230;
 	//SDL_Color *PaletteColors = nullptr;
     SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
+    float palette[768] = {};
+
 
     //Shader stuff
-    Shader color_cycle { "shaders//zoom_shader.vert", "shaders//color_cycle_2D.frag" };
+    //Shader color_cycle { "shaders//zoom_shader.vert", "shaders//color_cycle_1D.frag" };
+    Shader render_PAL_shader { "shaders//passthru_shader.vert", "shaders//render_PAL.frag" };
+    Shader render_FRM_shader { "shaders//passthru_shader.vert", "shaders//render_frm.frag" };
     mesh giant_triangle;
 
     float old_zoom = 1.0;

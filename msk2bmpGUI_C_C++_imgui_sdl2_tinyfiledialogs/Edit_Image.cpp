@@ -3,10 +3,14 @@
 
 #include "Edit_Image.h"
 #include "imgui-docking/imgui.h"
-#include "FRM_Animate.h"
+//#include "FRM_Animate.h"
+#include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 
-void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
+bool init_PAL_framebuffer(struct image_data* img_data, struct LF* F_Prop);
+bool bind_PAL_data(struct LF* F_Prop, SDL_Surface* surface, struct image_data* img_data);
+
+void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
 
     ImVec2 Origin = ImGui::GetItemRectMin();
     int width  = F_Prop->image->w;
@@ -52,6 +56,18 @@ void Edit_Image(LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Colo
     //Converts unpalettized image to texture for display, sets window bool to true
     if (Palette_Update || image_edited) {
         Update_Palette(F_Prop, false);
+
+        bind_PAL_data(F_Prop, F_Prop->Pal_Surface, &F_Prop->img_data);
+        draw_PAL_to_framebuffer(My_Variables->palette, 
+                               &My_Variables->render_PAL_shader, 
+                               &My_Variables->giant_triangle, 
+                               &F_Prop->img_data);
+
+        //draw_FRM_to_framebuffer(My_Variables->palette,
+        //                       &My_Variables->render_FRM_shader,
+        //                       &My_Variables->giant_triangle,
+        //                       &F_Prop->img_data);
+
 
         //SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
         //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
@@ -338,3 +354,77 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
 //        0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
 //        My_Variables->F_Prop[counter].Final_Render->pixels);
 //}
+
+bool init_PAL_framebuffer(struct image_data* img_data, struct LF* F_Prop)
+{
+    glDeleteFramebuffers(1, &img_data->framebuffer);
+    //glDeleteTextures(1, &img_data->render_texture);
+    glGenTextures(1, &F_Prop->Optimized_Render_Texture);
+    glBindTexture(GL_TEXTURE_2D, F_Prop->Optimized_Render_Texture);
+    //set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //allocate video memory for texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+        F_Prop->texture_width, F_Prop->texture_height,
+        0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+    //init framebuffer
+    glGenFramebuffers(1, &img_data->framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+
+    //attach texture to framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->render_texture, 0);
+    glViewport(0, 0, F_Prop->texture_width, F_Prop->texture_height);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
+        printf("glError: %d", glGetError());
+        //reset texture bind to default
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return false;
+    }
+    else {
+        //reset texture and framebuffer bind to default
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return true;
+    }
+}
+
+bool bind_PAL_data(struct LF* F_Prop, SDL_Surface* surface, struct image_data* img_data)
+{
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //load & gen texture
+    glGenTextures(1, &img_data->PAL_data);
+    glBindTexture(GL_TEXTURE_2D, img_data->PAL_data);
+    //texture settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    if (surface->pixels) {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
+        //TODO: control alignment of the image (auto aligned to 4-bytes) when converted to texture
+        //GL_UNPACK_ALIGNMENT
+        //TODO: control alignment of the image (auto aligned to 4-bytes) when read from texture
+        //GL_PACK_ALIGNMENT
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+
+        bool success = false;
+        success = init_PAL_framebuffer(img_data, F_Prop);
+        if (!success) {
+            printf("image framebuffer failed to attach correctly?\n");
+            return false;
+        }
+        return true;
+    }
+    else {
+        printf("surface.pixels image didn't load...\n");
+        return false;
+    }
+}

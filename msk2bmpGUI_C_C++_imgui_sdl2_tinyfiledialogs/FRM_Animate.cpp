@@ -12,46 +12,46 @@ typedef uint8_t BYTE;
 typedef uint16_t DWORD;
 
 // Palette color arrays   r,   g,   b
-BYTE g_nSlime[] =     {   0, 108,   0,                              // Slime
+static BYTE g_nSlime[] =     {   0, 108,   0,                              // Slime
                          11, 115,   7,
                          27, 123,  15,
                          43, 131,  27 };
-BYTE g_nMonitors[] =  { 107, 107, 111,                              // Monitors
+static BYTE g_nMonitors[] =  { 107, 107, 111,                              // Monitors
                          99, 103, 127,
                          87, 107, 143,
                           0, 147, 163,
                         107, 187, 255 };
-BYTE g_nFireSlow[] =  { 255,   0,   0,                              // Slow fire
+static BYTE g_nFireSlow[] =  { 255,   0,   0,                              // Slow fire
                         215,   0,   0,
                         147,  43,  11,
                         255, 119,   0,
                         255,  59,   0 };
-BYTE g_nFireFast[] =  {  71,   0,   0,                              // Fast fire
+static BYTE g_nFireFast[] =  {  71,   0,   0,                              // Fast fire
                         123,   0,   0,
                         179,   0,   0,
                         123,   0,   0,
                          71,   0,   0 };
-BYTE g_nShoreline[] = {  83,  63,  43,                              // Shoreline
+static BYTE g_nShoreline[] = {  83,  63,  43,                              // Shoreline
                          75,  59,  43,
                          67,  55,  39,
                          63,  51,  39,
                          55,  47,  35,
                          51,  43,  35 };
-BYTE g_nBlinkingRed = { 252 };                                      // Alarm
+static BYTE g_nBlinkingRed = { 252 };                                      // Alarm
 
 // Current parameters of cycle
-DWORD g_dwSlimeCurrent      = 0;
-DWORD g_dwMonitorsCurrent   = 0;
-DWORD g_dwFireSlowCurrent   = 0;
-DWORD g_dwFireFastCurrent   = 0;
-DWORD g_dwShorelineCurrent  = 0;
-BYTE  g_nBlinkingRedCurrent = 0;
+static DWORD g_dwSlimeCurrent      = 0;
+static DWORD g_dwMonitorsCurrent   = 0;
+static DWORD g_dwFireSlowCurrent   = 0;
+static DWORD g_dwFireFastCurrent   = 0;
+static DWORD g_dwShorelineCurrent  = 0;
+static BYTE  g_nBlinkingRedCurrent = 0;
 
-// Time of Last changinge
-uint32_t g_dwLastCycleSlow     = 0;
-uint32_t g_dwLastCycleMedium   = 0;
-uint32_t g_dwLastCycleFast     = 0;
-uint32_t g_dwLastCycleVeryFast = 0;
+// Time of Last cycle
+static uint32_t g_dwLastCycleSlow     = 0;
+static uint32_t g_dwLastCycleMedium   = 0;
+static uint32_t g_dwLastCycleFast     = 0;
+static uint32_t g_dwLastCycleVeryFast = 0;
 
 // Current speed factor
 DWORD g_dwCycleSpeedFactor = 1;
@@ -87,7 +87,7 @@ void Color_Cycle(SDL_Color * PaletteColors, uint16_t* g_dwCurrent, int pal_index
             Current_Frame++;
     }
 
-    if (*g_dwCurrent == 3)
+    if (*g_dwCurrent == cycle_count)
         *g_dwCurrent = 0;
     else
         (*g_dwCurrent)++;

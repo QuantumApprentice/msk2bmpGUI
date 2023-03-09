@@ -22,6 +22,9 @@
     <Filter Include="Source Files\OpenGL\Image2Texture">
       <UniqueIdentifier>{53b58c10-480a-4117-981d-daa7d99c3e11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\OpenGL\FRM">
+      <UniqueIdentifier>{cc314f19-68c8-4331-9347-75dff9713c25}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="tinyfiledialogs.c">
@@ -60,9 +63,6 @@
     <ClCompile Include="imgui-docking\imgui_impl_opengl3.cpp">
       <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
-    <ClCompile Include="glad\src\glad.c">
-      <Filter>Source Files\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="Image2Texture.cpp">
       <Filter>Source Files\OpenGL\Image2Texture</Filter>
     </ClCompile>
@@ -84,8 +84,17 @@
     <ClCompile Include="shaders\shader_class.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
-    <ClCompile Include="shaders\Shader_Stuff.cpp">
-      <Filter>Source Files\OpenGL</Filter>
+    <ClCompile Include="load_FRM_OpenGL.cpp">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </ClCompile>
+    <ClCompile Include="display_FRM_OpenGL.cpp">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </ClCompile>
+    <ClCompile Include="Palette_Cycle.cpp">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\GLAD\src\glad.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -146,11 +155,17 @@
     <ClInclude Include="MSK_Convert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shaders\Shader_Stuff.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="load_FRM_OpenGL.h">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </ClInclude>
+    <ClInclude Include="display_FRM_OpenGL.h">
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClInclude>
     <ClInclude Include="shaders\shader_class.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Palette_Cycle.h">
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +183,15 @@
     </None>
     <None Include="shaders\zoom_shader.vert">
       <Filter>Source Files\OpenGL</Filter>
+    </None>
+    <None Include="shaders\passthru_shader.vert">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </None>
+    <None Include="shaders\render_frm.frag">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </None>
+    <None Include="render_PAL.frag">
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </None>
   </ItemGroup>
 </Project>
