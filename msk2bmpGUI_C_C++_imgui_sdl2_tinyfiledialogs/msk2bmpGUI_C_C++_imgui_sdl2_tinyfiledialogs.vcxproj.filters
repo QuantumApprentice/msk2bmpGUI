@@ -190,7 +190,7 @@
     <None Include="shaders\render_frm.frag">
       <Filter>Source Files\OpenGL\FRM</Filter>
     </None>
-    <None Include="render_PAL.frag">
+    <None Include="shaders\render_PAL.frag">
       <Filter>Source Files\OpenGL\FRM</Filter>
     </None>
   </ItemGroup>

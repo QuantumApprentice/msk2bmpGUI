@@ -16,6 +16,7 @@ struct LF {
     SDL_Surface* Map_Mask = nullptr;
 
     image_data img_data;
+    image_data edit_data;
 
     GLuint palette_buffer;
     GLuint palette_texture;
@@ -35,5 +36,6 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
 };
+
 void Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
 void Load_Edit_MSK(LF* F_Prop, struct user_info* user_info);

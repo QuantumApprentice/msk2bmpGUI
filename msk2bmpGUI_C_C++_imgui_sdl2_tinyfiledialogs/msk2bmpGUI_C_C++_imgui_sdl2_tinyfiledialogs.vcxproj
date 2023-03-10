@@ -200,13 +200,13 @@
     <ClInclude Include="tinyfiledialogs.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="render_PAL.frag" />
     <None Include="shaders\color_cycle_1D.frag" />
     <None Include="shaders\color_cycle_2D.frag" />
     <None Include="shaders\Palette_Shader.vert" />
     <None Include="shaders\passthru_shader.vert" />
     <None Include="shaders\pass_thru_shader.frag" />
     <None Include="shaders\render_frm.frag" />
+    <None Include="shaders\render_PAL.frag" />
     <None Include="shaders\zoom_shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

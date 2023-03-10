@@ -27,6 +27,5 @@ void main()
     else {
     //forground
         FragColor = vec4(texel, 1.0f);
-        //FragColor = vec4(TexCoord.x, TexCoord.y, 1.0, 1.0f);
     }
 }

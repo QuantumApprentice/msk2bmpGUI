@@ -7,11 +7,12 @@
 #include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 
-bool init_PAL_framebuffer(struct image_data* img_data, struct LF* F_Prop);
-bool bind_PAL_data(struct LF* F_Prop, SDL_Surface* surface, struct image_data* img_data);
-
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
 
+    static bool run_once = true;
+    if (run_once) {
+        bind_PAL_data(F_Prop->Pal_Surface, &F_Prop->edit_data);
+    }
     ImVec2 Origin = ImGui::GetItemRectMin();
     int width  = F_Prop->image->w;
     int height = F_Prop->image->h;
@@ -57,11 +58,19 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Ev
     if (Palette_Update || image_edited) {
         Update_Palette(F_Prop, false);
 
-        bind_PAL_data(F_Prop, F_Prop->Pal_Surface, &F_Prop->img_data);
-        draw_PAL_to_framebuffer(My_Variables->palette, 
-                               &My_Variables->render_PAL_shader, 
-                               &My_Variables->giant_triangle, 
-                               &F_Prop->img_data);
+        //F_Prop->edit_data.FRM    = F_Prop->img_data.FRM;
+        //F_Prop->edit_data.width  = F_Prop->img_data.width;
+        //F_Prop->edit_data.height  = F_Prop->img_data.height;
+        F_Prop->edit_data.width  = F_Prop->Pal_Surface->w;
+        F_Prop->edit_data.height = F_Prop->Pal_Surface->h;
+
+
+        draw_PAL_to_framebuffer(My_Variables->palette,
+                               &My_Variables->render_FRM_shader,
+                               &My_Variables->giant_triangle,
+                               &F_Prop->edit_data);
+
+        //F_Prop->Optimized_Render_Texture = F_Prop->edit_data.render_texture;
 
         //draw_FRM_to_framebuffer(My_Variables->palette,
         //                       &My_Variables->render_FRM_shader,
@@ -72,6 +81,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Ev
         //SDL_SetPaletteColors(F_Prop->Pal_Surface->format->palette,
         //    &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
     }
+
 }
 
 SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
@@ -355,47 +365,7 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
 //        My_Variables->F_Prop[counter].Final_Render->pixels);
 //}
 
-bool init_PAL_framebuffer(struct image_data* img_data, struct LF* F_Prop)
-{
-    glDeleteFramebuffers(1, &img_data->framebuffer);
-    //glDeleteTextures(1, &img_data->render_texture);
-    glGenTextures(1, &F_Prop->Optimized_Render_Texture);
-    glBindTexture(GL_TEXTURE_2D, F_Prop->Optimized_Render_Texture);
-    //set texture options
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    //allocate video memory for texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        F_Prop->texture_width, F_Prop->texture_height,
-        0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-    //init framebuffer
-    glGenFramebuffers(1, &img_data->framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
-
-    //attach texture to framebuffer
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->render_texture, 0);
-    glViewport(0, 0, F_Prop->texture_width, F_Prop->texture_height);
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-    {
-        printf("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
-        printf("glError: %d", glGetError());
-        //reset texture bind to default
-        glBindTexture(GL_TEXTURE_2D, 0);
-        return false;
-    }
-    else {
-        //reset texture and framebuffer bind to default
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        return true;
-    }
-}
-
-bool bind_PAL_data(struct LF* F_Prop, SDL_Surface* surface, struct image_data* img_data)
+bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
 {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     //load & gen texture
@@ -416,7 +386,7 @@ bool bind_PAL_data(struct LF* F_Prop, SDL_Surface* surface, struct image_data* i
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
 
         bool success = false;
-        success = init_PAL_framebuffer(img_data, F_Prop);
+        success = init_framebuffer(img_data);
         if (!success) {
             printf("image framebuffer failed to attach correctly?\n");
             return false;
