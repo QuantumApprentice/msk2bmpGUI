@@ -67,9 +67,13 @@ void draw_FRM_to_framebuffer(float* palette,
 }
 
 void draw_PAL_to_framebuffer(float* palette, Shader* shader,
-                            mesh* triangle, struct image_data* img_data)
+                            mesh* triangle, struct image_data* img_data, SDL_Surface* surface)
 {
     glViewport(0, 0, img_data->width, img_data->height);
+
+    glBindTexture(GL_TEXTURE_2D, img_data->PAL_data);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
+
 
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle->VAO);

@@ -712,16 +712,13 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
 
             ImGui::Image(
-                (ImTextureID)My_Variables->F_Prop[counter].Optimized_Render_Texture,
-                ImVec2(My_Variables->F_Prop[counter].image->w,
+                (ImTextureID)My_Variables->F_Prop[counter].edit_data.render_texture,
+                    ImVec2(My_Variables->F_Prop[counter].image->w,
                        My_Variables->F_Prop[counter].image->h));
 
 
             Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
-
-            ImGui::Image((ImTextureID)My_Variables->F_Prop[counter].edit_data.render_texture,
-                ImVec2(My_Variables->F_Prop[counter].edit_data.width,
-                    My_Variables->F_Prop[counter].edit_data.height));
+    
         }
         else {
             if (ImGui::Button("Export Mask Tiles...")) {

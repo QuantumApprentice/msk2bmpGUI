@@ -28,15 +28,15 @@ uint8_t g_nShoreline[] = {  83,  63,  43,       // Shoreline
                             63,  51,  39,
                             55,  47,  35,
                             51,  43,  35 };
-uint8_t g_nBlinkingRed[]={ 252,   0,   0 };
+int g_nBlinkingRed = { -16 };
 
 // Current parameters of cycle
-uint16_t g_dwSlimeCurrent = 0;
-uint16_t g_dwMonitorsCurrent = 0;
-uint16_t g_dwFireSlowCurrent = 0;
-uint16_t g_dwFireFastCurrent = 0;
-uint16_t g_dwShorelineCurrent = 0;
-uint8_t  g_nBlinkingRedCurrent = 0;
+int g_dwSlimeCurrent = 0;
+int g_dwMonitorsCurrent = 0;
+int g_dwFireSlowCurrent = 0;
+int g_dwFireFastCurrent = 0;
+int g_dwShorelineCurrent = 0;
+uint8_t g_nBlinkingRedCurrent = 0;
 
 // Time of last cycle
 double g_dwLastCycleSlow = 0;
@@ -80,14 +80,21 @@ void update_palette_array(float* palette, double CurrentTime, bool* Palette_Upda
         if (CurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
             // Blinking red ///////////////////////////////////////////////////////
             //TODO: need to fix this color cycle...doesn't update in ImGui correctly yet
-            if ((g_nBlinkingRedCurrent == 0) || (g_nBlinkingRedCurrent == 60))
-            { g_nBlinkingRed[0] = -g_nBlinkingRed[0]; }
+            if ((g_nBlinkingRedCurrent == 0) || (g_nBlinkingRedCurrent == 60*4))
+            { g_nBlinkingRed = -g_nBlinkingRed; }
 
-            palette[254*3+0] = (g_nBlinkingRed[0] + g_nBlinkingRedCurrent) / 255.0f;
-            //palette[254*3+1] = 0;
-            //palette[254*3+2] = 0;
+            palette[254*3+0] = (g_nBlinkingRedCurrent + g_nBlinkingRed) / 255.0f;
+            palette[254*3+1] = 0;
+            palette[254*3+2] = 0;
 
-            g_nBlinkingRedCurrent += g_nBlinkingRed[0];
+            /*  color value range
+              0,  16,  32,  48,
+             64,  80,  96, 112,
+            128, 142, 160, 176,
+            192, 208, 224, 240
+            */
+
+            g_nBlinkingRedCurrent += g_nBlinkingRed;
 
             g_dwLastCycleVeryFast = CurrentTime;
             *Palette_Update = true;
@@ -95,7 +102,7 @@ void update_palette_array(float* palette, double CurrentTime, bool* Palette_Upda
     }
 }
 
-void Color_Cycle(float* PaletteColors, uint16_t* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
+void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
 {
     uint16_t Current_Frame = *g_dwCurrent;
 

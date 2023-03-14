@@ -93,10 +93,16 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
             = SDL_ConvertSurface(F_Prop->image,
                                  F_Prop->image->format,
                                  0);
+
         SDL_SetPixelFormatPalette(F_Prop->Pal_Surface->format,
                                   pxlFMT_FO_Pal->palette);
         //Unpalettize image to new surface for display
-        F_Prop->Final_Render = Unpalettize_Image(F_Prop->Pal_Surface);
+        //F_Prop->Final_Render = Unpalettize_Image(F_Prop->Pal_Surface);
+
+    //Converts unpalettized image to texture for display, sets window bool to true
+        Image2Texture(F_Prop->Final_Render,
+            &F_Prop->Optimized_Render_Texture,
+            window);
     }
     else if (F_Prop->type == MSK) {
         ////TODO: Handle MSK file types
@@ -113,6 +119,10 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         //SDL_BlitSurface(F_Prop->Map_Mask, NULL, F_Prop->Final_Render, NULL);
         //SDL_BlitSurface(F_Prop->image, NULL, F_Prop->Final_Render, NULL);
 
+    //Converts unpalettized image to texture for display, sets window bool to true
+        Image2Texture(F_Prop->Final_Render,
+            &F_Prop->Optimized_Render_Texture,
+            window);
         printf(SDL_GetError());
     }
     else {
@@ -120,15 +130,8 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
             = FRM_Color_Convert(F_Prop->image,
                                 pxlFMT_FO_Pal,
                                 color_match);
-        //Unpalettize image to new surface for display
-        F_Prop->Final_Render = Unpalettize_Image(F_Prop->Pal_Surface);
+        //set edit window bool to true, opens edit window
+        *window = true;
     }
-
-
-
-
-    //Converts unpalettized image to texture for display, sets window bool to true
-    Image2Texture(F_Prop->Final_Render,
-                 &F_Prop->Optimized_Render_Texture,
-                  window);
 }
+
