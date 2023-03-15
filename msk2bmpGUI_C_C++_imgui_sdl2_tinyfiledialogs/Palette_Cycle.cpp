@@ -1,3 +1,4 @@
+//https://falloutmods.fandom.com/wiki/PAL_File_Format
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
 
@@ -28,7 +29,7 @@ uint8_t g_nShoreline[] = {  83,  63,  43,       // Shoreline
                             63,  51,  39,
                             55,  47,  35,
                             51,  43,  35 };
-int g_nBlinkingRed = { -16 };
+int g_nBlinkingRed = { -4*4 };
 
 // Current parameters of cycle
 int g_dwSlimeCurrent = 0;
@@ -87,7 +88,7 @@ void update_palette_array(float* palette, double CurrentTime, bool* Palette_Upda
             palette[254*3+1] = 0;
             palette[254*3+2] = 0;
 
-            /*  color value range
+            /* color value range
               0,  16,  32,  48,
              64,  80,  96, 112,
             128, 142, 160, 176,

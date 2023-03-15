@@ -464,17 +464,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         }
     }
 
-    //if (My_Variables->Palette_Update) {
-    //    if(F_Prop->image == NULL) {}
-    //    else {
-    //        Update_Palette2(F_Prop->image,
-    //                       &F_Prop->Optimized_Texture,
-    //                        pxlFMT_FO_Pal);
-    //    }
-    //}
-
-
-
     ImGui::Text(F_Prop->c_name);
     if (My_Variables->Palette_Update) {
         if (F_Prop->type == FRM) {
@@ -713,11 +702,13 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
             ImGui::Image(
                 (ImTextureID)My_Variables->F_Prop[counter].edit_data.render_texture,
-                    ImVec2(My_Variables->F_Prop[counter].image->w,
-                       My_Variables->F_Prop[counter].image->h));
-
+                ImVec2(My_Variables->F_Prop[counter].edit_data.width,
+                       My_Variables->F_Prop[counter].edit_data.height));
 
             Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
+
+
+
     
         }
         else {

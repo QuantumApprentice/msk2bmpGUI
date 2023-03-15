@@ -100,6 +100,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
+        img_data->FRM_data = data;
         return true;
     }
     else {

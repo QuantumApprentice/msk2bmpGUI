@@ -10,4 +10,3 @@ void Update_Palette(struct LF* files, bool blend);
 //void Update_Palette2(struct LF* files, SDL_PixelFormat* pxlFMT);
 void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT);
 //void Update_Palette(variables* My_Variables, int counter, bool blend);
-bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data);

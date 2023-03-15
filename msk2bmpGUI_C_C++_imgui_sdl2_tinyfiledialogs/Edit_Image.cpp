@@ -6,21 +6,12 @@
 #include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 
-void texture_paint(int x, int y, int value, unsigned int texture);
+void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture);
 
 
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
 
-    static bool run_once = true;
-    if (run_once) {
-        F_Prop->edit_data.width = F_Prop->Pal_Surface->w;
-        F_Prop->edit_data.height = F_Prop->Pal_Surface->h;
-        bind_PAL_data(F_Prop->Pal_Surface, &F_Prop->edit_data);
-        run_once = false;
-    }
     ImVec2 Origin = ImGui::GetItemRectMin();
-    int width  = F_Prop->image->w;
-    int height = F_Prop->image->h;
     bool image_edited = false;
 
     //TODO: maybe pass the dithering choice through?
@@ -30,28 +21,29 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Ev
         x = ImGui::GetMousePos().x - Origin.x;
         y = ImGui::GetMousePos().y - Origin.y;
 
-        SDL_Rect rect;
-        rect.x = x-5;
-        rect.y = y-5;
-        rect.h = 10;
-        rect.w = 10;
-
-        if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
-
-            SDL_FillRect(F_Prop->Pal_Surface, &rect, *Color_Pick);
-            //texture_paint(x, y, *Color_Pick, F_Prop->edit_data.PAL_data);
+        if ((0 <= x && x <= F_Prop->edit_data.width) && (0 <= y && y <= F_Prop->edit_data.height)) {
+            texture_paint(x, y, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_data);
         }
     }
 
     //Converts unpalettized image to texture for display, sets window bool to true
     if (Palette_Update || image_edited) {
-        Update_Palette(F_Prop, false);
+        //Update_Palette(F_Prop, false);
+        if (F_Prop->Pal_Surface) {
 
-        draw_PAL_to_framebuffer(My_Variables->palette,
-                               &My_Variables->render_FRM_shader,
-                               &My_Variables->giant_triangle,
-                               &F_Prop->edit_data,
-                                F_Prop->Pal_Surface);
+            draw_PAL_to_framebuffer(My_Variables->palette,
+                &My_Variables->render_FRM_shader,
+                //&My_Variables->render_PAL_shader,
+                &My_Variables->giant_triangle,
+                &F_Prop->edit_data);
+        }
+        else {
+            draw_PAL_to_framebuffer(My_Variables->palette,
+                &My_Variables->render_FRM_shader,
+                //&My_Variables->render_PAL_shader,
+                &My_Variables->giant_triangle,
+                &F_Prop->edit_data);
+        }
     }
 
 }
@@ -223,48 +215,21 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
     }
 }
 
-bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
+
+
+void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
 {
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    //load & gen texture
-    glGenTextures(1, &img_data->PAL_data);
-    glBindTexture(GL_TEXTURE_2D, img_data->PAL_data);
-    //texture settings
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    if (surface->pixels) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
-        //TODO: control alignment of the image (auto aligned to 4-bytes) when converted to texture
-        //GL_UNPACK_ALIGNMENT
-        //TODO: control alignment of the image (auto aligned to 4-bytes) when read from texture
-        //GL_PACK_ALIGNMENT
-        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-
-        bool success = false;
-        success = init_framebuffer(img_data);
-        if (!success) {
-            printf("image framebuffer failed to attach correctly?\n");
-            return false;
-        }
-        return true;
-    }
-    else {
-        printf("surface.pixels image didn't load...\n");
-        return false;
-    }
-}
-
-void texture_paint(int x, int y, int value, unsigned int texture)
-{
-    int v = value * 255;
-    uint8_t color[4] = { v, v, v };
+    int v = value;
+    int size = brush_h * brush_w;
+    uint8_t* color = (uint8_t*)malloc(size);
+    memset(color, value, size);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, 5, 5,
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
         GL_RED, GL_UNSIGNED_BYTE,
         color);
+
+    free(color);
 }

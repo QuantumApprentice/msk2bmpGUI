@@ -12,13 +12,13 @@ void main()
     vec3 texel;
     vec4 index1 = texture(Indexed_FRM, vec2(TexCoord.x, TexCoord.y));
     vec4 index2 = texture(Indexed_PAL, vec2(TexCoord.x, TexCoord.y));
-//    if (index2.r == 0) {
-//        texel = ColorPalette[int(index1.r*255)];
-//    }
-//    else {
-//        texel = ColorPalette[int(index2.r*255)];
-//    }
-    texel = ColorPalette[int(index1.r*255)];
+    if (index2.r == 0) {
+        texel = ColorPalette[int(index1.r*255)];
+    }
+    else {
+        texel = ColorPalette[int(index2.r*255)];
+    }
+    //texel = ColorPalette[int(index1.r*255)];
 
     //alpha channel background
     if (index1.r == 0) {
