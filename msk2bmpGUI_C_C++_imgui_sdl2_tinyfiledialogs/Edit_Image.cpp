@@ -6,10 +6,13 @@
 #include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 
-void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture);
-
-
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
+
+    float zoom = F_Prop->edit_data.img_pos.new_zoom;
+    ImGui::Image(
+        (ImTextureID)F_Prop->edit_data.render_texture,
+              ImVec2(F_Prop->edit_data.width  * zoom,
+                     F_Prop->edit_data.height * zoom));
 
     ImVec2 Origin = ImGui::GetItemRectMin();
     bool image_edited = false;
@@ -21,29 +24,35 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Ev
         x = ImGui::GetMousePos().x - Origin.x;
         y = ImGui::GetMousePos().y - Origin.y;
 
-        if ((0 <= x && x <= F_Prop->edit_data.width) && (0 <= y && y <= F_Prop->edit_data.height)) {
-            texture_paint(x, y, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_data);
+        if ((0 <= x && x <= F_Prop->edit_data.width*zoom) && (0 <= y && y <= F_Prop->edit_data.height*zoom)) {
+            texture_paint(x/zoom, y/zoom, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_texture);
         }
     }
 
     //Converts unpalettized image to texture for display, sets window bool to true
     if (Palette_Update || image_edited) {
         //Update_Palette(F_Prop, false);
-        if (F_Prop->Pal_Surface) {
+            draw_PAL_to_framebuffer(My_Variables->palette,
+                //&My_Variables->render_FRM_shader,
+                &My_Variables->render_PAL_shader,
+                &My_Variables->giant_triangle,
+                &F_Prop->edit_data);
+    }
 
-            draw_PAL_to_framebuffer(My_Variables->palette,
-                &My_Variables->render_FRM_shader,
-                //&My_Variables->render_PAL_shader,
-                &My_Variables->giant_triangle,
-                &F_Prop->edit_data);
-        }
-        else {
-            draw_PAL_to_framebuffer(My_Variables->palette,
-                &My_Variables->render_FRM_shader,
-                //&My_Variables->render_PAL_shader,
-                &My_Variables->giant_triangle,
-                &F_Prop->edit_data);
-        }
+    if (ImGui::Button("Clear All Changes...")) {
+
+        int size = F_Prop->edit_data.width * F_Prop->edit_data.height;
+        uint8_t* clear = (uint8_t*)malloc(size);
+        memset(clear, 0, size);
+
+        glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
+
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+            F_Prop->edit_data.width, F_Prop->edit_data.height,
+            0, GL_RED, GL_UNSIGNED_BYTE, clear);
+
+        free(clear);
     }
 
 }
@@ -214,8 +223,6 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
         }
     }
 }
-
-
 
 void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
 {

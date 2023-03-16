@@ -62,7 +62,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
 void Set_Default_Path(struct user_info* user_info);
 
 struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
-void zoom(float zoom_level, struct position focus_point, float* old_zoom, float new_zoom, float* bottom_left_pos);
+void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos);
 
 
 
@@ -121,14 +121,11 @@ int main(int, char**)
     struct variables My_Variables = {};
     Load_Config(&user_info);
 
-    My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
+    //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     bool success = load_palette_to_array(My_Variables.palette);
     if (!success) { printf("failed to load palette to array\n"); }
 
     My_Variables.giant_triangle = load_giant_triangle();
-    //Shader color_cycle("shaders\\zoom_shader.vert", "shaders\\color_cycle_1D.frag");
-    Shader render_FRM("shaders/passthru_shader.vert", "shaders/render_frm.frag");
-
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -212,31 +209,49 @@ int main(int, char**)
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
                 done = true;
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        done = true;
+                        break;
+                }
+            }
 
     //zoom code
             if (event.type == SDL_MOUSEWHEEL) {
                 int wheel_direction = event.wheel.y;
                 printf("wheel.y: %d\n", event.wheel.y);
-                int x_pos, y_pos;
-                SDL_GetMouseState(&x_pos, &y_pos);
-                //static position old_position;
-                position new_position;
-                position normalized_pos;
+                //int x_pos, y_pos;
+                //SDL_GetMouseState(&x_pos, &y_pos);
+                ////static position old_position;
+                //position new_position;
+                //position normalized_pos;
+                //new_position.x = x_pos;
+                //new_position.y = y_pos;
 
-                variables* MV = &My_Variables;
 
-                MV->old_zoom = MV->new_zoom;
+                for (int i = 0; i < counter; i++)
+                {
 
-                new_position.x = x_pos;
-                new_position.y = y_pos;
-                position new_texture_coord = mouse_pos_to_texture_coord(new_position, MV->new_zoom,
-                                (int)io.DisplaySize.x, (int)io.DisplaySize.y, MV->bottom_left_pos);
+                    LF* FP = &My_Variables.F_Prop[i];
 
-                if (wheel_direction > 0) {
-                    zoom(1.05, new_texture_coord, &MV->old_zoom, MV->new_zoom, MV->bottom_left_pos);
-                } else {
-                    zoom(0.95, new_texture_coord, &MV->old_zoom, MV->new_zoom, MV->bottom_left_pos);
+
+                    if (wheel_direction > 0) {
+                        zoom(1.05,
+                            FP->edit_data.img_pos.new_tex_coord,
+                            &FP->edit_data.img_pos.old_zoom,
+                            &FP->edit_data.img_pos.new_zoom,
+                            FP->edit_data.img_pos.bottom_left);
+                    }
+                    else {
+                        zoom(0.95,
+                            FP->edit_data.img_pos.new_tex_coord,
+                            &FP->edit_data.img_pos.old_zoom,
+                            &FP->edit_data.img_pos.new_zoom,
+                            FP->edit_data.img_pos.bottom_left);
+                    }
                 }
+
     //end of zoom code
 
 
@@ -256,10 +271,6 @@ int main(int, char**)
         bool show_demo_window = false;
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
-
-        //bool * t = NULL;
-        //bool r = true;
-        //t = &r;
 
         //ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
@@ -359,19 +370,18 @@ int main(int, char**)
     return 0;
 }
 
-void zoom(float zoom_level, struct position focus_point, float* old_zoom, float new_zoom, float* bottom_left_pos)
+void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos)
 {
-    *old_zoom = new_zoom;
-    //new_zoom += zoom_level;
-    new_zoom *= zoom_level;
+    *old_zoom = *new_zoom;
+    *new_zoom *= zoom_level;
 
-    if (new_zoom < 0.125)
+    if (*new_zoom < 0.125)
     {
-        new_zoom = 0.125;
+        *new_zoom = 0.125;
     }
 
-    bottom_left_pos[0] = focus_point.x - *old_zoom / new_zoom * (focus_point.x - bottom_left_pos[0]);
-    bottom_left_pos[1] = focus_point.y - *old_zoom / new_zoom * (focus_point.y - bottom_left_pos[1]);
+    bottom_left_pos[0] = focus_point.x - *old_zoom / *new_zoom * (focus_point.x - bottom_left_pos[0]);
+    bottom_left_pos[1] = focus_point.y - *old_zoom / *new_zoom * (focus_point.y - bottom_left_pos[1]);
 }
 
 struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos)
@@ -548,10 +558,6 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
         for (int x = 0; x < 16; x++) {
 
             int index = y * 16 + x;
-            //SDL_Color color = My_Variables->pxlFMT_FO_Pal->palette->colors[index];
-            //float r = (float)color.r / 255.0f;
-            //float g = (float)color.g / 255.0f;
-            //float b = (float)color.b / 255.0f;
 
             float r = My_Variables->palette[index*3 + 0];
             float g = My_Variables->palette[index*3 + 1];
@@ -569,16 +575,9 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
                 update_palette_array(My_Variables->palette,
                                      My_Variables->CurrentTime,
                                     &My_Variables->Palette_Update);
-                //Cycle_Palette(My_Variables->pxlFMT_FO_Pal->palette,
-                //    &My_Variables->Palette_Update,
-                //    My_Variables->CurrentTime);
             }
         }
     }
-    //if (My_Variables->Palette_Update) {
-    //    SDL_SetPaletteColors(My_Variables->pxlFMT_FO_Pal->palette,
-    //        &My_Variables->pxlFMT_FO_Pal->palette->colors[228], 228, 28);
-    //}
 
     ImGui::End();
 }
@@ -676,9 +675,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     std::string a = My_Variables->F_Prop[counter].c_name;
     std::string name = a + " Edit Window...###edit" + b;
 
-    //TODO: crash detector?
-    //crash_detector();
-
     if (!ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].edit_image_window, 0))
     {
         ImGui::End();
@@ -687,7 +683,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     else
     {
         if (!My_Variables->F_Prop[counter].edit_map_mask) {
-
+            //regular edit image window with animated color pallete painting
             if (ImGui::Button("Save as Map Tiles...")) {
                 Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, user_info);
             }
@@ -699,18 +695,14 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
                                      &My_Variables->F_Prop[counter].edit_image_window);
                 My_Variables->F_Prop[counter].edit_map_mask = true;
             }
-
-            ImGui::Image(
-                (ImTextureID)My_Variables->F_Prop[counter].edit_data.render_texture,
-                ImVec2(My_Variables->F_Prop[counter].edit_data.width,
-                       My_Variables->F_Prop[counter].edit_data.height));
-
+            
+            if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+                
+            }
             Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
 
-
-
-    
         }
+        //edit mask window
         else {
             if (ImGui::Button("Export Mask Tiles...")) {
                 //TODO: export mask tiles using msk2bmp2020 code
@@ -752,7 +744,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
         }
 
-        //Removes the mask tile overlay
+        //closes edit window and cancels all edits?
         if (ImGui::Button("Cancel Editing...")) {
             My_Variables->F_Prop[counter].edit_image_window = false;
         }
@@ -760,7 +752,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
         ImGui::End();
     }
 }
-
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 {
@@ -807,9 +798,6 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
     {
         printf("Error: Palette not loaded...");
         My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
-
-        //need to load the full palette first before using it to color convert
-        //load_palette_1D(&F_Prop->palette_texture);
     }
     Load_Files(&My_Variables->F_Prop[*counter], user_info, My_Variables->pxlFMT_FO_Pal);
 

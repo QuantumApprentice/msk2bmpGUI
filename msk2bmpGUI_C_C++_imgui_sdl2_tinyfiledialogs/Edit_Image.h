@@ -10,3 +10,5 @@ void Update_Palette(struct LF* files, bool blend);
 //void Update_Palette2(struct LF* files, SDL_PixelFormat* pxlFMT);
 void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT);
 //void Update_Palette(variables* My_Variables, int counter, bool blend);
+void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture);
+

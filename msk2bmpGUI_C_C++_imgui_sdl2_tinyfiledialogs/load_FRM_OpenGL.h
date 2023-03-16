@@ -30,9 +30,9 @@ struct image_position {
 };
 
 struct image_data {
-    GLuint FRM;
+    GLuint FRM_texture;
     uint8_t* FRM_data;
-    GLuint PAL_data;
+    GLuint PAL_texture;
     GLuint render_texture;
     GLuint framebuffer;
     int width;

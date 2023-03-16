@@ -47,10 +47,9 @@ bool init_framebuffer(struct image_data* img_data)
 //returns true on success, else false
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
 {
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     //load & gen texture
-    glGenTextures(1, &img_data->FRM);
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM);
+    glGenTextures(1, &img_data->FRM_texture);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
     //texture settings
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -87,12 +86,11 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     fclose(File_ptr);
 
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-        //TODO: control alignment of the image (auto aligned to 4-bytes) when converted to texture
-        //GL_UNPACK_ALIGNMENT
-        //TODO: control alignment of the image (auto aligned to 4-bytes) when read from texture
-        //GL_PACK_ALIGNMENT
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //FRM's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //bind data to FRM_texture for display
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 
         bool success = false;
         success = init_framebuffer(img_data);
