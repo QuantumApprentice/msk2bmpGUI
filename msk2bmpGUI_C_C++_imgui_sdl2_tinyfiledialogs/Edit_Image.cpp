@@ -9,10 +9,12 @@
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Event* event, uint8_t* Color_Pick) {
 
     float zoom = F_Prop->edit_data.img_pos.new_zoom;
+    int width = F_Prop->edit_data.width;
+    int height = F_Prop->edit_data.height;
+
     ImGui::Image(
         (ImTextureID)F_Prop->edit_data.render_texture,
-              ImVec2(F_Prop->edit_data.width  * zoom,
-                     F_Prop->edit_data.height * zoom));
+              ImVec2(width * zoom, height * zoom));
 
     ImVec2 Origin = ImGui::GetItemRectMin();
     bool image_edited = false;
@@ -24,7 +26,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, SDL_Ev
         x = ImGui::GetMousePos().x - Origin.x;
         y = ImGui::GetMousePos().y - Origin.y;
 
-        if ((0 <= x && x <= F_Prop->edit_data.width*zoom) && (0 <= y && y <= F_Prop->edit_data.height*zoom)) {
+        if ((0 <= x && x <= width*zoom) && (0 <= y && y <= height*zoom)) {
             texture_paint(x/zoom, y/zoom, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_texture);
         }
     }

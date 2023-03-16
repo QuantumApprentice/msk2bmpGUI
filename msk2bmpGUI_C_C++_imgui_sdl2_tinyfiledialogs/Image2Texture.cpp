@@ -93,7 +93,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
 
     if (F_Prop->type == FRM) {
         //rebind the FRM for editing
-        F_Prop->edit_data.FRM_data    = F_Prop->img_data.FRM_data;
+        F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
 
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
@@ -224,7 +224,7 @@ bool bind_NULL_texture_test(struct image_data* img_data, SDL_Surface* surface)
             //control alignment of the image (auto aligned to 4-bytes) when converted to texture
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             //bind FRM_data to FRM_texture for "indirect" editing
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, img_data->width, img_data->width, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_data->width, img_data->height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
         }
         else {
             printf("FRM_texture didn't load?...\n");
