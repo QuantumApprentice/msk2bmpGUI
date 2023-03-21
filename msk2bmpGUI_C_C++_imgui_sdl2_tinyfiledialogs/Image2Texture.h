@@ -3,7 +3,6 @@
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 #include "shaders/shader_class.h"
-//#include "shaders/Shader_Stuff.h"
 
 
 struct variables {
@@ -48,3 +47,4 @@ void Image2Texture(SDL_Surface* surface,      GLuint* texture,      bool* window
 void SDL_to_OpenGl(SDL_Surface* Temp_Surface, GLuint *Optimized_Texture);
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window);
 bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data);
+bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface);

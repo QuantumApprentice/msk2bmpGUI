@@ -4,8 +4,6 @@
 
 #include "Image2Texture.h"
 
-bool bind_NULL_texture_test(struct image_data* img_data, SDL_Surface* surface);
-
 
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
@@ -98,7 +96,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
         //bind edit data for editing
-        bind_NULL_texture_test(&F_Prop->edit_data, NULL);
+        bind_NULL_texture(&F_Prop->edit_data, NULL);
         //set edit window bool to true, opens edit window
         *window = true;
 
@@ -132,7 +130,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         F_Prop->edit_data.width  = F_Prop->Pal_Surface->w;
         F_Prop->edit_data.height = F_Prop->Pal_Surface->h;
         //bind edit data for editing
-        bind_NULL_texture_test(&F_Prop->edit_data, F_Prop->Pal_Surface);
+        bind_NULL_texture(&F_Prop->edit_data, F_Prop->Pal_Surface);
         //set edit window bool to true, opens edit window
         *window = true;
     }
@@ -185,12 +183,12 @@ bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
     return true;
 }
 
-bool bind_NULL_texture_test(struct image_data* img_data, SDL_Surface* surface)
+bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface)
 {
     if (surface) {
         if (surface->pixels) {
             //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
+            //control alignment of the image (SDL auto aligned to 4-bytes) when converted to texture
             glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
             //load & gen texture
             glGenTextures(1, &img_data->FRM_texture);
@@ -221,7 +219,7 @@ bool bind_NULL_texture_test(struct image_data* img_data, SDL_Surface* surface)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
+            //control alignment of the image (FRM data needs 1-byte) when converted to texture
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             //bind FRM_data to FRM_texture for "indirect" editing
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_data->width, img_data->height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);

@@ -20,13 +20,13 @@ struct image_position {
     float beta = 0;
 
     position new_tex_coord;
+    position offset{};
 
     double x = 0;
     double y = 0;
     float new_zoom = 1.0;
     float old_zoom = 1.0;
     float bottom_left[2] = { 0.0, 0.0 };
-    double xoffset = 0, yoffset = 0;
 };
 
 struct image_data {

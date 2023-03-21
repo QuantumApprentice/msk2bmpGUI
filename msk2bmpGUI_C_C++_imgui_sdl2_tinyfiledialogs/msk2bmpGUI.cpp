@@ -36,6 +36,7 @@
 #include "Load_Settings.h"
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
+#include "Preview_Image.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
@@ -62,7 +63,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
 void Set_Default_Path(struct user_info* user_info);
 
 struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
-void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos);
+//void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos);
 
 
 
@@ -216,46 +217,6 @@ int main(int, char**)
                         break;
                 }
             }
-
-    //zoom code
-            if (event.type == SDL_MOUSEWHEEL) {
-                int wheel_direction = event.wheel.y;
-                printf("wheel.y: %d\n", event.wheel.y);
-                //int x_pos, y_pos;
-                //SDL_GetMouseState(&x_pos, &y_pos);
-                ////static position old_position;
-                //position new_position;
-                //position normalized_pos;
-                //new_position.x = x_pos;
-                //new_position.y = y_pos;
-
-
-                for (int i = 0; i < counter; i++)
-                {
-
-                    LF* FP = &My_Variables.F_Prop[i];
-
-
-                    if (wheel_direction > 0) {
-                        zoom(1.05,
-                            FP->edit_data.img_pos.new_tex_coord,
-                            &FP->edit_data.img_pos.old_zoom,
-                            &FP->edit_data.img_pos.new_zoom,
-                            FP->edit_data.img_pos.bottom_left);
-                    }
-                    else {
-                        zoom(0.95,
-                            FP->edit_data.img_pos.new_tex_coord,
-                            &FP->edit_data.img_pos.old_zoom,
-                            &FP->edit_data.img_pos.new_zoom,
-                            FP->edit_data.img_pos.bottom_left);
-                    }
-                }
-
-    //end of zoom code
-
-
-            }
         }
 
         // Store these variables at frame start for cycling the palette colors
@@ -294,14 +255,14 @@ int main(int, char**)
             ImGui::DockBuilderDockWindow("###edit00"    , dock_main_id);
 
             for (int i = 1; i <= 99; i++) {
-                char buff[13];
-                sprintf(buff, "###preview%02d", i);
+                char buff1[13];
+                sprintf(buff1, "###preview%02d", i);
                 char buff2[12];
                 sprintf(buff2, "###render%02d", i);
                 char buff3[10];
                 sprintf(buff3, "###edit%02d", i);
 
-                ImGui::DockBuilderDockWindow(buff, dock_main_id);
+                ImGui::DockBuilderDockWindow(buff1, dock_main_id);
                 ImGui::DockBuilderDockWindow(buff2, dock_id_right);
                 ImGui::DockBuilderDockWindow(buff3, dock_main_id);
             }
@@ -368,31 +329,6 @@ int main(int, char**)
     write_cfg_file(&user_info);
 
     return 0;
-}
-
-void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos)
-{
-    *old_zoom = *new_zoom;
-    *new_zoom *= zoom_level;
-
-    if (*new_zoom < 0.125)
-    {
-        *new_zoom = 0.125;
-    }
-
-    bottom_left_pos[0] = focus_point.x - *old_zoom / *new_zoom * (focus_point.x - bottom_left_pos[0]);
-    bottom_left_pos[1] = focus_point.y - *old_zoom / *new_zoom * (focus_point.y - bottom_left_pos[1]);
-}
-
-struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos)
-{
-    float scale = 1 / new_zoom;
-
-    position absolute_pos;
-    absolute_pos.x = scale * (pos.x / frame_width) + bottom_left_pos[0];
-    absolute_pos.y = scale * (1 - pos.y / frame_height) + bottom_left_pos[1];
-
-    return absolute_pos;
 }
 
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
@@ -475,44 +411,21 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 
     ImGui::Text(F_Prop->c_name);
+        //new openGL version of pallete cycling
     if (My_Variables->Palette_Update) {
         if (F_Prop->type == FRM) {
-
             draw_FRM_to_framebuffer(My_Variables->palette,
                                    &My_Variables->render_FRM_shader,
                                    &My_Variables->giant_triangle,
                                    &F_Prop->img_data);
         }
-
-        else { }
     }
 
-    int zoom_scale = 4;
-
-    if (F_Prop->type == FRM) {
-        ImGui::Image(
-            (ImTextureID)F_Prop->img_data.render_texture,
-            ImVec2((float)(F_Prop->img_data.width*zoom_scale),
-                   (float)(F_Prop->img_data.height*zoom_scale)),
-            My_Variables->uv_min,
-            My_Variables->uv_max,
-            My_Variables->tint_col,
-            My_Variables->border_col);
-    }
-    else {
-    //old way to load the image
-    //need to simplify to just get width, height
-        ImGui::Image(
-            (ImTextureID)F_Prop->Optimized_Texture,
-            ImVec2((float)F_Prop->image->w,
-            (float)F_Prop->image->h),
-            My_Variables->uv_min,
-            My_Variables->uv_max,
-            My_Variables->tint_col,
-            My_Variables->border_col);
-    }
+    //show the original image for previewing
+    Preview_Image(My_Variables, F_Prop);
 
     // Draw red boxes to indicate where the tiles will be cut from
+    float scale = F_Prop->img_data.img_pos.new_zoom;
     if (wrong_size) {
         ImDrawList *Draw_List = ImGui::GetWindowDrawList();
         ImVec2 Origin = ImGui::GetItemRectMin();
@@ -525,9 +438,9 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         {
             for (int j = 0; j < max_box_y; j++)
             {
-                Top_Left.x = Origin.x + (i * 350);
-                Top_Left.y = Origin.y + (j * 300);
-                Bottom_Right = { Top_Left.x + 350, Top_Left.y + 300 };
+                Top_Left.x = Origin.x + (i * 350)*scale;
+                Top_Left.y = Origin.y + (j * 300)*scale;
+                Bottom_Right = { (float)(Top_Left.x + 350*scale), (float)(Top_Left.y + 300*scale) };
                 Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
             }
         }
@@ -545,6 +458,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     if (F_Prop->edit_image_window) {
         Edit_Image_Window(My_Variables, &user_info, counter, event);
     }
+
     ImGui::End();
 }
 
@@ -682,6 +596,11 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     }
     else
     {
+        //closes edit window and cancels all edits?
+        if (ImGui::Button("Cancel Editing...")) {
+            My_Variables->F_Prop[counter].edit_image_window = false;
+        }
+
         if (!My_Variables->F_Prop[counter].edit_map_mask) {
             //regular edit image window with animated color pallete painting
             if (ImGui::Button("Save as Map Tiles...")) {
@@ -699,7 +618,9 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
                 
             }
-            Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, event, &My_Variables->Color_Pick);
+
+
+            Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, &My_Variables->Color_Pick);
 
         }
         //edit mask window
@@ -744,10 +665,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
             }
         }
 
-        //closes edit window and cancels all edits?
-        if (ImGui::Button("Cancel Editing...")) {
-            My_Variables->F_Prop[counter].edit_image_window = false;
-        }
+
 
         ImGui::End();
     }
@@ -799,16 +717,16 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
         printf("Error: Palette not loaded...");
         My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
     }
+
     Load_Files(&My_Variables->F_Prop[*counter], user_info, My_Variables->pxlFMT_FO_Pal);
 
     //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
     if (My_Variables->F_Prop[*counter].type == FRM)
-    {
+    {   //new openGL way to load an FRM
         draw_FRM_to_framebuffer(My_Variables->palette,
                                &My_Variables->render_FRM_shader,
                                &My_Variables->giant_triangle,
                                &F_Prop->img_data);
-
     }
     else {
         Image2Texture(My_Variables->F_Prop[*counter].image,

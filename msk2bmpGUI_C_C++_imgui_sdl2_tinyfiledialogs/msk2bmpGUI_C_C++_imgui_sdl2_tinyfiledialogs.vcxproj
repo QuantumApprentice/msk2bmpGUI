@@ -169,10 +169,12 @@
     <ClCompile Include="msk2bmpGUI.cpp" />
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Palette_Cycle.cpp" />
+    <ClCompile Include="Preview_Image.cpp" />
     <ClCompile Include="Save_Files.cpp" />
     <ClCompile Include="MSK_Convert.cpp" />
     <ClCompile Include="shaders\shader_class.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
+    <ClCompile Include="Zoom_Pan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="B_Endian.h" />
@@ -194,10 +196,12 @@
     <ClInclude Include="load_FRM_OpenGL.h" />
     <ClInclude Include="Load_Settings.h" />
     <ClInclude Include="Palette_Cycle.h" />
+    <ClInclude Include="Preview_Image.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="MSK_Convert.h" />
     <ClInclude Include="shaders\shader_class.h" />
     <ClInclude Include="tinyfiledialogs.h" />
+    <ClInclude Include="Zoom_Pan.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\color_cycle_1D.frag" />

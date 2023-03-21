@@ -42,20 +42,10 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
             //F_Prop->image = Load_FRM_Image(F_Prop->Opened_File, pxlFMT);
             F_Prop->type = FRM;
 
-    //The new way to load FRM images using openGL
-    //init framebuffers and textures
-            
+            //The new way to load FRM images using openGL
+            //init framebuffers and textures
             load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
-            //Load_FRM_Image2(F_Prop->Opened_File,   &F_Prop->render_texture,
-            //               &F_Prop->texture_width, &F_Prop->texture_height);
 
-            //framebuffer stuff should be included in the load_FRM function
-            //init_framebuffer(&F_Prop->palette_buffer,
-            //    &F_Prop->palette_texture,
-            //    F_Prop->texture_width, F_Prop->texture_height);
-            //init_framebuffer(&F_Prop->render_buffer,
-            //    &F_Prop->Optimized_Render_Texture,
-            //    F_Prop->texture_width, F_Prop->texture_height);
 
 
 
@@ -90,11 +80,13 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
         else
         {
             F_Prop->image = IMG_Load(F_Prop->Opened_File);
-            //TODO: add another type for other generic image types?
-            //      (other than MSK files)
+            F_Prop->img_data.width  = F_Prop->image->w;
+            F_Prop->img_data.height = F_Prop->image->h;
+
             F_Prop->type = other;
         }
-
+        //TODO: add another type for other generic image types?
+        //      (other than MSK files)
 
         if ((F_Prop->image == NULL) && F_Prop->type != FRM)
         {

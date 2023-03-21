@@ -21,7 +21,7 @@ void main()
     //texel = ColorPalette[int(index1.r*255)];
 
     //alpha channel background
-    if (index1.r == 0) {
+    if ((index1.r + index2.r) == 0) {
         float xTile = mod(TexCoord.x, 0.1);
         float yTile = mod(TexCoord.y, 0.1);
         if ((xTile < 0.05 && yTile < 0.05) || (xTile >= 0.05 && yTile >= 0.05))
