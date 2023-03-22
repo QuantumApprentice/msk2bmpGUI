@@ -12,10 +12,11 @@
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick) {
     //TODO: maybe pass the dithering choice through?
 
+    image_data* edit_data = &F_Prop->edit_data;
     bool image_edited = false;
-    float scale = F_Prop->edit_data.img_pos.new_zoom;
-    int width   = F_Prop->edit_data.width;
-    int height  = F_Prop->edit_data.height;
+    float scale = edit_data->img_pos.new_zoom;
+    int width   = edit_data->width;
+    int height  = edit_data->height;
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
 
     if (ImGui::Button("Clear All Changes...")) {
@@ -24,7 +25,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
         uint8_t* clear = (uint8_t*)malloc(texture_size);
         memset(clear, 0, texture_size);
 
-        glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
+        glBindTexture(GL_TEXTURE_2D, edit_data->PAL_texture);
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
@@ -42,52 +43,33 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
-    ImVec2 corner_pos;
-    ImVec2 new_max;
+    ImVec2* corner_pos = &edit_data->img_pos.corner_pos;
+    ImVec2* bottom_corner = &edit_data->img_pos.bottom_corner;
+    position* offset = &My_Variables->mouse_delta;
 
-
-    position new_mouse_pos;
-    //screen position not window
-    new_mouse_pos.x = ImGui::GetMousePos().x;
-    new_mouse_pos.y = ImGui::GetMousePos().y;
-    static position old_mouse_pos;
-
-    ImVec2 window_pos = ImGui::GetWindowPos();
     ImVec2 window_size = ImGui::GetWindowSize();
     ImVec2 cursor_screen_pos = ImGui::GetCursorScreenPos();
 
-    if (ImGui::GetIO().MouseDown[1] && ImGui::IsWindowHovered()) {
-        F_Prop->edit_data.img_pos.offset.x += new_mouse_pos.x - old_mouse_pos.x;
-        F_Prop->edit_data.img_pos.offset.y += new_mouse_pos.y - old_mouse_pos.y;
-    }
+    //calculate mouse offset and add to img_pos.offset
+    panning(edit_data, *offset);
 
-    F_Prop->edit_data.img_pos.offset.x = std::max((double)(window_size.x/2 - size.x), F_Prop->edit_data.img_pos.offset.x);
-    F_Prop->edit_data.img_pos.offset.y = std::max((double)(window_size.y/2 - size.y), F_Prop->edit_data.img_pos.offset.y);
-    F_Prop->edit_data.img_pos.offset.x = std::min((double)(window_size.x/2         ), F_Prop->edit_data.img_pos.offset.x);
-    F_Prop->edit_data.img_pos.offset.y = std::min((double)(window_size.y/2         ), F_Prop->edit_data.img_pos.offset.y);
+    
+    edit_data->img_pos.offset.x = std::max((double)(window_size.x/2 - size.x), edit_data->img_pos.offset.x);
+    edit_data->img_pos.offset.y = std::max((double)(window_size.y/2 - size.y), edit_data->img_pos.offset.y);
+    edit_data->img_pos.offset.x = std::min((double)(window_size.x/2         ), edit_data->img_pos.offset.x);
+    edit_data->img_pos.offset.y = std::min((double)(window_size.y/2         ), edit_data->img_pos.offset.y);
+    
+
 
     //if (offset.x < window_size.x / 2 - size.s)
-    //  { offset.x = window_size.x / 2 - size.x; }
+    //      { offset.x = window_size.x / 2 - size.x; }
     //else if (offset.x > window_size / 2)
-    //  { offset.x = window_size / 2; }
-
-
-
-    corner_pos.x = F_Prop->edit_data.img_pos.offset.x + cursor_screen_pos.x;
-    corner_pos.y = F_Prop->edit_data.img_pos.offset.y + cursor_screen_pos.y;
-
-    old_mouse_pos = new_mouse_pos;
-
-    new_max.x = corner_pos.x + size.x;
-    new_max.y = corner_pos.y + size.y;
-
-
-
+    //      { offset.x = window_size / 2; }
 
     //image I'm trying to pan with
     window->DrawList->AddImage(
-        (ImTextureID)F_Prop->edit_data.render_texture,
-        corner_pos, new_max,
+        (ImTextureID)edit_data->render_texture,
+        *corner_pos, *bottom_corner,
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
@@ -107,15 +89,15 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     if (ImGui::GetIO().MouseDown[0]) {
         image_edited = true;
         float x, y;
-        x = ImGui::GetMousePos().x - corner_pos.x;
-        y = ImGui::GetMousePos().y - corner_pos.y;
+        x = ImGui::GetMousePos().x - corner_pos->x;
+        y = ImGui::GetMousePos().y - corner_pos->y;
 
         if ((0 <= x && x <= size.x) && (0 <= y && y <= size.y)) {
             texture_paint(x/scale, y/scale, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_texture);
         }
     }
 
-    //Converts unpalettized image to texture for display, sets window bool to true
+    //Converts unpalettized image to texture for display
     if (Palette_Update || image_edited) {
         draw_PAL_to_framebuffer(My_Variables->palette,
             //&My_Variables->render_FRM_shader,

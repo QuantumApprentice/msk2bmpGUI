@@ -6,22 +6,25 @@
 
 
 struct variables {
-	ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-	ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
-	ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
-	ImVec2 uv_max = ImVec2(1.0f, 1.0f);
-	bool Render_Tiles = false;
-	bool Preview_Tiles = false;
-	bool Render_Window = false;
+    ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
+    ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
+    ImVec2 uv_max = ImVec2(1.0f, 1.0f);
+    bool Render_Tiles = false;
+    bool Preview_Tiles = false;
+    bool Render_Window = false;
 
     bool Palette_Update = false;
 
-	int Render_Width = 0, Render_Height = 0;
+    int Render_Width = 0, Render_Height = 0;
     clock_t CurrentTime = 0;
+
+    position mouse_delta;
+    position new_mouse_pos;
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
-	//SDL_Color *PaletteColors = nullptr;
+    //SDL_Color *PaletteColors = nullptr;
     SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
     float palette[768] = {};
 
@@ -37,9 +40,9 @@ struct variables {
     float bottom_left_pos[2] = { 0.0, 0.0 };
     bool panning = false;
 
-	SDL_Surface* Temp_Surface = nullptr;
+    SDL_Surface* Temp_Surface = nullptr;
 
-	struct LF F_Prop[99]{};
+    struct LF F_Prop[99]{};
 };
 
 //void Image2Texture(variables* My_Variables, int counter);

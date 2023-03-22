@@ -219,10 +219,26 @@ int main(int, char**)
             }
         }
 
-        // Store these variables at frame start for cycling the palette colors
-        My_Variables.CurrentTime    =  clock();
-        My_Variables.Palette_Update = false;
+        //if (ImGui::GetIO().MouseDown[1])
+        {
+            //mouse position handling for panning
+            position old_mouse_pos = My_Variables.new_mouse_pos;
 
+            //store current mouse position
+            My_Variables.new_mouse_pos.x = ImGui::GetMousePos().x;
+            My_Variables.new_mouse_pos.y = ImGui::GetMousePos().y;
+
+            //store offset for mouse movement between frames
+            My_Variables.mouse_delta.x = My_Variables.new_mouse_pos.x - old_mouse_pos.x;
+            My_Variables.mouse_delta.y = My_Variables.new_mouse_pos.y - old_mouse_pos.y;
+
+        }
+
+        {
+            // Store these variables at frame start for cycling the palette colors
+            My_Variables.CurrentTime = clock();
+            My_Variables.Palette_Update = false;
+        }
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -401,6 +417,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 
     //// Rotate the palette for animation
+        //new openGL version of pallete cycling
     if (My_Variables->Palette_Update) {
         if (F_Prop->img_data.render_texture == NULL) {}
         else {
@@ -409,9 +426,9 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                                 &My_Variables->Palette_Update);
         }
     }
-
+    //new openGL way of redrawing the FRM image to cycle colors?
+    //Converts unpalettized image to texture for display
     ImGui::Text(F_Prop->c_name);
-        //new openGL version of pallete cycling
     if (My_Variables->Palette_Update) {
         if (F_Prop->type == FRM) {
             draw_FRM_to_framebuffer(My_Variables->palette,

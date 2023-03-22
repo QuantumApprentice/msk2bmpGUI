@@ -31,18 +31,6 @@ mesh load_giant_triangle()
     return triangle;
 }
 
-//example code, need to remove when zoom/pan completed
-void draw_to_window(struct image_data* img_data, Shader* shader, mesh* triangle)
-{
-    shader->use();
-    glUniform1f(glGetUniformLocation(shader->ID, "new_zoom"), img_data->img_pos.new_zoom);
-    glUniform2fv(glGetUniformLocation(shader->ID, "bottom_left_pos"), 1, img_data->img_pos.bottom_left);
-
-    glViewport(0, 0, img_data->width * 8, img_data->height * 8);
-    glBindTexture(GL_TEXTURE_2D, img_data->render_texture);
-    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
-}
-
 void draw_FRM_to_framebuffer(float* palette,
     Shader* shader, mesh* triangle,
     struct image_data* img_data)

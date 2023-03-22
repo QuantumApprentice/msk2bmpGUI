@@ -2,6 +2,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include "imgui-docking/imgui.h"
+
 struct mesh {
     GLuint VBO = 0;
     GLuint VAO = 0;
@@ -21,12 +23,13 @@ struct image_position {
 
     position new_tex_coord;
     position offset{};
+    ImVec2 corner_pos;
+    ImVec2 bottom_corner;
 
     double x = 0;
     double y = 0;
     float new_zoom = 1.0;
     float old_zoom = 1.0;
-    float bottom_left[2] = { 0.0, 0.0 };
 };
 
 struct image_data {
