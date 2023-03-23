@@ -184,19 +184,6 @@ int main(int, char**)
     bool done = false;
     while (!done)
     {
-    //-----------------------------------------------------------------------------------------
-        //OpenGL stuff
-        //shader_setup(My_Variables.giant_triangle,
-        //            (int)io.DisplaySize.x, (int)io.DisplaySize.y,
-        //             My_Variables.F_Prop[counter].palette_texture,
-        //             My_Variables.F_Prop[counter].palette_buffer,
-        //             My_Variables.color_cycle);
-
-
-
-    //-----------------------------------------------------------------------------------------
-
-
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -219,9 +206,8 @@ int main(int, char**)
             }
         }
 
-        //if (ImGui::GetIO().MouseDown[1])
-        {
-            //mouse position handling for panning
+        {// mouse position handling for panning
+            //store previous mouse position before assigning current
             position old_mouse_pos = My_Variables.new_mouse_pos;
 
             //store current mouse position
@@ -234,11 +220,11 @@ int main(int, char**)
 
         }
 
-        {
-            // Store these variables at frame start for cycling the palette colors
+        {// Store these variables at frame start for cycling the palette colors
             My_Variables.CurrentTime = clock();
             My_Variables.Palette_Update = false;
         }
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -289,9 +275,61 @@ int main(int, char**)
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
             if (ImGui::Button("Load Files...")) {
-
         //load files
                 Open_Files(&user_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
+            }
+
+
+            for (int count = 0; count < counter; count++)
+            {
+
+                //shortcuts, need to replace with direct calls?
+                LF* F_Prop = &My_Variables.F_Prop[count];
+                SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables.pxlFMT_FO_Pal;
+                //Editing buttons
+            //TODO: for some reason map tile's won't edit, need to fix
+                if (F_Prop->file_open_window) {
+                    if (ImGui::Button("SDL Convert and Paint")) {
+                        Prep_Image(F_Prop,
+                            pxlFMT_FO_Pal,
+                            true,
+                            &F_Prop->edit_image_window);
+                    }
+                    if (ImGui::Button("Euclidian Convert and Paint")) {
+                        Prep_Image(F_Prop,
+                            pxlFMT_FO_Pal,
+                            false,
+                            &F_Prop->edit_image_window);
+                    }
+                    //TODO: manage some sort of contextual menu for tileable images?
+                    if (F_Prop->image_is_tileable && F_Prop->window_focused) {
+                        //Tileable image Buttons
+                        if (ImGui::Button("Preview Tiles - SDL color match")) {
+                            Prep_Image(F_Prop,
+                                pxlFMT_FO_Pal,
+                                true,
+                                &F_Prop->preview_tiles_window);
+                        }
+                        if (ImGui::Button("Preview Tiles - Euclidian color match")) {
+                            Prep_Image(F_Prop,
+                                pxlFMT_FO_Pal,
+                                false,
+                                &F_Prop->preview_tiles_window);
+                        }
+                        if (ImGui::Button("Preview as Image - SDL color match")) {
+                            Prep_Image(F_Prop,
+                                pxlFMT_FO_Pal,
+                                true,
+                                &F_Prop->preview_image_window);
+                        }
+                        if (ImGui::Button("Preview as Image - Euclidian color match")) {
+                            Prep_Image(F_Prop,
+                                pxlFMT_FO_Pal,
+                                false,
+                                &F_Prop->preview_image_window);
+                        }
+                    }
+                }
             }
 
             ImGui::SameLine();
@@ -367,20 +405,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                      (F_Prop->image->h != 300);
     }
     ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0);
-    //Editing buttons
-    //TODO: for some reason map tile's won't edit, need to fix
-    if (ImGui::Button("SDL Convert and Paint")) {
-        Prep_Image(F_Prop,
-                   pxlFMT_FO_Pal,
-                   true,
-                  &F_Prop->edit_image_window);
-    }
-    if (ImGui::Button("Euclidian Convert and Paint")) {
-        Prep_Image(F_Prop,
-                   pxlFMT_FO_Pal,
-                   false,
-                  &F_Prop->edit_image_window);
-    }
+
 
     // Check image size to match tile size (350x300 pixels)
     if (wrong_size) {
@@ -389,32 +414,13 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                     F_Prop->image->w,
                     F_Prop->image->h);
         ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
-        //Buttons
-        if (ImGui::Button("Preview Tiles - SDL color match")) {
-            Prep_Image(F_Prop,
-                       pxlFMT_FO_Pal,
-                       true,
-                      &F_Prop->preview_tiles_window);
-        }
-        if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-            Prep_Image(F_Prop,
-                       pxlFMT_FO_Pal,
-                       false,
-                      &F_Prop->preview_tiles_window);
-        }
-        if (ImGui::Button("Preview as Image - SDL color match")) {
-            Prep_Image(F_Prop,
-                       pxlFMT_FO_Pal,
-                       true,
-                      &F_Prop->preview_image_window);
-        }
-        if (ImGui::Button("Preview as Image - Euclidian color match")) {
-            Prep_Image(F_Prop,
-                       pxlFMT_FO_Pal,
-                       false,
-                      &F_Prop->preview_image_window);
-        }
+        F_Prop->image_is_tileable = true;
+
     }
+
+    //TODO: manage some sort of contextual menu for tileable images?
+    F_Prop->window_focused = ImGui::IsWindowFocused();
+
 
     //// Rotate the palette for animation
         //new openGL version of pallete cycling
@@ -445,8 +451,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     float scale = F_Prop->img_data.img_pos.new_zoom;
     if (wrong_size) {
         ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-        ImVec2 Origin = ImGui::GetItemRectMin();
-        ImVec2 Top_Left = Origin;
+        ImVec2 Origin = F_Prop->img_data.img_pos.corner_pos;
+        ImVec2 Top_Left;
         ImVec2 Bottom_Right = { 0, 0 };
         int max_box_x = F_Prop->image->w / 350;
         int max_box_y = F_Prop->image->h / 300;
@@ -746,9 +752,11 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
                                &F_Prop->img_data);
     }
     else {
-        Image2Texture(My_Variables->F_Prop[*counter].image,
-                     &My_Variables->F_Prop[*counter].Optimized_Texture,
-                     &My_Variables->F_Prop[*counter].file_open_window);
+        Image2Texture(F_Prop->image,
+                     &F_Prop->img_data.render_texture,
+                     &F_Prop->file_open_window);
+        F_Prop->img_data.height = F_Prop->image->h;
+        F_Prop->img_data.width  = F_Prop->image->w;
     }
     if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
 }

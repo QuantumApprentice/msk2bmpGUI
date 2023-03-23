@@ -44,7 +44,7 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
 
             //The new way to load FRM images using openGL
             //init framebuffers and textures
-            load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
+            F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
 
 
 
@@ -96,7 +96,7 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
         }
         else
         {// Set display window to open
-        	F_Prop->file_open_window = true;
+            F_Prop->file_open_window = true;
         }
     }
 }

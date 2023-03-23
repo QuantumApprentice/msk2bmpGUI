@@ -53,12 +53,12 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //calculate mouse offset and add to img_pos.offset
     panning(edit_data, *offset);
 
-    
+
     edit_data->img_pos.offset.x = std::max((double)(window_size.x/2 - size.x), edit_data->img_pos.offset.x);
     edit_data->img_pos.offset.y = std::max((double)(window_size.y/2 - size.y), edit_data->img_pos.offset.y);
     edit_data->img_pos.offset.x = std::min((double)(window_size.x/2         ), edit_data->img_pos.offset.x);
     edit_data->img_pos.offset.y = std::min((double)(window_size.y/2         ), edit_data->img_pos.offset.y);
-    
+
 
 
     //if (offset.x < window_size.x / 2 - size.s)

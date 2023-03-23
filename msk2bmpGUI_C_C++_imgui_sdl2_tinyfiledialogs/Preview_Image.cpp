@@ -24,23 +24,26 @@ void Preview_Image(variables* My_Variables, LF* F_Prop)
         zoom_wrap(0.95, img_data);
     }
 
-    if (F_Prop->type == FRM) {
+    //if (F_Prop->type == FRM) {
         //image I'm trying to pan with
         window->DrawList->AddImage(
             (ImTextureID)img_data->render_texture,
             img_data->img_pos.corner_pos, img_data->img_pos.bottom_corner,
             uv_min, uv_max,
             ImGui::GetColorU32(My_Variables->tint_col));
-    }
-    else {
+
+        //TODO: need to figure out how I'm going to handle scrolling on large images
+        ImGui::Dummy(size);
+    //}
+    //else {
         //old way to load the image
         //need to simplify to just get width, height
 
-        window->DrawList->AddImage(
-            (ImTextureID)F_Prop->Optimized_Texture,
-            img_data->img_pos.corner_pos, img_data->img_pos.bottom_corner,
-            uv_min, uv_max,
-            ImGui::GetColorU32(My_Variables->tint_col));
+        //window->DrawList->AddImage(
+        //    (ImTextureID)F_Prop->Optimized_Texture,
+        //    img_data->img_pos.corner_pos, img_data->img_pos.bottom_corner,
+        //    uv_min, uv_max,
+        //    ImGui::GetColorU32(My_Variables->tint_col));
 
 
         //ImGui::Image(
@@ -50,7 +53,7 @@ void Preview_Image(variables* My_Variables, LF* F_Prop)
         //    My_Variables->uv_max,
         //    My_Variables->tint_col,
         //    My_Variables->border_col);
-    }
+    //}
 
 
 }

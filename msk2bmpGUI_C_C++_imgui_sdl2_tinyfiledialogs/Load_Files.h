@@ -35,6 +35,8 @@ struct LF {
     bool preview_image_window;
     bool edit_image_window;
     bool edit_map_mask = false;
+    bool image_is_tileable = false;
+    bool window_focused = false;
 };
 
 void Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
