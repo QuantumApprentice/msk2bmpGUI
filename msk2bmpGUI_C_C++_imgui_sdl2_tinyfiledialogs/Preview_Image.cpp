@@ -18,10 +18,10 @@ void Preview_Image(variables* My_Variables, LF* F_Prop)
 
     float mouse_wheel = ImGui::GetIO().MouseWheel;
     if      (mouse_wheel > 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()){
-        zoom_wrap(1.05, img_data);
+        zoom_wrap(1.05, img_data, My_Variables->new_mouse_pos);
     }
     else if (mouse_wheel < 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()){
-        zoom_wrap(0.95, img_data);
+        zoom_wrap(0.95, img_data, My_Variables->new_mouse_pos);
     }
 
     //if (F_Prop->type == FRM) {

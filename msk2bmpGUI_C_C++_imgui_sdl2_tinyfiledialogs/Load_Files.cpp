@@ -46,9 +46,6 @@ void Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
             //init framebuffers and textures
             F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
 
-
-
-
         }
         else if(!(strncmp (F_Prop->extension, "MSK", 4)))
         {

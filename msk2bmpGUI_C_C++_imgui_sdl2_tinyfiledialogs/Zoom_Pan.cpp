@@ -3,17 +3,17 @@
 
 #include "Zoom_Pan.h"
 
-void zoom_wrap(float zoom_level, image_data* img_data) {
-    zoom(zoom_level, 
-         img_data->img_pos.new_tex_coord,
-        &img_data->img_pos.old_zoom,
+void zoom_wrap(float zoom_level, image_data* img_data, struct position focus_point) {
+    zoom(zoom_level,
+         focus_point,
         &img_data->img_pos.new_zoom,
-        &img_data->img_pos.corner_pos);
+        &img_data->img_pos.corner_pos,
+        &img_data->img_pos.offset);
 }
 
-void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, ImVec2* corner_pos)
+void zoom(float zoom_level, struct position focus_point, float* new_zoom, ImVec2* corner_pos, position* offset)
 {
-    *old_zoom = *new_zoom;
+    float old_zoom = *new_zoom;
     *new_zoom *= zoom_level;
 
     if (*new_zoom < 0.125)
@@ -21,8 +21,25 @@ void zoom(float zoom_level, struct position focus_point, float* old_zoom, float*
         *new_zoom = 0.125;
     }
 
-    //corner_pos->x = focus_point.x - *old_zoom / *new_zoom * (focus_point.x - corner_pos->x);
-    //corner_pos->y = focus_point.y - *old_zoom / *new_zoom * (focus_point.y - corner_pos->y);
+    //////////////////////////////////////////////////////////////////////////////////
+    //mouse position relative to window/screen code here
+
+    position zoom_center_offset;
+    zoom_center_offset.x = corner_pos->x - focus_point.x;
+    zoom_center_offset.y = corner_pos->y - focus_point.y;
+
+    position new_corner;
+
+    new_corner.x = focus_point.x + ( *new_zoom / old_zoom)*zoom_center_offset.x;
+    new_corner.y = focus_point.y + ( *new_zoom / old_zoom)*zoom_center_offset.y;
+
+    offset->x += new_corner.x - corner_pos->x;
+    offset->y += new_corner.y - corner_pos->y;
+
+    corner_pos->x = new_corner.x;
+    corner_pos->y = new_corner.y;
+
+    //////////////////////////////////////////////////////////////////////////////////
 }
 
 struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos)

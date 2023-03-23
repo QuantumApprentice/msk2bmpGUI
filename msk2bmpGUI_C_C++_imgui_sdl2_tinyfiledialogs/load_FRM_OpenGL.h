@@ -21,7 +21,6 @@ struct image_position {
     float alpha = 0;
     float beta = 0;
 
-    position new_tex_coord;
     position offset{};
     ImVec2 corner_pos;
     ImVec2 bottom_corner;
@@ -29,7 +28,6 @@ struct image_position {
     double x = 0;
     double y = 0;
     float new_zoom = 1.0;
-    float old_zoom = 1.0;
 };
 
 struct image_data {
