@@ -404,6 +404,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         wrong_size = (F_Prop->image->w != 350) ||
                      (F_Prop->image->h != 300);
     }
+
     ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0);
 
 
@@ -445,10 +446,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 
     //show the original image for previewing
-    Preview_Image(My_Variables, F_Prop);
+    Preview_Image(My_Variables, &F_Prop->img_data);
 
     // Draw red boxes to indicate where the tiles will be cut from
-    float scale = F_Prop->img_data.img_pos.new_zoom;
+    float scale = F_Prop->img_data.img_pos.scale;
     if (wrong_size) {
         ImDrawList *Draw_List = ImGui::GetWindowDrawList();
         ImVec2 Origin = F_Prop->img_data.img_pos.corner_pos;

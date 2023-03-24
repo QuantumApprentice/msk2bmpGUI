@@ -44,8 +44,6 @@ void draw_FRM_to_framebuffer(float* palette,
 
     //shader
     shader->use();
-    //glUniform1f(glGetUniformLocation(shader->ID, "new_zoom"), img_data->img_pos.new_zoom);
-    //glUniform2fv(glGetUniformLocation(shader->ID, "bottom_left_pos"), 1, img_data->img_pos.bottom_left);
     glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
     shader->setInt("Indexed_FRM", 0);
 
@@ -69,8 +67,6 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
 
     //shader
     shader->use();
-    //glUniform1f(glGetUniformLocation(shader->ID, "new_zoom"), img_data->img_pos.new_zoom);
-    //glUniform2fv(glGetUniformLocation(shader->ID, "bottom_left_pos"), 1, img_data->img_pos.bottom_left);
     glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
     shader->setInt("Indexed_FRM", 0);
     shader->setInt("Indexed_PAL", 1);

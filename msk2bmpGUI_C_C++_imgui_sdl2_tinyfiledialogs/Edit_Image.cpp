@@ -14,10 +14,16 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
     image_data* edit_data = &F_Prop->edit_data;
     bool image_edited = false;
-    float scale = edit_data->img_pos.new_zoom;
+    float scale = edit_data->img_pos.scale;
     int width   = edit_data->width;
     int height  = edit_data->height;
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
+    if (edit_data->img_pos.run_once) {
+
+        init_image_pos(&edit_data->img_pos, size);
+        edit_data->img_pos.run_once = false;
+    }
 
     if (ImGui::Button("Clear All Changes...")) {
 
@@ -36,23 +42,18 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     }
 
 
-/////////////////////////////////////////////////////////////////////////////////
-    //draw image with zoom and pan
-
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-
+    //shortcuts
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2* corner_pos = &edit_data->img_pos.corner_pos;
     ImVec2* bottom_corner = &edit_data->img_pos.bottom_corner;
     position* offset = &My_Variables->mouse_delta;
 
+
+    //zoom and panning function
+    zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta, size);
+
     ImVec2 window_size = ImGui::GetWindowSize();
-    ImVec2 cursor_screen_pos = ImGui::GetCursorScreenPos();
-
-    //calculate mouse offset and add to img_pos.offset
-    panning(edit_data, *offset);
-
     //edit_data->img_pos.offset.x = std::max((double)(window_size.x/2 - size.x), edit_data->img_pos.offset.x);
     //edit_data->img_pos.offset.y = std::max((double)(window_size.y/2 - size.y), edit_data->img_pos.offset.y);
     //edit_data->img_pos.offset.x = std::min((double)(window_size.x/2         ), edit_data->img_pos.offset.x);
@@ -63,6 +64,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //else if (offset.x > window_size / 2)
     //      { offset.x = window_size / 2; }
 
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
         (ImTextureID)edit_data->render_texture,
@@ -71,26 +73,14 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
         ImGui::GetColorU32(My_Variables->tint_col));
 
 
-/////////////////////////////////////////////////////////////////////////////////
-
-
-
-    float mouse_wheel = ImGui::GetIO().MouseWheel;
-    if      (mouse_wheel > 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()) {
-        zoom_wrap(1.05, &F_Prop->edit_data, My_Variables->new_mouse_pos);
-    }
-    else if (mouse_wheel < 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()) {
-        zoom_wrap(0.95, &F_Prop->edit_data, My_Variables->new_mouse_pos);
-    }
-
     if (ImGui::GetIO().MouseDown[0]) {
         image_edited = true;
         float x, y;
-        x = ImGui::GetMousePos().x - corner_pos->x;
-        y = ImGui::GetMousePos().y - corner_pos->y;
+        x = My_Variables->new_mouse_pos.x - corner_pos->x;
+        y = My_Variables->new_mouse_pos.y - corner_pos->y;
 
         if ((0 <= x && x <= size.x) && (0 <= y && y <= size.y)) {
-            texture_paint(x/scale, y/scale, 10, 10, *Color_Pick, F_Prop->edit_data.PAL_texture);
+            texture_paint(x/scale, y/scale, 10, 10, *Color_Pick, edit_data->PAL_texture);
         }
     }
 
@@ -100,10 +90,8 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
             //&My_Variables->render_FRM_shader,
             &My_Variables->render_PAL_shader,
             &My_Variables->giant_triangle,
-            &F_Prop->edit_data);
+            edit_data);
     }
-
-
 }
 
 SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
@@ -145,7 +133,8 @@ SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
     return Map_Mask;
 }
 
-//TODO: change input from My_Variables to F_Prop[]
+//TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
+//TODO: also change to work with openGL
 void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin)
 {
     int width  = F_Prop->image->w;
@@ -200,6 +189,7 @@ void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Or
 }
 
 //bool blend == true = blend surfaces
+//TODO: remove! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
 void Update_Palette(struct LF* files, bool blend) {
     SDL_FreeSurface(files->Final_Render);
     if (files->type == MSK) {
@@ -225,7 +215,7 @@ void Update_Palette(struct LF* files, bool blend) {
             &files->Optimized_Render_Texture);
     }
 }
-
+////TODO: remove! same as above
 //void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT) {
 //    SDL_Surface* Temp_Surface;
 //    //Force image to use the global palette instead of allowing SDL to use a copy
@@ -236,6 +226,7 @@ void Update_Palette(struct LF* files, bool blend) {
 //    SDL_FreeSurface(Temp_Surface);
 //}
 
+////TODO: remove! same as above
 void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
 {
     int width  = msk_surface->w;

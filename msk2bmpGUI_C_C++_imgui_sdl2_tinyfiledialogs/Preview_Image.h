@@ -4,5 +4,5 @@
 #include "Image2Texture.h"
 #include "Zoom_Pan.h"
 
-void Preview_Image(variables* My_Variables, LF* F_Prop);
+void Preview_Image(variables* My_Variables, struct image_data* img_data);
 

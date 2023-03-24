@@ -1,8 +1,8 @@
 #pragma once
 #include "load_FRM_OpenGL.h"
 
-void zoom(float zoom_level, struct position focus_point, float* new_zoom, ImVec2* corner_pos, position* offset);
-void zoom_wrap(float zoom_level, image_data* img_data, struct position focus_point);
-struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
+void init_image_pos(image_position* img_pos, ImVec2 size);
+void zoom_pan(image_data* img_data, position focus_point, position mouse_delta, ImVec2 size);
+void zoom(float zoom_level, struct position focus_point, image_position* img_pos);
 void panning(struct image_data* img_data, struct position offset);
 

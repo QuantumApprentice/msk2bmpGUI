@@ -17,17 +17,12 @@ struct position {
 };
 
 struct image_position {
-    bool panning = false;
-    float alpha = 0;
-    float beta = 0;
+    bool run_once = true;
+    float scale = 1.0;
 
     position offset{};
     ImVec2 corner_pos;
     ImVec2 bottom_corner;
-
-    double x = 0;
-    double y = 0;
-    float new_zoom = 1.0;
 };
 
 struct image_data {
