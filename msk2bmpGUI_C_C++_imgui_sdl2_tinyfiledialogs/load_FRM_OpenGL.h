@@ -16,15 +16,6 @@ struct position {
     double y = 0;
 };
 
-struct image_position {
-    bool run_once = true;
-    float scale = 1.0;
-
-    position offset{};
-    ImVec2 corner_pos;
-    ImVec2 bottom_corner;
-};
-
 struct image_data {
     GLuint FRM_texture;
     uint8_t* FRM_data;
@@ -34,7 +25,13 @@ struct image_data {
     int width;
     int height;
 
-    image_position img_pos;
+    //image position
+    //bool window_opened = false;
+    float scale = 1.0;
+
+    position offset{};
+    ImVec2 corner_pos;
+    ImVec2 bottom_corner;
 };
 
 //FRM loading

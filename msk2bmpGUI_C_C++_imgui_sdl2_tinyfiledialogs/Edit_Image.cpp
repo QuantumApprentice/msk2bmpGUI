@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <numeric>
 
 #include "Edit_Image.h"
 #include "imgui-docking/imgui.h"
@@ -13,71 +12,62 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //TODO: maybe pass the dithering choice through?
 
     image_data* edit_data = &F_Prop->edit_data;
-    bool image_edited = false;
-    float scale = edit_data->img_pos.scale;
+    float scale = edit_data->scale;
     int width   = edit_data->width;
     int height  = edit_data->height;
-    ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
 
-    if (edit_data->img_pos.run_once) {
 
-        init_image_pos(&edit_data->img_pos, size);
-        edit_data->img_pos.run_once = false;
+    //TODO: use a menu bar for the editor/previewer?
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("label")) {
+
+            if (ImGui::MenuItem("Clear All Changes...")) {
+                int texture_size = width * height;
+                uint8_t* clear = (uint8_t*)malloc(texture_size);
+                memset(clear, 0, texture_size);
+
+                glBindTexture(GL_TEXTURE_2D, edit_data->PAL_texture);
+
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                    width, height,
+                    0, GL_RED, GL_UNSIGNED_BYTE, clear);
+
+                free(clear);
+            }
+
+
+            ImGui::EndMenu();
+
+        }
+        ImGui::EndMenuBar();
     }
-
-    if (ImGui::Button("Clear All Changes...")) {
-
-        int texture_size = width * height;
-        uint8_t* clear = (uint8_t*)malloc(texture_size);
-        memset(clear, 0, texture_size);
-
-        glBindTexture(GL_TEXTURE_2D, edit_data->PAL_texture);
-
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-            width, height,
-            0, GL_RED, GL_UNSIGNED_BYTE, clear);
-
-        free(clear);
-    }
-
 
     //shortcuts
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
-    ImVec2* corner_pos = &edit_data->img_pos.corner_pos;
-    ImVec2* bottom_corner = &edit_data->img_pos.bottom_corner;
-    position* offset = &My_Variables->mouse_delta;
 
+    //handle zoom and panning for the image, plus update image position every frame
+    //ImVec2 corner_pos;
+    //ImVec2 bottom_corner;
+    zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
-    //zoom and panning function
-    zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta, size);
-
-    ImVec2 window_size = ImGui::GetWindowSize();
-    //edit_data->img_pos.offset.x = std::max((double)(window_size.x/2 - size.x), edit_data->img_pos.offset.x);
-    //edit_data->img_pos.offset.y = std::max((double)(window_size.y/2 - size.y), edit_data->img_pos.offset.y);
-    //edit_data->img_pos.offset.x = std::min((double)(window_size.x/2         ), edit_data->img_pos.offset.x);
-    //edit_data->img_pos.offset.y = std::min((double)(window_size.y/2         ), edit_data->img_pos.offset.y);
-
-    //if (offset.x < window_size.x / 2 - size.s)
-    //      { offset.x = window_size.x / 2 - size.x; }
-    //else if (offset.x > window_size / 2)
-    //      { offset.x = window_size / 2; }
-
+    ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
         (ImTextureID)edit_data->render_texture,
-        *corner_pos, *bottom_corner,
+        top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
 
-    if (ImGui::GetIO().MouseDown[0]) {
+    bool image_edited = false;
+    if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
         float x, y;
-        x = My_Variables->new_mouse_pos.x - corner_pos->x;
-        y = My_Variables->new_mouse_pos.y - corner_pos->y;
+        x = My_Variables->new_mouse_pos.x - top_corner(edit_data).x;
+        y = My_Variables->new_mouse_pos.y - top_corner(edit_data).y;
 
         if ((0 <= x && x <= size.x) && (0 <= y && y <= size.y)) {
             texture_paint(x/scale, y/scale, 10, 10, *Color_Pick, edit_data->PAL_texture);
@@ -135,7 +125,7 @@ SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
 
 //TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
 //TODO: also change to work with openGL
-void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin)
+void Edit_Map_Mask(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
 {
     int width  = F_Prop->image->w;
     int height = F_Prop->image->h;
@@ -155,7 +145,7 @@ void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Or
     rect.h = 10;
     rect.w = 10;
 
-    if (ImGui::IsMouseDown(event->button.button)) {
+    if (ImGui::GetIO().MouseDown[0]) {
 
         if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
 

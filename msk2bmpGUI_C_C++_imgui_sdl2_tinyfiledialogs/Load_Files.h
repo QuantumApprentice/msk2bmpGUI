@@ -18,11 +18,6 @@ struct LF {
     image_data img_data;
     image_data edit_data;
 
-    GLuint palette_buffer;
-    GLuint palette_texture;
-    GLuint render_buffer;
-    GLuint render_texture;
-
     GLuint Optimized_Texture = 0;
     GLuint Optimized_Render_Texture = 0;
     GLuint Optimized_Mask_Texture = 0;
@@ -36,8 +31,7 @@ struct LF {
     bool edit_image_window;
     bool edit_map_mask = false;
     bool image_is_tileable = false;
-    bool window_focused = false;
 };
 
-void Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
+bool Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
 void Load_Edit_MSK(LF* F_Prop, struct user_info* user_info);

@@ -3,7 +3,7 @@
 #include "Image2Texture.h"
 
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick);
-void Edit_Map_Mask(LF* F_Prop, SDL_Event* event, bool* Palette_Update, ImVec2 Origin);
+void Edit_Map_Mask(LF* F_Prop, bool* Palette_Update, ImVec2 Origin);
 
 SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window);
 void CPU_Blend(SDL_Surface* surface1, SDL_Surface* surface2);

@@ -43,6 +43,11 @@ struct variables {
     SDL_Surface* Temp_Surface = nullptr;
 
     struct LF F_Prop[99]{};
+
+    //if edit_image_open == true, then edit window is open, else false for preview window
+    bool edit_image_focused = false;
+    int window_number_focus = -1;
+
 };
 
 //void Image2Texture(variables* My_Variables, int counter);
