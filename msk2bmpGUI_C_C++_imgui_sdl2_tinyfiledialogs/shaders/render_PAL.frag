@@ -26,10 +26,10 @@ void main()
         float yTile = mod(TexCoord.y, 0.1);
         if ((xTile < 0.05 && yTile < 0.05) || (xTile >= 0.05 && yTile >= 0.05))
         {
-            FragColor = vec4(1,1,1,1);
+            FragColor = vec4(0.5,0.5,0.5,1);
         }
         else {
-            FragColor = vec4(0.8,0.8,0.8,1);
+            FragColor = vec4(0.2,0.2,0.2,1);
         }
     }
     else {

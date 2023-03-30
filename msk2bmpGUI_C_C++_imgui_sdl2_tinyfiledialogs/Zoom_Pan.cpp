@@ -25,6 +25,14 @@ ImVec2 bottom_corner(ImVec2 size, ImVec2 corner_pos)
 
 void viewport_boundary(image_data* img_data, ImVec2 size)
 {
+
+    ImVec2 image_offset;
+    image_offset.x = ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
+    image_offset.y = ImGui::GetCursorScreenPos().y - ImGui::GetWindowPos().y;
+
+    img_data->offset.x += image_offset.x;
+    img_data->offset.y += image_offset.y;
+
     ImVec2 window_size = ImGui::GetWindowSize();
     if (size.x >= window_size.x) {
         img_data->offset.x = std::max((double)(window_size.x / 2 - size.x), img_data->offset.x);
@@ -49,19 +57,20 @@ void viewport_boundary(image_data* img_data, ImVec2 size)
         // technically should update corner_pos here if the offset changed
     }
 
+    img_data->offset.x -= image_offset.x;
+    img_data->offset.y -= image_offset.y;
+
 }
 
 //handle zoom and panning for the image, plus update image position every frame
 void zoom_pan(image_data* img_data, position focus_point, position mouse_delta)
 {
-    ImVec2 corner_pos = top_corner(img_data);
-
     float mouse_wheel = ImGui::GetIO().MouseWheel;
     if (mouse_wheel > 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()) {
-        zoom(1.05, focus_point, img_data, &corner_pos);
+        zoom(1.05, focus_point, img_data);
     }
     else if (mouse_wheel < 0 && (ImGui::GetIO().KeyCtrl) && ImGui::IsWindowHovered()) {
-        zoom(0.95, focus_point, img_data, &corner_pos);
+        zoom(0.95, focus_point, img_data);
     }
 
     if (ImGui::GetIO().MouseDown[1] && ImGui::IsWindowHovered()) {
@@ -72,16 +81,14 @@ void zoom_pan(image_data* img_data, position focus_point, position mouse_delta)
         img_data->height * img_data->scale);
 
     viewport_boundary(img_data, size);
-
-    //bottom_corner->x = corner_pos->x + size.x;
-    //bottom_corner->y = corner_pos->y + size.y;
-
 }
 
-void zoom(float zoom_level, struct position focus_point, image_data* img_data, ImVec2* corner_pos)
+void zoom(float zoom_level, struct position focus_point, image_data* img_data)
 {
     float* scale = &img_data->scale;
     position* offset = &img_data->offset;
+
+    ImVec2 corner_pos = top_corner(img_data);
 
     float old_zoom = *scale;
     *scale *= zoom_level;
@@ -93,19 +100,15 @@ void zoom(float zoom_level, struct position focus_point, image_data* img_data, I
 
     //mouse position relative to window/screen code here
     position zoom_center_offset;
-    zoom_center_offset.x = corner_pos->x - focus_point.x;
-    zoom_center_offset.y = corner_pos->y - focus_point.y;
+    zoom_center_offset.x = corner_pos.x - focus_point.x;
+    zoom_center_offset.y = corner_pos.y - focus_point.y;
 
     position new_corner;
     new_corner.x = focus_point.x + (*scale / old_zoom)*zoom_center_offset.x;
     new_corner.y = focus_point.y + (*scale / old_zoom)*zoom_center_offset.y;
 
-    offset->x += new_corner.x - corner_pos->x;
-    offset->y += new_corner.y - corner_pos->y;
-
-    //corner_pos->x = new_corner.x;
-    //corner_pos->y = new_corner.y;
-
+    offset->x += new_corner.x - corner_pos.x;
+    offset->y += new_corner.y - corner_pos.y;
 }
 
 void panning(struct image_data* img_data, position mouse_delta)
@@ -113,5 +116,4 @@ void panning(struct image_data* img_data, position mouse_delta)
     //calculate mouse offset
     img_data->offset.x += mouse_delta.x;
     img_data->offset.y += mouse_delta.y;
-
 }

@@ -169,6 +169,9 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
     FRM_Header.Frame_Area             = B_Endian::write_u32(300 * 350);
     FRM_Header.Frame_0_Size           = B_Endian::write_u32(300 * 350);
 
+    //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
+    //TODO: also need to test index 255 to see what color it shows in the engine
+    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
     Split_to_Tiles(PAL_surface, user_info, FRM, &FRM_Header);
 
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
@@ -180,6 +183,7 @@ void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
     Split_to_Tiles(MSK_surface, user_info, MSK, NULL);
 }
 
+//TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
 void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
 {
     int num_tiles_x = surface->w / 350;
@@ -187,7 +191,6 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
     int tile_num = 0;
     char path[MAX_PATH];
     char Save_File_Name[MAX_PATH];
-
 
     FILE * File_ptr = NULL;
 

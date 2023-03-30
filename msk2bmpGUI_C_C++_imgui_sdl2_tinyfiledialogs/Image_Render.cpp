@@ -1,31 +1,33 @@
-#include "Preview_Image.h"
+#include "Image_Render.h"
+#include "Zoom_Pan.h"
+#include "display_FRM_OpenGL.h"
+#include "imgui-docking/imgui_internal.h"
 
 
-void Preview_Image(variables* My_Variables, struct image_data* img_data)
+//render a full image after palettizing
+void image_render(variables* My_Variables, image_data* img_data)
 {
-
-
-    //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
+    draw_FRM_to_framebuffer(My_Variables->palette,
+                           &My_Variables->render_FRM_shader,
+                           &My_Variables->giant_triangle,
+                            img_data);
+
+    //shortcuts
     float scale = img_data->scale;
-    int width = img_data->width;
-    int height = img_data->height;
+    int width   = img_data->width;
+    int height  = img_data->height;
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
-    //image I'm trying to pan and zoom with
+    //image I'm trying to pan with
     window->DrawList->AddImage(
         (ImTextureID)img_data->render_texture,
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
-        //corner_pos, bottom_corner,
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
-
-
-    //TODO: need to figure out how I'm going to handle scrolling on large images
-    ImGui::Dummy(size);
 
 }

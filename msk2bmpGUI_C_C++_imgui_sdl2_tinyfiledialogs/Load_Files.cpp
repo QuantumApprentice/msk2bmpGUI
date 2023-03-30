@@ -57,11 +57,11 @@ bool Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
             F_Prop->edit_image_window = true;
             F_Prop->file_open_window  = true;
 
-            F_Prop->image = Load_MSK_Image(FileName);
-            F_Prop->Map_Mask = Create_Map_Mask(F_Prop->image,
+            F_Prop->IMG_Surface = Load_MSK_Image(FileName);
+            F_Prop->Map_Mask = Create_Map_Mask(F_Prop->IMG_Surface,
                                               &F_Prop->Optimized_Mask_Texture,
                                               &F_Prop->edit_image_window);
-            SDL_BlitSurface(F_Prop->image, NULL, F_Prop->Map_Mask, NULL);
+            SDL_BlitSurface(F_Prop->IMG_Surface, NULL, F_Prop->Map_Mask, NULL);
 
             printf(SDL_GetError());
             Image2Texture(F_Prop->Map_Mask,
@@ -75,18 +75,20 @@ bool Load_Files(LF* F_Prop, user_info* user_info, SDL_PixelFormat* pxlFMT)
             //SDL_FreeSurface(temp);
             //SDL_to_OpenGl(F_Prop->Map_Mask, &F_Prop->Optimized_Texture);
         }
+
+    //do this for all other more common (generic) image types
     else
-    {
-        F_Prop->image = IMG_Load(F_Prop->Opened_File);
-        F_Prop->img_data.width  = F_Prop->image->w;
-        F_Prop->img_data.height = F_Prop->image->h;
+    {   
+        F_Prop->IMG_Surface = IMG_Load(F_Prop->Opened_File);
+        F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+        F_Prop->img_data.height = F_Prop->IMG_Surface->h;
 
         F_Prop->type = other;
     }
     //TODO: add another type for other generic image types?
     //      (other than MSK files)
     //TODO: add a check for MSK files here
-    if ((F_Prop->image == NULL) && F_Prop->type != FRM)
+    if ((F_Prop->IMG_Surface == NULL) && F_Prop->type != FRM)
     {
         printf("Unable to open image file %s! SDL Error: %s\n",
             F_Prop->Opened_File,

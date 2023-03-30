@@ -5,6 +5,7 @@
 #include "Image2Texture.h"
 
 
+//remove when everything else has been moved to new opengl stuff
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
     //TODO: Need to work on a zoom feature
@@ -30,7 +31,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         *window = false;
     }
 }
-
+//remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 {
     // OpenGL conversion from surface to texture - needs to be own function
@@ -60,7 +61,7 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 
     }
 }
-
+//remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 {
     if (!glIsTexture(*texture)) {
@@ -86,8 +87,8 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 //TODO: need to simplify My_Variables to accept F_Prop[counter] instead
     //Palettize to 8-bit FO pallet, and dithered
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window) {
-    SDL_FreeSurface(F_Prop->Pal_Surface);
-    SDL_FreeSurface(F_Prop->Final_Render);
+    SDL_FreeSurface(F_Prop->PAL_Surface);
+    //SDL_FreeSurface(F_Prop->Final_Render);
 
     if (F_Prop->type == FRM) {
         //rebind the FRM for editing
@@ -95,6 +96,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
 
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
+        F_Prop->edit_data.scale  = F_Prop->img_data.scale;
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL);
         //set edit window bool to true, opens edit window
@@ -103,13 +105,13 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
     }
     else if (F_Prop->type == MSK) {
         ////TODO: Handle MSK file types
-        F_Prop->Pal_Surface
-            = FRM_Color_Convert(F_Prop->image,
+        F_Prop->PAL_Surface
+            = FRM_Color_Convert(F_Prop->IMG_Surface,
                                 pxlFMT_FO_Pal,
                                 color_match);
         printf(SDL_GetError());
 
-        F_Prop->Final_Render = Unpalettize_Image(F_Prop->Pal_Surface);
+        F_Prop->Final_Render = Unpalettize_Image(F_Prop->PAL_Surface);
 
         //F_Prop->Final_Render =
         //    SDL_CreateRGBSurface(0, F_Prop->Map_Mask->w, F_Prop->Map_Mask->h, 32, 0, 0, 0, 0);
@@ -123,19 +125,26 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         printf(SDL_GetError());
     }
     else {
-        F_Prop->Pal_Surface
-            = FRM_Color_Convert(F_Prop->image,
+        F_Prop->PAL_Surface
+            = FRM_Color_Convert(F_Prop->IMG_Surface,
                                 pxlFMT_FO_Pal,
                                 color_match);
-        F_Prop->edit_data.width  = F_Prop->Pal_Surface->w;
-        F_Prop->edit_data.height = F_Prop->Pal_Surface->h;
+        F_Prop->edit_data.scale = F_Prop->img_data.scale;
+
+        F_Prop->img_data.width  = F_Prop->PAL_Surface->w;
+        F_Prop->img_data.height = F_Prop->PAL_Surface->h;
+
+        F_Prop->edit_data.width = F_Prop->PAL_Surface->w;
+        F_Prop->edit_data.height = F_Prop->PAL_Surface->h;
+
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, F_Prop->Pal_Surface);
+        bind_NULL_texture(&F_Prop->edit_data, F_Prop->PAL_Surface);
         //set edit window bool to true, opens edit window
         *window = true;
     }
 }
 
+// binds image information to PAL_texture (don't remember why right now, probably remove)
 bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
 {
     //load & gen texture
@@ -183,6 +192,8 @@ bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
     return true;
 }
 
+// binds the image information to FRM_texture
+// and sets up PAL_texture with a NULL texture of appropriate size for editing
 bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface)
 {
     if (surface) {

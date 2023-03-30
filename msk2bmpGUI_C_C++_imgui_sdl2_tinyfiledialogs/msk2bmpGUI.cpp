@@ -40,20 +40,19 @@
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
-//#include "shaders/Shader_Stuff.h"
+#include "Image_Render.h"
+#include "Preview_Tiles.h"
 
 // Our state
 struct user_info user_info;
 
 // Function declarations
 void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
-void Preview_Tiles_Window(variables *My_Variables,
-    ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
-    int *max_box_x, int *max_box_y, int counter);
+void Preview_Tiles_Window(variables *My_Variables, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
 void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter);
 
-void Show_Palette_Window(struct variables *My_Variables, int counter);
+void Show_Palette_Window(struct variables *My_Variables);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
@@ -294,7 +293,7 @@ int main(int, char**)
 
             ImGui::End();
 
-            Show_Palette_Window(&My_Variables, counter);
+            Show_Palette_Window(&My_Variables);
 
             for (int i = 0; i < counter; i++)
             {
@@ -340,6 +339,8 @@ int main(int, char**)
 
     return 0;
 }
+//end of main////////////////////////////////////////////////////////////////////////
+
 
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
 {
@@ -353,12 +354,12 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     std::string name = a + "###preview" + b;
     bool wrong_size;
 
-    if (F_Prop->image == NULL) {
+    if (F_Prop->IMG_Surface == NULL) {
         wrong_size = NULL;
     }
     else {
-        wrong_size = (F_Prop->image->w != 350) ||
-            (F_Prop->image->h != 300);
+        wrong_size = (F_Prop->IMG_Surface->w != 350) ||
+                     (F_Prop->IMG_Surface->h != 300);
     }
 
     if (ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0)) {
@@ -373,8 +374,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         if (wrong_size) {
             ImGui::Text("This image is the wrong size to make a tile...");
             ImGui::Text("Size is %dx%d",
-                F_Prop->image->w,
-                F_Prop->image->h);
+                F_Prop->IMG_Surface->w,
+                F_Prop->IMG_Surface->h);
             ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
             F_Prop->image_is_tileable = true;
 
@@ -415,8 +416,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
             ImVec2 Top_Left;
             ImVec2 Bottom_Right = { 0, 0 };
-            int max_box_x = F_Prop->image->w / 350;
-            int max_box_y = F_Prop->image->h / 300;
+            int max_box_x = F_Prop->IMG_Surface->w / 350;
+            int max_box_y = F_Prop->IMG_Surface->h / 300;
 
             for (int i = 0; i < max_box_x; i++)
             {
@@ -428,26 +429,24 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                     Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
                 }
             }
-            // Preview tiles from red boxes
-            if (F_Prop->preview_tiles_window) {
-                bool window;
-                Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &window);
-                Preview_Tiles_Window(My_Variables, &Top_Left, &Bottom_Right,
-                    &Origin, &max_box_x, &max_box_y, counter);
-            }
         }
     }
     ImGui::End();
+    // Preview tiles from red boxes
+    if (F_Prop->preview_tiles_window) {
+        Preview_Tiles_Window(My_Variables, counter);
+    }
     // Preview full image
-    if (F_Prop->preview_image_window) {
+    if (F_Prop->show_image_render) {
         Show_Image_Render(My_Variables, &user_info, counter);
-    }// Edit full image
+    }
+    // Edit full image
     if (F_Prop->edit_image_window) {
         Edit_Image_Window(My_Variables, &user_info, counter);
     }
 }
 
-void Show_Palette_Window(variables *My_Variables, int counter) {
+void Show_Palette_Window(variables *My_Variables) {
 
     bool palette_window = true;
     std::string name = "Default Fallout palette ###palette";
@@ -481,54 +480,29 @@ void Show_Palette_Window(variables *My_Variables, int counter) {
     ImGui::End();
 }
 
-void Preview_Tiles_Window(variables *My_Variables,
-    ImVec2 *Top_Left, ImVec2 *Bottom_Right, ImVec2 *Origin,
-    int *max_box_x, int *max_box_y, int counter)
+void Preview_Tiles_Window(variables *My_Variables, int counter)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
     char b[3];
     sprintf(b, "%02d", counter);
     std::string name = a + " Preview...###render" + b;
 
-    ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_tiles_window, 0);
+    //shortcuts
+    LF* F_Prop = &My_Variables->F_Prop[counter];
 
-    if (ImGui::Button("Save as Map Tiles...")) {
-        My_Variables->Render_Window = true;
-        if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
-        {
-            Save_IMG(My_Variables->F_Prop[counter].image, &user_info);
-        }
-        else
-        {
-            Save_FRM_tiles(My_Variables->F_Prop[counter].Pal_Surface, &user_info);
-        }
-    }
+    if (ImGui::Begin(name.c_str(), &F_Prop->preview_tiles_window, 0)) {
 
-    // Preview window for tiles already converted to palettized and dithered format
-    if (My_Variables->F_Prop[counter].preview_tiles_window) {
-        Top_Left = Origin;
-        for (int y = 0; y < *max_box_y; y++)
-        {
-            for (int x = 0; x < *max_box_x; x++)
-            {
-                Top_Left->x = ((x * 350.0f)) / My_Variables->F_Prop[counter].image->w;
-                Top_Left->y = ((y * 300.0f)) / My_Variables->F_Prop[counter].image->h;
-
-                *Bottom_Right = { (Top_Left->x + (350.0f / My_Variables->F_Prop[counter].image->w)),
-                                  (Top_Left->y + (300.0f / My_Variables->F_Prop[counter].image->h)) };
-
-                ImGui::Image((ImTextureID)
-                    My_Variables->F_Prop[counter].edit_data.render_texture,
-                    ImVec2(350, 300),
-                    *Top_Left,
-                    *Bottom_Right,
-                    My_Variables->tint_col,
-                    My_Variables->border_col);
-
-                ImGui::SameLine();
+        if (ImGui::Button("Save as Map Tiles...")) {
+            if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0) {
+                Save_IMG(My_Variables->F_Prop[counter].IMG_Surface, &user_info);
             }
-            ImGui::NewLine();
+            else {
+                Save_FRM_tiles(My_Variables->F_Prop[counter].PAL_Surface, &user_info);
+            }
         }
+
+        preview_tiles(My_Variables, &F_Prop->edit_data, counter);
+
     }
     ImGui::End();
 }
@@ -540,30 +514,22 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
     std::string a = My_Variables->F_Prop[counter].c_name;
     std::string name = a + " Preview Window...###render" + b;
 
-    ImGui::Begin(name.c_str(), &My_Variables->F_Prop[counter].preview_image_window, 0);
-    if (ImGui::Button("Save as Image...")) {
+    LF* F_Prop = &My_Variables->F_Prop[counter];
 
-        My_Variables->F_Prop[counter].preview_image_window = true;
+    if (ImGui::Begin(name.c_str(), &F_Prop->show_image_render, 0)) {
 
-        if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0)
-        {
-            Save_IMG(My_Variables->F_Prop[counter].image, user_info);
+        if (ImGui::Button("Save as Image...")) {
+            if (F_Prop->type == FRM) {
+                Save_IMG(F_Prop->IMG_Surface, user_info);
+            }
+            else {
+                Save_FRM(F_Prop->PAL_Surface, user_info);
+            }
         }
-        else
-        {
-            Save_FRM(My_Variables->F_Prop[counter].Pal_Surface, user_info);
-        }
+
+        image_render(My_Variables, &F_Prop->edit_data);
+
     }
-    //ImVec2 Origin = ImGui::GetItemRectMin();
-    //ImVec2 Top_Left = Origin;
-    //ImVec2 Bottom_Right = { 0, 0 };
-    //Bottom_Right = ImVec2(Top_Left.x + (My_Variables->F_Prop[counter].image->w),
-    //                      Top_Left.y + (My_Variables->F_Prop[counter].image->h) );
-
-    ImGui::Image((ImTextureID)
-        My_Variables->F_Prop[counter].Optimized_Render_Texture,
-        ImVec2(My_Variables->F_Prop[counter].image->w,
-               My_Variables->F_Prop[counter].image->h));
     ImGui::End();
 }
 
@@ -657,11 +623,11 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
                 &F_Prop->img_data);
         }
         else {
-            Image2Texture(F_Prop->image,
+            Image2Texture(F_Prop->IMG_Surface,
                 &F_Prop->img_data.render_texture,
                 &F_Prop->file_open_window);
-            F_Prop->img_data.height = F_Prop->image->h;
-            F_Prop->img_data.width = F_Prop->image->w;
+            F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+            F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
         }
         if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
     }
@@ -698,12 +664,12 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (!F_Prop->edit_map_mask) {
             //regular edit image window with animated color pallete painting
             if (ImGui::Button("Save as Map Tiles...")) {
-                Save_FRM_tiles(F_Prop->Pal_Surface, &user_info);
+                Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
             }
 
             if (ImGui::Button("Create Mask Tiles...")) {
                 F_Prop->Map_Mask =
-                    Create_Map_Mask(F_Prop->image,
+                    Create_Map_Mask(F_Prop->IMG_Surface,
                         &F_Prop->Optimized_Mask_Texture,
                         &F_Prop->edit_image_window);
                 F_Prop->edit_map_mask = true;
@@ -726,14 +692,14 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
             ImGui::Image(
                 (ImTextureID)F_Prop->Optimized_Render_Texture,
-                ImVec2(F_Prop->image->w,
-                       F_Prop->image->h));
+                ImVec2(F_Prop->IMG_Surface->w,
+                       F_Prop->IMG_Surface->h));
 
             ImDrawList *Draw_List = ImGui::GetWindowDrawList();
             ImVec2 Origin = ImGui::GetItemRectMin();
 
-            int width =  F_Prop->image->w;
-            int height = F_Prop->image->h;
+            int width =  F_Prop->IMG_Surface->w;
+            int height = F_Prop->IMG_Surface->h;
             ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
 
             Edit_Map_Mask(F_Prop, &My_Variables->Palette_Update, Origin);
@@ -776,13 +742,13 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 true,
-                &F_Prop->preview_image_window);
+                &F_Prop->show_image_render);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 false,
-                &F_Prop->preview_image_window);
+                &F_Prop->show_image_render);
         }
         //TODO: manage some sort of contextual menu for tileable images?
         if (F_Prop->image_is_tileable) {
@@ -799,7 +765,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     false,
                     &F_Prop->preview_tiles_window);
             }
-
         }
     }
 

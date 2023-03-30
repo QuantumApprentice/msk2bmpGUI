@@ -2,57 +2,46 @@
 #include <stdlib.h>
 
 #include "Edit_Image.h"
-#include "imgui-docking/imgui.h"
-#include "imgui-docking/imgui_internal.h"
 #include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 #include "Zoom_Pan.h"
+#include "imgui-docking/imgui_internal.h"
 
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick) {
     //TODO: maybe pass the dithering choice through?
 
     image_data* edit_data = &F_Prop->edit_data;
-    float scale = edit_data->scale;
-    int width   = edit_data->width;
-    int height  = edit_data->height;
 
-
-    //TODO: use a menu bar for the editor/previewer?
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("label")) {
-
-            if (ImGui::MenuItem("Clear All Changes...")) {
-                int texture_size = width * height;
-                uint8_t* clear = (uint8_t*)malloc(texture_size);
-                memset(clear, 0, texture_size);
-
-                glBindTexture(GL_TEXTURE_2D, edit_data->PAL_texture);
-
-                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                    width, height,
-                    0, GL_RED, GL_UNSIGNED_BYTE, clear);
-
-                free(clear);
-            }
-
-
-            ImGui::EndMenu();
-
-        }
-        ImGui::EndMenuBar();
-    }
-
-    //shortcuts
-    ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
-    ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
+    ////TODO: use a menu bar for the editor/previewer?
+    //if (ImGui::BeginMenuBar()) {
+    //    if (ImGui::BeginMenu("label")) {
+    //        if (ImGui::MenuItem("Clear All Changes...")) {
+    //            int texture_size = width * height;
+    //            uint8_t* clear = (uint8_t*)malloc(texture_size);
+    //            memset(clear, 0, texture_size);
+    //            glBindTexture(GL_TEXTURE_2D, edit_data->PAL_texture);
+    //            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+    //                width, height,
+    //                0, GL_RED, GL_UNSIGNED_BYTE, clear);
+    //            free(clear);
+    //        }
+    //        ImGui::EndMenu();
+    //    }
+    //    ImGui::EndMenuBar();
+    //}
 
     //handle zoom and panning for the image, plus update image position every frame
-    //ImVec2 corner_pos;
-    //ImVec2 bottom_corner;
     zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
+    //shortcuts
+    float scale = edit_data->scale;
+    int width = edit_data->width;
+    int height = edit_data->height;
+    ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
+    ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
@@ -127,8 +116,8 @@ SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
 //TODO: also change to work with openGL
 void Edit_Map_Mask(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
 {
-    int width  = F_Prop->image->w;
-    int height = F_Prop->image->h;
+    int width  = F_Prop->IMG_Surface->w;
+    int height = F_Prop->IMG_Surface->h;
 
     SDL_Surface* BB_Surface = F_Prop->Map_Mask;
     Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
@@ -189,7 +178,7 @@ void Update_Palette(struct LF* files, bool blend) {
     }
     else {
         //Unpalettize image to new surface for display
-        files->Final_Render = Unpalettize_Image(files->Pal_Surface);
+        files->Final_Render = Unpalettize_Image(files->PAL_Surface);
     }
     if (blend) {
         CPU_Blend(    files->Map_Mask,

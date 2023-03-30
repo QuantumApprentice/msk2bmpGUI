@@ -157,6 +157,7 @@
     <ClCompile Include="FRM_Animate.cpp" />
     <ClCompile Include="FRM_Convert.cpp" />
     <ClCompile Include="Image2Texture.cpp" />
+    <ClCompile Include="Image_Render.cpp" />
     <ClCompile Include="imgui-docking\imgui.cpp" />
     <ClCompile Include="imgui-docking\imgui_demo.cpp" />
     <ClCompile Include="imgui-docking\imgui_draw.cpp" />
@@ -170,6 +171,7 @@
     <ClCompile Include="Load_Files.cpp" />
     <ClCompile Include="Palette_Cycle.cpp" />
     <ClCompile Include="Preview_Image.cpp" />
+    <ClCompile Include="Preview_Tiles.cpp" />
     <ClCompile Include="Save_Files.cpp" />
     <ClCompile Include="MSK_Convert.cpp" />
     <ClCompile Include="shaders\shader_class.cpp" />
@@ -183,6 +185,7 @@
     <ClInclude Include="FRM_Animate.h" />
     <ClInclude Include="FRM_Convert.h" />
     <ClInclude Include="Image2Texture.h" />
+    <ClInclude Include="Image_Render.h" />
     <ClInclude Include="imgui-docking\imconfig.h" />
     <ClInclude Include="imgui-docking\imgui.h" />
     <ClInclude Include="imgui-docking\imgui_impl_opengl3.h" />
@@ -197,6 +200,7 @@
     <ClInclude Include="Load_Settings.h" />
     <ClInclude Include="Palette_Cycle.h" />
     <ClInclude Include="Preview_Image.h" />
+    <ClInclude Include="Preview_Tiles.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="MSK_Convert.h" />
     <ClInclude Include="shaders\shader_class.h" />
