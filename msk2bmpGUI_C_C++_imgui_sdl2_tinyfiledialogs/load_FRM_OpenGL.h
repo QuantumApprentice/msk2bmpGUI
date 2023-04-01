@@ -17,8 +17,11 @@ struct position {
 };
 
 struct image_data {
-    GLuint FRM_texture;
     uint8_t* FRM_data;
+    uint8_t* MSK_data;
+
+    GLuint FRM_texture;
+    GLuint MSK_texture;
     GLuint PAL_texture;
     GLuint render_texture;
     GLuint framebuffer;

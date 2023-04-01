@@ -21,8 +21,6 @@ struct LF {
     GLuint Optimized_Render_Texture = 0;
     GLuint Optimized_Mask_Texture = 0;
 
-    //int texture_width = 0, texture_height = 0;
-
     img_type type;
     bool file_open_window = false;
     bool preview_tiles_window = false;

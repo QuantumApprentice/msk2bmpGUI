@@ -167,7 +167,7 @@ void Edit_Map_Mask(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
     }
 }
 
-//bool blend == true = blend surfaces
+//bool blend == true will blend surfaces
 //TODO: remove! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
 void Update_Palette(struct LF* files, bool blend) {
     SDL_FreeSurface(files->Final_Render);

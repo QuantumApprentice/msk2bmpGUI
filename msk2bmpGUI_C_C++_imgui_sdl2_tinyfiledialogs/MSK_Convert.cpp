@@ -9,6 +9,7 @@
 
 #include "MSK_Convert.h"
 #include "tinyfiledialogs.h"
+#include "load_FRM_OpenGL.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
 char bmpHeader[62] = {
@@ -223,6 +224,90 @@ int BytesToInt(char *C, int numBytes)
         ReturnVal += subC;
     }
     return ReturnVal;
+}
+
+bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
+{
+    //open the file & error checking
+    fopen_s(&infile, FileName, "rb");
+    if (infile == NULL)
+    {
+        fprintf(stderr, "[ERROR] Unable to open file.");
+        return NULL;
+    }
+    //read the binary lines in
+    ReadMskLines(infile, inputLines);
+
+
+    //TODO: refactor this and make sure the inputLines buffer
+    //      matches the other buffer for exporting
+    uint8_t *bin_ptr = (uint8_t*)inputLines;
+    //int shift = 0;
+    uint8_t bitmask = 128;
+    uint8_t buff = 0;
+    bool mask_1_or_0;
+    //SDL_Color white = { 255,255,255,128 };
+    uint8_t white = 255;
+    uint8_t* data = (uint8_t*)malloc(350*300);
+
+    if (data) {
+        for (int pxl_y = 0; pxl_y < 300; pxl_y++)
+        {
+            for (int pxl_x = 0; pxl_x < 350; pxl_x++)
+            {
+                buff = *bin_ptr;
+
+                mask_1_or_0 = (buff & bitmask);
+                if (mask_1_or_0) {
+                    *(data + (pxl_y * 350) + pxl_x) = white;
+
+                    //*((SDL_Color*)Mask_Surface->pixels + (pxl_y * Mask_Surface->pitch / 4) + pxl_x) = white;
+                }
+
+                bitmask >>= 1;
+
+                if (bitmask == 0)
+                {
+                    ++bin_ptr;
+                    bitmask = 128;
+                }
+            }
+            //bitmask <<= 2 /* final shift */;
+            ++bin_ptr;
+            bitmask = 128;
+        }
+
+        img_data->width  = 350;
+        img_data->height = 300;
+
+        //load & gen texture
+        glGenTextures(1, &img_data->MSK_texture);
+        glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+        //texture settings
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //MSK's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //bind data to FRM_texture for display
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 350, 300, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+
+        bool success = false;
+        success = init_framebuffer(img_data);
+        if (!success) {
+            printf("image framebuffer failed to attach correctly?\n");
+            return false;
+        }
+        img_data->MSK_data = data;
+        return true;
+    }
+    else {
+        printf("MSK image didn't load...\n");
+        return false;
+    }
+
 }
 
 SDL_Surface* Load_MSK_Image(char* FileName)

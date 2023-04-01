@@ -393,14 +393,21 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             //redraw FRM to framebuffer every time the palette update timer is true
             if (F_Prop->type == FRM) {
                 draw_FRM_to_framebuffer(My_Variables->palette,
-                    &My_Variables->render_FRM_shader,
-                    &My_Variables->giant_triangle,
-                    &F_Prop->img_data);
+                                       &My_Variables->render_FRM_shader,
+                                       &My_Variables->giant_triangle,
+                                       &F_Prop->img_data);
             }
         }
         //new openGL way of redrawing the FRM image to cycle colors?
         //Converts unpalettized image to texture for display
         ImGui::Text(F_Prop->c_name);
+
+        //if (F_Prop->type == MSK) {
+        //    draw_MSK_to_framebuffer(My_Variables->palette,
+        //                           &My_Variables->render_FRM_shader,
+        //                           &My_Variables->giant_triangle,
+        //                           &F_Prop->img_data);
+        //}
 
         //show the original image for previewing
         Preview_Image(My_Variables, &F_Prop->img_data);
@@ -615,9 +622,16 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
 
     //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
     if (F_Prop->file_open_window) {
-        if (My_Variables->F_Prop[*counter].type == FRM)
-        {   //new openGL way to load an FRM
+        if (F_Prop->type == FRM)
+        {   //new openGL way to load FRM
             draw_FRM_to_framebuffer(My_Variables->palette,
+                &My_Variables->render_FRM_shader,
+                &My_Variables->giant_triangle,
+                &F_Prop->img_data);
+        }
+        else if (F_Prop->type == MSK)
+        {   //new OpenGL way to load MSK
+            draw_MSK_to_framebuffer(My_Variables->palette,
                 &My_Variables->render_FRM_shader,
                 &My_Variables->giant_triangle,
                 &F_Prop->img_data);

@@ -32,8 +32,8 @@ mesh load_giant_triangle()
 }
 
 void draw_FRM_to_framebuffer(float* palette,
-    Shader* shader, mesh* triangle,
-    struct image_data* img_data)
+                             Shader* shader, mesh* triangle,
+                             struct image_data* img_data)
 {
     glViewport(0, 0, img_data->width, img_data->height);
 
@@ -70,6 +70,28 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
     glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
     shader->setInt("Indexed_FRM", 0);
     shader->setInt("Indexed_PAL", 1);
+
+    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+
+    //bind framebuffer back to default
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void draw_MSK_to_framebuffer(float* palette,
+                             Shader* shader, mesh* triangle,
+                             struct image_data* img_data)
+{
+    glViewport(0, 0, img_data->width, img_data->height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+    glBindVertexArray(triangle->VAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+
+    //shader
+    shader->use();
+    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
+    shader->setInt("Indexed_FRM", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
 
