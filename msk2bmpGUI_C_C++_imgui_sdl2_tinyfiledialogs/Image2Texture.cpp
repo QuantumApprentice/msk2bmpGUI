@@ -86,32 +86,44 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 
 //TODO: need to simplify My_Variables to accept F_Prop[counter] instead
     //Palettize to 8-bit FO pallet, and dithered
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window) {
-    SDL_FreeSurface(F_Prop->PAL_Surface);
-    //SDL_FreeSurface(F_Prop->Final_Render);
+void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off) {
 
     if (F_Prop->type == FRM) {
-        //rebind the FRM for editing
+        //copy the FRM_data pointer for editing (maybe copy by value instead?)
         F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
 
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
         F_Prop->edit_data.scale  = F_Prop->img_data.scale;
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, NULL);
+        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
         //set edit window bool to true, opens edit window
         *window = true;
 
     }
     else if (F_Prop->type == MSK) {
         ////TODO: Handle MSK file types
-        F_Prop->PAL_Surface
-            = FRM_Color_Convert(F_Prop->IMG_Surface,
-                                pxlFMT_FO_Pal,
-                                color_match);
-        printf(SDL_GetError());
+        //copy the MSK_data pointer for editing (maybe copy by value instead?)
+        F_Prop->edit_data.MSK_data = F_Prop->img_data.MSK_data;
 
-        F_Prop->Final_Render = Unpalettize_Image(F_Prop->PAL_Surface);
+        F_Prop->edit_data.width  = F_Prop->img_data.width;
+        F_Prop->edit_data.height = F_Prop->img_data.height;
+        F_Prop->edit_data.scale  = F_Prop->img_data.scale;
+
+        //bind edit data for editing
+        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
+
+        //set edit window bool to true, opens edit window
+        *window = true;
+
+        //old way of converting MSK surface for editing
+        ////////////////////////////////////////////////////////////////////
+        //F_Prop->PAL_Surface
+        //    = FRM_Color_Convert(F_Prop->IMG_Surface,
+        //                        pxlFMT_FO_Pal,
+        //                        color_match);
+        //printf(SDL_GetError());
+        //F_Prop->Final_Render = Unpalettize_Image(F_Prop->PAL_Surface);
 
         //F_Prop->Final_Render =
         //    SDL_CreateRGBSurface(0, F_Prop->Map_Mask->w, F_Prop->Map_Mask->h, 32, 0, 0, 0, 0);
@@ -119,88 +131,131 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         //SDL_BlitSurface(F_Prop->image, NULL, F_Prop->Final_Render, NULL);
 
     //Converts unpalettized image to texture for display, sets window bool to true
-        Image2Texture(F_Prop->Final_Render,
-            &F_Prop->Optimized_Render_Texture,
-            window);
-        printf(SDL_GetError());
+        //Image2Texture(F_Prop->Final_Render,
+        //    &F_Prop->Optimized_Render_Texture,
+        //    window);
+        //printf(SDL_GetError());
     }
     else {
+        SDL_FreeSurface(F_Prop->PAL_Surface);
         F_Prop->PAL_Surface
             = FRM_Color_Convert(F_Prop->IMG_Surface,
                                 pxlFMT_FO_Pal,
                                 color_match);
+
+        int width = F_Prop->PAL_Surface->w;
+        int height = F_Prop->PAL_Surface->h;
+        int size = width * height;// *F_Prop->PAL_Surface->pitch;
+
+        F_Prop->edit_data.FRM_data = (uint8_t*)malloc(size);
+
+        //memcpy(F_Prop->edit_data.FRM_data, F_Prop->PAL_Surface->pixels, size);
+
+
+        //for (int pixel_i = 0; pixel_i < 300; pixel_i++)
+        int pixel_pointer = 0;// = F_Prop->PAL_Surface->pitch * y + x;
+        //for (int x = 0; x < width; x++)
+        //{
+            for (int y = 0; y < height; y++)
+            {
+                //write out one row of pixels in each loop
+                memcpy(F_Prop->edit_data.FRM_data + (width*y), 
+                      ((uint8_t*)F_Prop->PAL_Surface->pixels + pixel_pointer), 
+                        width);// F_Prop->PAL_Surface->pitch);
+
+                pixel_pointer += F_Prop->PAL_Surface->pitch;
+            }
+        //}
+
         F_Prop->edit_data.scale = F_Prop->img_data.scale;
 
-        F_Prop->img_data.width  = F_Prop->PAL_Surface->w;
-        F_Prop->img_data.height = F_Prop->PAL_Surface->h;
+        F_Prop->img_data.width  = width;
+        F_Prop->img_data.height = height;
 
-        F_Prop->edit_data.width = F_Prop->PAL_Surface->w;
-        F_Prop->edit_data.height = F_Prop->PAL_Surface->h;
+        F_Prop->edit_data.width  = width;
+        F_Prop->edit_data.height = height;
 
+        if (alpha_off) {
+            int size = (F_Prop->PAL_Surface->w) * (F_Prop->PAL_Surface->h);
+
+            for (int i = 0; i < size; i++)
+            {
+                if (((uint8_t*)F_Prop->PAL_Surface->pixels)[i] == 0) {
+                    ((uint8_t*)F_Prop->PAL_Surface->pixels)[i] = 1;
+                }
+            }
+            for (int i = 0; i < size; i++)
+            {
+                if ((uint8_t)F_Prop->edit_data.FRM_data[i] == 0) {
+                    (uint8_t)F_Prop->edit_data.FRM_data[i] = 1;
+                }
+            }
+        }
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, F_Prop->PAL_Surface);
+        bind_NULL_texture(&F_Prop->edit_data, F_Prop->PAL_Surface, F_Prop->type);
         //set edit window bool to true, opens edit window
         *window = true;
     }
 }
 
 // binds image information to PAL_texture (don't remember why right now, probably remove)
-bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
-{
-    //load & gen texture
-    glGenTextures(1, &img_data->PAL_texture);
-    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
-    //texture settings
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    if (surface) {
-        if (surface->pixels) {
-            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
-            //reset alignment to 1 for rest of program
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        }
-        else {
-            printf("surface.pixels image didn't load...\n");
-            return false;
-        }
-    }
-    else {
-        if (img_data->FRM_texture) {
-            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, img_data->width, img_data->width, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
-        }
-        else {
-            printf("FRM_texture didn't load...\n");
-            return false;
-        }
-    }
-
-    bool success = false;
-    success = init_framebuffer(img_data);
-    if (!success) {
-        printf("image framebuffer failed to attach correctly?\n");
-        return false;
-    }
-    return true;
-}
+//bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
+//{
+//    //load & gen texture
+//    glGenTextures(1, &img_data->PAL_texture);
+//    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+//    //texture settings
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//
+//    if (surface) {
+//        if (surface->pixels) {
+//            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+//            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
+//            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
+//            //reset alignment to 1 for rest of program
+//            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//        }
+//        else {
+//            printf("surface.pixels image didn't load...\n");
+//            return false;
+//        }
+//    }
+//    else {
+//        if (img_data->FRM_texture) {
+//            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+//            //control alignment of the image (auto aligned to 4-bytes) when converted to texture
+//            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, img_data->width, img_data->width, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
+//        }
+//        else {
+//            printf("FRM_texture didn't load...\n");
+//            return false;
+//        }
+//    }
+//
+//    bool success = false;
+//    success = init_framebuffer(img_data);
+//    if (!success) {
+//        printf("image framebuffer failed to attach correctly?\n");
+//        return false;
+//    }
+//    return true;
+//}
 
 // binds the image information to FRM_texture
 // and sets up PAL_texture with a NULL texture of appropriate size for editing
-bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface)
+bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_type type)
 {
     if (surface) {
         if (surface->pixels) {
             //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
             //control alignment of the image (SDL auto aligned to 4-bytes) when converted to texture
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             //load & gen texture
             glGenTextures(1, &img_data->FRM_texture);
             glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
@@ -210,16 +265,14 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface)
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, surface->pixels);
-            //reset alignment to 1 for rest of program
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
         }
         else {
             printf("surface.pixels image didn't load...\n");
             return false;
         }
     }
-    else {
+    else if (type == FRM) {
         if (img_data->FRM_data) {
 
             glGenTextures(1, &img_data->FRM_texture);
@@ -237,6 +290,27 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface)
         }
         else {
             printf("FRM_texture didn't load?...\n");
+            return false;
+        }
+    }
+    else if (type == MSK) {
+        if (img_data->MSK_data) {
+
+            glGenTextures(1, &img_data->MSK_texture);
+            glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+            //texture settings
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+            //control alignment of the image (FRM data needs 1-byte) when converted to texture
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            //bind FRM_data to FRM_texture for "indirect" editing
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_data->width, img_data->height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->MSK_data);
+        }
+        else {
+            printf("MSK_texture didn't load?...\n");
             return false;
         }
     }

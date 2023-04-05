@@ -1,5 +1,7 @@
 #pragma once
 #include "Load_Settings.h"
+#include "load_FRM_OpenGL.h"
+#include "Load_Files.h"
 
 #pragma pack(push, 1)
 typedef struct {
@@ -22,10 +24,19 @@ typedef struct {
 
 
 char* Save_FRM(SDL_Surface *f_surface, struct user_info* user_info);
+char* Save_FRM_OpenGL(image_data* img_data, struct user_info* user_info);
+
 char* Save_IMG(SDL_Surface *b_surface, struct user_info* user_info);
+
 void Save_FRM_tiles(SDL_Surface *PAL_surface, struct user_info* user_info);
+void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info);
+
 void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info);
 
-char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name);
+
 void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* FRM_Header);
+void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header);
+
 void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name);
+char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name);
+

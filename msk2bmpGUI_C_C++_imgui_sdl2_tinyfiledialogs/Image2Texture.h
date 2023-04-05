@@ -40,8 +40,8 @@ struct variables {
 };
 
 void SDL_to_OpenGl(SDL_Surface* Temp_Surface, GLuint *Optimized_Texture);
-bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data);
+//bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data);
 //void Image2Texture(variables* My_Variables, int counter);
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window);
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window);
-bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface);
+void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off = false);
+bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_type type);

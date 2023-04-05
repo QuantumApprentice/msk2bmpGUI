@@ -40,15 +40,16 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     int height = edit_data->height;
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
+    ImVec4 tint   = My_Variables->tint_col;
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
         (ImTextureID)edit_data->render_texture,
         top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
-        uv_min, uv_max,
-        ImGui::GetColorU32(My_Variables->tint_col));
+        uv_min, uv_max, ImGui::GetColorU32(tint));
 
 
     bool image_edited = false;
@@ -71,6 +72,11 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
             &My_Variables->giant_triangle,
             edit_data);
     }
+}
+
+void Edit_MSK(variables* My_Variables, LF* F_Prop)
+{
+
 }
 
 SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)

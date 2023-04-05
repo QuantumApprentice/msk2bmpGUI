@@ -7,8 +7,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "B_Endian.h"
 #include "Save_Files.h"
+
+#include "B_Endian.h"
 #include "tinyfiledialogs.h"
 #include "imgui-docking/imgui.h"
 #include "Load_Settings.h"
@@ -65,6 +66,89 @@ char* Save_FRM(SDL_Surface *f_surface, user_info* user_info)
             fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
             //TODO: some image sizes are coming out weird again :(
             fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
+            //TODO: also want to add animation frames
+
+            fclose(File_ptr);
+        }
+    }
+
+    return Save_File_Name;
+}
+
+char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
+{
+    int width = img_data->width;
+    int height = img_data->height;
+    int size = width * height;
+
+    FRM_Header FRM_Header;
+    FRM_Header.version = B_Endian::write_u32(4);
+    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
+    FRM_Header.Frame_0_Height = B_Endian::write_u16(height);
+    FRM_Header.Frame_0_Width  = B_Endian::write_u16(width);
+    FRM_Header.Frame_Area     = B_Endian::write_u32(size);
+    FRM_Header.Frame_0_Size   = B_Endian::write_u32(size);
+
+    FILE * File_ptr = NULL;
+    char * Save_File_Name;
+    char * lFilterPatterns[2] = { "", "*.FRM" };
+    Save_File_Name = tinyfd_saveFileDialog(
+        "default_name",
+        "temp001.FRM",
+        2,
+        lFilterPatterns,
+        nullptr
+    );
+    if (Save_File_Name == NULL) {}
+    else
+    {
+        //parse Save_File_Name to isolate the directory and save in default_save_path
+        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+
+        //std::filesystem::path p(Save_File_Name);
+        std::filesystem::path p(w_save_name);
+
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+
+        //TODO: check for existing file first
+        //fopen_s(&File_ptr, Save_File_Name, "wb");
+        _wfopen_s(&File_ptr, w_save_name, L"wb");
+
+        if (!File_ptr) {
+            tinyfd_messageBox(
+                "Error",
+                "Can not open this file in write mode",
+                "ok",
+                "error",
+                1);
+            return NULL;
+        }
+        else {
+            fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+
+            //write openGL texture stuff
+            glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+
+            //create a buffer
+            uint8_t* texture_buffer = (uint8_t*)malloc(size);
+            uint8_t* buffer = (uint8_t*)malloc(size);
+            //read pixels into buffer
+            glPixelStorei(GL_PACK_ALIGNMENT, 1);
+            glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+
+            //combine edit data w/original image
+            for (int i = 0; i < size; i++)
+            {
+                if (texture_buffer[i] != 0) {
+                    buffer[i] = texture_buffer[i];
+                }
+                else {
+                    buffer[i] = img_data->FRM_data[i];
+                }
+            }
+
+            //write to file?
+            fwrite(buffer, size, 1, File_ptr);
             //TODO: also want to add animation frames
 
             fclose(File_ptr);
@@ -177,10 +261,132 @@ void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
 
+//Fallout map tile size hardcoded in engine to 350x300 pixels WxH
+#define TILE_W      (350)
+#define TILE_H      (300)
+#define TILE_SIZE   (350*300)
+
+void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
+{
+    FRM_Header FRM_Header;
+    FRM_Header.version = B_Endian::write_u32(4);
+    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
+    FRM_Header.Frame_0_Height = B_Endian::write_u16(TILE_H);
+    FRM_Header.Frame_0_Width  = B_Endian::write_u16(TILE_W);
+    FRM_Header.Frame_Area     = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header.Frame_0_Size   = B_Endian::write_u32(TILE_SIZE);
+
+    //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
+    //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
+    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
+    Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header);
+
+    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
+}
+
 void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
     Split_to_Tiles(MSK_surface, user_info, MSK, NULL);
+}
+
+void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header)
+{
+    int img_width = img_data->width;
+    int img_height = img_data->height;
+    int img_size = img_width * img_height;
+
+    int num_tiles_x = img_width / TILE_W;
+    int num_tiles_y = img_height / TILE_H;
+    int tile_num = 0;
+    char path[MAX_PATH];
+    char Save_File_Name[MAX_PATH];
+
+    FILE * File_ptr = NULL;
+
+    if (!strcmp(user_info->default_game_path, "")) {
+        Set_Default_Path(user_info);
+        if (!strcmp(user_info->default_game_path, "")) { return; }
+    }
+    strncpy(path, user_info->default_game_path, MAX_PATH);
+
+    //copy edited texture to buffer, combine with original image
+    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+
+    //create a buffer
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
+    uint8_t* out_buffer     = (uint8_t*)malloc(img_size);
+
+    //read pixels into buffer
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+
+    //combine edit data w/original image
+    for (int i = 0; i < img_size; i++)
+    {
+        if (texture_buffer[i] != 0) {
+            out_buffer[i] = texture_buffer[i];
+        }
+        else {
+            out_buffer[i] = img_data->FRM_data[i];
+        }
+    }
+    free(texture_buffer);
+
+    //split buffer into tiles and write to files
+    for (int y = 0; y < num_tiles_y; y++)
+    {
+        for (int x = 0; x < num_tiles_x; x++)
+        {
+            char filename_buffer[MAX_PATH];
+            strncpy_s(filename_buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
+
+            //check for existing file first
+            check_file(type, File_ptr, path, filename_buffer, tile_num, Save_File_Name);
+            if (filename_buffer == NULL) { return; }
+
+            wchar_t* w_save_name = tinyfd_utf8to16(filename_buffer);
+            _wfopen_s(&File_ptr, w_save_name, L"wb");
+
+            if (!File_ptr) {
+                tinyfd_messageBox(
+                    "Error",
+                    "Can not open this file in write mode.\n"
+                    "Make sure the default game path is set.",
+                    "ok",
+                    "error",
+                    1);
+                return;
+            }
+            else {
+                // FRM = 1, MSK = 0
+                if (type == FRM) {
+                    //save header
+                    fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
+
+                    int tile_pointer = (y * img_width*TILE_H) + (x * TILE_W);
+                    int row_pointer = 0;
+
+                    for (int i = 0; i < TILE_H; i++)
+                    {
+                        //write out one row of pixels in each loop
+                        fwrite(out_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
+                        row_pointer += img_width;
+                    }
+                }
+                ///////////////////////////////////////////////////////////////////////////
+                if (type == MSK)
+                {
+                    //Split the surface up into 350x300 pixel surfaces
+                    //      and pass them to Save_Mask()
+                    //Save_MSK_Image(surface, File_ptr, x, y);
+
+                }
+                fclose(File_ptr);
+            }
+            tile_num++;
+        }
+    }
 }
 
 //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture

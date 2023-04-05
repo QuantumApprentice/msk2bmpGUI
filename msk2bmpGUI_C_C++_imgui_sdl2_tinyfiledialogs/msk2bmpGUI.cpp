@@ -55,7 +55,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 void Show_Palette_Window(struct variables *My_Variables);
 
 void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
+//void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
 void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
@@ -399,15 +399,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             }
         }
         //new openGL way of redrawing the FRM image to cycle colors?
-        //Converts unpalettized image to texture for display
         ImGui::Text(F_Prop->c_name);
-
-        //if (F_Prop->type == MSK) {
-        //    draw_MSK_to_framebuffer(My_Variables->palette,
-        //                           &My_Variables->render_FRM_shader,
-        //                           &My_Variables->giant_triangle,
-        //                           &F_Prop->img_data);
-        //}
 
         //show the original image for previewing
         Preview_Image(My_Variables, &F_Prop->img_data);
@@ -468,9 +460,9 @@ void Show_Palette_Window(variables *My_Variables) {
             float g = My_Variables->palette[index*3 + 1];
             float b = My_Variables->palette[index*3 + 2];
 
-            char q[12];
-            snprintf(q, 12, "%d##aa%d", index, index);
-            if (ImGui::ColorButton(q, ImVec4(r, g, b, 1.0f))) {
+            char color_info[12];
+            snprintf(color_info, 12, "%d##aa%d", index, index);
+            if (ImGui::ColorButton(color_info, ImVec4(r, g, b, 1.0f))) {
                 My_Variables->Color_Pick = (uint8_t)(index);
             }
 
@@ -530,10 +522,10 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
                 Save_IMG(F_Prop->IMG_Surface, user_info);
             }
             else {
-                Save_FRM(F_Prop->PAL_Surface, user_info);
+                //Save_FRM(F_Prop->PAL_Surface, user_info);
+                Save_FRM_OpenGL(&F_Prop->edit_data, user_info);
             }
         }
-
         image_render(My_Variables, &F_Prop->edit_data);
 
     }
@@ -653,13 +645,14 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
     SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
 
-//TODO: for some reason map tile's cause major slowage, need to fix
     //Edit_Image buttons
     if (My_Variables->edit_image_focused) {
         int width = F_Prop->edit_data.width;
         int height = F_Prop->edit_data.height;
 
-        if (ImGui::Button("Clear All Changes...")) {
+        //regular edit image window with animated color pallete painting
+        if (!F_Prop->edit_map_mask) {
+            if (ImGui::Button("Clear All Changes...")) {
 
             int texture_size = width * height;
             uint8_t* clear = (uint8_t*)malloc(texture_size);
@@ -675,10 +668,13 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             free(clear);
         }
 
-        if (!F_Prop->edit_map_mask) {
-            //regular edit image window with animated color pallete painting
+            if (ImGui::Button("Export Image...")) {
+                Save_FRM_OpenGL(&F_Prop->edit_data, &user_info);
+            }
+
             if (ImGui::Button("Save as Map Tiles...")) {
-                Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
+                //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
+                Save_FRM_Tiles_OpenGL(F_Prop, &user_info);
             }
 
             if (ImGui::Button("Create Mask Tiles...")) {
@@ -718,15 +714,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
             Edit_Map_Mask(F_Prop, &My_Variables->Palette_Update, Origin);
 
-            //no alpha value input
-            //Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-            //    Origin, Bottom_Right);
-            //
-            ////modifies alpha value input
-            //int alpha = 64;
-            //Draw_List->AddImage((ImTextureID)My_Variables->F_Prop[counter].Optimized_Mask_Texture,
-            //              Origin, Bottom_Right, { 0, 0 }, { 1, 1 }, IM_COL32(255, 255, 255, alpha));
-
             if (ImGui::Button("Cancel Map Mask...")) {
                 F_Prop->edit_map_mask = false;
             }
@@ -739,7 +726,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
     }
     //Preview_Image buttons
-    else {
+    else if (!My_Variables->edit_image_focused) {
         if (ImGui::Button("SDL Convert and Paint")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
@@ -757,6 +744,12 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 pxlFMT_FO_Pal,
                 true,
                 &F_Prop->show_image_render);
+        }
+        if (ImGui::Button("Preview as Image - SDL color match - Disable Alpha")) {
+            Prep_Image(F_Prop,
+                pxlFMT_FO_Pal,
+                true,
+                &F_Prop->show_image_render, true);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
             Prep_Image(F_Prop,
@@ -781,5 +774,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
         }
     }
-
+    //image_render buttons
+    else if (F_Prop->show_image_render) {
+        if (ImGui::Button("Disable Alpha")) {
+            My_Variables->palette[0] = 255;
+        }
+    }
 }

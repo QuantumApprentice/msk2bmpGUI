@@ -143,34 +143,15 @@ bool load_palette_to_array(float* palette)
     }
     fclose(File_ptr);
     if (uint8_t_data) {
-        for (int i = 0; i < 768; i++)
+        for (int i = 0; i < 765; i++)
         {
             if (uint8_t_data[i] < 64) {
                 uint8_t_data[i] *= 4;
             }
         }
-        {//color cycling stuff
-            int size = 0;
-            uint8_t* ptr = uint8_t_data + 229 * 3;
-
-            //first row
-            size = sizeof(g_nSlime);
-            memcpy(ptr, g_nSlime, size);
-            ptr += size;
-            size = sizeof(g_nMonitors);
-            memcpy(ptr, g_nMonitors, size);
-            ptr += size;
-            size = sizeof(g_nFireSlow);
-            memcpy(ptr, g_nFireSlow, size);
-            ptr += size;
-            size = sizeof(g_nFireFast);
-            memcpy(ptr, g_nFireFast, size);
-            ptr += size;
-            size = sizeof(g_nShoreline);
-            memcpy(ptr, g_nShoreline, size);
-            ptr += size;
-            size = sizeof(g_nBlinkingRed);
-            memcpy(ptr, &g_nBlinkingRed, size);
+        for (int i = 765; i < 768; i++)
+        {
+            uint8_t_data[i] = 0;
         }
         for (int i = 0; i < 256 * 3; i++)
         {
