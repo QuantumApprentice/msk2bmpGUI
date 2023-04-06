@@ -226,6 +226,11 @@ int BytesToInt(char *C, int numBytes)
     return ReturnVal;
 }
 
+//Fallout map tile size hardcoded in engine to 350x300 pixels WxH
+#define TILE_W      (350)
+#define TILE_H      (300)
+#define TILE_SIZE   (350*300)
+
 bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
 {
     //open the file & error checking
@@ -247,21 +252,30 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
     uint8_t buff = 0;
     bool mask_1_or_0;
     //SDL_Color white = { 255,255,255,128 };
-    uint8_t white = 255;
-    uint8_t* data = (uint8_t*)malloc(350*300);
+    uint8_t white = 1;
+    uint8_t* data = (uint8_t*)calloc(1, TILE_SIZE);
+
+
+
+    //bool GetBit(this byte b, int bitNumber)
+    //{
+    //    return (b & (1 << bitNumber)) != 0;
+    //}
+
+    //mask_1_or_0 = (bitmask &(1 << shift)) != 0;
+
+
 
     if (data) {
-        for (int pxl_y = 0; pxl_y < 300; pxl_y++)
+        for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
         {
-            for (int pxl_x = 0; pxl_x < 350; pxl_x++)
+            for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
             {
                 buff = *bin_ptr;
 
                 mask_1_or_0 = (buff & bitmask);
                 if (mask_1_or_0) {
-                    *(data + (pxl_y * 350) + pxl_x) = white;
-
-                    //*((SDL_Color*)Mask_Surface->pixels + (pxl_y * Mask_Surface->pitch / 4) + pxl_x) = white;
+                    *(data + (pxl_y * TILE_W) + pxl_x) = white;
                 }
 
                 bitmask >>= 1;
@@ -277,8 +291,8 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
             bitmask = 128;
         }
 
-        img_data->width  = 350;
-        img_data->height = 300;
+        img_data->width  = TILE_W;
+        img_data->height = TILE_H;
 
         //load & gen texture
         glGenTextures(1, &img_data->MSK_texture);
@@ -292,7 +306,7 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
         //MSK's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 350, 300, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TILE_W, TILE_H, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 
         bool success = false;
         success = init_framebuffer(img_data);
@@ -310,7 +324,7 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
 
 }
 
-SDL_Surface* Load_MSK_Image(char* FileName)
+SDL_Surface* Load_MSK_Image_SDL(char* FileName)
 {
     //open the file & error checking
     fopen_s(&infile, FileName, "rb");
@@ -334,7 +348,7 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     //SDL_Surface*temp_surface = SDL_ConvertSurfaceFormat(binary_bitmap, SDL_PIXELFORMAT_RGBA8888, 0);
     printf(SDL_GetError());
 
-    SDL_Surface* Mask_Surface = SDL_CreateRGBSurface(0, 350, 300, 32, 0, 0, 0, 0);
+    SDL_Surface* Mask_Surface = SDL_CreateRGBSurface(0, TILE_W, TILE_H, 32, 0, 0, 0, 0);
     printf(SDL_GetError());
     //TODO: refactor this and make sure the inputLines buffer
     //      matches the other buffer for exporting
@@ -345,9 +359,9 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     bool mask_1_or_0;
     SDL_Color white = { 255,255,255,128 };
 
-    for (int pxl_y = 0; pxl_y < 300; pxl_y++)
+    for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
     {
-        for (int pxl_x = 0; pxl_x < 350; pxl_x++)
+        for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
         {
             buff = *bin_ptr;
 
@@ -374,41 +388,3 @@ SDL_Surface* Load_MSK_Image(char* FileName)
     return Mask_Surface;
 }
 
-void Save_MSK_Image(SDL_Surface* surface, FILE* File_ptr, int x, int y)
-{
-    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
-    uint8_t *outp = out_buffer;
-
-    int shift = 0;
-    uint8_t bitmask = 0;
-    bool mask_1_or_0;
-
-    int pixel_pointer = surface->pitch * y * 300 + x * 350;
-    //don't need to flip for the MSK (maybe need to flip for bitmaps)
-    for (int pxl_y = 0; pxl_y < 300; pxl_y++)
-    {
-        for (int pxl_x = 0; pxl_x < 350; pxl_x++)
-        {
-            bitmask <<= 1;
-            mask_1_or_0 =
-                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
-                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
-                //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
-            bitmask |= mask_1_or_0;
-            if (++shift == 8)
-            {
-                *outp = bitmask;
-                ++outp;
-                shift = 0;
-                bitmask = 0;
-            }
-        }
-        bitmask <<= 2 /* final shift */;
-        *outp = bitmask;
-        ++outp;
-        shift = 0;
-        bitmask = 0;
-    }
-    writelines(File_ptr, out_buffer);
-    fclose(File_ptr);
-}

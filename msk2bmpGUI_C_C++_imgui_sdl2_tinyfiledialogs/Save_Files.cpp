@@ -18,7 +18,7 @@
 void Set_Default_Path(user_info* user_info);
 void write_cfg_file(user_info* user_info);
 
-char* Save_FRM(SDL_Surface *f_surface, user_info* user_info)
+char* Save_FRM_SDL(SDL_Surface *f_surface, user_info* user_info)
 {
     FRM_Header FRM_Header;
     FRM_Header.version                = B_Endian::write_u32(4);
@@ -65,6 +65,7 @@ char* Save_FRM(SDL_Surface *f_surface, user_info* user_info)
         else {
             fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
             //TODO: some image sizes are coming out weird again :(
+            //issue is the alignment, SDL surfaces aligned at 4 pixels
             fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
             //TODO: also want to add animation frames
 
@@ -126,35 +127,17 @@ char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
         else {
             fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
 
-            //write openGL texture stuff
-            glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+            //create buffer from texture and original FRM_data
+            uint8_t* blend_buffer = blend_PAL_texture(img_data);
 
-            //create a buffer
-            uint8_t* texture_buffer = (uint8_t*)malloc(size);
-            uint8_t* buffer = (uint8_t*)malloc(size);
-            //read pixels into buffer
-            glPixelStorei(GL_PACK_ALIGNMENT, 1);
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
-
-            //combine edit data w/original image
-            for (int i = 0; i < size; i++)
-            {
-                if (texture_buffer[i] != 0) {
-                    buffer[i] = texture_buffer[i];
-                }
-                else {
-                    buffer[i] = img_data->FRM_data[i];
-                }
-            }
-
-            //write to file?
-            fwrite(buffer, size, 1, File_ptr);
+            //write to file
+            fwrite(blend_buffer, size, 1, File_ptr);
             //TODO: also want to add animation frames
 
             fclose(File_ptr);
+            free(blend_buffer);
         }
     }
-
     return Save_File_Name;
 }
 
@@ -243,28 +226,27 @@ void Set_Default_Path(user_info* user_info)
     }
 }
 
-void Save_FRM_tiles(SDL_Surface *PAL_surface, user_info* user_info)
-{
-    FRM_Header FRM_Header;
-    FRM_Header.version                = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height         = B_Endian::write_u16(300);
-    FRM_Header.Frame_0_Width          = B_Endian::write_u16(350);
-    FRM_Header.Frame_Area             = B_Endian::write_u32(300 * 350);
-    FRM_Header.Frame_0_Size           = B_Endian::write_u32(300 * 350);
-
-    //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
-    //TODO: also need to test index 255 to see what color it shows in the engine
-    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
-    Split_to_Tiles(PAL_surface, user_info, FRM, &FRM_Header);
-
-    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
-}
-
 //Fallout map tile size hardcoded in engine to 350x300 pixels WxH
 #define TILE_W      (350)
 #define TILE_H      (300)
 #define TILE_SIZE   (350*300)
+
+void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
+{
+    FRM_Header FRM_Header;
+    FRM_Header.version                = B_Endian::write_u32(4);
+    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
+    FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
+    FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
+    FRM_Header.Frame_Area             = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
+
+    //TODO: also need to test index 255 to see what color it shows in the engine
+    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
+    Split_to_Tiles_SDL(PAL_surface, user_info, FRM, &FRM_Header);
+
+    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
+}
 
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
 {
@@ -276,7 +258,6 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
     FRM_Header.Frame_Area     = B_Endian::write_u32(TILE_SIZE);
     FRM_Header.Frame_0_Size   = B_Endian::write_u32(TILE_SIZE);
 
-    //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
     //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
     //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
     Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header);
@@ -284,19 +265,57 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
 
-void Save_Map_Mask(SDL_Surface* MSK_surface, struct user_info* user_info) {
+void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info)
+{
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
-    Split_to_Tiles(MSK_surface, user_info, MSK, NULL);
+    Split_to_Tiles_SDL(MSK_surface, user_info, MSK, NULL);
+}
+
+void Save_MSK_Tiles_OpenGL(image_data* img_data, user_info* user_info)
+{
+    //TODO: export mask tiles using msk2bmp2020 code
+    tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
+
+    //Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL);
+}
+
+uint8_t* blend_PAL_texture(image_data* img_data)
+{
+    int img_size = img_data->width * img_data->height;
+
+    //copy edited texture to buffer, combine with original image
+    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+
+    //create a buffer
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
+    uint8_t* blend_buffer   = (uint8_t*)malloc(img_size);
+
+    //read pixels into buffer
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+
+    //combine edit data w/original image
+    for (int i = 0; i < img_size; i++)
+    {
+        if (texture_buffer[i] != 0) {
+            blend_buffer[i] = texture_buffer[i];
+        }
+        else {
+            blend_buffer[i] = img_data->FRM_data[i];
+        }
+    }
+    free(texture_buffer);
+    return blend_buffer;
 }
 
 void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header)
 {
-    int img_width = img_data->width;
+    int img_width  = img_data->width;
     int img_height = img_data->height;
-    int img_size = img_width * img_height;
+    int img_size   = img_width * img_height;
 
-    int num_tiles_x = img_width / TILE_W;
+    int num_tiles_x = img_width  / TILE_W;
     int num_tiles_y = img_height / TILE_H;
     int tile_num = 0;
     char path[MAX_PATH];
@@ -310,28 +329,8 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     }
     strncpy(path, user_info->default_game_path, MAX_PATH);
 
-    //copy edited texture to buffer, combine with original image
-    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
-
-    //create a buffer
-    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
-    uint8_t* out_buffer     = (uint8_t*)malloc(img_size);
-
-    //read pixels into buffer
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
-
-    //combine edit data w/original image
-    for (int i = 0; i < img_size; i++)
-    {
-        if (texture_buffer[i] != 0) {
-            out_buffer[i] = texture_buffer[i];
-        }
-        else {
-            out_buffer[i] = img_data->FRM_data[i];
-        }
-    }
-    free(texture_buffer);
+    //create buffer from texture and original FRM_data
+    uint8_t* blend_buffer = blend_PAL_texture(img_data);
 
     //split buffer into tiles and write to files
     for (int y = 0; y < num_tiles_y; y++)
@@ -370,7 +369,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                     for (int i = 0; i < TILE_H; i++)
                     {
                         //write out one row of pixels in each loop
-                        fwrite(out_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
+                        fwrite(blend_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
                         row_pointer += img_width;
                     }
                 }
@@ -387,13 +386,14 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
             tile_num++;
         }
     }
+    free(blend_buffer);
 }
 
 //TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
-void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
+void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
 {
-    int num_tiles_x = surface->w / 350;
-    int num_tiles_y = surface->h / 300;
+    int num_tiles_x = surface->w / TILE_W;
+    int num_tiles_y = surface->h / TILE_H;
     int tile_num = 0;
     char path[MAX_PATH];
     char Save_File_Name[MAX_PATH];
@@ -438,11 +438,11 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                     //save header
                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
 
-                    int pixel_pointer = surface->pitch * y * 300 + x * 350;
-                    for (int pixel_i = 0; pixel_i < 300; pixel_i++)
+                    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
+                    for (int pixel_i = 0; pixel_i < TILE_H; pixel_i++)
                     {
                         //write out one row of pixels in each loop
-                        fwrite((uint8_t*)surface->pixels + pixel_pointer, 350, 1, File_ptr);
+                        fwrite((uint8_t*)surface->pixels + pixel_pointer, TILE_W, 1, File_ptr);
                         pixel_pointer += surface->pitch;
                     }
                     fclose(File_ptr);
@@ -452,7 +452,7 @@ void Split_to_Tiles(SDL_Surface *surface, struct user_info* user_info, img_type 
                 {
                 //Split the surface up into 350x300 pixel surfaces
                 //      and pass them to Save_Mask()
-                    Save_MSK_Image(surface, File_ptr, x, y);
+                    Save_MSK_Image_SDL(surface, File_ptr, x, y);
 
 ///////////////////////////////////////////////////////////////////////////
                 ///*Blit combination not supported :(
@@ -588,4 +588,80 @@ char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_
      //return tinyfd_utf8to16(Save_File_Name);
     //just return the filename?
     return Save_File_Name;
+}
+
+void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
+{
+    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
+    uint8_t *outp = out_buffer;
+
+    int shift = 0;
+    uint8_t bitmask = 0;
+    bool mask_1_or_0;
+
+    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
+    //don't need to flip for the MSK (maybe need to flip for bitmaps)
+    for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
+    {
+        for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
+        {
+            bitmask <<= 1;
+            mask_1_or_0 =
+                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
+            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
+            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
+            bitmask |= mask_1_or_0;
+            if (++shift == 8)
+            {
+                *outp = bitmask;
+                ++outp;
+                shift = 0;
+                bitmask = 0;
+            }
+        }
+        bitmask <<= 2 /* final shift */;
+        *outp = bitmask;
+        ++outp;
+        shift = 0;
+        bitmask = 0;
+    }
+    writelines(File_ptr, out_buffer);
+    fclose(File_ptr);
+}
+
+void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr)
+{
+    int img_size = img_data->width * img_data->height;
+
+    //copy edited texture to buffer, combine with original image
+    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+    //create a buffer
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
+    uint8_t* out_buffer     = (uint8_t*)malloc(ceil(img_size / 8));
+
+    //read pixels into buffer
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+
+    int shift = 0;
+    uint8_t bitmask = 0;
+    //bool mask_1_or_0;
+    uint8_t* outp = out_buffer;
+    //don't need to flip for the MSK (maybe need to flip for bitmaps?)
+    for (int i = 0; i < img_size; i++)
+    {
+        bitmask <<= 1;
+        //mask_1_or_0 = texture_buffer[i] > 0;
+        //bitmask |= mask_1_or_0;
+        bitmask |= texture_buffer[i];
+        if (++shift == 8)
+        {
+            shift   = 0;
+            bitmask = 0;
+            *outp = bitmask;
+            ++outp;
+        }
+    }
+    writelines(File_ptr, out_buffer);
+    fclose(File_ptr);
 }

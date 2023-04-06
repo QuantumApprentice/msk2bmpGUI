@@ -64,14 +64,20 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
 
     //shader
     shader->use();
     glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
     shader->setInt("Indexed_FRM", 0);
     shader->setInt("Indexed_PAL", 1);
+    shader->setInt("Indexed_MSK", 2);
+
+    //printf("glGetError: %d\n", glGetError());
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+
 
     //bind framebuffer back to default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

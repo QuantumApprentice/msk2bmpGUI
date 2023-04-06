@@ -132,7 +132,7 @@ void Load_Edit_MSK(LF* F_Prop, user_info* user_info)
         }
         else
         {
-            F_Prop->Map_Mask = Load_MSK_Image(FileName);
+            F_Prop->Map_Mask = Load_MSK_Image_SDL(FileName);
             Image2Texture(F_Prop->Map_Mask,
                 &F_Prop->Optimized_Mask_Texture,
                 &F_Prop->edit_image_window);

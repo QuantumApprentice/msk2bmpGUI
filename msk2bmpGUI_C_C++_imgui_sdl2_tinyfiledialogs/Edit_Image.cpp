@@ -51,7 +51,6 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
         top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
         uv_min, uv_max, ImGui::GetColorU32(tint));
 
-
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
@@ -72,6 +71,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
             &My_Variables->giant_triangle,
             edit_data);
     }
+
 }
 
 void Edit_MSK(variables* My_Variables, LF* F_Prop)

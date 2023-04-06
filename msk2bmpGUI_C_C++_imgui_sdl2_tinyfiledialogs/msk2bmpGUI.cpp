@@ -496,7 +496,7 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
                 Save_IMG(My_Variables->F_Prop[counter].IMG_Surface, &user_info);
             }
             else {
-                Save_FRM_tiles(My_Variables->F_Prop[counter].PAL_Surface, &user_info);
+                Save_FRM_tiles_SDL(My_Variables->F_Prop[counter].PAL_Surface, &user_info);
             }
         }
 
@@ -690,7 +690,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         else {
             if (ImGui::Button("Export Mask Tiles...")) {
                 //TODO: export mask tiles using msk2bmp2020 code
-                Save_Map_Mask(F_Prop->Map_Mask, &user_info);
+                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &user_info);
+                //Save_MSK_Tiles_SDL(F_Prop->Map_Mask, &user_info);
             }
             if (ImGui::Button("Load Mask Tiles...")) {
                 //TODO: load mask tiles
@@ -699,20 +700,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //            user_info,
                 //            My_Variables->pxlFMT_FO_Pal);
             }
-
-            ImGui::Image(
-                (ImTextureID)F_Prop->Optimized_Render_Texture,
-                ImVec2(F_Prop->IMG_Surface->w,
-                       F_Prop->IMG_Surface->h));
-
-            ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-            ImVec2 Origin = ImGui::GetItemRectMin();
-
-            int width =  F_Prop->IMG_Surface->w;
-            int height = F_Prop->IMG_Surface->h;
-            ImVec2 Bottom_Right = { width + Origin.x, height + Origin.y };
-
-            Edit_Map_Mask(F_Prop, &My_Variables->Palette_Update, Origin);
 
             if (ImGui::Button("Cancel Map Mask...")) {
                 F_Prop->edit_map_mask = false;
