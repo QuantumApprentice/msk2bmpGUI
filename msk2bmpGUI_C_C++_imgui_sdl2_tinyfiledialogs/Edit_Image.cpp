@@ -59,7 +59,12 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
         y = My_Variables->new_mouse_pos.y - top_corner(edit_data).y;
 
         if ((0 <= x && x <= size.x) && (0 <= y && y <= size.y)) {
-            texture_paint(x/scale, y/scale, 10, 10, *Color_Pick, edit_data->PAL_texture);
+            if (F_Prop->edit_MSK) {
+                texture_paint(x / scale, y / scale, 10, 10, *Color_Pick, edit_data->MSK_texture);
+            }
+            else {
+                texture_paint(x / scale, y / scale, 10, 10, *Color_Pick, edit_data->PAL_texture);
+            }
         }
     }
 
@@ -74,12 +79,12 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
 }
 
-void Edit_MSK(variables* My_Variables, LF* F_Prop)
+void Edit_MSK_OpenGL(variables* My_Variables, LF* F_Prop)
 {
 
 }
 
-SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
+SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window)
 {
     int width  = image->w;
     int height = image->h;
@@ -118,88 +123,125 @@ SDL_Surface* Create_Map_Mask(SDL_Surface* image, GLuint* texture, bool* window)
     return Map_Mask;
 }
 
-//TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
-//TODO: also change to work with openGL
-void Edit_Map_Mask(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
+bool Create_MSK_OpenGL(image_data* img_data)
 {
-    int width  = F_Prop->IMG_Surface->w;
-    int height = F_Prop->IMG_Surface->h;
+    int img_width  = img_data->width;
+    int img_height = img_data->height;
+    int img_size = img_width * img_height;
+    uint8_t* data = (uint8_t*)calloc(1, img_size);
 
-    SDL_Surface* BB_Surface = F_Prop->Map_Mask;
-    Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
-                              255, 255, 255);
+    if (data) {
+        //load & gen texture
+        glGenTextures(1, &img_data->MSK_texture);
+        glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+        //texture settings
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //MSK's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //bind data to FRM_texture for display
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 
-    ImVec2 MousePos = ImGui::GetMousePos();
-    int x = (int)(MousePos.x - Origin.x);
-    int y = (int)(MousePos.y - Origin.y);
-    int pitch = BB_Surface->pitch;
-
-    SDL_Rect rect;
-    rect.x = x;
-    rect.y = y;
-    rect.h = 10;
-    rect.w = 10;
-
-    if (ImGui::GetIO().MouseDown[0]) {
-
-        if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
-
-            SDL_FillRect(F_Prop->Map_Mask, &rect, white);
-            *Palette_Update = true;
-
-
-            ///*TODO: This stuff didn't work, delete it when done                   */
-            ///*TODO: two problems with using binary surface:
-            ///       pixel addressing skips by 8 pixels at a time,
-            ///       and SDL_FillRect() doesn't work                               */
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    uint8_t* where_i_want_to_draw = 
-            //                &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
-            //    ((uint8_t*)where_i_want_to_draw)[0] = 255;
-            //}
-            ///*OpenGl stuff didn't work either :                                   */
-            //opengl_stuff();
+        bool success = false;
+        success = init_framebuffer(img_data);
+        if (!success) {
+            printf("image framebuffer failed to attach correctly?\n");
+            return false;
         }
+        img_data->MSK_data = data;
+        return true;
     }
-
-    if (*Palette_Update && (F_Prop->type == FRM)) {
-    ///re-copy Pal_Surface to Final_Render each time to allow 
-    ///transparency through the mask surface painting
-        Update_Palette(F_Prop, true);
-    }
-    else if (*Palette_Update && (F_Prop->type == MSK)) {
-        Update_Palette(F_Prop, true);
+    else {
+        printf("MSK image didn't load...\n");
+        return false;
     }
 }
+
+//TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
+//TODO: also change to work with openGL
+//void Edit_MSK_SDL(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
+//{
+//    int width  = F_Prop->IMG_Surface->w;
+//    int height = F_Prop->IMG_Surface->h;
+//
+//    SDL_Surface* BB_Surface = F_Prop->Map_Mask;
+//    Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
+//                              255, 255, 255);
+//
+//    ImVec2 MousePos = ImGui::GetMousePos();
+//    int x = (int)(MousePos.x - Origin.x);
+//    int y = (int)(MousePos.y - Origin.y);
+//    int pitch = BB_Surface->pitch;
+//
+//    SDL_Rect rect;
+//    rect.x = x;
+//    rect.y = y;
+//    rect.h = 10;
+//    rect.w = 10;
+//
+//    if (ImGui::GetIO().MouseDown[0]) {
+//
+//        if ((0 <= x && x <= width) && (0 <= y && y <= height)) {
+//
+//            SDL_FillRect(F_Prop->Map_Mask, &rect, white);
+//            *Palette_Update = true;
+//
+//
+//            ///*TODO: This stuff didn't work, delete it when done                   */
+//            ///*TODO: two problems with using binary surface:
+//            ///       pixel addressing skips by 8 pixels at a time,
+//            ///       and SDL_FillRect() doesn't work                               */
+//            //for (int i = 0; i < 4; i++)
+//            //{
+//            //    uint8_t* where_i_want_to_draw = 
+//            //                &((uint8_t*)BB_Surface->pixels)[pitch*y + x/8 + i];
+//            //    ((uint8_t*)where_i_want_to_draw)[0] = 255;
+//            //}
+//            ///*OpenGl stuff didn't work either :                                   */
+//            //opengl_stuff();
+//        }
+//    }
+//
+//    if (*Palette_Update && (F_Prop->type == FRM)) {
+//    ///re-copy Pal_Surface to Final_Render each time to allow 
+//    ///transparency through the mask surface painting
+//        Update_Palette(F_Prop, true);
+//    }
+//    else if (*Palette_Update && (F_Prop->type == MSK)) {
+//        Update_Palette(F_Prop, true);
+//    }
+//}
 
 //bool blend == true will blend surfaces
 //TODO: remove! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
-void Update_Palette(struct LF* files, bool blend) {
-    SDL_FreeSurface(files->Final_Render);
-    if (files->type == MSK) {
-        files->Final_Render =
-            SDL_CreateRGBSurface(0, files->Map_Mask->w, files->Map_Mask->h, 32, 0, 0, 0, 0);
-        SDL_BlitSurface(files->Map_Mask, NULL, files->Final_Render, NULL);
-    }
-    else {
-        //Unpalettize image to new surface for display
-        files->Final_Render = Unpalettize_Image(files->PAL_Surface);
-    }
-    if (blend) {
-        CPU_Blend(    files->Map_Mask,
-                      files->Final_Render);
-        SDL_to_OpenGl(files->Final_Render,
-                     &files->Optimized_Render_Texture);
-    }
-    else {
-        //Image2Texture(files->Final_Render,
-        //             &files->Optimized_Render_Texture,
-        //             &files->edit_image_window);
-        SDL_to_OpenGl(files->Final_Render,
-            &files->Optimized_Render_Texture);
-    }
-}
+//void Update_Palette(struct LF* files, bool blend) {
+//    SDL_FreeSurface(files->Final_Render);
+//    if (files->type == MSK) {
+//        files->Final_Render =
+//            SDL_CreateRGBSurface(0, files->Map_Mask->w, files->Map_Mask->h, 32, 0, 0, 0, 0);
+//        SDL_BlitSurface(files->Map_Mask, NULL, files->Final_Render, NULL);
+//    }
+//    else {
+//        //Unpalettize image to new surface for display
+//        files->Final_Render = Unpalettize_Image(files->PAL_Surface);
+//    }
+//    if (blend) {
+//        CPU_Blend(    files->Map_Mask,
+//                      files->Final_Render);
+//        SDL_to_OpenGl(files->Final_Render,
+//                     &files->Optimized_Render_Texture);
+//    }
+//    else {
+//        //Image2Texture(files->Final_Render,
+//        //             &files->Optimized_Render_Texture,
+//        //             &files->edit_image_window);
+//        SDL_to_OpenGl(files->Final_Render,
+//            &files->Optimized_Render_Texture);
+//    }
+//}
 ////TODO: remove! same as above
 //void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT) {
 //    SDL_Surface* Temp_Surface;

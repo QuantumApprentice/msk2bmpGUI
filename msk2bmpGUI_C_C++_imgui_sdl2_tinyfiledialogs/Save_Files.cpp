@@ -272,7 +272,7 @@ void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info)
     Split_to_Tiles_SDL(MSK_surface, user_info, MSK, NULL);
 }
 
-void Save_MSK_Tiles_OpenGL(image_data* img_data, user_info* user_info)
+void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info)
 {
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
@@ -298,6 +298,7 @@ uint8_t* blend_PAL_texture(image_data* img_data)
     //combine edit data w/original image
     for (int i = 0; i < img_size; i++)
     {
+        //TODO: add a switch for 255 to set blend_buffer[i] to 0
         if (texture_buffer[i] != 0) {
             blend_buffer[i] = texture_buffer[i];
         }
@@ -389,7 +390,6 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     free(blend_buffer);
 }
 
-//TODO: need to switch from PAL_Surface to the Edit_Image.render_texture
 void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
 {
     int num_tiles_x = surface->w / TILE_W;
@@ -573,7 +573,6 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
 // bool type: FRM = 1, MSK = 0
 char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name)
 {
-
     //-------save file
     //TODO: move tile_num++ outside if check
     if (type == FRM) {
@@ -585,6 +584,7 @@ char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_
     }
 
     // Wide character stuff follows...
+    //TODO: is this necessary?
      //return tinyfd_utf8to16(Save_File_Name);
     //just return the filename?
     return Save_File_Name;
@@ -647,7 +647,7 @@ void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr)
     uint8_t bitmask = 0;
     //bool mask_1_or_0;
     uint8_t* outp = out_buffer;
-    //don't need to flip for the MSK (maybe need to flip for bitmaps?)
+    //don't need to flip for MSK (maybe need to flip for bitmaps?)
     for (int i = 0; i < img_size; i++)
     {
         bitmask <<= 1;
@@ -662,6 +662,7 @@ void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr)
             ++outp;
         }
     }
+    //TODO: swap out writelines for something more generic
     writelines(File_ptr, out_buffer);
     fclose(File_ptr);
 }

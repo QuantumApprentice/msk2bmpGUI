@@ -230,8 +230,9 @@ int BytesToInt(char *C, int numBytes)
 #define TILE_W      (350)
 #define TILE_H      (300)
 #define TILE_SIZE   (350*300)
-
-bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
+//TODO: might want to move this entire function to Save_Files.cpp
+//and swap out ReadMskLines for something more generic
+bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
 {
     //open the file & error checking
     fopen_s(&infile, FileName, "rb");
@@ -261,7 +262,7 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
     //{
     //    return (b & (1 << bitNumber)) != 0;
     //}
-
+    //
     //mask_1_or_0 = (bitmask &(1 << shift)) != 0;
 
 
@@ -324,7 +325,7 @@ bool Load_MSK_OpenGL(char* FileName, image_data* img_data)
 
 }
 
-SDL_Surface* Load_MSK_Image_SDL(char* FileName)
+SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
 {
     //open the file & error checking
     fopen_s(&infile, FileName, "rb");

@@ -26,7 +26,6 @@ struct variables {
 
 
     //Shader stuff
-    //Shader color_cycle { "shaders//zoom_shader.vert", "shaders//color_cycle_1D.frag" };
     Shader render_PAL_shader { "shaders//passthru_shader.vert", "shaders//render_PAL.frag" };
     Shader render_FRM_shader { "shaders//passthru_shader.vert", "shaders//render_FRM.frag" };
     mesh giant_triangle;

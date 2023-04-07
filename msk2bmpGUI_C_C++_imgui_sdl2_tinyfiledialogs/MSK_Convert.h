@@ -12,7 +12,8 @@ bool IsBMPFile(FILE *infile);
 bool ReadBmpLines(FILE *file, line_array_t vOutput);            // same as below
 void ReadMskLines(FILE *file, uint8_t vOutput[MAX_LINES][44]);
 int BytesToInt(char *C, int numBytes);
-SDL_Surface* Load_MSK_Image_SDL(char* FileName);
+
 void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y);
 
-bool Load_MSK_OpenGL(char* FileName, image_data* img_data);
+bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data);
+SDL_Surface* Load_MSK_Tile_SDL(char* FileName);

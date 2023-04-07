@@ -26,8 +26,8 @@ struct LF {
     bool preview_tiles_window = false;
     bool show_image_render = false;
     bool edit_image_window = false;
-    bool edit_map_mask = false;
     bool image_is_tileable = false;
+    bool edit_MSK = false;
 };
 
 bool Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);

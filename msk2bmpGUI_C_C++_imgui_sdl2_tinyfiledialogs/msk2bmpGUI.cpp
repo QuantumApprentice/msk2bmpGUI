@@ -651,7 +651,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         int height = F_Prop->edit_data.height;
 
         //regular edit image window with animated color pallete painting
-        if (!F_Prop->edit_map_mask) {
+        if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
 
             int texture_size = width * height;
@@ -666,7 +666,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 0, GL_RED, GL_UNSIGNED_BYTE, clear);
 
             free(clear);
-        }
+            }
 
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_OpenGL(&F_Prop->edit_data, &user_info);
@@ -676,13 +676,17 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &user_info);
             }
+            if (ImGui::Button("Edit MSK Layer...")) {
+                F_Prop->edit_MSK = true;
+            }
 
-            if (ImGui::Button("Create Mask Tiles...")) {
-                F_Prop->Map_Mask =
-                    Create_Map_Mask(F_Prop->IMG_Surface,
-                        &F_Prop->Optimized_Mask_Texture,
-                        &F_Prop->edit_image_window);
-                F_Prop->edit_map_mask = true;
+            if (ImGui::Button("Create Mask Layer...")) {
+                //F_Prop->Map_Mask =
+                //    Create_MSK_SDL(F_Prop->IMG_Surface,
+                //        &F_Prop->Optimized_Mask_Texture,
+                //        &F_Prop->edit_image_window);
+                Create_MSK_OpenGL(&F_Prop->edit_data);
+                F_Prop->edit_MSK = true;
             }
         }
 
@@ -693,7 +697,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &user_info);
                 //Save_MSK_Tiles_SDL(F_Prop->Map_Mask, &user_info);
             }
-            if (ImGui::Button("Load Mask Tiles...")) {
+            if (ImGui::Button("Load Mask Tile...")) {
                 //TODO: load mask tiles
                 Load_Edit_MSK(F_Prop, &user_info);
                 //Load_Files(&My_Variables->F_Prop[counter],
@@ -701,14 +705,16 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //            My_Variables->pxlFMT_FO_Pal);
             }
 
+
             if (ImGui::Button("Cancel Map Mask...")) {
-                F_Prop->edit_map_mask = false;
+                F_Prop->edit_MSK = false;
             }
         }
 
         //closes edit window and cancels all edits?
         if (ImGui::Button("Cancel Editing...")) {
             F_Prop->edit_image_window = false;
+            F_Prop->edit_MSK = false;
         }
 
     }
