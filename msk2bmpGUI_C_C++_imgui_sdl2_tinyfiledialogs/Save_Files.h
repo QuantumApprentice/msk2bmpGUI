@@ -27,7 +27,7 @@ uint8_t* blend_PAL_texture(image_data* img_data);
 char* Save_FRM_SDL(SDL_Surface *f_surface, struct user_info* user_info);
 char* Save_FRM_OpenGL(image_data* img_data, struct user_info* user_info);
 
-char* Save_IMG(SDL_Surface *b_surface, struct user_info* user_info);
+char* Save_IMG_SDL(SDL_Surface *b_surface, struct user_info* user_info);
 
 void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info);

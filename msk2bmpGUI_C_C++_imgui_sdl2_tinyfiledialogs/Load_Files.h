@@ -4,6 +4,7 @@
 
 #include "load_FRM_OpenGL.h"
 #include "Load_Settings.h"
+#include "shaders/shader_class.h"
 
 //File info
 struct LF {
@@ -12,14 +13,14 @@ struct LF {
     char * extension;
     SDL_Surface* IMG_Surface = nullptr;
     SDL_Surface* PAL_Surface = nullptr;
-    SDL_Surface* Final_Render = nullptr;
-    SDL_Surface* Map_Mask = nullptr;
+
+    //SDL_Surface* Final_Render = nullptr;
+    //SDL_Surface* Map_Mask = nullptr;
+    //GLuint Optimized_Render_Texture = 0;
+    //GLuint Optimized_Mask_Texture = 0;
 
     image_data img_data;
     image_data edit_data;
-
-    GLuint Optimized_Render_Texture = 0;
-    GLuint Optimized_Mask_Texture = 0;
 
     img_type type;
     bool file_open_window = false;
@@ -30,5 +31,12 @@ struct LF {
     bool edit_MSK = false;
 };
 
-bool Load_Files   (LF* F_Prop, struct user_info* user_info, SDL_PixelFormat* pxlFMT);
-void Load_Edit_MSK(LF* F_Prop, struct user_info* user_info);
+struct shader_info {
+    float palette[768];
+    Shader render_PAL_shader{ "shaders//passthru_shader.vert", "shaders//render_PAL.frag" };
+    Shader render_FRM_shader{ "shaders//passthru_shader.vert", "shaders//render_FRM.frag" };
+    mesh giant_triangle;
+};
+
+bool Load_Files   (LF* F_Prop, struct user_info* user_info, shader_info* shaders);
+//void Load_Edit_MSK_SDL(LF* F_Prop, struct user_info* user_info);

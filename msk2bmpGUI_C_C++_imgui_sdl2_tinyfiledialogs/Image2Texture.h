@@ -2,7 +2,7 @@
 #include "imgui-docking/imgui.h"
 #include "Load_Files.h"
 #include "FRM_Convert.h"
-#include "shaders/shader_class.h"
+//#include "shaders/shader_class.h"
 
 
 struct variables {
@@ -20,15 +20,12 @@ struct variables {
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
-    //SDL_Color *PaletteColors = nullptr;
     SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
-    float palette[768] = {};
 
+    bool link_brush_sizes = true;
+    ImVec2 brush_size{ 10, 10 };
 
-    //Shader stuff
-    Shader render_PAL_shader { "shaders//passthru_shader.vert", "shaders//render_PAL.frag" };
-    Shader render_FRM_shader { "shaders//passthru_shader.vert", "shaders//render_FRM.frag" };
-    mesh giant_triangle;
+    shader_info shaders;
 
     struct LF F_Prop[99]{};
 

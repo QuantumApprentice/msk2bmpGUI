@@ -54,14 +54,14 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
 
 void Show_Palette_Window(struct variables *My_Variables);
 
-void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
-//void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* preview_type);
+//void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
 void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
 void Set_Default_Path(struct user_info* user_info);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
+void Show_MSK_Palette_Window(variables* My_Variables);
 
 //struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
 //void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos);
@@ -124,10 +124,10 @@ int main(int, char**)
     Load_Config(&user_info);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
-    bool success = load_palette_to_array(My_Variables.palette);
+    bool success = load_palette_to_array(My_Variables.shaders.palette);
     if (!success) { printf("failed to load palette to array\n"); }
 
-    My_Variables.giant_triangle = load_giant_triangle();
+    My_Variables.shaders.giant_triangle = load_giant_triangle();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -284,16 +284,20 @@ int main(int, char**)
             ImGui::Text("counter = %d", counter);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            //for (int count = 0; count < counter; count++)
+            //contextual buttons for each image slot
             if (My_Variables.window_number_focus >= 0)
             {
                 contextual_buttons(&My_Variables, My_Variables.window_number_focus);
             }
-
-
             ImGui::End();
 
-            Show_Palette_Window(&My_Variables);
+            //contextual palette window for MSK vs FRM editing
+            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK) {
+                Show_MSK_Palette_Window(&My_Variables);
+            }
+            else {
+                Show_Palette_Window(&My_Variables);
+            }
 
             for (int i = 0; i < counter; i++)
             {
@@ -344,6 +348,8 @@ int main(int, char**)
 
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
 {
+    shader_info* shaders = &My_Variables->shaders;
+
     //shortcuts...possibly replace variables* with just LF*
     LF* F_Prop = &My_Variables->F_Prop[counter];
     SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
@@ -386,15 +392,15 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         if (My_Variables->Palette_Update) {
             if (F_Prop->img_data.render_texture == NULL) {}
             else {
-                update_palette_array(My_Variables->palette,
-                    My_Variables->CurrentTime,
-                    &My_Variables->Palette_Update);
+                update_palette_array(shaders->palette,
+                                My_Variables->CurrentTime,
+                               &My_Variables->Palette_Update);
             }
             //redraw FRM to framebuffer every time the palette update timer is true
             if (F_Prop->type == FRM) {
-                draw_FRM_to_framebuffer(My_Variables->palette,
-                                       &My_Variables->render_FRM_shader,
-                                       &My_Variables->giant_triangle,
+                draw_FRM_to_framebuffer(shaders->palette,
+                                       &shaders->render_FRM_shader,
+                                       &shaders->giant_triangle,
                                        &F_Prop->img_data);
             }
         }
@@ -447,18 +453,22 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
 void Show_Palette_Window(variables *My_Variables) {
 
+    shader_info* shaders = &My_Variables->shaders;
+
     bool palette_window = true;
     std::string name = "Default Fallout palette ###palette";
     ImGui::Begin(name.c_str(), &palette_window);
+
+    brush_size_handler(My_Variables);
 
     for (int y = 0; y < 16; y++) {
         for (int x = 0; x < 16; x++) {
 
             int index = y * 16 + x;
 
-            float r = My_Variables->palette[index*3 + 0];
-            float g = My_Variables->palette[index*3 + 1];
-            float b = My_Variables->palette[index*3 + 2];
+            float r = shaders->palette[index*3 + 0];
+            float g = shaders->palette[index*3 + 1];
+            float b = shaders->palette[index*3 + 2];
 
             char color_info[12];
             snprintf(color_info, 12, "%d##aa%d", index, index);
@@ -469,7 +479,7 @@ void Show_Palette_Window(variables *My_Variables) {
             if (x < 15) ImGui::SameLine();
 
             if ((index) >= 229) {
-                update_palette_array(My_Variables->palette,
+                update_palette_array(     shaders->palette,
                                      My_Variables->CurrentTime,
                                     &My_Variables->Palette_Update);
             }
@@ -478,6 +488,28 @@ void Show_Palette_Window(variables *My_Variables) {
 
     ImGui::End();
 }
+
+void Show_MSK_Palette_Window(variables* My_Variables)
+{
+    bool MSK_palette = true;
+    std::string name = "MSK colors ###palette";
+    ImGui::Begin(name.c_str(), &MSK_palette);
+
+    brush_size_handler(My_Variables);
+
+    ImGui::Text("Erase Mask                    Draw Mask");
+    if (ImGui::ColorButton("Erase Mask", ImVec4(0, 0, 0, 1.0f), NULL, ImVec2(200.0f, 200.0f))) {
+        My_Variables->Color_Pick = (0);
+    }
+    ImGui::SameLine();
+    if (ImGui::ColorButton("Mark Mask", ImVec4(1.0f, 1.0f, 1.0f, 1.0f), NULL, ImVec2(200.0f, 200.0f))) {
+        My_Variables->Color_Pick = (1);
+    }
+
+    ImGui::End();
+}
+
+
 
 void Preview_Tiles_Window(variables *My_Variables, int counter)
 {
@@ -493,7 +525,7 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
 
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0) {
-                Save_IMG(My_Variables->F_Prop[counter].IMG_Surface, &user_info);
+                Save_IMG_SDL(My_Variables->F_Prop[counter].IMG_Surface, &user_info);
             }
             else {
                 Save_FRM_tiles_SDL(My_Variables->F_Prop[counter].PAL_Surface, &user_info);
@@ -519,7 +551,7 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 
         if (ImGui::Button("Save as Image...")) {
             if (F_Prop->type == FRM) {
-                Save_IMG(F_Prop->IMG_Surface, user_info);
+                Save_IMG_SDL(F_Prop->IMG_Surface, user_info);
             }
             else {
                 //Save_FRM(F_Prop->PAL_Surface, user_info);
@@ -610,33 +642,33 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
         My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
     }
 
-    F_Prop->file_open_window = Load_Files(&My_Variables->F_Prop[*counter], user_info, My_Variables->pxlFMT_FO_Pal);
+    F_Prop->file_open_window = Load_Files(&My_Variables->F_Prop[*counter], user_info, &My_Variables->shaders);
 
     //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
-    if (F_Prop->file_open_window) {
-        if (F_Prop->type == FRM)
-        {   //new openGL way to load FRM
-            draw_FRM_to_framebuffer(My_Variables->palette,
-                &My_Variables->render_FRM_shader,
-                &My_Variables->giant_triangle,
-                &F_Prop->img_data);
-        }
-        else if (F_Prop->type == MSK)
-        {   //new OpenGL way to load MSK
-            draw_MSK_to_framebuffer(My_Variables->palette,
-                &My_Variables->render_FRM_shader,
-                &My_Variables->giant_triangle,
-                &F_Prop->img_data);
-        }
-        else {
-            Image2Texture(F_Prop->IMG_Surface,
-                &F_Prop->img_data.render_texture,
-                &F_Prop->file_open_window);
-            F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-            F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-        }
+    //if (F_Prop->file_open_window) {
+    //    if (F_Prop->type == FRM)
+    //    {   //new openGL way to load FRM
+    //        //draw_FRM_to_framebuffer(My_Variables->palette,
+    //        //    &My_Variables->render_FRM_shader,
+    //        //    &My_Variables->giant_triangle,
+    //        //    &F_Prop->img_data);
+    //    }
+    //    else if (F_Prop->type == MSK)
+    //    {   //new OpenGL way to load MSK
+    //        //draw_MSK_to_framebuffer(My_Variables->palette,
+    //        //    &My_Variables->render_FRM_shader,
+    //        //    &My_Variables->giant_triangle,
+    //        //    &F_Prop->img_data);
+    //    }
+    //    else {
+    //        //Image2Texture(F_Prop->IMG_Surface,
+    //        //    &F_Prop->img_data.render_texture,
+    //        //    &F_Prop->file_open_window);
+    //        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+    //        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+    //    }
         if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
-    }
+    //}
 }
 
 void contextual_buttons(variables* My_Variables, int window_number_focus)
@@ -652,26 +684,21 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
-            if (ImGui::Button("Clear All Changes...")) {
 
+            if (ImGui::Button("Clear All Changes...")) {
             int texture_size = width * height;
             uint8_t* clear = (uint8_t*)malloc(texture_size);
             memset(clear, 0, texture_size);
-
             glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
-
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
                 width, height,
                 0, GL_RED, GL_UNSIGNED_BYTE, clear);
-
             free(clear);
             }
-
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_OpenGL(&F_Prop->edit_data, &user_info);
             }
-
             if (ImGui::Button("Save as Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &user_info);
@@ -679,15 +706,23 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             if (ImGui::Button("Edit MSK Layer...")) {
                 F_Prop->edit_MSK = true;
             }
-
             if (ImGui::Button("Create Mask Layer...")) {
-                //F_Prop->Map_Mask =
-                //    Create_MSK_SDL(F_Prop->IMG_Surface,
-                //        &F_Prop->Optimized_Mask_Texture,
-                //        &F_Prop->edit_image_window);
+
                 Create_MSK_OpenGL(&F_Prop->edit_data);
                 F_Prop->edit_MSK = true;
+
+                draw_PAL_to_framebuffer(My_Variables->shaders.palette,
+                                       &My_Variables->shaders.render_PAL_shader,
+                                       &My_Variables->shaders.giant_triangle,
+                                       &F_Prop->edit_data);
             }
+            if (ImGui::Button("Load image to this slot...")) {
+
+                Load_Files(F_Prop, &user_info, &My_Variables->shaders);
+                Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
+
+            }
+
         }
 
         //edit mask window
@@ -697,12 +732,15 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &user_info);
                 //Save_MSK_Tiles_SDL(F_Prop->Map_Mask, &user_info);
             }
-            if (ImGui::Button("Load Mask Tile...")) {
-                //TODO: load mask tiles
-                Load_Edit_MSK(F_Prop, &user_info);
-                //Load_Files(&My_Variables->F_Prop[counter],
-                //            user_info,
-                //            My_Variables->pxlFMT_FO_Pal);
+            if (ImGui::Button("Load MSK to this slot...")) {
+
+                Load_Files(F_Prop, &user_info, &My_Variables->shaders);
+                Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
+                draw_PAL_to_framebuffer(My_Variables->shaders.palette,
+                                       &My_Variables->shaders.render_PAL_shader,
+                                       &My_Variables->shaders.giant_triangle,
+                                       &F_Prop->edit_data);
+
             }
 
 
@@ -750,6 +788,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 false,
                 &F_Prop->show_image_render);
         }
+
         //TODO: manage some sort of contextual menu for tileable images?
         if (F_Prop->image_is_tileable) {
             //Tileable image Buttons
@@ -770,7 +809,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //image_render buttons
     else if (F_Prop->show_image_render) {
         if (ImGui::Button("Disable Alpha")) {
-            My_Variables->palette[0] = 255;
+            My_Variables->shaders.palette[0] = 255;
         }
     }
 }

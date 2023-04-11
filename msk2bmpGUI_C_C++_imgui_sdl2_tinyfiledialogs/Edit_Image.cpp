@@ -11,6 +11,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //TODO: maybe pass the dithering choice through?
 
     image_data* edit_data = &F_Prop->edit_data;
+    shader_info* shaders = &My_Variables->shaders;
 
     ////TODO: use a menu bar for the editor/previewer?
     //if (ImGui::BeginMenuBar()) {
@@ -54,33 +55,19 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
-        float x, y;
-        x = My_Variables->new_mouse_pos.x - top_corner(edit_data).x;
-        y = My_Variables->new_mouse_pos.y - top_corner(edit_data).y;
 
-        if ((0 <= x && x <= size.x) && (0 <= y && y <= size.y)) {
-            if (F_Prop->edit_MSK) {
-                texture_paint(x / scale, y / scale, 10, 10, *Color_Pick, edit_data->MSK_texture);
-            }
-            else {
-                texture_paint(x / scale, y / scale, 10, 10, *Color_Pick, edit_data->PAL_texture);
-            }
-        }
+        texture_paint(My_Variables, edit_data, F_Prop->edit_MSK);
+
     }
 
     //Converts unpalettized image to texture for display
     if (Palette_Update || image_edited) {
-        draw_PAL_to_framebuffer(My_Variables->palette,
-            //&My_Variables->render_FRM_shader,
-            &My_Variables->render_PAL_shader,
-            &My_Variables->giant_triangle,
-            edit_data);
+        draw_PAL_to_framebuffer(shaders->palette,
+                               //&My_Variables->render_FRM_shader,
+                               &shaders->render_PAL_shader,
+                               &shaders->giant_triangle,
+                               edit_data);
     }
-
-}
-
-void Edit_MSK_OpenGL(variables* My_Variables, LF* F_Prop)
-{
 
 }
 
@@ -127,10 +114,10 @@ bool Create_MSK_OpenGL(image_data* img_data)
 {
     int img_width  = img_data->width;
     int img_height = img_data->height;
-    int img_size = img_width * img_height;
-    uint8_t* data = (uint8_t*)calloc(1, img_size);
+    //int img_size = img_width * img_height;
+    //uint8_t* data = (uint8_t*)calloc(1, img_size);
 
-    if (data) {
+    //if (data) {
         //load & gen texture
         glGenTextures(1, &img_data->MSK_texture);
         glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
@@ -143,7 +130,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
         //MSK's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_width, img_height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
 
         bool success = false;
         success = init_framebuffer(img_data);
@@ -151,13 +138,13 @@ bool Create_MSK_OpenGL(image_data* img_data)
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
-        img_data->MSK_data = data;
+    //    img_data->MSK_data = data;
         return true;
-    }
-    else {
-        printf("MSK image didn't load...\n");
-        return false;
-    }
+    //}
+    //else {
+    //    printf("MSK image didn't load...\n");
+    //    return false;
+    //}
 }
 
 //TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
@@ -217,7 +204,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 
 //bool blend == true will blend surfaces
 //TODO: remove! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
-//void Update_Palette(struct LF* files, bool blend) {
+//void Update_Palette_SDL(struct LF* files, bool blend) {
 //    SDL_FreeSurface(files->Final_Render);
 //    if (files->type == MSK) {
 //        files->Final_Render =
@@ -254,7 +241,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //}
 
 ////TODO: remove! same as above
-void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
+void CPU_Blend_SDL(SDL_Surface* msk_surface, SDL_Surface* img_surface)
 {
     int width  = msk_surface->w;
     int height = msk_surface->h;
@@ -291,19 +278,77 @@ void CPU_Blend(SDL_Surface* msk_surface, SDL_Surface* img_surface)
     }
 }
 
-void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
+//void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
+void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK)
 {
-    int v = value;
-    int size = brush_h * brush_w;
-    uint8_t* color = (uint8_t*)malloc(size);
-    memset(color, value, size);
+    //int v = value;
+    int color_pick = My_Variables->Color_Pick;
+    //ImVec2 brush_s = My_Variables->brush_size;
+    float brush_w = My_Variables->brush_size.x;
+    float brush_h = My_Variables->brush_size.y;
+    int brush_size = brush_h * brush_w;
+    uint8_t* color = (uint8_t*)malloc(brush_size);
+    memset(color, color_pick, brush_size);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
-        GL_RED, GL_UNSIGNED_BYTE,
-        color);
+
+    float scale = edit_data->scale;
+    int width   = edit_data->width;
+    int height  = edit_data->height;
+    ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
+
+
+    float x, y;
+    x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
+    y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
+
+    GLuint* texture = NULL;
+    if (edit_MSK) {
+        texture = &edit_data->MSK_texture;
+        //texture_paint(x / scale, y / scale, brush_s.x, brush_s.y, color_pick, edit_data->MSK_texture);
+    }
+    else {
+        texture = &edit_data->PAL_texture;
+        //texture_paint(x / scale, y / scale, brush_s.x, brush_s.y, color_pick, edit_data->PAL_texture);
+    }
+
+    if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
+
+        if ((x + brush_w / 2) > width) {
+            x = width - brush_w / 2;
+        }
+        if ((x - brush_w / 2) < 0) {
+            x = brush_w /2;
+        }
+        if ((y + brush_h / 2) > height) {
+            y = height - brush_h / 2;
+        }
+        if ((y - brush_h / 2) < 0) {
+            y = brush_h / 2;
+        }
+
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, *texture);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
+            GL_RED, GL_UNSIGNED_BYTE,
+            color);
+    }
 
     free(color);
+}
+
+void brush_size_handler(variables* My_Variables)
+{
+    ImGui::Checkbox("Link width/height", &My_Variables->link_brush_sizes);
+
+    ImGui::DragFloat("Brush Width", &My_Variables->brush_size.x, 1.0f, 0.0f, FLT_MAX);
+
+    if (My_Variables->link_brush_sizes) {
+        My_Variables->brush_size.y = My_Variables->brush_size.x;
+    }
+    else {
+        ImGui::DragFloat("Brush Height", &My_Variables->brush_size.y);
+    }
 }

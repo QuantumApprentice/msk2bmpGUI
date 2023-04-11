@@ -45,6 +45,7 @@ uint8_t convert_colors(uint8_t bytes) {
 #define PALETTE_FLAT 228
 SDL_Color PaletteColors[PALETTE_NUMBER];
 
+//TODO: fix this to use float palette from My_Variables?
 SDL_PixelFormat* loadPalette(char * name)
 {
     std::ifstream f("palette//color.pal", 
@@ -84,7 +85,7 @@ SDL_PixelFormat* loadPalette(char * name)
 
 
 // Converts the color space to Fallout's paletted format
-SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool SDL)
+uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool SDL)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
     SDL_Surface* Surface_8;
@@ -129,7 +130,26 @@ SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bo
     SDL_FreeFormat(pxlFMT_Temp);
     SDL_FreeFormat(pxlFMT_UnPal);
     SDL_FreeSurface(Surface_32);
-    return Surface_8;
+
+    int width = Surface_8->w;
+    int height = Surface_8->h;
+    int size = width * height;
+
+    uint8_t* data = (uint8_t*)malloc(Surface_8->w * Surface_8->h);
+
+    int pixel_pointer = 0;
+    for (int y = 0; y < height; y++)
+    {
+        //write out one row of pixels in each loop
+        memcpy(data + (width*y),
+              ((uint8_t*)Surface_8->pixels + pixel_pointer),
+              width);
+
+        pixel_pointer += Surface_8->pitch;
+    }
+    SDL_FreeSurface(Surface_8);
+
+    return data;
 }
 
 void SDL_Color_Match(SDL_Surface* Surface_32,

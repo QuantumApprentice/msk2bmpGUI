@@ -5,7 +5,7 @@
 uint8_t convert_colors(uint8_t bytes);
 
 SDL_PixelFormat* loadPalette(char * name);
-SDL_Surface* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool SDL);
+uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool SDL);
 SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT);
 SDL_Surface* Unpalettize_Image(SDL_Surface* Render_Surface);
 void SDL_Color_Match(SDL_Surface* Convert,

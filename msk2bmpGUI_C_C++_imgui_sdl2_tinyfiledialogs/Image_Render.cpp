@@ -7,11 +7,14 @@
 //render a full image after palettizing
 void image_render(variables* My_Variables, image_data* img_data)
 {
+
+    shader_info* shaders = &My_Variables->shaders;
+
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
-    draw_FRM_to_framebuffer(My_Variables->palette,
-                           &My_Variables->render_FRM_shader,
-                           &My_Variables->giant_triangle,
+    draw_FRM_to_framebuffer(shaders->palette,
+                           &shaders->render_FRM_shader,
+                           &shaders->giant_triangle,
                             img_data);
 
     //shortcuts

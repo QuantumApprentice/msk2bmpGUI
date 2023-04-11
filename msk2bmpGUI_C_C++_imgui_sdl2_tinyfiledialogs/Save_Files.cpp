@@ -141,7 +141,7 @@ char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
     return Save_File_Name;
 }
 
-char* Save_IMG(SDL_Surface *b_surface, user_info* user_info)
+char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
 {
     char * Save_File_Name;
     char * lFilterPatterns[2] = { "*.BMP", "" };

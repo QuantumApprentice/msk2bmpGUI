@@ -33,7 +33,7 @@ mesh load_giant_triangle()
 
 void draw_FRM_to_framebuffer(float* palette,
                              Shader* shader, mesh* triangle,
-                             struct image_data* img_data)
+                             image_data* img_data)
 {
     glViewport(0, 0, img_data->width, img_data->height);
 

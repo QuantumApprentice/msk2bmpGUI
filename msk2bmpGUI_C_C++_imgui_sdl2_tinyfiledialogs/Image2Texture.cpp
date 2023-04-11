@@ -84,7 +84,6 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 
 }
 
-//TODO: need to simplify My_Variables to accept F_Prop[counter] instead
     //Palettize to 8-bit FO pallet, and dithered
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off) {
 
@@ -102,7 +101,6 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
 
     }
     else if (F_Prop->type == MSK) {
-        ////TODO: Handle MSK file types
         //copy the MSK_data pointer for editing (maybe copy by value instead?)
         F_Prop->edit_data.MSK_data = F_Prop->img_data.MSK_data;
 
@@ -116,56 +114,16 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         //set edit window bool to true, opens edit window
         *window = true;
 
-        //old way of converting MSK surface for editing
-        ////////////////////////////////////////////////////////////////////
-        //F_Prop->PAL_Surface
-        //    = FRM_Color_Convert(F_Prop->IMG_Surface,
-        //                        pxlFMT_FO_Pal,
-        //                        color_match);
-        //printf(SDL_GetError());
-        //F_Prop->Final_Render = Unpalettize_Image(F_Prop->PAL_Surface);
-
-        //F_Prop->Final_Render =
-        //    SDL_CreateRGBSurface(0, F_Prop->Map_Mask->w, F_Prop->Map_Mask->h, 32, 0, 0, 0, 0);
-        //SDL_BlitSurface(F_Prop->Map_Mask, NULL, F_Prop->Final_Render, NULL);
-        //SDL_BlitSurface(F_Prop->image, NULL, F_Prop->Final_Render, NULL);
-
-    //Converts unpalettized image to texture for display, sets window bool to true
-        //Image2Texture(F_Prop->Final_Render,
-        //    &F_Prop->Optimized_Render_Texture,
-        //    window);
-        //printf(SDL_GetError());
     }
     else {
-        SDL_FreeSurface(F_Prop->PAL_Surface);
-        F_Prop->PAL_Surface
+        F_Prop->edit_data.FRM_data
             = FRM_Color_Convert(F_Prop->IMG_Surface,
                                 pxlFMT_FO_Pal,
                                 color_match);
 
-        int width = F_Prop->PAL_Surface->w;
-        int height = F_Prop->PAL_Surface->h;
-        int size = width * height;// *F_Prop->PAL_Surface->pitch;
-
-        F_Prop->edit_data.FRM_data = (uint8_t*)malloc(size);
-
-        //memcpy(F_Prop->edit_data.FRM_data, F_Prop->PAL_Surface->pixels, size);
-
-
-        //for (int pixel_i = 0; pixel_i < 300; pixel_i++)
-        int pixel_pointer = 0;// = F_Prop->PAL_Surface->pitch * y + x;
-        //for (int x = 0; x < width; x++)
-        //{
-            for (int y = 0; y < height; y++)
-            {
-                //write out one row of pixels in each loop
-                memcpy(F_Prop->edit_data.FRM_data + (width*y), 
-                      ((uint8_t*)F_Prop->PAL_Surface->pixels + pixel_pointer), 
-                        width);// F_Prop->PAL_Surface->pitch);
-
-                pixel_pointer += F_Prop->PAL_Surface->pitch;
-            }
-        //}
+        int width  = F_Prop->IMG_Surface->w;
+        int height = F_Prop->IMG_Surface->h;
+        int size = width * height;
 
         F_Prop->edit_data.scale = F_Prop->img_data.scale;
 
@@ -176,23 +134,24 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         F_Prop->edit_data.height = height;
 
         if (alpha_off) {
-            int size = (F_Prop->PAL_Surface->w) * (F_Prop->PAL_Surface->h);
-
             for (int i = 0; i < size; i++)
             {
-                if (((uint8_t*)F_Prop->PAL_Surface->pixels)[i] == 0) {
-                    ((uint8_t*)F_Prop->PAL_Surface->pixels)[i] = 1;
+                //if (((uint8_t*)F_Prop->PAL_Surface->pixels)[i] == 0) {
+                //    ((uint8_t*)F_Prop->PAL_Surface->pixels)[i] = 1;
+                //}
+                if (F_Prop->img_data.FRM_data[i] == 0) {
+                    F_Prop->img_data.FRM_data[i] = 1;
                 }
             }
             for (int i = 0; i < size; i++)
             {
-                if ((uint8_t)F_Prop->edit_data.FRM_data[i] == 0) {
-                    (uint8_t)F_Prop->edit_data.FRM_data[i] = 1;
+                if (F_Prop->edit_data.FRM_data[i] == 0) {
+                    F_Prop->edit_data.FRM_data[i] = 1;
                 }
             }
         }
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, F_Prop->PAL_Surface, F_Prop->type);
+        bind_NULL_texture(&F_Prop->edit_data, NULL, FRM);
         //set edit window bool to true, opens edit window
         *window = true;
     }
