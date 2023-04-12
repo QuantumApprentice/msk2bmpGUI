@@ -63,7 +63,6 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //Converts unpalettized image to texture for display
     if (Palette_Update || image_edited) {
         draw_PAL_to_framebuffer(shaders->palette,
-                               //&My_Variables->render_FRM_shader,
                                &shaders->render_PAL_shader,
                                &shaders->giant_triangle,
                                edit_data);
@@ -71,44 +70,44 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
 }
 
-SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window)
-{
-    int width  = image->w;
-    int height = image->h;
-
-    //if (Map_Mask)
-    //    { SDL_FreeSurface(Map_Mask); }
-    SDL_Surface* Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
-
-    if (Map_Mask) {
-
-        Uint32 color = SDL_MapRGBA(Map_Mask->format,
-                                   0, 0, 0, 0);
-
-        for (int i = 0; i < (width*height); i++)
-        {
-            ((Uint32*)Map_Mask->pixels)[i] = color; //rand() % 255;
-            //uint8_t byte =
-            //    (rand() % 2 << 0) |
-            //    (rand() % 2 << 1) |
-            //    (rand() % 2 << 2) |
-            //    (rand() % 2 << 3) |
-            //    (rand() % 2 << 4) |
-            //    (rand() % 2 << 5) |
-            //    (rand() % 2 << 6) |
-            //    (rand() % 2 << 7);
-            //((uint8_t*)MM_Surface->pixels)[i] = byte;
-        }
-
-        Image2Texture(Map_Mask,
-            texture,
-            window);
-    }
-    else {
-        printf("Can't allocate surface for some reason...");
-    }
-    return Map_Mask;
-}
+//SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window)
+//{
+//    int width  = image->w;
+//    int height = image->h;
+//
+//    //if (Map_Mask)
+//    //    { SDL_FreeSurface(Map_Mask); }
+//    SDL_Surface* Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+//
+//    if (Map_Mask) {
+//
+//        Uint32 color = SDL_MapRGBA(Map_Mask->format,
+//                                   0, 0, 0, 0);
+//
+//        for (int i = 0; i < (width*height); i++)
+//        {
+//            ((Uint32*)Map_Mask->pixels)[i] = color; //rand() % 255;
+//            //uint8_t byte =
+//            //    (rand() % 2 << 0) |
+//            //    (rand() % 2 << 1) |
+//            //    (rand() % 2 << 2) |
+//            //    (rand() % 2 << 3) |
+//            //    (rand() % 2 << 4) |
+//            //    (rand() % 2 << 5) |
+//            //    (rand() % 2 << 6) |
+//            //    (rand() % 2 << 7);
+//            //((uint8_t*)MM_Surface->pixels)[i] = byte;
+//        }
+//
+//        Image2Texture(Map_Mask,
+//            texture,
+//            window);
+//    }
+//    else {
+//        printf("Can't allocate surface for some reason...");
+//    }
+//    return Map_Mask;
+//}
 
 bool Create_MSK_OpenGL(image_data* img_data)
 {
@@ -241,49 +240,47 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //}
 
 ////TODO: remove! same as above
-void CPU_Blend_SDL(SDL_Surface* msk_surface, SDL_Surface* img_surface)
-{
-    int width  = msk_surface->w;
-    int height = msk_surface->h;
-    int pitch = msk_surface->pitch/4;
-
-    Uint32 color_noAlpha = SDL_MapRGB(msk_surface->format,
-                               255, 255, 255);
-    Uint32 color_wAlpha = SDL_MapRGBA(img_surface->format,
-                               255, 255, 255, 255);
-
-    for (int i = 0; i < height; i++)
-    {
-        for (int j = 0; j < width; j++)
-        {
-            int position = (pitch*i) + j;
-
-            if (((Uint32*)msk_surface->pixels)[position] == color_noAlpha)
-            {
-                Uint32 pixel = ((Uint32*)img_surface->pixels)[position];
-                uint8_t r, g, b, a;
-
-                SDL_GetRGBA(pixel, img_surface->format, &r, &g, &b, &a);
-                r = ((int)r + 255) / 2;
-                g = ((int)g + 255) / 2;
-                b = ((int)b + 255) / 2;
-                a = ((int)a + 255) / 2;
-
-                Uint32 color_wAlpha = SDL_MapRGBA(img_surface->format,
-                                                  r, g, b, a);
-
-                ((Uint32*)img_surface->pixels)[position] = color_wAlpha;
-            }
-        }
-    }
-}
+//void CPU_Blend_SDL(SDL_Surface* msk_surface, SDL_Surface* img_surface)
+//{
+//    int width  = msk_surface->w;
+//    int height = msk_surface->h;
+//    int pitch = msk_surface->pitch/4;
+//
+//    Uint32 color_noAlpha = SDL_MapRGB(msk_surface->format,
+//                               255, 255, 255);
+//    Uint32 color_wAlpha = SDL_MapRGBA(img_surface->format,
+//                               255, 255, 255, 255);
+//
+//    for (int i = 0; i < height; i++)
+//    {
+//        for (int j = 0; j < width; j++)
+//        {
+//            int position = (pitch*i) + j;
+//
+//            if (((Uint32*)msk_surface->pixels)[position] == color_noAlpha)
+//            {
+//                Uint32 pixel = ((Uint32*)img_surface->pixels)[position];
+//                uint8_t r, g, b, a;
+//
+//                SDL_GetRGBA(pixel, img_surface->format, &r, &g, &b, &a);
+//                r = ((int)r + 255) / 2;
+//                g = ((int)g + 255) / 2;
+//                b = ((int)b + 255) / 2;
+//                a = ((int)a + 255) / 2;
+//
+//                Uint32 color_wAlpha = SDL_MapRGBA(img_surface->format,
+//                                                  r, g, b, a);
+//
+//                ((Uint32*)img_surface->pixels)[position] = color_wAlpha;
+//            }
+//        }
+//    }
+//}
 
 //void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
 void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK)
 {
-    //int v = value;
     int color_pick = My_Variables->Color_Pick;
-    //ImVec2 brush_s = My_Variables->brush_size;
     float brush_w = My_Variables->brush_size.x;
     float brush_h = My_Variables->brush_size.y;
     int brush_size = brush_h * brush_w;
@@ -304,15 +301,13 @@ void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK
     GLuint* texture = NULL;
     if (edit_MSK) {
         texture = &edit_data->MSK_texture;
-        //texture_paint(x / scale, y / scale, brush_s.x, brush_s.y, color_pick, edit_data->MSK_texture);
     }
     else {
         texture = &edit_data->PAL_texture;
-        //texture_paint(x / scale, y / scale, brush_s.x, brush_s.y, color_pick, edit_data->PAL_texture);
     }
 
     if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
-
+        //clamp brush to edge when close enough
         if ((x + brush_w / 2) > width) {
             x = width - brush_w / 2;
         }
@@ -325,8 +320,6 @@ void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK
         if ((y - brush_h / 2) < 0) {
             y = brush_h / 2;
         }
-
-
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, *texture);
@@ -341,14 +334,12 @@ void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK
 
 void brush_size_handler(variables* My_Variables)
 {
-    ImGui::Checkbox("Link width/height", &My_Variables->link_brush_sizes);
-
-    ImGui::DragFloat("Brush Width", &My_Variables->brush_size.x, 1.0f, 0.0f, FLT_MAX);
+    ImGui::DragFloat("###width", &My_Variables->brush_size.x, 1.0f, 1.0f, FLT_MAX, "Brush Width: %.0f pixels");
+    ImGui::SameLine();
+    ImGui::Checkbox("Link", &My_Variables->link_brush_sizes);
 
     if (My_Variables->link_brush_sizes) {
         My_Variables->brush_size.y = My_Variables->brush_size.x;
     }
-    else {
-        ImGui::DragFloat("Brush Height", &My_Variables->brush_size.y);
-    }
+    ImGui::DragFloat("###height", &My_Variables->brush_size.y, 1.0f, 1.0f, FLT_MAX, "Brush Height: %.0f pixels");
 }

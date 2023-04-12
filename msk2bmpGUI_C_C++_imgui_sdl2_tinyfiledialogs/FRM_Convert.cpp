@@ -131,11 +131,11 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, bool S
     SDL_FreeFormat(pxlFMT_UnPal);
     SDL_FreeSurface(Surface_32);
 
-    int width = Surface_8->w;
+    int width  = Surface_8->w;
     int height = Surface_8->h;
-    int size = width * height;
+    int size   = width * height;
 
-    uint8_t* data = (uint8_t*)malloc(Surface_8->w * Surface_8->h);
+    uint8_t* data = (uint8_t*)malloc(size);
 
     int pixel_pointer = 0;
     for (int y = 0; y < height; y++)

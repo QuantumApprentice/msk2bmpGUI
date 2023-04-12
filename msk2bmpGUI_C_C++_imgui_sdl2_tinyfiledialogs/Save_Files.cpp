@@ -277,7 +277,10 @@ void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info)
     //TODO: export mask tiles using msk2bmp2020 code
     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
 
-    //Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL);
+    Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL);
+
+
+
 }
 
 uint8_t* blend_PAL_texture(image_data* img_data)
@@ -330,8 +333,13 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     }
     strncpy(path, user_info->default_game_path, MAX_PATH);
 
-    //create buffer from texture and original FRM_data
-    uint8_t* blend_buffer = blend_PAL_texture(img_data);
+    //create buffers for use in tiling
+    uint8_t* blend_buffer = NULL;
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
+    if (type == FRM) {
+        //create buffer from texture and original FRM_data
+        blend_buffer = blend_PAL_texture(img_data);
+    }
 
     //split buffer into tiles and write to files
     for (int y = 0; y < num_tiles_y; y++)
@@ -379,8 +387,38 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                 {
                     //Split the surface up into 350x300 pixel surfaces
                     //      and pass them to Save_Mask()
-                    //Save_MSK_Image(surface, File_ptr, x, y);
 
+                    int img_size = img_data->width * img_data->height;
+
+
+                    //create buffers
+                    uint8_t* tile_buffer    = (uint8_t*)malloc(TILE_SIZE);
+
+                    //copy edited texture to buffer, combine with original image
+                    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+                    //read pixels into buffer
+                    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+
+
+                    int tile_pointer = (y * img_width * TILE_H) + (x * TILE_W);
+                    int img_row_pntr = 0;
+                    int tile_row_pntr = 0;
+
+                    for (int i = 0; i < TILE_H; i++)
+                    {
+                        //copy out one row of pixels in each loop to the buffer
+                        //fwrite(blend_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
+                        memcpy(tile_buffer + tile_row_pntr, texture_buffer + tile_pointer + img_row_pntr, TILE_W);
+
+                        img_row_pntr  += img_width;
+                        tile_row_pntr += TILE_W;
+                    }
+
+                    //Save_MSK_Image_OpenGL(img_data, File_ptr);
+                    Save_MSK_Image_OpenGL(tile_buffer, File_ptr, TILE_W, TILE_H);
+
+                    free(tile_buffer);
                 }
                 fclose(File_ptr);
             }
@@ -388,6 +426,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
         }
     }
     free(blend_buffer);
+    free(texture_buffer);
 }
 
 void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
@@ -629,40 +668,41 @@ void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
     fclose(File_ptr);
 }
 
-void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr)
+//void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr)
+void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 {
-    int img_size = img_data->width * img_data->height;
+    int img_size = width * height;
 
-    //copy edited texture to buffer, combine with original image
-    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
-    //create a buffer
-    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
-    uint8_t* out_buffer     = (uint8_t*)malloc(ceil(img_size / 8));
-
-    //read pixels into buffer
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+    //final output buffer
+    uint8_t* out_buffer = (uint8_t*)malloc(ceil(img_size / 8));
 
     int shift = 0;
     uint8_t bitmask = 0;
     //bool mask_1_or_0;
     uint8_t* outp = out_buffer;
-    //don't need to flip for MSK (maybe need to flip for bitmaps?)
-    for (int i = 0; i < img_size; i++)
+    for (int pxl_y = 0; pxl_y < height; pxl_y++)
     {
-        bitmask <<= 1;
-        //mask_1_or_0 = texture_buffer[i] > 0;
-        //bitmask |= mask_1_or_0;
-        bitmask |= texture_buffer[i];
-        if (++shift == 8)
+        for (int pxl_x = 0; pxl_x < width; pxl_x++)
         {
-            shift   = 0;
-            bitmask = 0;
-            *outp = bitmask;
-            ++outp;
+            //don't need to flip for MSK (maybe need to flip for bitmaps?)
+            bitmask <<= 1;
+            bitmask |= tile_buffer[pxl_x + pxl_y*width];
+            if (++shift == 8)
+            {
+                *outp = bitmask;
+                ++outp;
+                shift = 0;
+                bitmask = 0;
+            }
         }
+        bitmask <<= (8-shift); /* final shift */
+        *outp = bitmask;
+        ++outp;
+        shift = 0;
+        bitmask = 0;
     }
     //TODO: swap out writelines for something more generic
-    writelines(File_ptr, out_buffer);
-    fclose(File_ptr);
+    fwrite(out_buffer, img_size, 1, File_ptr);
+    //writelines(File_ptr, out_buffer);
+    free(out_buffer);
 }

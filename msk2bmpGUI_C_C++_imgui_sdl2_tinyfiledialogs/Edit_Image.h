@@ -7,8 +7,8 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
 bool Create_MSK_OpenGL(image_data* img_data);
 
-SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window);
-void CPU_Blend_SDL(SDL_Surface* surface1, SDL_Surface* surface2);
+//SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window);
+//void CPU_Blend_SDL(SDL_Surface* surface1, SDL_Surface* surface2);
 //void Update_Palette_SDL(struct LF* files, bool blend);
 //void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT);
 

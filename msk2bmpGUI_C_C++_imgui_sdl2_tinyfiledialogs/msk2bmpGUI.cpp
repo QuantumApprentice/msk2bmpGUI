@@ -246,13 +246,13 @@ int main(int, char**)
             ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); // Add empty node
             ImGui::DockBuilderSetNodeSize(dockspace_id, ImGui::GetMainViewport()->WorkSize);
 
-            ImGuiID dock_main_id = dockspace_id; // This variable will track the docking node.
-            ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(       dock_main_id, ImGuiDir_Left,  0.35f, NULL, &dock_main_id);
-            ImGuiID dock_id_bottom_left = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down,  0.57f, NULL, &dock_id_left);
-            ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(      dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
+            ImGuiID dock_main_id  = dockspace_id; // This variable will track the docking node.
+            ImGuiID dock_id_left  = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left,  0.35f, NULL, &dock_main_id);
+            ImGuiID dock_id_bleft = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down,  0.64f, NULL, &dock_id_left);
+            ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.50f, NULL, &dock_main_id);
 
             ImGui::DockBuilderDockWindow("###file"      , dock_id_left);
-            ImGui::DockBuilderDockWindow("###palette"   , dock_id_bottom_left);
+            ImGui::DockBuilderDockWindow("###palette"   , dock_id_bleft);
             ImGui::DockBuilderDockWindow("###preview00" , dock_main_id);
             ImGui::DockBuilderDockWindow("###render00"  , dock_id_right);
             ImGui::DockBuilderDockWindow("###edit00"    , dock_main_id);
@@ -297,6 +297,12 @@ int main(int, char**)
             }
             else {
                 Show_Palette_Window(&My_Variables);
+            }
+            //update palette at regular intervals
+            {
+                update_palette_array(My_Variables.shaders.palette,
+                                     My_Variables.CurrentTime,
+                                    &My_Variables.Palette_Update);
             }
 
             for (int i = 0; i < counter; i++)
@@ -390,12 +396,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         //// Rotate the palette for animation
             //new openGL version of pallete cycling
         if (My_Variables->Palette_Update) {
-            if (F_Prop->img_data.render_texture == NULL) {}
-            else {
-                update_palette_array(shaders->palette,
-                                My_Variables->CurrentTime,
-                               &My_Variables->Palette_Update);
-            }
             //redraw FRM to framebuffer every time the palette update timer is true
             if (F_Prop->type == FRM) {
                 draw_FRM_to_framebuffer(shaders->palette,
@@ -479,7 +479,7 @@ void Show_Palette_Window(variables *My_Variables) {
             if (x < 15) ImGui::SameLine();
 
             if ((index) >= 229) {
-                update_palette_array(     shaders->palette,
+                update_palette_array(shaders->palette,
                                      My_Variables->CurrentTime,
                                     &My_Variables->Palette_Update);
             }

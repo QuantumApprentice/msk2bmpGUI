@@ -5,14 +5,13 @@
 #include "Image2Texture.h"
 
 
-//remove when everything else has been moved to new opengl stuff
+//TODO: remove when everything else has been moved to new opengl stuff
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
-    //TODO: Need to work on a zoom feature
     //TODO: Need to clean up the memory leaks in this function and the next
     if (surface)
     {
-        if (surface->format->BitsPerPixel < 32) {
+        if (surface->format->BitsPerPixel < 9) {
             SDL_Surface* Temp_Surface = NULL;
             Temp_Surface = Unpalettize_Image(surface);
 
@@ -31,7 +30,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         *window = false;
     }
 }
-//remove when everything else has been moved to new opengl stuff
+//TODO: remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 {
     // OpenGL conversion from surface to texture - needs to be own function
@@ -61,7 +60,7 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 
     }
 }
-//remove when everything else has been moved to new opengl stuff
+//TODO: remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 {
     if (!glIsTexture(*texture)) {
