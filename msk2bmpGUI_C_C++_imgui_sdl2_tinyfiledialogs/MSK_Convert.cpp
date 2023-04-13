@@ -243,7 +243,7 @@ bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
     }
     //read the binary lines in
     ReadMskLines(infile, inputLines);
-
+    fclose(infile);
 
     //TODO: refactor this and make sure the inputLines buffer
     //      matches the other buffer for exporting

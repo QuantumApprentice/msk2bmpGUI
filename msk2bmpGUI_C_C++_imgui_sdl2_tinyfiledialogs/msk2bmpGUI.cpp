@@ -727,10 +727,29 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         //edit mask window
         else {
+            if (ImGui::Button("Clear all changes...")) {
+                if (F_Prop->edit_data.MSK_data) {
+                    glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
+                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                        width, height, 0,
+                        GL_RED, GL_UNSIGNED_BYTE, F_Prop->edit_data.MSK_data);
+                }
+                else {
+                    int texture_size = width * height;
+                    uint8_t* clear = (uint8_t*)malloc(texture_size);
+                    memset(clear, 0, texture_size);
+                    glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
+                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                        width, height,
+                        0, GL_RED, GL_UNSIGNED_BYTE, clear);
+                    free(clear);
+                }
+            }
             if (ImGui::Button("Export Mask Tiles...")) {
-                //TODO: export mask tiles using msk2bmp2020 code
+                //export mask tiles
                 Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &user_info);
-                //Save_MSK_Tiles_SDL(F_Prop->Map_Mask, &user_info);
             }
             if (ImGui::Button("Load MSK to this slot...")) {
 
@@ -742,9 +761,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                                        &F_Prop->edit_data);
 
             }
+            if (ImGui::Button("Export Full MSK...")) {
+                Save_Full_MSK_OpenGL(&F_Prop->edit_data, &user_info);
+            }
 
-
-            if (ImGui::Button("Cancel Map Mask...")) {
+            if (ImGui::Button("Cancel Editing Mask...")) {
                 F_Prop->edit_MSK = false;
             }
         }

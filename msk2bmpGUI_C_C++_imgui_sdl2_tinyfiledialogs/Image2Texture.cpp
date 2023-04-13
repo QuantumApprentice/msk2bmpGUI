@@ -33,7 +33,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 //TODO: remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 {
-    // OpenGL conversion from surface to texture - needs to be own function
+    // OpenGL conversion from surface to texture
     {
         if (!glIsTexture(*texture)) {
             glGenTextures(1, texture);

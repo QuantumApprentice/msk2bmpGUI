@@ -83,7 +83,7 @@ bool Load_Files(LF* F_Prop, struct user_info* user_info, shader_info* shaders)
     //TODO: add another type for other generic image types?
     else
     {   
-        F_Prop->IMG_Surface = IMG_Load(F_Prop->Opened_File);
+        F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
         F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
         F_Prop->img_data.height = F_Prop->IMG_Surface->h;
 

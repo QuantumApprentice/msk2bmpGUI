@@ -28,6 +28,7 @@ char* Save_FRM_SDL(SDL_Surface *f_surface, struct user_info* user_info);
 char* Save_FRM_OpenGL(image_data* img_data, struct user_info* user_info);
 
 char* Save_IMG_SDL(SDL_Surface *b_surface, struct user_info* user_info);
+void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
 
 void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info);
@@ -36,7 +37,6 @@ void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info);
 void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info);
 
 void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y);
-//void Save_MSK_Image_OpenGL(image_data* img_data, FILE* File_ptr);
 void Save_MSK_Image_OpenGL(uint8_t* texture_buffer, FILE* File_ptr, int width, int height);
 
 void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* FRM_Header);
