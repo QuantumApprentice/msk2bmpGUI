@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <iostream>
-//#include <fstream>
 #include <vector>
 #include <SDL.h>
 
@@ -59,8 +58,6 @@ SDL_PixelFormat* loadPalette(char * name)
     }
 
     uint8_t r, g, b;
-    //printf("Palette size: %d\n", 256);
-    
     for (int i = 0; i < 256; i++)
     {
         uint8_t bytes[4];
@@ -78,7 +75,6 @@ SDL_PixelFormat* loadPalette(char * name)
     SDL_SetPaletteColors(FO_Palette, PaletteColors, 0, PALETTE_NUMBER);
     pxlFMT_FO_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
     SDL_SetPixelFormatPalette(pxlFMT_FO_Pal, FO_Palette);
-
 
     return pxlFMT_FO_Pal;
 }
@@ -189,6 +185,7 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
                 limit_dither(Surface_32, &err, pxl_index_arr);
 
                 //TODO: need to clean this up
+                //      used to keep track of palettization
                 if (i == c) {
                     printf("SDL color match loop #: %d\n", i);
                     c *= 10;
@@ -223,10 +220,6 @@ void Euclidian_Distance_Color_Match(
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            //int i = (Surface_32->w * y) + x;
-            //w_smallest = INT_MAX;
-            //memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + i, sizeof(Pxl_info_32));
-
             int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
             w_smallest = INT_MAX;
             memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
@@ -269,6 +262,7 @@ void Euclidian_Distance_Color_Match(
                 }
             }
             //TODO: need to clean this up
+            //      used to keep track of palettization
             if (i == c) {
                 printf("SDL color match loop #: %d\n", i);
                 c *= 10;
@@ -285,9 +279,6 @@ void limit_dither(SDL_Surface* Surface_32,
 {
     int x = *pxl_index_arr[0];
     int y = *pxl_index_arr[1];
-
-    //if ((x - 1 <= 0) || (x + 1 >= Surface_32->w)) return;
-    //if (y + 1 >= Surface_32->h) return;
 
     int pixel_index[4];
     //if it crashes again on dithering, try removing the '=' sign from pixel_index[0] 
@@ -344,7 +335,7 @@ void clamp_dither(SDL_Surface *Surface_32,
 }
 
 // Convert FRM color to standard 32bit
-SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
+SDL_Surface* Load_FRM_Image_SDL(char *File_Name, SDL_PixelFormat* pxlFMT)
 {
     // File open stuff
     FILE *File_ptr = fopen(File_Name, "rb");
@@ -378,9 +369,6 @@ SDL_Surface* Load_FRM_Image(char *File_Name, SDL_PixelFormat* pxlFMT)
     // Have to read-in one line at a time to account for
     // SDL adding a buffer to the pitch
     uint8_t* data = (uint8_t*)Pal_Surface->pixels;
-
-    //Pal_Surface->pitch = Pal_Surface->w;
-    //fread(data, frame_height, frame_width, File_ptr);
 
     int pitch = Pal_Surface->pitch;
     for (int row = 0; row < frame_height; row++)

@@ -111,7 +111,6 @@ char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
 
         strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
-        //TODO: check for existing file first
         //fopen_s(&File_ptr, Save_File_Name, "wb");
         _wfopen_s(&File_ptr, w_save_name, L"wb");
 
@@ -335,6 +334,13 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
         //create buffer from texture and original FRM_data
         blend_buffer = blend_PAL_texture(img_data);
     }
+    else if (type == MSK) {
+        //copy edited texture to buffer, combine with original image
+        glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+        //read pixels into buffer
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
+    }
 
     //split buffer into tiles and write to files
     for (int y = 0; y < num_tiles_y; y++)
@@ -388,12 +394,6 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
 
                     //create buffers
                     uint8_t* tile_buffer    = (uint8_t*)malloc(TILE_SIZE);
-
-                    //copy edited texture to buffer, combine with original image
-                    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
-                    //read pixels into buffer
-                    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
 
                     int tile_pointer  = (y * img_width * TILE_H) + (x * TILE_W);
                     int img_row_pntr  = 0;
@@ -637,24 +637,11 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
 
 
-
-    /////////////////////////////////////////////////////
-
     //get filename
-    //char path[MAX_PATH];
-    //char Save_File_Name[MAX_PATH];
     FILE * File_ptr = NULL;
-
-    /////////////////////////////////////////////////////
-
     char * Save_File_Name;
     char * lFilterPatterns[2] = { "*.MSK", "" };
     char save_path[MAX_PATH];
-
-    //if (!strcmp(usr_info->default_save_path, "")) {
-    //    Set_Default_Path(usr_info);
-    //    if (!strcmp(usr_info->default_save_path, "")) { return; }
-    //}
 
     snprintf(save_path, MAX_PATH, "%s\\temp001.MSK", usr_info->default_save_path);
 
@@ -666,11 +653,6 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
         nullptr
     );
 
-    /////////////////////////////////////////////////////
-
-
-    //check for existing file first
-    //check_file(MSK, File_ptr, path, filename_buffer, tile_num, Save_File_Name);
     if (Save_File_Name == NULL) { return; }
 
     wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
@@ -686,7 +668,6 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
             1);
         return;
     }
-
 
     Save_MSK_Image_OpenGL(texture_buffer, File_ptr, img_data->width, img_data->height);
 
@@ -768,7 +749,7 @@ void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int 
             bitmask = 0;
         }
     }
+
     fwrite(out_buffer, buff_size, 1, File_ptr);
-    //writelines(File_ptr, out_buffer);
     free(out_buffer);
 }

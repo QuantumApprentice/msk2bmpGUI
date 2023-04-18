@@ -10,10 +10,12 @@ typedef uint8_t line_array_t[MAX_LINES][44];
 int MSK_Convert(char* File_Name, const char ** argv);
 bool IsBMPFile(FILE *infile);
 bool ReadBmpLines(FILE *file, line_array_t vOutput);            // same as below
-void ReadMskLines(FILE *file, uint8_t vOutput[MAX_LINES][44]);
+void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44]);
 int BytesToInt(char *C, int numBytes);
 
 void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y);
 
 bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data);
+bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int height);
+
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName);

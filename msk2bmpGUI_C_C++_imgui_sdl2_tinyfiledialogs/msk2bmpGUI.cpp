@@ -42,6 +42,7 @@
 #include "Palette_Cycle.h"
 #include "Image_Render.h"
 #include "Preview_Tiles.h"
+#include "MSK_Convert.h"
 
 // Our state
 struct user_info user_info;
@@ -509,8 +510,6 @@ void Show_MSK_Palette_Window(variables* My_Variables)
     ImGui::End();
 }
 
-
-
 void Preview_Tiles_Window(variables *My_Variables, int counter)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
@@ -572,8 +571,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
     std::string a = F_Prop->c_name;
     std::string name = a + " Edit Window...###edit" + b;
 
-
-
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
         if (ImGui::IsWindowFocused()) {
@@ -584,8 +581,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int
         Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, &My_Variables->Color_Pick);
 
     }
-
-
 
     ImGui::End();
 
@@ -642,7 +637,7 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
         My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
     }
 
-    F_Prop->file_open_window = Load_Files(&My_Variables->F_Prop[*counter], user_info, &My_Variables->shaders);
+    F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, user_info, &My_Variables->shaders);
 
     //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
     //if (F_Prop->file_open_window) {
@@ -684,7 +679,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
-
             if (ImGui::Button("Clear All Changes...")) {
             int texture_size = width * height;
             uint8_t* clear = (uint8_t*)malloc(texture_size);
@@ -716,15 +710,12 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                                        &My_Variables->shaders.giant_triangle,
                                        &F_Prop->edit_data);
             }
-            if (ImGui::Button("Load image to this slot...")) {
+            if (ImGui::Button("Load MSK to this slot...")) {
 
-                Load_Files(F_Prop, &user_info, &My_Variables->shaders);
+                Load_Files(F_Prop, &F_Prop->edit_data, &user_info, &My_Variables->shaders);
                 Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
-
             }
-
         }
-
         //edit mask window
         else {
             if (ImGui::Button("Clear all changes...")) {
@@ -753,29 +744,25 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Load MSK to this slot...")) {
 
-                Load_Files(F_Prop, &user_info, &My_Variables->shaders);
+                Load_Files(F_Prop, &F_Prop->edit_data, &user_info, &My_Variables->shaders);
                 Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
                 draw_PAL_to_framebuffer(My_Variables->shaders.palette,
                                        &My_Variables->shaders.render_PAL_shader,
                                        &My_Variables->shaders.giant_triangle,
                                        &F_Prop->edit_data);
-
             }
             if (ImGui::Button("Export Full MSK...")) {
                 Save_Full_MSK_OpenGL(&F_Prop->edit_data, &user_info);
             }
-
             if (ImGui::Button("Cancel Editing Mask...")) {
                 F_Prop->edit_MSK = false;
             }
         }
-
-        //closes edit window and cancels all edits?
+        //closes edit window, doesn't cancel all edits yet
         if (ImGui::Button("Cancel Editing...")) {
             F_Prop->edit_image_window = false;
             F_Prop->edit_MSK = false;
         }
-
     }
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
@@ -798,10 +785,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 &F_Prop->show_image_render);
         }
         if (ImGui::Button("Preview as Image - SDL color match - Disable Alpha")) {
+            bool disable_alpha = true;
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 true,
-                &F_Prop->show_image_render, true);
+                &F_Prop->show_image_render, disable_alpha);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
             Prep_Image(F_Prop,

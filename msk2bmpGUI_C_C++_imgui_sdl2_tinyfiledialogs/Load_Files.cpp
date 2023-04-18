@@ -13,25 +13,25 @@
 
 #include "display_FRM_OpenGL.h"
 
-bool Load_Files(LF* F_Prop, struct user_info* user_info, shader_info* shaders)
+bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders)
 {
-    char buffer[MAX_PATH];
-    snprintf(buffer, MAX_PATH, "%s\\", user_info->default_load_path);
+    char load_path[MAX_PATH];
+    snprintf(load_path, MAX_PATH, "%s\\", user_info->default_load_path);
     char * FilterPattern1[4] = { "*.bmp" , "*.png", "*.frm", "*.msk" };
 
     char *FileName = tinyfd_openFileDialog(
-        "Open files...",
-        buffer,
-        4,
-        FilterPattern1,
-        NULL,
-        1);
+                     "Open files...",
+                     load_path,
+                     4,
+                     FilterPattern1,
+                     NULL,
+                     1);
 
     //TODO: swap the if check so it returns false in an else instead
     if (!FileName) { return false; }
 
     memcpy(F_Prop->Opened_File, FileName, MAX_PATH);
-    F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
+    F_Prop->c_name    = strrchr(F_Prop->Opened_File, '/\\') + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
     //TODO: clean up this function to work better for extensions
@@ -48,35 +48,40 @@ bool Load_Files(LF* F_Prop, struct user_info* user_info, shader_info* shaders)
         F_Prop->extension = buff;
     }
 
-
     std::filesystem::path p(FileName);
     strncpy(user_info->default_load_path, p.parent_path().string().c_str(), MAX_PATH);
     //TODO: remove this printf
     printf("extension: %s\n", F_Prop->extension);
-    // TODO change strncmp to more secure varient when I figure out what that is :P
 
+    return File_Type_Check(F_Prop, shaders, img_data);
+
+}
+
+bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
+{
+    // TODO change strncmp to more secure varient when I figure out what that is :P
     if (!(strncmp (F_Prop->extension, "FRM", 4)))
     {
         //The new way to load FRM images using openGL
-        F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, &F_Prop->img_data);
+        F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);
 
         F_Prop->type = FRM;
 
         draw_FRM_to_framebuffer(shaders->palette,
                                &shaders->render_FRM_shader,
                                &shaders->giant_triangle,
-                               &F_Prop->img_data);
+                               img_data);
     }
     else if(!(strncmp (F_Prop->extension, "MSK", 4)))
     {
-        F_Prop->file_open_window = Load_MSK_Tile_OpenGL(FileName, &F_Prop->img_data);
+        F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
 
         F_Prop->type = MSK;
 
         draw_MSK_to_framebuffer(shaders->palette,
                                &shaders->render_FRM_shader,
                                &shaders->giant_triangle,
-                               &F_Prop->img_data);
+                               img_data);
 
     }
     //do this for all other more common (generic) image types
@@ -93,7 +98,7 @@ bool Load_Files(LF* F_Prop, struct user_info* user_info, shader_info* shaders)
                      &F_Prop->img_data.render_texture,
                      &F_Prop->file_open_window);
         F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-        F_Prop->img_data.width = F_Prop->IMG_Surface->w;
+        F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
     }
 
     if ((F_Prop->IMG_Surface == NULL) && F_Prop->type != FRM && F_Prop->type != MSK)

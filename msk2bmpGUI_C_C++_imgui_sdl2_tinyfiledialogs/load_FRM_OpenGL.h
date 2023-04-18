@@ -17,8 +17,8 @@ struct position {
 };
 
 struct image_data {
-    uint8_t* FRM_data;
-    uint8_t* MSK_data;
+    uint8_t* FRM_data = NULL;
+    uint8_t* MSK_data = NULL;
 
     GLuint FRM_texture;
     GLuint MSK_texture;

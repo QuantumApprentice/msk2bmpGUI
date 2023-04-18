@@ -5,13 +5,13 @@
 #include "Image2Texture.h"
 
 
-//TODO: remove when everything else has been moved to new opengl stuff
+//Used to convert generic images loaded with SDL
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
 {
     //TODO: Need to clean up the memory leaks in this function and the next
     if (surface)
     {
-        if (surface->format->BitsPerPixel < 9) {
+        if (surface->format->BitsPerPixel < 32) {
             SDL_Surface* Temp_Surface = NULL;
             Temp_Surface = Unpalettize_Image(surface);
 
@@ -30,7 +30,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         *window = false;
     }
 }
-//TODO: remove when everything else has been moved to new opengl stuff
+
 void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 {
     // OpenGL conversion from surface to texture
@@ -40,8 +40,6 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
         }
         glBindTexture(GL_TEXTURE_2D, *texture);
 
-        //shader->use();
-
         // Setup filtering parameters for display
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -49,6 +47,7 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        printf("glError: %d\n", glGetError());
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
             Surface->w,
             Surface->h,
@@ -56,7 +55,6 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
             Surface->pixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-        //printf("glError: %d\n", glGetError());
 
     }
 }
@@ -83,7 +81,7 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 
 }
 
-    //Palettize to 8-bit FO pallet, and dithered
+//Palettize to 8-bit FO pallet, and dither
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off) {
 
     if (F_Prop->type == FRM) {
