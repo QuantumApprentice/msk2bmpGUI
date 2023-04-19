@@ -33,8 +33,8 @@ struct image_data {
     float scale = 1.0;
 
     position offset{};
-    ImVec2 corner_pos;
-    ImVec2 bottom_corner;
+    //ImVec2 corner_pos;
+    //ImVec2 bottom_corner;
 };
 
 //FRM loading

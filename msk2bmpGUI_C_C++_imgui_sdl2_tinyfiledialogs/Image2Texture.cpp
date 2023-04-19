@@ -85,12 +85,15 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off) {
 
     if (F_Prop->type == FRM) {
-        //copy the FRM_data pointer for editing (maybe copy by value instead?)
+        //copy the FRM_data pointer for editing
+        //TODO: maybe copy by value instead?
         F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
 
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
         F_Prop->edit_data.scale  = F_Prop->img_data.scale;
+        F_Prop->edit_data.offset = F_Prop->img_data.offset;
+
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
         //set edit window bool to true, opens edit window
@@ -98,12 +101,14 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
 
     }
     else if (F_Prop->type == MSK) {
-        //copy the MSK_data pointer for editing (maybe copy by value instead?)
+        //copy the MSK_data pointer for editing
+        //TODO: maybe copy by value instead?
         F_Prop->edit_data.MSK_data = F_Prop->img_data.MSK_data;
 
         F_Prop->edit_data.width  = F_Prop->img_data.width;
         F_Prop->edit_data.height = F_Prop->img_data.height;
         F_Prop->edit_data.scale  = F_Prop->img_data.scale;
+        F_Prop->edit_data.offset = F_Prop->img_data.offset;
 
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
@@ -123,6 +128,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         int size = width * height;
 
         F_Prop->edit_data.scale = F_Prop->img_data.scale;
+        F_Prop->edit_data.offset = F_Prop->img_data.offset;
 
         F_Prop->img_data.width  = width;
         F_Prop->img_data.height = height;
@@ -131,15 +137,12 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bo
         F_Prop->edit_data.height = height;
 
         if (alpha_off) {
-            for (int i = 0; i < size; i++)
-            {
-                //if (((uint8_t*)F_Prop->PAL_Surface->pixels)[i] == 0) {
-                //    ((uint8_t*)F_Prop->PAL_Surface->pixels)[i] = 1;
-                //}
-                if (F_Prop->img_data.FRM_data[i] == 0) {
-                    F_Prop->img_data.FRM_data[i] = 1;
-                }
-            }
+            //for (int i = 0; i < size; i++)
+            //{
+            //    if (F_Prop->img_data.FRM_data[i] == 0) {
+            //        F_Prop->img_data.FRM_data[i] = 1;
+            //    }
+            //}
             for (int i = 0; i < size; i++)
             {
                 if (F_Prop->edit_data.FRM_data[i] == 0) {
@@ -290,4 +293,15 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
     }
     return true;
 
+}
+
+bool alpha_handler(bool* alpha)
+{
+    ImGui::Checkbox("Alpha Enabled", alpha);
+    if (*alpha) {
+        return false;
+    }
+    else {
+        return true;
+    }
 }

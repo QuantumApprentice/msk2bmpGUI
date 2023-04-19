@@ -628,6 +628,19 @@ char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_
 
 void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
 {
+    if (usr_info->save_full_MSK_warning) {
+        tinyfd_messageBox(
+            "Warning",
+            "This is intended to allow you to save your progress only.\n"
+            "Dimensions are currently not saved with this file format.\n\n"
+            "To load a file saved this way, make sure to load the full map image first.",
+            "yesnocancel",
+            "warning",
+            2);
+    }
+
+
+
     int texture_size = img_data->width * img_data->height;
     uint8_t* texture_buffer = (uint8_t*)malloc(texture_size);
     //copy edited texture to buffer, combine with original image

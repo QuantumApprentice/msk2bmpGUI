@@ -45,21 +45,21 @@
 #include "MSK_Convert.h"
 
 // Our state
-struct user_info user_info;
+user_info usr_info;
 
 // Function declarations
 void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
 void Preview_Tiles_Window(variables *My_Variables, int counter);
-void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter);
-void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter);
+void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
+void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables);
 
 //void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
-void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
-void Set_Default_Path(struct user_info* user_info);
+void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
+void Set_Default_Path(struct user_info* usr_info);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
@@ -122,7 +122,7 @@ int main(int, char**)
 
     //State variables
     struct variables My_Variables = {};
-    Load_Config(&user_info);
+    Load_Config(&usr_info);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     bool success = load_palette_to_array(My_Variables.shaders.palette);
@@ -227,6 +227,8 @@ int main(int, char**)
             My_Variables.Palette_Update = false;
         }
 
+        //end of event handling/////////////////////////////////////////////////////////////////////////
+
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -276,20 +278,20 @@ int main(int, char**)
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
-            if (ImGui::Button("Load Files...")) {
-        //load files
-                Open_Files(&user_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
-            }
+                //load files
+                if (ImGui::Button("Load Files...")) {
+                    Open_Files(&usr_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
+                }
 
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::SameLine();
+                ImGui::Text("counter = %d", counter);
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            //contextual buttons for each image slot
-            if (My_Variables.window_number_focus >= 0)
-            {
-                contextual_buttons(&My_Variables, My_Variables.window_number_focus);
-            }
+                //contextual buttons for each image slot
+                if (My_Variables.window_number_focus >= 0)
+                {
+                    contextual_buttons(&My_Variables, My_Variables.window_number_focus);
+                }
             ImGui::End();
 
             //contextual palette window for MSK vs FRM editing
@@ -346,7 +348,7 @@ int main(int, char**)
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    write_cfg_file(&user_info);
+    write_cfg_file(&usr_info);
 
     return 0;
 }
@@ -444,11 +446,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
     // Preview full image
     if (F_Prop->show_image_render) {
-        Show_Image_Render(My_Variables, &user_info, counter);
+        Show_Image_Render(My_Variables, &usr_info, counter);
     }
     // Edit full image
     if (F_Prop->edit_image_window) {
-        Edit_Image_Window(My_Variables, &user_info, counter);
+        Edit_Image_Window(My_Variables, &usr_info, counter);
     }
 }
 
@@ -524,10 +526,10 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
 
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0) {
-                Save_IMG_SDL(My_Variables->F_Prop[counter].IMG_Surface, &user_info);
+                Save_IMG_SDL(My_Variables->F_Prop[counter].IMG_Surface, &usr_info);
             }
             else {
-                Save_FRM_tiles_SDL(My_Variables->F_Prop[counter].PAL_Surface, &user_info);
+                Save_FRM_tiles_SDL(My_Variables->F_Prop[counter].PAL_Surface, &usr_info);
             }
         }
 
@@ -537,7 +539,7 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
     ImGui::End();
 }
 
-void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int counter)
+void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter)
 {
     char b[3];
     sprintf(b, "%02d", counter);
@@ -550,11 +552,11 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
 
         if (ImGui::Button("Save as Image...")) {
             if (F_Prop->type == FRM) {
-                Save_IMG_SDL(F_Prop->IMG_Surface, user_info);
+                Save_IMG_SDL(F_Prop->IMG_Surface, usr_info);
             }
             else {
                 //Save_FRM(F_Prop->PAL_Surface, user_info);
-                Save_FRM_OpenGL(&F_Prop->edit_data, user_info);
+                Save_FRM_OpenGL(&F_Prop->edit_data, usr_info);
             }
         }
         image_render(My_Variables, &F_Prop->edit_data);
@@ -563,7 +565,7 @@ void Show_Image_Render(variables *My_Variables, struct user_info* user_info, int
     ImGui::End();
 }
 
-void Edit_Image_Window(variables *My_Variables, struct user_info* user_info, int counter)
+void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter)
 {
     char b[3];
     sprintf(b, "%02d", counter);
@@ -601,11 +603,20 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                 /*TODO: add a new file option w/blank surfaces*/ }
             if (ImGui::MenuItem("Open", "Ctrl+O"))
             { 
-                Open_Files(&user_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
+                Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path"))
             {
-                Set_Default_Path(&user_info);
+                Set_Default_Path(&usr_info);
+            }
+            if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning"))
+            {
+                if (usr_info.save_full_MSK_warning) {
+                    usr_info.save_full_MSK_warning = false;
+                }
+                else {
+                    usr_info.save_full_MSK_warning = true;
+                }
             }
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
@@ -625,10 +636,11 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 }
 
 //TODO: Need to test wide character support
-void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
+void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
+    // (limit is greater than 1600x1200 for menus at least - tested on MR)
     LF* F_Prop = &My_Variables->F_Prop[*counter];
 
     if (My_Variables->pxlFMT_FO_Pal == NULL)
@@ -637,33 +649,9 @@ void Open_Files(struct user_info* user_info, int* counter, SDL_PixelFormat* pxlF
         My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
     }
 
-    F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, user_info, &My_Variables->shaders);
+    F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
 
-    //if (std::string_view{ My_Variables.F_Prop[*counter].type } == "FRM")
-    //if (F_Prop->file_open_window) {
-    //    if (F_Prop->type == FRM)
-    //    {   //new openGL way to load FRM
-    //        //draw_FRM_to_framebuffer(My_Variables->palette,
-    //        //    &My_Variables->render_FRM_shader,
-    //        //    &My_Variables->giant_triangle,
-    //        //    &F_Prop->img_data);
-    //    }
-    //    else if (F_Prop->type == MSK)
-    //    {   //new OpenGL way to load MSK
-    //        //draw_MSK_to_framebuffer(My_Variables->palette,
-    //        //    &My_Variables->render_FRM_shader,
-    //        //    &My_Variables->giant_triangle,
-    //        //    &F_Prop->img_data);
-    //    }
-    //    else {
-    //        //Image2Texture(F_Prop->IMG_Surface,
-    //        //    &F_Prop->img_data.render_texture,
-    //        //    &F_Prop->file_open_window);
-    //        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-    //        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-    //    }
-        if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
-    //}
+    if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
 }
 
 void contextual_buttons(variables* My_Variables, int window_number_focus)
@@ -676,7 +664,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     if (My_Variables->edit_image_focused) {
         int width = F_Prop->edit_data.width;
         int height = F_Prop->edit_data.height;
-
+        ImGui::Text("Zoom: %%%.2f", My_Variables->F_Prop[window_number_focus].edit_data.scale * 100);
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
@@ -691,11 +679,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             free(clear);
             }
             if (ImGui::Button("Export Image...")) {
-                Save_FRM_OpenGL(&F_Prop->edit_data, &user_info);
+                Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
             }
             if (ImGui::Button("Save as Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
-                Save_FRM_Tiles_OpenGL(F_Prop, &user_info);
+                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info);
             }
             if (ImGui::Button("Edit MSK Layer...")) {
                 F_Prop->edit_MSK = true;
@@ -711,9 +699,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                                        &F_Prop->edit_data);
             }
             if (ImGui::Button("Load MSK to this slot...")) {
-
-                Load_Files(F_Prop, &F_Prop->edit_data, &user_info, &My_Variables->shaders);
-                Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
+                Load_Files(F_Prop, &F_Prop->edit_data, &usr_info, &My_Variables->shaders);
             }
         }
         //edit mask window
@@ -740,25 +726,19 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Export Mask Tiles...")) {
                 //export mask tiles
-                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &user_info);
+                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info);
             }
             if (ImGui::Button("Load MSK to this slot...")) {
-
-                Load_Files(F_Prop, &F_Prop->edit_data, &user_info, &My_Variables->shaders);
-                Prep_Image(F_Prop, pxlFMT_FO_Pal, true, &F_Prop->edit_image_window, false);
-                draw_PAL_to_framebuffer(My_Variables->shaders.palette,
-                                       &My_Variables->shaders.render_PAL_shader,
-                                       &My_Variables->shaders.giant_triangle,
-                                       &F_Prop->edit_data);
+                Load_Files(F_Prop, &F_Prop->edit_data, &usr_info, &My_Variables->shaders);
             }
             if (ImGui::Button("Export Full MSK...")) {
-                Save_Full_MSK_OpenGL(&F_Prop->edit_data, &user_info);
+                Save_Full_MSK_OpenGL(&F_Prop->edit_data, &usr_info);
             }
             if (ImGui::Button("Cancel Editing Mask...")) {
                 F_Prop->edit_MSK = false;
             }
         }
-        //closes edit window, doesn't cancel all edits yet
+        //closes both edit windows, doesn't cancel all edits yet
         if (ImGui::Button("Cancel Editing...")) {
             F_Prop->edit_image_window = false;
             F_Prop->edit_MSK = false;
@@ -766,36 +746,31 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     }
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
+        ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
+        bool alpha_off = alpha_handler(&F_Prop->alpha);
         if (ImGui::Button("SDL Convert and Paint")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 true,
-                &F_Prop->edit_image_window);
+                &F_Prop->edit_image_window, alpha_off);
         }
         if (ImGui::Button("Euclidian Convert and Paint")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 false,
-                &F_Prop->edit_image_window);
+                &F_Prop->edit_image_window, alpha_off);
         }
         if (ImGui::Button("Preview as Image - SDL color match")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 true,
-                &F_Prop->show_image_render);
-        }
-        if (ImGui::Button("Preview as Image - SDL color match - Disable Alpha")) {
-            bool disable_alpha = true;
-            Prep_Image(F_Prop,
-                pxlFMT_FO_Pal,
-                true,
-                &F_Prop->show_image_render, disable_alpha);
+                &F_Prop->show_image_render, alpha_off);
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
                 false,
-                &F_Prop->show_image_render);
+                &F_Prop->show_image_render, alpha_off);
         }
 
         //TODO: manage some sort of contextual menu for tileable images?
@@ -805,7 +780,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
                     true,
-                    &F_Prop->preview_tiles_window);
+                    &F_Prop->preview_tiles_window, alpha_off);
             }
             if (ImGui::Button("Preview Tiles - Euclidian color match")) {
                 Prep_Image(F_Prop,
@@ -813,12 +788,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     false,
                     &F_Prop->preview_tiles_window);
             }
-        }
-    }
-    //image_render buttons
-    else if (F_Prop->show_image_render) {
-        if (ImGui::Button("Disable Alpha")) {
-            My_Variables->shaders.palette[0] = 255;
         }
     }
 }

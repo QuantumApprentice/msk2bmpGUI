@@ -18,9 +18,9 @@ struct config_data {
     char key_buffer[MAX_KEY];
     char val_buffer[MAX_PATH];
 
-} config_data;
+} config;
 
-void Load_Config(struct user_info *user_info)
+void Load_Config(struct user_info *usr_info)
 {
     //regular char
     char buffer[MAX_PATH];
@@ -49,12 +49,12 @@ void Load_Config(struct user_info *user_info)
 
         std::filesystem::path p("config\\");
         if (std::filesystem::is_directory(p)) {
-            write_cfg_file(user_info);
+            write_cfg_file(usr_info);
   
         }
         else {
             std::filesystem::create_directory("config\\");
-            write_cfg_file(user_info);
+            write_cfg_file(usr_info);
         }
     }
     else
@@ -64,95 +64,95 @@ void Load_Config(struct user_info *user_info)
 
         file_data = (char*)malloc(size);
         fread(file_data, size, 1, config_file_ptr);
-        file_data[size-1] = '\0';
+        file_data[size] = '\0';
         fclose(config_file_ptr);
 
-        parse_data(file_data, size, user_info);
+        parse_data(file_data, size, usr_info);
     }
 }
 
 //normal char version
-void parse_data(char * file_data, size_t size, struct user_info *user_info)
+void parse_data(char * file_data, size_t size, struct user_info *usr_info)
 {
-    while (config_data.char_ptr < size)
+    while (config.char_ptr < size)
     {
-        switch (file_data[config_data.char_ptr])
+        switch (file_data[config.char_ptr])
         {
         case '\r': case '\n':
         {
-            config_data.char_ptr++;
-            parse_key(file_data, size, &config_data);
+            config.char_ptr++;
+            parse_key(file_data, size, &config);
             break;
         }
         case ';':
         {
-            parse_comment(file_data, size, &config_data);
+            parse_comment(file_data, size, &config);
             break;
         }
         case '=':
         {
-            parse_value(file_data, size, &config_data, user_info);
+            parse_value(file_data, size, &config, usr_info);
             break;
         }
         default:
         {
-            parse_key(file_data, size, &config_data);
+            parse_key(file_data, size, &config);
             break;
         }
         }
     }
 }
-void parse_key(char *file_data, size_t size, struct config_data *config_data)
+void parse_key(char *file_data, size_t size, struct config_data *config)
 {
     int i = 0;
-    while (config_data->char_ptr < size)
+    while (config->char_ptr < size)
     {
-        switch (file_data[config_data->char_ptr])
+        switch (file_data[config->char_ptr])
         {
         case '\r': case '\n': case '=':
         {
-            config_data->key_buffer[i++] = '\0';
+            config->key_buffer[i++] = '\0';
             return;
         }
         }
-        config_data->key_buffer[i++] = file_data[config_data->char_ptr++];
+        config->key_buffer[i++] = file_data[config->char_ptr++];
     }
 }
-void parse_comment(char *file_data, size_t size, struct config_data *config_data)
+void parse_comment(char *file_data, size_t size, struct config_data *config)
 {
-    while (config_data->char_ptr < size)
+    while (config->char_ptr < size)
     {
-        switch (file_data[config_data->char_ptr])
+        switch (file_data[config->char_ptr])
         {
         case '\r': case '\n':
         {
             return;
         }
         }
-        config_data->char_ptr++;
+        config->char_ptr++;
     }
 }
-void parse_value(char *file_data, size_t size, struct config_data *config_data, struct user_info *user_info)
+void parse_value(char *file_data, size_t size, struct config_data *config, struct user_info *usr_info)
 {
     int i = 0;
-    config_data->char_ptr++;
-    while (config_data->char_ptr < size)
+    config->char_ptr++;
+    while (config->char_ptr < size)
     {
-        switch (file_data[config_data->char_ptr])
+        switch (file_data[config->char_ptr])
         {
         case '\r': case '\n':
         {
-            config_data->val_buffer[i++] = '\0';
-            store_config_info(config_data, user_info);
+            config->val_buffer[i++] = '\0';
+            store_config_info(config, usr_info);
             return;
         }
         case ';':
         { return; }
         }
-        config_data->val_buffer[i++] = file_data[config_data->char_ptr++];
+        config->val_buffer[i++] = file_data[config->char_ptr++];
     }
-    config_data->val_buffer[i++] = '\0';
-    store_config_info(config_data, user_info);
+    config->val_buffer[i++] = '\0';
+    store_config_info(config, usr_info);
 }
 
 
@@ -239,34 +239,48 @@ void parse_value(char *file_data, size_t size, struct config_data *config_data, 
 //    store_config_info(config_data, user_info);
 //}
 
-void store_config_info(struct config_data *config_data, struct user_info *user_info)
+void store_config_info(struct config_data *config, struct user_info *usr_info)
 {
-    if (strncmp(config_data->key_buffer, "Default_Save_Path", sizeof(config_data->val_buffer)) == 0)
+    if (strncmp(config->key_buffer, "Default_Save_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(user_info->default_save_path, config_data->val_buffer, sizeof(config_data->val_buffer));
+        strncpy(usr_info->default_save_path, config->val_buffer, sizeof(config->val_buffer));
     }
-    if (strncmp(config_data->key_buffer, "Default_Game_Path", sizeof(config_data->val_buffer)) == 0)
+    if (strncmp(config->key_buffer, "Default_Game_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(user_info->default_game_path, config_data->val_buffer, sizeof(config_data->val_buffer));
+        strncpy(usr_info->default_game_path, config->val_buffer, sizeof(config->val_buffer));
     }
-    if (strncmp(config_data->key_buffer, "Default_Load_Path", sizeof(config_data->val_buffer)) == 0)
+    if (strncmp(config->key_buffer, "Default_Load_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(user_info->default_load_path, config_data->val_buffer, sizeof(config_data->val_buffer));
+        strncpy(usr_info->default_load_path, config->val_buffer, sizeof(config->val_buffer));
+    }
+    if (strncmp(config->key_buffer, "Save_Full_MSK_Warn", sizeof(config->val_buffer)) == 0)
+    {
+        //TODO: might need to write a boolean handler?
+        char buffer[2];
+        strncpy(buffer, config->val_buffer, sizeof(config->val_buffer));
+        usr_info->save_full_MSK_warning = buffer[1];
     }
 }
 
-void write_cfg_file(struct user_info* user_info)
+void write_cfg_file(struct user_info* usr_info)
 {
     FILE * config_file_ptr = NULL;
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
     _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"wb");
 
     fwrite("Default_Save_Path=",   strlen("Default_Save_Path="  ), 1, config_file_ptr);
-    fwrite(user_info->default_save_path, strlen(user_info->default_save_path), 1, config_file_ptr);
+    fwrite(usr_info->default_save_path, strlen(usr_info->default_save_path), 1, config_file_ptr);
     fwrite("\r\nDefault_Game_Path=", strlen("\r\nDefault_Game_Path="), 1, config_file_ptr);
-    fwrite(user_info->default_game_path, strlen(user_info->default_game_path), 1, config_file_ptr);
+    fwrite(usr_info->default_game_path, strlen(usr_info->default_game_path), 1, config_file_ptr);
     fwrite("\r\nDefault_Load_Path=", strlen("\r\nDefault_Load_Path="), 1, config_file_ptr);
-    fwrite(user_info->default_load_path, strlen(user_info->default_load_path), 1, config_file_ptr);
+    fwrite(usr_info->default_load_path, strlen(usr_info->default_load_path), 1, config_file_ptr);
+
+    //handle boolean
+    //TODO: might need to write a handler?
+    fwrite("\r\nSave_Full_MSK_Warn=", strlen("\r\nSave_Full_MSK_Warn="), 1, config_file_ptr);
+    char buffer[2];
+    snprintf(buffer, 2, "%d", usr_info->save_full_MSK_warning);
+    fwrite(buffer, strlen(buffer), 1, config_file_ptr);
 
     fclose(config_file_ptr);
 }

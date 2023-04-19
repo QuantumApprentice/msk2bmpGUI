@@ -277,7 +277,7 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     uint8_t bitmask = 128;
     uint8_t buff = 0;
     bool mask_1_or_0 = false;
-    uint8_t white    = 255;
+    uint8_t white    = 1;
     uint8_t* bin_ptr = MSK_buffer;
     uint8_t* data    = (uint8_t*)calloc(1, width*height);
 

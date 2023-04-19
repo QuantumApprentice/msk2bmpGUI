@@ -13,6 +13,7 @@ struct LF {
     char * extension;
     SDL_Surface* IMG_Surface = nullptr;
     SDL_Surface* PAL_Surface = nullptr;
+    bool alpha = true;
 
     image_data img_data;
     image_data edit_data;

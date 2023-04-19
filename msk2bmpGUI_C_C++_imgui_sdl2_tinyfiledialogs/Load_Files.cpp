@@ -17,12 +17,12 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, s
 {
     char load_path[MAX_PATH];
     snprintf(load_path, MAX_PATH, "%s\\", user_info->default_load_path);
-    char * FilterPattern1[4] = { "*.bmp" , "*.png", "*.frm", "*.msk" };
+    char * FilterPattern1[5] = { "*.bmp" , "*.png", "*.frm", "*.msk", "*.jpg" };
 
     char *FileName = tinyfd_openFileDialog(
                      "Open files...",
                      load_path,
-                     4,
+                     5,
                      FilterPattern1,
                      NULL,
                      1);
