@@ -256,9 +256,10 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
     if (strncmp(config->key_buffer, "Save_Full_MSK_Warn", sizeof(config->val_buffer)) == 0)
     {
         //TODO: might need to write a boolean handler?
+        int size = sizeof(config->val_buffer);
         char buffer[2];
-        strncpy(buffer, config->val_buffer, sizeof(config->val_buffer));
-        usr_info->save_full_MSK_warning = buffer[1];
+        strncpy(buffer, config->val_buffer, 2);
+        usr_info->save_full_MSK_warning = atoi(buffer);
     }
 }
 

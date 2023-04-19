@@ -633,7 +633,10 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
             "Warning",
             "This is intended to allow you to save your progress only.\n"
             "Dimensions are currently not saved with this file format.\n\n"
-            "To load a file saved this way, make sure to load the full map image first.",
+            "To load a file saved this way,\n"
+            "make sure to load the full map image first.\n\n"
+            "To disable this warning,\n"
+            "toggle this setting in the File menu.",
             "yesnocancel",
             "warning",
             2);
