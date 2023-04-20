@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <cstdint>
 #include <SDL.h>
+#include <SDL_image.h>
 #include <filesystem>
 #include <Windows.h>
 
@@ -160,6 +161,8 @@ char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
     {
         //TODO: check for existing file first
         SDL_SaveBMP(b_surface, Save_File_Name);
+        //TODO: add support for more file formats
+        //IMG_SavePNG();
 
         //parse Save_File_Name to isolate the directory and store in default_save_path
         std::filesystem::path p(Save_File_Name);

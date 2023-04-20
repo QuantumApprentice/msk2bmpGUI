@@ -9,7 +9,6 @@
 
 #include "MSK_Convert.h"
 #include "tinyfiledialogs.h"
-#include "load_FRM_OpenGL.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
 char bmpHeader[62] = {
@@ -345,10 +344,47 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
 //    return (b & (1 << bitNumber)) != 0;
 //}
 
+union Pxl_info_32 {
+    struct {
+        uint8_t a;
+        uint8_t b;
+        uint8_t g;
+        uint8_t r;
+    };
+    uint8_t arr[4];
+};
 
+void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* img_data)
+{
+    int width  = surface->w;
+    int height = surface->h;
+    int size   = width * height;
+    uint8_t* data = (uint8_t*)calloc(1, size);
 
+    SDL_PixelFormat* pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
+    if (!Surface_32) {
+        printf("Error: %s\n", SDL_GetError());
+    }
 
+    Pxl_info_32 rgba;
+    int white = 1;
+    int i;
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
+            memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
 
+            if (rgba.r > 0 || rgba.g > 0 || rgba.b > 0) {
+                data[y*width + x] = white;
+            }
+        }
+    }
+    img_data->MSK_data = data;
+    F_Prop->type = MSK;
+}
 
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
 {

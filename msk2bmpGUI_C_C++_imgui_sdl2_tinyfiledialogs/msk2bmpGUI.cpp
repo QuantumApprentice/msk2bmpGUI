@@ -524,16 +524,13 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
 
     if (ImGui::Begin(name.c_str(), &F_Prop->preview_tiles_window, 0)) {
 
-        if (ImGui::Button("Save as Map Tiles...")) {
-            if (strcmp(My_Variables->F_Prop[counter].extension, "FRM") == 0) {
-                Save_IMG_SDL(My_Variables->F_Prop[counter].IMG_Surface, &usr_info);
-            }
-            else {
-                Save_FRM_tiles_SDL(My_Variables->F_Prop[counter].PAL_Surface, &usr_info);
-            }
+        if (ImGui::IsWindowFocused()) {
+            My_Variables->window_number_focus = counter;
+            My_Variables->tile_window_focused = true;
+            My_Variables->render_wind_focused = false;
         }
 
-        preview_tiles(My_Variables, &F_Prop->edit_data, counter);
+        preview_tiles(My_Variables, &F_Prop->edit_data);
 
     }
     ImGui::End();
@@ -550,15 +547,12 @@ void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int 
 
     if (ImGui::Begin(name.c_str(), &F_Prop->show_image_render, 0)) {
 
-        if (ImGui::Button("Save as Image...")) {
-            if (F_Prop->type == FRM) {
-                Save_IMG_SDL(F_Prop->IMG_Surface, usr_info);
-            }
-            else {
-                //Save_FRM(F_Prop->PAL_Surface, user_info);
-                Save_FRM_OpenGL(&F_Prop->edit_data, usr_info);
-            }
+        if (ImGui::IsWindowFocused()) {
+            My_Variables->window_number_focus = counter;
+            My_Variables->render_wind_focused = true;
+            My_Variables->tile_window_focused = false;
         }
+
         image_render(My_Variables, &F_Prop->edit_data);
 
     }
@@ -748,45 +742,83 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     else if (!My_Variables->edit_image_focused) {
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
         bool alpha_off = alpha_handler(&F_Prop->alpha);
+        bool SDL_color = false;
         if (ImGui::Button("SDL Convert and Paint")) {
+            SDL_color = true;
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
-                true,
+                SDL_color,
                 &F_Prop->edit_image_window, alpha_off);
         }
         if (ImGui::Button("Euclidian Convert and Paint")) {
             Prep_Image(F_Prop,
-                pxlFMT_FO_Pal,
-                false,
-                &F_Prop->edit_image_window, alpha_off);
+                       pxlFMT_FO_Pal,
+                       SDL_color,
+                       &F_Prop->edit_image_window, alpha_off);
         }
         if (ImGui::Button("Preview as Image - SDL color match")) {
+            SDL_color = true;
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
-                true,
+                SDL_color,
                 &F_Prop->show_image_render, alpha_off);
+            F_Prop->preview_tiles_window = false;
         }
         if (ImGui::Button("Preview as Image - Euclidian color match")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
-                false,
+                SDL_color,
                 &F_Prop->show_image_render, alpha_off);
+            F_Prop->preview_tiles_window = false;
         }
-
         //TODO: manage some sort of contextual menu for tileable images?
         if (F_Prop->image_is_tileable) {
             //Tileable image Buttons
             if (ImGui::Button("Preview Tiles - SDL color match")) {
+                SDL_color = true;
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    true,
+                    SDL_color,
                     &F_Prop->preview_tiles_window, alpha_off);
+                //TODO: if image already palettized, need to just feed the texture in
+                F_Prop->show_image_render = false;
             }
             if (ImGui::Button("Preview Tiles - Euclidian color match")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    false,
+                    SDL_color,
                     &F_Prop->preview_tiles_window);
+                F_Prop->show_image_render = false;
+            }
+        }
+        if (ImGui::Button("Convert Regular Image to MSK")) {
+            SDL_color = true;
+            Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
+            Prep_Image(F_Prop,
+                NULL,
+                SDL_color,
+                &F_Prop->edit_image_window, alpha_off);
+            F_Prop->edit_MSK = true;
+        }
+    }
+    if (My_Variables->tile_window_focused) {
+        if (ImGui::Button("Save as Map Tiles...")) {
+            if (strcmp(F_Prop->extension, "FRM") == 0) {
+                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+            }
+            else {
+                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info);
+            }
+        }
+    }
+    if (My_Variables->render_wind_focused) {
+        if (ImGui::Button("Save as Image...")) {
+            if (F_Prop->type == FRM) {
+                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+            }
+            else {
+                //Save_FRM(F_Prop->PAL_Surface, user_info);
+                Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
             }
         }
     }

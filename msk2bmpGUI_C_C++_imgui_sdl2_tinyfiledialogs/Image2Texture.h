@@ -31,6 +31,8 @@ struct variables {
 
     //if edit_image_open == true, then edit window is open, else false for preview window
     bool edit_image_focused = false;
+    bool tile_window_focused = false;
+    bool render_wind_focused = false;
     int window_number_focus = -1;
 
 };

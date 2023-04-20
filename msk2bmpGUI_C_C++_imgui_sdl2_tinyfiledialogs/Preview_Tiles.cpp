@@ -10,7 +10,7 @@
 #define TILE_H      (300)
 #define TILE_SIZE   (350*300)
 
-void preview_tiles(variables* My_Variables, image_data* img_data, int counter)
+void preview_tiles(variables* My_Variables, image_data* img_data)
 {
     shader_info* shaders = &My_Variables->shaders;
 
@@ -19,14 +19,7 @@ void preview_tiles(variables* My_Variables, image_data* img_data, int counter)
                            &shaders->giant_triangle,
                             img_data);
 
-    //ImVec2 Origin;
-    //Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
-    //Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
-
-
-
-
-        //handle zoom and panning for the image, plus update image position every frame
+    //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
     float scale = img_data->scale;
