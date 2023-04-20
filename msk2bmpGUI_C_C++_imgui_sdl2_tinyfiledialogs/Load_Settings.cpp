@@ -59,15 +59,14 @@ void Load_Config(struct user_info *usr_info)
     }
     else
     {
-        size_t size;
-        size = std::filesystem::file_size("config\\msk2bmpGUI.cfg");
+        size_t file_size = std::filesystem::file_size("config\\msk2bmpGUI.cfg");
 
-        file_data = (char*)malloc(size);
-        fread(file_data, size, 1, config_file_ptr);
-        file_data[size] = '\0';
+        file_data = (char*)malloc(file_size + 1);
+        fread(file_data, file_size, 1, config_file_ptr);
+        file_data[file_size] = '\0';
         fclose(config_file_ptr);
 
-        parse_data(file_data, size, usr_info);
+        parse_data(file_data, file_size, usr_info);
     }
 }
 
@@ -243,33 +242,29 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
 {
     if (strncmp(config->key_buffer, "Default_Save_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(usr_info->default_save_path, config->val_buffer, sizeof(config->val_buffer));
+        snprintf(usr_info->default_save_path, sizeof(usr_info->default_save_path), "%s", config->val_buffer);
     }
     if (strncmp(config->key_buffer, "Default_Game_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(usr_info->default_game_path, config->val_buffer, sizeof(config->val_buffer));
+        snprintf(usr_info->default_game_path, sizeof(usr_info->default_save_path), "%s", config->val_buffer);
     }
     if (strncmp(config->key_buffer, "Default_Load_Path", sizeof(config->val_buffer)) == 0)
     {
-        strncpy(usr_info->default_load_path, config->val_buffer, sizeof(config->val_buffer));
+        snprintf(usr_info->default_load_path, sizeof(usr_info->default_save_path), "%s", config->val_buffer);
     }
     if (strncmp(config->key_buffer, "Save_Full_MSK_Warn", sizeof(config->val_buffer)) == 0)
-    {
-        //TODO: might need to write a boolean handler?
-        int size = sizeof(config->val_buffer);
-        char buffer[2];
-        strncpy(buffer, config->val_buffer, 2);
-        usr_info->save_full_MSK_warning = atoi(buffer);
+    {   //handle boolean
+        usr_info->save_full_MSK_warning = (config->val_buffer[0] == '1');
     }
 }
 
 void write_cfg_file(struct user_info* usr_info)
 {
-    FILE * config_file_ptr = NULL;
+     FILE * config_file_ptr = NULL;
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
     _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"wb");
 
-    fwrite("Default_Save_Path=",   strlen("Default_Save_Path="  ), 1, config_file_ptr);
+    fwrite("Default_Save_Path=",     strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(usr_info->default_save_path, strlen(usr_info->default_save_path), 1, config_file_ptr);
     fwrite("\r\nDefault_Game_Path=", strlen("\r\nDefault_Game_Path="), 1, config_file_ptr);
     fwrite(usr_info->default_game_path, strlen(usr_info->default_game_path), 1, config_file_ptr);
