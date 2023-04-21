@@ -82,7 +82,7 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 }
 
 //Palettize to 8-bit FO pallet, and dither
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, bool color_match, bool* window, bool alpha_off) {
+void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
 
     if (F_Prop->type == FRM) {
         //copy the FRM_data pointer for editing

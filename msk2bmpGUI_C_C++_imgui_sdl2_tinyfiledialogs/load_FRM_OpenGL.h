@@ -28,13 +28,9 @@ struct image_data {
     int width;
     int height;
 
-    //image position
-    //bool window_opened = false;
     float scale = 1.0;
 
     position offset{};
-    //ImVec2 corner_pos;
-    //ImVec2 bottom_corner;
 };
 
 //FRM loading

@@ -55,8 +55,6 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 
 void Show_Palette_Window(struct variables *My_Variables);
 
-//void SDL_to_OpenGl(SDL_Surface *surface, GLuint *Optimized_Texture);
-
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
 void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
 void Set_Default_Path(struct user_info* usr_info);
@@ -64,22 +62,18 @@ void Set_Default_Path(struct user_info* usr_info);
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
 
-//struct position mouse_pos_to_texture_coord(struct position pos, float new_zoom, int frame_width, int frame_height, float* bottom_left_pos);
-//void zoom(float zoom_level, struct position focus_point, float* old_zoom, float* new_zoom, float* bottom_left_pos);
 
 
-
-
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-//    PSTR lpCmdLine, INT nCmdShow)
-//{
-//    return main(0, NULL);
-//}
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    PSTR lpCmdLine, INT nCmdShow)
+{
+    return main(0, NULL);
+}
 
 // Main code
 int main(int, char**)
 {
-    // Setup SDL
+    // Setup SDL    
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -101,7 +95,7 @@ int main(int, char**)
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Q's Crappy Fallout Image Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    SDL_Window* window = SDL_CreateWindow("Q's Beta Fallout Image Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     SDL_GL_MakeCurrent(window, gl_context);
 
@@ -662,15 +656,15 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
-            int texture_size = width * height;
-            uint8_t* clear = (uint8_t*)malloc(texture_size);
-            memset(clear, 0, texture_size);
-            glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                width, height,
-                0, GL_RED, GL_UNSIGNED_BYTE, clear);
-            free(clear);
+                int texture_size = width * height;
+                uint8_t* clear = (uint8_t*)malloc(texture_size);
+                memset(clear, 0, texture_size);
+                glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
+                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                    width, height,
+                    0, GL_RED, GL_UNSIGNED_BYTE, clear);
+                free(clear);
             }
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
@@ -742,65 +736,65 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     else if (!My_Variables->edit_image_focused) {
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
         bool alpha_off = alpha_handler(&F_Prop->alpha);
-        bool SDL_color = false;
-        if (ImGui::Button("SDL Convert and Paint")) {
-            SDL_color = true;
+        char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
+        ImGui::SameLine();
+        ImGui::Combo("##", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
+
+        if (ImGui::Button("Color Match and Edit")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
-                SDL_color,
+                My_Variables->SDL_color,
                 &F_Prop->edit_image_window, alpha_off);
         }
-        if (ImGui::Button("Euclidian Convert and Paint")) {
-            Prep_Image(F_Prop,
-                       pxlFMT_FO_Pal,
-                       SDL_color,
-                       &F_Prop->edit_image_window, alpha_off);
-        }
-        if (ImGui::Button("Preview as Image - SDL color match")) {
-            SDL_color = true;
+        //if (ImGui::Button("Euclidian Convert and Paint")) {
+        //    Prep_Image(F_Prop,
+        //               pxlFMT_FO_Pal,
+        //               My_Variables->SDL_color,
+        //               &F_Prop->edit_image_window, alpha_off);
+        //}
+        if (ImGui::Button("Color Match & Preview as Image")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
-                SDL_color,
+                My_Variables->SDL_color,
                 &F_Prop->show_image_render, alpha_off);
             F_Prop->preview_tiles_window = false;
         }
-        if (ImGui::Button("Preview as Image - Euclidian color match")) {
-            Prep_Image(F_Prop,
-                pxlFMT_FO_Pal,
-                SDL_color,
-                &F_Prop->show_image_render, alpha_off);
-            F_Prop->preview_tiles_window = false;
-        }
+        //if (ImGui::Button("Preview as Image - Euclidian color match")) {
+        //    Prep_Image(F_Prop,
+        //        pxlFMT_FO_Pal,
+        //        My_Variables->SDL_color,
+        //        &F_Prop->show_image_render, alpha_off);
+        //    F_Prop->preview_tiles_window = false;
+        //}
         //TODO: manage some sort of contextual menu for tileable images?
         if (F_Prop->image_is_tileable) {
             //Tileable image Buttons
-            if (ImGui::Button("Preview Tiles - SDL color match")) {
-                SDL_color = true;
+            if (ImGui::Button("Color Match & Preview Tiles")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    SDL_color,
+                    My_Variables->SDL_color,
                     &F_Prop->preview_tiles_window, alpha_off);
                 //TODO: if image already palettized, need to just feed the texture in
                 F_Prop->show_image_render = false;
             }
-            if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-                Prep_Image(F_Prop,
-                    pxlFMT_FO_Pal,
-                    SDL_color,
-                    &F_Prop->preview_tiles_window);
-                F_Prop->show_image_render = false;
-            }
+            //if (ImGui::Button("Preview Tiles - Euclidian color match")) {
+            //    Prep_Image(F_Prop,
+            //        pxlFMT_FO_Pal,
+            //        My_Variables->SDL_color,
+            //        &F_Prop->preview_tiles_window);
+            //    F_Prop->show_image_render = false;
+            //}
         }
         if (ImGui::Button("Convert Regular Image to MSK")) {
-            SDL_color = true;
             Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
             Prep_Image(F_Prop,
                 NULL,
-                SDL_color,
+                My_Variables->SDL_color,
                 &F_Prop->edit_image_window, alpha_off);
             F_Prop->edit_MSK = true;
         }
     }
+    ImGui::Separator();
     if (My_Variables->tile_window_focused) {
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(F_Prop->extension, "FRM") == 0) {
