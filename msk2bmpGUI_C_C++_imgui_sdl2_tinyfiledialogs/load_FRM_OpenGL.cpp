@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "load_FRM_OpenGL.h"
 #include "B_Endian.h"
 
@@ -42,6 +41,34 @@ bool init_framebuffer(struct image_data* img_data)
     }
 }
 
+uint16_t* Orientation(FILE* File_ptr)
+{
+    int size = 6 * sizeof(uint16_t);
+    uint16_t buffer;
+    uint16_t* data = (uint16_t*)malloc(size);
+
+    for (int i = 0; i < 6; i++)
+    {
+        fread(&buffer, sizeof(uint16_t), 1, File_ptr);
+        data[i] = B_Endian::write_u16(buffer);
+    }
+    return data;
+}
+
+uint32_t* Offset(FILE* File_ptr)
+{
+    int size = 6 * sizeof(uint32_t);
+    uint32_t buffer;
+    uint32_t* data = (uint32_t*)malloc(size);
+
+    for (int i = 0; i < 6; i++)
+    {
+        fread(&buffer, sizeof(uint32_t), 1, File_ptr);
+        data[i] = B_Endian::write_u32(buffer);
+    }
+    return data;
+}
+
 //load FRM image from char* file_name
 //stores GLuint and size info to img_data
 //returns true on success, else false
@@ -63,26 +90,63 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
         return NULL;
     }
 
-    fseek(File_ptr, 0x3E, SEEK_SET);
+    uint16_t buffer_16;
+    uint32_t buffer_32;
 
-    uint16_t frm_width = 0;
-    fread(&frm_width, 2, 1, File_ptr);
-    frm_width = B_Endian::write_u16(frm_width);
-    uint16_t frm_height = 0;
-    fread(&frm_height, 2, 1, File_ptr);
-    frm_height = B_Endian::write_u16(frm_height);
-    uint32_t frm_size = 0;
-    fread(&frm_size, 4, 1, File_ptr);
-    frm_size = B_Endian::write_u32(frm_size);
+    fread(&buffer_32, 4, 1, File_ptr);
+    img_data->FRM_Info.version                = B_Endian::write_u32(buffer_32);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.FPS                    = B_Endian::write_u16(buffer_16);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Action_Frame           = B_Endian::write_u16(buffer_16);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Frames_Per_Orientation = B_Endian::write_u16(buffer_16);
+    img_data->FRM_Info.Shift_Orient_x         = Orientation(File_ptr);
+    img_data->FRM_Info.Shift_Orient_y         = Orientation(File_ptr);
+    img_data->FRM_Info.Frame_0_Offset         = Offset(File_ptr);
+    fread(&buffer_32, 4, 1, File_ptr);
+    img_data->FRM_Info.Frame_Area             = B_Endian::write_u32(buffer_32);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Frame_0_Width          = B_Endian::write_u16(buffer_16);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Frame_0_Height         = B_Endian::write_u16(buffer_16);
+    fread(&buffer_32, 4, 1, File_ptr);
+    img_data->FRM_Info.Frame_0_Size           = B_Endian::write_u32(buffer_32);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Shift_Offset_x         = B_Endian::write_u16(buffer_16);
+    fread(&buffer_16, 2, 1, File_ptr);
+    img_data->FRM_Info.Shift_Offset_y         = B_Endian::write_u16(buffer_16);
 
-    img_data->width = frm_width;
+
+    //uint16_t frm_number = 0;
+    //fseek(File_ptr, 0x0008, SEEK_SET);
+    //fread(&frm_number, 2, 1, File_ptr);
+    //frm_number = B_Endian::write_u16(frm_number);
+
+    //uint16_t frm_width  = 0;
+    //uint16_t frm_height = 0;
+    //uint32_t frm_size   = 0;
+    //fseek(File_ptr, 0x3E, SEEK_SET);
+    //fread(&frm_width, 2, 1, File_ptr);
+    //frm_width = B_Endian::write_u16(frm_width);
+    //fread(&frm_height, 2, 1, File_ptr);
+    //frm_height = B_Endian::write_u16(frm_height);
+    //fread(&frm_size, 4, 1, File_ptr);
+    //frm_size = B_Endian::write_u32(frm_size);
+
+    int frm_size    = img_data->FRM_Info.Frame_0_Size;
+    int frm_number  = img_data->FRM_Info.Frames_Per_Orientation;
+    int frm_width   = img_data->FRM_Info.Frame_0_Width;
+    int frm_height  = img_data->FRM_Info.Frame_0_Height;
+
+    img_data->width  = frm_width;
     img_data->height = frm_height;
 
     fseek(File_ptr, 0x4A, SEEK_SET);
 
-    uint8_t* data = (uint8_t*)malloc(frm_size);
-    //read in FRM data
-    fread(data, 1, frm_size, File_ptr);
+    uint8_t* data = (uint8_t*)malloc(frm_size * frm_number);
+    //read in FRM data including animation frames
+    fread(data, 1, frm_size * frm_number, File_ptr);
     fclose(File_ptr);
 
     if (data) {

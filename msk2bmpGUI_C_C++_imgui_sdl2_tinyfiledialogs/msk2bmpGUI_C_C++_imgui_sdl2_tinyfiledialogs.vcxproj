@@ -208,6 +208,14 @@
     <ClInclude Include="Zoom_Pan.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="libs\libjpeg-9.dll" />
+    <None Include="libs\libpng16-16.dll" />
+    <None Include="libs\libtiff-5.dll" />
+    <None Include="libs\libwebp-7.dll" />
+    <None Include="libs\SDL2.dll" />
+    <None Include="libs\SDL2_image.dll" />
+    <None Include="libs\tinyfiledialogs32.dll" />
+    <None Include="libs\zlib1.dll" />
     <None Include="shaders\color_cycle_1D.frag" />
     <None Include="shaders\color_cycle_2D.frag" />
     <None Include="shaders\Palette_Shader.vert" />

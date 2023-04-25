@@ -217,5 +217,29 @@
     <None Include="shaders\render_PAL.frag">
       <Filter>Header Files\OpenGL\FRM</Filter>
     </None>
+    <None Include="libs\libjpeg-9.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\libpng16-16.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\libtiff-5.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\libwebp-7.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\SDL2.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\SDL2_image.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\tinyfiledialogs32.dll">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="libs\zlib1.dll">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

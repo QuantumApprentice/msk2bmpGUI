@@ -1,4 +1,5 @@
 #include "display_FRM_OpenGL.h"
+#include "B_Endian.h"
 
 mesh load_giant_triangle()
 {
@@ -29,6 +30,84 @@ mesh load_giant_triangle()
     glBindVertexArray(0);
 
     return triangle;
+}
+
+void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
+                              image_data* img_data, clock_t time, int q)
+{
+    int size = img_data->FRM_Info.Frame_0_Size;
+    int frm_width = img_data->FRM_Info.Frame_0_Width;
+    int frm_height = img_data->FRM_Info.Frame_0_Height;
+    uint8_t* data = img_data->FRM_data;
+
+    glViewport(0, 0, img_data->width, img_data->height);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+    glBindVertexArray(triangle->VAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+
+
+    if (time != NULL) {
+        int go = 0;
+        if (img_data->FRM_Info.FPS != 0) {
+            go = time % img_data->FRM_Info.FPS;
+        }
+        else {
+            go = time % 10;
+        }
+
+        static int i = 0;
+        static int pxl_ptr = 0;
+        if (go < 1) {
+
+            uint16_t width2  = B_Endian::write_u16(*((uint16_t*)(img_data->FRM_data + size + 0)));
+
+            uint16_t height2 = B_Endian::write_u16(*((uint16_t*)(img_data->FRM_data + size + 2)));
+
+            static uint32_t size = 0;
+            size            += B_Endian::write_u16(*((uint32_t*)(img_data->FRM_data + size + 4)));
+            size += i * 12;
+            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+            //FRM's are aligned to 1-byte
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            //bind data to FRM_texture for display
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data + pxl_ptr);
+            pxl_ptr =   12 * i++;
+            if (i > img_data->FRM_Info.Frames_Per_Orientation) {
+                i = 0;
+                pxl_ptr = 0;
+            }
+        }
+        static int qi = 0;
+        qi++;
+        if (qi > 60) {
+            qi = 0;
+        }
+
+        int pxl_ptr = size + 12;
+        frm_width  += q;
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //FRM's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //bind data to FRM_texture for display
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RED, GL_UNSIGNED_BYTE, data + pxl_ptr);
+
+
+    }
+    else {
+        glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+    }
+
+    //shader
+    shader->use();
+    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
+    shader->setInt("Indexed_FRM", 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+
+    //bind framebuffer back to default
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void draw_FRM_to_framebuffer(float* palette,

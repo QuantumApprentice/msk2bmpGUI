@@ -253,12 +253,12 @@ void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
 {
     FRM_Header FRM_Header;
-    FRM_Header.version = B_Endian::write_u32(4);
+    FRM_Header.version                = B_Endian::write_u32(4);
     FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height = B_Endian::write_u16(TILE_H);
-    FRM_Header.Frame_0_Width  = B_Endian::write_u16(TILE_W);
-    FRM_Header.Frame_Area     = B_Endian::write_u32(TILE_SIZE);
-    FRM_Header.Frame_0_Size   = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
+    FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
+    FRM_Header.Frame_Area             = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
 
     //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
     //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)

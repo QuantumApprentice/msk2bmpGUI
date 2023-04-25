@@ -64,11 +64,11 @@ void Show_MSK_Palette_Window(variables* My_Variables);
 
 
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-    PSTR lpCmdLine, INT nCmdShow)
-{
-    return main(0, NULL);
-}
+//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+//    PSTR lpCmdLine, INT nCmdShow)
+//{
+//    return main(0, NULL);
+//}
 
 // Main code
 int main(int, char**)
@@ -106,9 +106,9 @@ int main(int, char**)
     }
     else
     {
-        printf("Vendor: %s\n", glGetString(GL_VENDOR));
-        printf("Renderer: %s\n", glGetString(GL_RENDERER));
-        printf("Version: %s\n", glGetString(GL_VERSION));
+        printf("Vendor: %s\n",       glGetString(GL_VENDOR));
+        printf("Renderer: %s\n",     glGetString(GL_RENDERER));
+        printf("Version: %s\n",      glGetString(GL_VERSION));
         printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 
@@ -204,7 +204,7 @@ int main(int, char**)
 
         {// mouse position handling for panning
             //store previous mouse position before assigning current
-            position old_mouse_pos = My_Variables.new_mouse_pos;
+            ImVec2 old_mouse_pos = My_Variables.new_mouse_pos;
 
             //store current mouse position
             My_Variables.new_mouse_pos.x = ImGui::GetMousePos().x;
@@ -389,16 +389,36 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             F_Prop->image_is_tileable = true;
 
         }
-
+        static int q = 0;
+        static int r = 0;
+        if (ImGui::Button("increment w")) {
+            q++;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("increment h")) {
+            r++;
+        }
+        if (ImGui::Button("decrement w")) {
+            q--;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("decrement h")) {
+            r--;
+        }
         //// Rotate the palette for animation
             //new openGL version of pallete cycling
         if (My_Variables->Palette_Update) {
             //redraw FRM to framebuffer every time the palette update timer is true
             if (F_Prop->type == FRM) {
-                draw_FRM_to_framebuffer(shaders->palette,
-                                       &shaders->render_FRM_shader,
-                                       &shaders->giant_triangle,
-                                       &F_Prop->img_data);
+                animate_FRM_to_framebuff(shaders->palette,
+                                        &shaders->render_FRM_shader,
+                                        &shaders->giant_triangle,
+                                        &F_Prop->img_data, My_Variables->CurrentTime, q);
+
+                //draw_FRM_to_framebuffer(shaders->palette,
+                //                       &shaders->render_FRM_shader,
+                //                       &shaders->giant_triangle,
+                //                       &F_Prop->img_data);
             }
         }
         //new openGL way of redrawing the FRM image to cycle colors?
@@ -746,12 +766,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 My_Variables->SDL_color,
                 &F_Prop->edit_image_window, alpha_off);
         }
-        //if (ImGui::Button("Euclidian Convert and Paint")) {
-        //    Prep_Image(F_Prop,
-        //               pxlFMT_FO_Pal,
-        //               My_Variables->SDL_color,
-        //               &F_Prop->edit_image_window, alpha_off);
-        //}
         if (ImGui::Button("Color Match & Preview as Image")) {
             Prep_Image(F_Prop,
                 pxlFMT_FO_Pal,
@@ -759,13 +773,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 &F_Prop->show_image_render, alpha_off);
             F_Prop->preview_tiles_window = false;
         }
-        //if (ImGui::Button("Preview as Image - Euclidian color match")) {
-        //    Prep_Image(F_Prop,
-        //        pxlFMT_FO_Pal,
-        //        My_Variables->SDL_color,
-        //        &F_Prop->show_image_render, alpha_off);
-        //    F_Prop->preview_tiles_window = false;
-        //}
         //TODO: manage some sort of contextual menu for tileable images?
         if (F_Prop->image_is_tileable) {
             //Tileable image Buttons
@@ -777,13 +784,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //TODO: if image already palettized, need to just feed the texture in
                 F_Prop->show_image_render = false;
             }
-            //if (ImGui::Button("Preview Tiles - Euclidian color match")) {
-            //    Prep_Image(F_Prop,
-            //        pxlFMT_FO_Pal,
-            //        My_Variables->SDL_color,
-            //        &F_Prop->preview_tiles_window);
-            //    F_Prop->show_image_render = false;
-            //}
         }
         if (ImGui::Button("Convert Regular Image to MSK")) {
             Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
@@ -811,7 +811,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             else {
-                //Save_FRM(F_Prop->PAL_Surface, user_info);
                 Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
             }
         }

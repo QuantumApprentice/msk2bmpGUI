@@ -15,8 +15,8 @@ struct variables {
 
     clock_t CurrentTime = 0;
 
-    position mouse_delta;
-    position new_mouse_pos;
+    ImVec2 mouse_delta;
+    ImVec2 new_mouse_pos;
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
