@@ -117,6 +117,7 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
     FRM_Header* header = (FRM_Header*)buffer;
     flip_header_endian(header);
 
+
     FRM_Frame_Info* frame_info;
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
@@ -131,11 +132,7 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
         {
             frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
             flip_frame_endian(frame_info);
-            //img_data->Frame->frame_info->Frame_Height   = frame_info->Frame_Height;
-            //img_data->Frame->frame_info->Frame_Width    = frame_info->Frame_Width;
-            //img_data->Frame->frame_info->Frame_Size     = frame_info->Frame_Size;
-            //img_data->Frame->frame_info->Shift_Offset_x = frame_info->Shift_Offset_x;
-            //img_data->Frame->frame_info->Shift_Offset_y = frame_info->Shift_Offset_y;
+
             img_data->Frame[j + (i * num_frames)].frame_number  = j;
             img_data->Frame[j + (i * num_frames)].orientation   = i;
             img_data->Frame[j + (i * num_frames)].frame_info    = frame_info;
@@ -144,35 +141,15 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
         }
     }
 
-
+    img_data->FRM_data = buffer;
 
 
 
     uint16_t buffer_16;
     uint32_t buffer_32;
 
-    //img_data->FRM_Info.version                  = B_Endian::write_u32(*((uint32_t*)(buff_ptr)));
-    //img_data->FRM_Info.FPS                      = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 4)));
-    //img_data->FRM_Info.Action_Frame             = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 6)));
-    //img_data->FRM_Info.Frames_Per_Orientation   = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 8)));
-
-    //memcpy(img_data->FRM_Info.Shift_Orient_x, Orientation(File_ptr), sizeof(img_data->FRM_Info.Shift_Orient_x));
-    //img_data->FRM_Info.Shift_Orient_y = Orientation(File_ptr);
-    //img_data->FRM_Info.Frame_0_Offset = Offset(File_ptr);
-    //fread(&buffer_32, 4, 1, File_ptr);
-    //img_data->FRM_Info.Frame_Area = B_Endian::write_u32(buffer_32);
-    //fread(&buffer_16, 2, 1, File_ptr);
 
 
-    //img_data->FRM_Info.Frame_0_Width = B_Endian::write_u16(buffer_16);
-    //fread(&buffer_16, 2, 1, File_ptr);
-    //img_data->FRM_Info.Frame_0_Height = B_Endian::write_u16(buffer_16);
-    //fread(&buffer_32, 4, 1, File_ptr);
-    //img_data->FRM_Info.Frame_0_Size = B_Endian::write_u32(buffer_32);
-    //fread(&buffer_16, 2, 1, File_ptr);
-    //img_data->FRM_Info.Shift_Offset_x = B_Endian::write_u16(buffer_16);
-    //fread(&buffer_16, 2, 1, File_ptr);
-    //img_data->FRM_Info.Shift_Offset_y = B_Endian::write_u16(buffer_16);
     return true;
 }
 
