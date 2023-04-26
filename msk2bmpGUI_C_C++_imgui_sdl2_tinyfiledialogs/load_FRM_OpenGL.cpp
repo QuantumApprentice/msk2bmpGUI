@@ -41,33 +41,146 @@ bool init_framebuffer(struct image_data* img_data)
     }
 }
 
-uint16_t* Orientation(FILE* File_ptr)
+void Orientation(uint16_t Frame_0_Orient[6])
 {
-    int size = 6 * sizeof(uint16_t);
-    uint16_t buffer;
-    uint16_t* data = (uint16_t*)malloc(size);
-
     for (int i = 0; i < 6; i++)
     {
-        fread(&buffer, sizeof(uint16_t), 1, File_ptr);
-        data[i] = B_Endian::write_u16(buffer);
+        B_Endian::swap_16(Frame_0_Orient[i]);
     }
-    return data;
 }
 
-uint32_t* Offset(FILE* File_ptr)
+void Offset(uint32_t Frame_0_Offset[6])
 {
-    int size = 6 * sizeof(uint32_t);
-    uint32_t buffer;
-    uint32_t* data = (uint32_t*)malloc(size);
-
     for (int i = 0; i < 6; i++)
     {
-        fread(&buffer, sizeof(uint32_t), 1, File_ptr);
-        data[i] = B_Endian::write_u32(buffer);
+        B_Endian::swap_32(Frame_0_Offset[i]);
     }
-    return data;
 }
+
+void flip_header_endian(FRM_Header* header)
+{
+    B_Endian::swap_32(header->version);
+    B_Endian::swap_16(header->FPS);
+    B_Endian::swap_16(header->Action_Frame);
+    B_Endian::swap_16(header->Frames_Per_Orient);
+    Orientation(header->Shift_Orient_x);
+    Orientation(header->Shift_Orient_y);
+    Offset(header->Frame_0_Offset);
+    B_Endian::swap_32(header->Frame_Area);
+
+}
+
+void flip_frame_endian(FRM_Frame_Info* frame_info)
+{
+    B_Endian::swap_16(frame_info->Frame_Width);
+    B_Endian::swap_16(frame_info->Frame_Height);
+    B_Endian::swap_32(frame_info->Frame_Size);
+    B_Endian::swap_16(frame_info->Shift_Offset_x);
+    B_Endian::swap_16(frame_info->Shift_Offset_y);
+}
+
+uint8_t* load_entire_file(const char* file_name, int* file_size)
+{
+    FILE* File_ptr;
+    int file_length = 0;
+    fopen_s(&File_ptr, file_name, "rb");
+    if (!File_ptr) {
+        printf("error, can't open file");
+        return NULL;
+    }
+    int error = fseek(File_ptr, 0, SEEK_END);
+    if (!error) {
+        file_length = ftell(File_ptr);
+        fseek(File_ptr, 0, SEEK_SET);
+    }
+    else {
+        return NULL;
+    }
+    uint8_t* buffer = (uint8_t*)malloc(file_length);
+    fread(buffer, file_length, 1, File_ptr);
+    fclose(File_ptr);
+
+    if (file_size != NULL) {
+        *file_size = file_length;
+    }
+
+    return buffer;
+}
+
+bool load_FRM_header(const char* file_name, image_data* img_data)
+{
+    int file_size = 0;
+    int buff_offset = 0;
+    int info_size = sizeof(FRM_Frame_Info);
+    int hdr_size  = sizeof(FRM_Header);
+    uint8_t* buffer = load_entire_file(file_name, &file_size);
+    FRM_Header* header = (FRM_Header*)buffer;
+    flip_header_endian(header);
+
+    FRM_Frame_Info* frame_info;
+
+    int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
+    int num_frames  = header->Frames_Per_Orient;
+
+    img_data->Frame = (FRM_Frame*)malloc(header->Frames_Per_Orient * sizeof(FRM_Frame*) * num_orients);
+
+    buff_offset = hdr_size;
+    for (int i = 0; i < num_orients; i++)
+    {
+        for (int j = 0; j < num_frames; j++)
+        {
+            frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
+            flip_frame_endian(frame_info);
+            //img_data->Frame->frame_info->Frame_Height   = frame_info->Frame_Height;
+            //img_data->Frame->frame_info->Frame_Width    = frame_info->Frame_Width;
+            //img_data->Frame->frame_info->Frame_Size     = frame_info->Frame_Size;
+            //img_data->Frame->frame_info->Shift_Offset_x = frame_info->Shift_Offset_x;
+            //img_data->Frame->frame_info->Shift_Offset_y = frame_info->Shift_Offset_y;
+            img_data->Frame[j + (i * num_frames)].frame_number  = j;
+            img_data->Frame[j + (i * num_frames)].orientation   = i;
+            img_data->Frame[j + (i * num_frames)].frame_info    = frame_info;
+
+            buff_offset += frame_info->Frame_Size + info_size;
+        }
+    }
+
+
+
+
+
+    uint16_t buffer_16;
+    uint32_t buffer_32;
+
+    //img_data->FRM_Info.version                  = B_Endian::write_u32(*((uint32_t*)(buff_ptr)));
+    //img_data->FRM_Info.FPS                      = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 4)));
+    //img_data->FRM_Info.Action_Frame             = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 6)));
+    //img_data->FRM_Info.Frames_Per_Orientation   = B_Endian::write_u16(*((uint16_t*)(buff_ptr + 8)));
+
+    //memcpy(img_data->FRM_Info.Shift_Orient_x, Orientation(File_ptr), sizeof(img_data->FRM_Info.Shift_Orient_x));
+    //img_data->FRM_Info.Shift_Orient_y = Orientation(File_ptr);
+    //img_data->FRM_Info.Frame_0_Offset = Offset(File_ptr);
+    //fread(&buffer_32, 4, 1, File_ptr);
+    //img_data->FRM_Info.Frame_Area = B_Endian::write_u32(buffer_32);
+    //fread(&buffer_16, 2, 1, File_ptr);
+
+
+    //img_data->FRM_Info.Frame_0_Width = B_Endian::write_u16(buffer_16);
+    //fread(&buffer_16, 2, 1, File_ptr);
+    //img_data->FRM_Info.Frame_0_Height = B_Endian::write_u16(buffer_16);
+    //fread(&buffer_32, 4, 1, File_ptr);
+    //img_data->FRM_Info.Frame_0_Size = B_Endian::write_u32(buffer_32);
+    //fread(&buffer_16, 2, 1, File_ptr);
+    //img_data->FRM_Info.Shift_Offset_x = B_Endian::write_u16(buffer_16);
+    //fread(&buffer_16, 2, 1, File_ptr);
+    //img_data->FRM_Info.Shift_Offset_y = B_Endian::write_u16(buffer_16);
+    return true;
+}
+
+
+
+
+
+
 
 //load FRM image from char* file_name
 //stores GLuint and size info to img_data
@@ -83,39 +196,23 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    FILE* File_ptr;
-    fopen_s(&File_ptr, file_name, "rb");
-    if (!File_ptr) {
-        printf("error, can't open file");
-        return NULL;
+    int frm_number;
+    int frm_size;
+    int frm_width;
+    int frm_height;
+
+    bool success = load_FRM_header(file_name, img_data);
+    if (success) {
+        frm_number  = img_data->FRM_Info.Frames_Per_Orient;
+
+        frm_size    = img_data->Frame->frame_info->Frame_Size;
+        frm_width   = img_data->Frame->frame_info->Frame_Width;
+        frm_height  = img_data->Frame->frame_info->Frame_Height;
+
+        img_data->width  = frm_width;
+        img_data->height = frm_height;
     }
 
-    uint16_t buffer_16;
-    uint32_t buffer_32;
-
-    fread(&buffer_32, 4, 1, File_ptr);
-    img_data->FRM_Info.version                = B_Endian::write_u32(buffer_32);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.FPS                    = B_Endian::write_u16(buffer_16);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Action_Frame           = B_Endian::write_u16(buffer_16);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Frames_Per_Orientation = B_Endian::write_u16(buffer_16);
-    img_data->FRM_Info.Shift_Orient_x         = Orientation(File_ptr);
-    img_data->FRM_Info.Shift_Orient_y         = Orientation(File_ptr);
-    img_data->FRM_Info.Frame_0_Offset         = Offset(File_ptr);
-    fread(&buffer_32, 4, 1, File_ptr);
-    img_data->FRM_Info.Frame_Area             = B_Endian::write_u32(buffer_32);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Frame_0_Width          = B_Endian::write_u16(buffer_16);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Frame_0_Height         = B_Endian::write_u16(buffer_16);
-    fread(&buffer_32, 4, 1, File_ptr);
-    img_data->FRM_Info.Frame_0_Size           = B_Endian::write_u32(buffer_32);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Shift_Offset_x         = B_Endian::write_u16(buffer_16);
-    fread(&buffer_16, 2, 1, File_ptr);
-    img_data->FRM_Info.Shift_Offset_y         = B_Endian::write_u16(buffer_16);
 
 
     //uint16_t frm_number = 0;
@@ -134,27 +231,17 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     //fread(&frm_size, 4, 1, File_ptr);
     //frm_size = B_Endian::write_u32(frm_size);
 
-    int frm_size    = img_data->FRM_Info.Frame_0_Size;
-    int frm_number  = img_data->FRM_Info.Frames_Per_Orientation;
-    int frm_width   = img_data->FRM_Info.Frame_0_Width;
-    int frm_height  = img_data->FRM_Info.Frame_0_Height;
 
-    img_data->width  = frm_width;
-    img_data->height = frm_height;
 
-    fseek(File_ptr, 0x4A, SEEK_SET);
 
-    uint8_t* data = (uint8_t*)malloc(frm_size * frm_number);
     //read in FRM data including animation frames
-    fread(data, 1, frm_size * frm_number, File_ptr);
-    fclose(File_ptr);
 
-    if (data) {
+    if (img_data->FRM_data) {
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
 
         bool success = false;
         success = init_framebuffer(img_data);
@@ -162,7 +249,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
-        img_data->FRM_data = data;
+        img_data->FRM_data = img_data->FRM_data;
         return true;
     }
     else {

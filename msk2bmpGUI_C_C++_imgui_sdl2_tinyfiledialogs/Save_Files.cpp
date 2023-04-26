@@ -19,77 +19,84 @@
 void Set_Default_Path(user_info* user_info);
 void write_cfg_file(user_info* user_info);
 
-char* Save_FRM_SDL(SDL_Surface *f_surface, user_info* user_info)
-{
-    FRM_Header FRM_Header;
-    FRM_Header.version                = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height         = B_Endian::write_u16(f_surface->h);
-    FRM_Header.Frame_0_Width          = B_Endian::write_u16(f_surface->w);
-    FRM_Header.Frame_Area             = B_Endian::write_u32(f_surface->h * f_surface->w);
-    FRM_Header.Frame_0_Size           = B_Endian::write_u32(f_surface->h * f_surface->w);
-
-    FILE * File_ptr = NULL;
-    char * Save_File_Name;
-    char * lFilterPatterns[2] = { "", "*.FRM" };
-    Save_File_Name = tinyfd_saveFileDialog(
-        "default_name",
-        "temp001.FRM",
-        2,
-        lFilterPatterns,
-        nullptr
-    );
-    if (Save_File_Name == NULL) {}
-    else
-    {
-        //parse Save_File_Name to isolate the directory and save in default_save_path
-        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
-
-        //std::filesystem::path p(Save_File_Name);
-        std::filesystem::path p(w_save_name);
-
-        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
-
-        //TODO: check for existing file first
-        //fopen_s(&File_ptr, Save_File_Name, "wb");
-        _wfopen_s(&File_ptr, w_save_name, L"wb");
-
-        if (!File_ptr) {
-            tinyfd_messageBox(
-                "Error",
-                "Can not open this file in write mode",
-                "ok",
-                "error",
-                1);
-            return NULL;
-        }
-        else {
-            fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
-            //TODO: some image sizes are coming out weird again :(
-            //issue is the alignment, SDL surfaces aligned at 4 pixels
-            fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
-            //TODO: also want to add animation frames
-
-            fclose(File_ptr);
-        }
-    }
-
-    return Save_File_Name;
-}
+//char* Save_FRM_SDL(SDL_Surface *f_surface, user_info* user_info)
+//{
+//    FRM_Header FRM_Header;
+//    FRM_Header.version                = B_Endian::write_u32(4);
+//    FRM_Header.Frames_Per_Orient      = B_Endian::write_u16(1);
+//    FRM_Header.Frame_0_Height         = B_Endian::write_u16(f_surface->h);
+//    FRM_Header.Frame_0_Width          = B_Endian::write_u16(f_surface->w);
+//    FRM_Header.Frame_Area             = B_Endian::write_u32(f_surface->h * f_surface->w);
+//    FRM_Header.Frame_0_Size           = B_Endian::write_u32(f_surface->h * f_surface->w);
+//
+//    FILE * File_ptr = NULL;
+//    char * Save_File_Name;
+//    char * lFilterPatterns[2] = { "", "*.FRM" };
+//    Save_File_Name = tinyfd_saveFileDialog(
+//        "default_name",
+//        "temp001.FRM",
+//        2,
+//        lFilterPatterns,
+//        nullptr
+//    );
+//    if (Save_File_Name == NULL) {}
+//    else
+//    {
+//        //parse Save_File_Name to isolate the directory and save in default_save_path
+//        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+//
+//        //std::filesystem::path p(Save_File_Name);
+//        std::filesystem::path p(w_save_name);
+//
+//        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+//
+//        //TODO: check for existing file first
+//        //fopen_s(&File_ptr, Save_File_Name, "wb");
+//        _wfopen_s(&File_ptr, w_save_name, L"wb");
+//
+//        if (!File_ptr) {
+//            tinyfd_messageBox(
+//                "Error",
+//                "Can not open this file in write mode",
+//                "ok",
+//                "error",
+//                1);
+//            return NULL;
+//        }
+//        else {
+//            fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+//            //TODO: some image sizes are coming out weird again :(
+//            //issue is the alignment, SDL surfaces aligned at 4 pixels
+//            fwrite(f_surface->pixels, (f_surface->h * f_surface->w), 1, File_ptr);
+//            //TODO: also want to add animation frames
+//
+//            fclose(File_ptr);
+//        }
+//    }
+//
+//    return Save_File_Name;
+//}
 
 char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
 {
-    int width = img_data->width;
+    int width  = img_data->width;
     int height = img_data->height;
-    int size = width * height;
+    int size   = width * height;
 
     FRM_Header FRM_Header;
-    FRM_Header.version = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height = B_Endian::write_u16(height);
-    FRM_Header.Frame_0_Width  = B_Endian::write_u16(width);
-    FRM_Header.Frame_Area     = B_Endian::write_u32(size);
-    FRM_Header.Frame_0_Size   = B_Endian::write_u32(size);
+    FRM_Header.version                   = B_Endian::write_u32(4);
+    FRM_Header.Frames_Per_Orient         = B_Endian::write_u16(1);
+
+    img_data->Frame->frame_info->Frame_Height = B_Endian::write_u16(height);
+    img_data->Frame->frame_info->Frame_Width  = B_Endian::write_u16(width);
+    img_data->Frame->frame_info->Frame_Size   = B_Endian::write_u32(size);
+    //img_data->Frame_Info->Shift_Offset_x = 
+    //img_data->Frame_Info->Shift_Offset_y = 
+
+    //FRM_Header.Frame_0_Height = B_Endian::write_u16(height);
+    //FRM_Header.Frame_0_Width  = B_Endian::write_u16(width);
+    //FRM_Header.Frame_Area     = B_Endian::write_u32(size);
+    //FRM_Header.Frame_0_Size   = B_Endian::write_u32(size);
 
     FILE * File_ptr = NULL;
     char * Save_File_Name;
@@ -233,32 +240,37 @@ void Set_Default_Path(user_info* user_info)
 #define TILE_H      (300)
 #define TILE_SIZE   (350*300)
 
-void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
-{
-    FRM_Header FRM_Header;
-    FRM_Header.version                = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
-    FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
-    FRM_Header.Frame_Area             = B_Endian::write_u32(TILE_SIZE);
-    FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
-
-    //TODO: also need to test index 255 to see what color it shows in the engine
-    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
-    Split_to_Tiles_SDL(PAL_surface, user_info, FRM, &FRM_Header);
-
-    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
-}
+//void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
+//{
+//    FRM_Header FRM_Header;
+//    FRM_Header.version                = B_Endian::write_u32(4);
+//    FRM_Header.Frames_Per_Orient      = B_Endian::write_u16(1);
+//    FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
+//    FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
+//    FRM_Header.Frame_Area             = B_Endian::write_u32(TILE_SIZE);
+//    FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
+//
+//    //TODO: also need to test index 255 to see what color it shows in the engine
+//    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
+//    Split_to_Tiles_SDL(PAL_surface, user_info, FRM, &FRM_Header);
+//
+//    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
+//}
 
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
 {
     FRM_Header FRM_Header;
-    FRM_Header.version                = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orientation = B_Endian::write_u16(1);
-    FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
-    FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
-    FRM_Header.Frame_Area             = B_Endian::write_u32(TILE_SIZE);
-    FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header.version                                = B_Endian::write_u32(4);
+    FRM_Header.Frames_Per_Orient                      = B_Endian::write_u16(1);
+    FRM_Header.Frame_Area                             = B_Endian::write_u32(TILE_SIZE);
+
+    F_Prop->edit_data.Frame->frame_info->Frame_Height = B_Endian::write_u16(TILE_H);
+    F_Prop->edit_data.Frame->frame_info->Frame_Width  = B_Endian::write_u16(TILE_W);
+    F_Prop->edit_data.Frame->frame_info->Frame_Size   = B_Endian::write_u32(TILE_SIZE);
+
+    //FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
+    //FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
+    //FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
 
     //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
     //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
@@ -375,7 +387,8 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                 if (type == FRM) {
                     //Split buffer int 350x300 pixel tiles and write to file
                     //save header
-                    fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
+                    fwrite(frm_header,           sizeof(FRM_Header), 1, File_ptr);
+                    fwrite(img_data->Frame->frame_info, sizeof(FRM_Frame),  1, File_ptr);
 
                     int tile_pointer = (y * img_width*TILE_H) + (x * TILE_W);
                     int row_pointer = 0;

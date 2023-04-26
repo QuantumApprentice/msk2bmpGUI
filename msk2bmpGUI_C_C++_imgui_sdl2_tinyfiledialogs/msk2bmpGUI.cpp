@@ -390,20 +390,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         }
         static int q = 0;
-        static int r = 0;
-        if (ImGui::Button("increment w")) {
+        if (ImGui::Button("increment frame")) {
             q++;
         }
-        ImGui::SameLine();
-        if (ImGui::Button("increment h")) {
-            r++;
-        }
-        if (ImGui::Button("decrement w")) {
+        if (ImGui::Button("decrement frame")) {
             q--;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("decrement h")) {
-            r--;
         }
         //// Rotate the palette for animation
             //new openGL version of pallete cycling

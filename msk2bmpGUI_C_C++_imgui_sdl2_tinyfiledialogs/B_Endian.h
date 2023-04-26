@@ -7,10 +7,10 @@
 
 namespace B_Endian {
     // Convert signed values
-    //int32_t read_32(std::istream& f);
-    //int16_t read_16(std::istream& f);
-    //int8_t  read_8 (std::istream& f);
 
+    void swap_16(uint16_t& in);
+    void swap_32(uint32_t& in);
+    void swap_16(int16_t& in);
     // Convert unsigned values
     uint32_t read_u32(std::istream& f);
     uint32_t write_u32(int f);
