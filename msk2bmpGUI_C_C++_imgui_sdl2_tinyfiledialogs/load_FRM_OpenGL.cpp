@@ -13,9 +13,27 @@ bool init_framebuffer(struct image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    int x = 0, y = 0;
+    int num_orients = (img_data->FRM_Info.Frame_0_Offset[1]) ? 6 : 1;
+    for (int i = 0; i < img_data->FRM_Info.Frames_Per_Orient * num_orients; i++)
+    {
+        int largest = img_data->Frame[i].frame_info->Frame_Width;
+        if (largest > x) {
+            x = largest;
+        }
+        largest = img_data->Frame[i].frame_info->Frame_Height;
+        if (largest > y) {
+            y = largest;
+        }
+    }
+
+
+
+
     //allocate video memory for texture
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        img_data->width, img_data->height,
+        x,      y,
         0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     //init framebuffer
@@ -24,7 +42,7 @@ bool init_framebuffer(struct image_data* img_data)
 
     //attach texture to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->render_texture, 0);
-    glViewport(0, 0, img_data->width, img_data->height);
+    glViewport(0, 0, x, y);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -117,6 +135,13 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
     FRM_Header* header = (FRM_Header*)buffer;
     flip_header_endian(header);
 
+    //memcpy(img_data->FRM_Info, &header, sizeof(FRM_Header));
+
+    img_data->FRM_Info.Frames_Per_Orient = header->Frames_Per_Orient;
+    for (int i = 0; i < 6; i++)
+    {
+        img_data->FRM_Info.Frame_0_Offset[i] = header->Frame_0_Offset[i];
+    }
 
     FRM_Frame_Info* frame_info;
 
@@ -143,13 +168,6 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
 
     img_data->FRM_data = buffer;
 
-
-
-    uint16_t buffer_16;
-    uint32_t buffer_32;
-
-
-
     return true;
 }
 
@@ -173,43 +191,17 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    int frm_number;
-    int frm_size;
     int frm_width;
     int frm_height;
 
     bool success = load_FRM_header(file_name, img_data);
     if (success) {
-        frm_number  = img_data->FRM_Info.Frames_Per_Orient;
-
-        frm_size    = img_data->Frame->frame_info->Frame_Size;
         frm_width   = img_data->Frame->frame_info->Frame_Width;
         frm_height  = img_data->Frame->frame_info->Frame_Height;
 
         img_data->width  = frm_width;
         img_data->height = frm_height;
     }
-
-
-
-    //uint16_t frm_number = 0;
-    //fseek(File_ptr, 0x0008, SEEK_SET);
-    //fread(&frm_number, 2, 1, File_ptr);
-    //frm_number = B_Endian::write_u16(frm_number);
-
-    //uint16_t frm_width  = 0;
-    //uint16_t frm_height = 0;
-    //uint32_t frm_size   = 0;
-    //fseek(File_ptr, 0x3E, SEEK_SET);
-    //fread(&frm_width, 2, 1, File_ptr);
-    //frm_width = B_Endian::write_u16(frm_width);
-    //fread(&frm_height, 2, 1, File_ptr);
-    //frm_height = B_Endian::write_u16(frm_height);
-    //fread(&frm_size, 4, 1, File_ptr);
-    //frm_size = B_Endian::write_u32(frm_size);
-
-
-
 
     //read in FRM data including animation frames
 
@@ -218,7 +210,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->Frame[0].frame_info+1);
 
         bool success = false;
         success = init_framebuffer(img_data);

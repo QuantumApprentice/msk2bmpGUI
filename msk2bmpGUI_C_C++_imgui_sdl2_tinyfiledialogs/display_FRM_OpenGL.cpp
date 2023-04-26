@@ -33,13 +33,14 @@ mesh load_giant_triangle()
 }
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
-                              image_data* img_data, clock_t time, int q)
+                              image_data* img_data, clock_t time, int* q)
 {
-    int frm_width  = img_data->Frame->frame_info->Frame_Width;
-    int frm_height = img_data->Frame->frame_info->Frame_Height;
-    uint8_t* data  = img_data->FRM_data;
+    int frm_width  = img_data->Frame[*q].frame_info->Frame_Width;
+    int frm_height = img_data->Frame[*q].frame_info->Frame_Height;
+    uint32_t size  = img_data->Frame[*q].frame_info->Frame_Size;
+    uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
 
-    glViewport(0, 0, img_data->width, img_data->height);
+    glViewport(0, 0, 51, 79);
 
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle->VAO);
@@ -47,36 +48,17 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
     static int b = 0;
-    if (b != q) {
+    if (b != *q) {
 
-        b = q;
-
-        static uint16_t width2  = frm_width;
-        static uint16_t height2 = frm_height;
-        static uint32_t size    = img_data->Frame->frame_info->Frame_Size;
-        static int i = 0;
-        static int pxl_ptr = 0;
-
-
+        b = *q;
 
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data + pxl_ptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 
-        width2  = B_Endian::write_u16(*((uint16_t*)(img_data->FRM_data + size + 0)));
-        height2 = B_Endian::write_u16(*((uint16_t*)(img_data->FRM_data + size + 2)));
-        size   += B_Endian::write_u32(*((uint32_t*)(img_data->FRM_data + size + 4)));
-        size   += 12;
 
-        i++;
-        pxl_ptr = size;
-        if (i > img_data->FRM_Info.Frames_Per_Orient-2) {
-            i = 0;
-            pxl_ptr = 0;
-            size = img_data->Frame->frame_info->Frame_Size;
-        }
 
         ////Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         ////FRM's are aligned to 1-byte

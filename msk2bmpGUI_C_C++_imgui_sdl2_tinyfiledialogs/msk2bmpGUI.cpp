@@ -392,10 +392,18 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         static int q = 0;
         if (ImGui::Button("increment frame")) {
             q++;
+            if (q > F_Prop->img_data.FRM_Info.Frames_Per_Orient) {
+                q = 0;
+            }
         }
         if (ImGui::Button("decrement frame")) {
             q--;
+            if (q < 0) {
+                q = 0;
+            }
         }
+
+
         //// Rotate the palette for animation
             //new openGL version of pallete cycling
         if (My_Variables->Palette_Update) {
@@ -404,7 +412,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 animate_FRM_to_framebuff(shaders->palette,
                                         &shaders->render_FRM_shader,
                                         &shaders->giant_triangle,
-                                        &F_Prop->img_data, My_Variables->CurrentTime, q);
+                                        &F_Prop->img_data, My_Variables->CurrentTime, &q);
 
                 //draw_FRM_to_framebuffer(shaders->palette,
                 //                       &shaders->render_FRM_shader,
@@ -412,11 +420,17 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 //                       &F_Prop->img_data);
             }
         }
+
         //new openGL way of redrawing the FRM image to cycle colors?
         ImGui::Text(F_Prop->c_name);
+        char buff[256];
+        snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Height);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Width);
+        ImGui::Text(buff);
 
         //show the original image for previewing
-        Preview_Image(My_Variables, &F_Prop->img_data);
+        Preview_Image(My_Variables, &F_Prop->img_data, q);
 
         // Draw red boxes to indicate where the tiles will be cut from
         float scale = F_Prop->img_data.scale;
