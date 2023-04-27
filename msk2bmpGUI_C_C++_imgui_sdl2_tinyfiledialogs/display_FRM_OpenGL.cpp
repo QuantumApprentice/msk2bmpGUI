@@ -33,15 +33,20 @@ mesh load_giant_triangle()
 }
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
-                              image_data* img_data, clock_t time, int* q)
+                              image_data* img_data, clock_t time)
 {
-    int frm_width  = img_data->Frame[*q].frame_info->Frame_Width;
-    int frm_height = img_data->Frame[*q].frame_info->Frame_Height;
-    uint32_t size  = img_data->Frame[*q].frame_info->Frame_Size;
-    //uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
-    uint8_t* data = img_data->Frame[*q].frame_info->frame_start;
+    int orient = img_data->display_orient_num;
+    int frame = img_data->display_frame_num;
+    int max_frm = img_data->FRM_Info.Frames_Per_Orient;
+    int display_frame = orient * max_frm + frame;
 
-    glViewport(0, 0, 51, 79);
+    int frm_width  = img_data->Frame[display_frame].frame_info->Frame_Width;
+    int frm_height = img_data->Frame[display_frame].frame_info->Frame_Height;
+    //uint32_t size  = img_data->Frame[display_frame].frame_info->Frame_Size;
+    //uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
+    uint8_t* data = img_data->Frame[display_frame].frame_info->frame_start;
+
+    glViewport(0, 0, img_data->width, img_data->height);
 
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle->VAO);
@@ -49,9 +54,9 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
     static int b = 0;
-    if (b != *q) {
+    if (b != display_frame) {
 
-        b = *q;
+        b = display_frame;
 
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte

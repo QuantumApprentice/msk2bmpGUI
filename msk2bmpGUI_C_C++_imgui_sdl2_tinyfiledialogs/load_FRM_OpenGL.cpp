@@ -14,27 +14,11 @@ bool init_framebuffer(struct image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    int x = 0, y = 0;
-    int num_orients = (img_data->FRM_Info.Frame_0_Offset[1]) ? 6 : 1;
-    for (int i = 0; i < img_data->FRM_Info.Frames_Per_Orient * num_orients; i++)
-    {
-        int largest = img_data->Frame[i].frame_info->Frame_Width;
-        if (largest > x) {
-            x = largest;
-        }
-        largest = img_data->Frame[i].frame_info->Frame_Height;
-        if (largest > y) {
-            y = largest;
-        }
-    }
-
-
-
+    int width = img_data->width;
+    int height = img_data->height;
 
     //allocate video memory for texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        x,      y,
-        0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     //init framebuffer
     glGenFramebuffers(1, &img_data->framebuffer);
@@ -42,7 +26,7 @@ bool init_framebuffer(struct image_data* img_data)
 
     //attach texture to framebuffer
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->render_texture, 0);
-    glViewport(0, 0, x, y);
+    glViewport(0, 0, width, height);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
@@ -85,7 +69,6 @@ void flip_header_endian(FRM_Header* header)
     Orientation(header->Shift_Orient_y);
     Offset(header->Frame_0_Offset);
     B_Endian::swap_32(header->Frame_Area);
-
 }
 
 void flip_frame_endian(FRM_Frame_Info* frame_info)
@@ -134,7 +117,7 @@ void copy_header(image_data* img_data, FRM_Header* header)
     }
 }
 
-bool load_FRM_header(const char* file_name, image_data* img_data)
+bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size = 0;
     int buff_offset = 0;
@@ -154,6 +137,7 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
     img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
     buff_offset = hdr_size;
+    int x = 0, y = 0;
     for (int i = 0; i < num_orients; i++)
     {
         for (int j = 0; j < num_frames; j++)
@@ -165,20 +149,26 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
             img_data->Frame[j + (i * num_frames)].orientation   = i;
             img_data->Frame[j + (i * num_frames)].frame_info    = frame_info;
 
+            int largest = img_data->Frame[i].frame_info->Frame_Width;
+            if (largest > x) {
+                x = largest;
+            }
+            largest = img_data->Frame[i].frame_info->Frame_Height;
+            if (largest > y) {
+                y = largest;
+            }
+
             buff_offset += frame_info->Frame_Size + info_size;
         }
     }
+    img_data->width  = x;
+    img_data->height = y;
+
 
     img_data->FRM_data = buffer;
 
     return true;
 }
-
-
-
-
-
-
 
 //load FRM image from char* file_name
 //stores GLuint and size info to img_data
@@ -197,27 +187,22 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     int frm_width;
     int frm_height;
 
-    bool success = load_FRM_header(file_name, img_data);
-
-
-
+    bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
-        frm_width   = img_data->Frame->frame_info->Frame_Width;
-        frm_height  = img_data->Frame->frame_info->Frame_Height;
-
-        img_data->width  = frm_width;
-        img_data->height = frm_height;
+        frm_width   = img_data->Frame[0].frame_info->Frame_Width;
+        frm_height  = img_data->Frame[0].frame_info->Frame_Height;
     }
 
     //read in FRM data including animation frames
 
     if (img_data->FRM_data) {
+        uint8_t* data = img_data->Frame[0].frame_info->frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->Frame[0].frame_info->frame_start);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 
         bool success = false;
         success = init_framebuffer(img_data);
