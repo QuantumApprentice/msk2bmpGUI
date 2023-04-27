@@ -30,8 +30,10 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, s
     //TODO: swap the if check so it returns false in an else instead
     if (FileName) {
 
-        memcpy(F_Prop->Opened_File, FileName, MAX_PATH);
-        //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", FileName);
+        //if (strlen(FileName) < MAX_PATH) {
+        //    memcpy(F_Prop->Opened_File, FileName, strlen(FileName));
+        //}
+        snprintf(F_Prop->Opened_File, MAX_PATH, "%s", FileName);
         F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
         F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 

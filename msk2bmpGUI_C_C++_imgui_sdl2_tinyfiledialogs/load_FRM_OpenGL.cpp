@@ -151,7 +151,7 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame*) * num_orients);
+    img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
     buff_offset = hdr_size;
     for (int i = 0; i < num_orients; i++)
@@ -198,6 +198,10 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     int frm_height;
 
     bool success = load_FRM_header(file_name, img_data);
+
+
+
+
     if (success) {
         frm_width   = img_data->Frame->frame_info->Frame_Width;
         frm_height  = img_data->Frame->frame_info->Frame_Height;
@@ -213,7 +217,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->Frame[0].frame_info+1);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->Frame[0].frame_info->frame_start);
 
         bool success = false;
         success = init_framebuffer(img_data);
