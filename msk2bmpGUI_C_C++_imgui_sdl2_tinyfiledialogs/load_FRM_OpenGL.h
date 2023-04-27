@@ -52,7 +52,7 @@ struct FRM_Frame {
 struct image_data {
     FRM_Header FRM_Info{};
     FRM_Frame* Frame;
-    rectangle FRM_bounding_box = {};
+    rectangle FRM_bounding_box[6];
 
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;

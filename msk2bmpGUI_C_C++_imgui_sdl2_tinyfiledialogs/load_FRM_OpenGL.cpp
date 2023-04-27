@@ -14,9 +14,10 @@ bool init_framebuffer(struct image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    int width  = img_data->width;
-    int height = img_data->height;
-
+    int width   = img_data->width;
+    int height  = img_data->height;
+    //width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;
+    //height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;
     //allocate video memory for texture
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -200,11 +201,10 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             buff_offset += frame_info->Frame_Size + info_size;
             frame++;
         }
+        img_data->FRM_bounding_box[i] = FRM_bounding_box;
     }
     img_data->width  = FRM_bounding_box.x2 - FRM_bounding_box.x1;
     img_data->height = FRM_bounding_box.y2 - FRM_bounding_box.y1;
-    img_data->FRM_bounding_box = FRM_bounding_box;
-
 
     img_data->FRM_data = buffer;
 
@@ -225,14 +225,22 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    int frm_width;
-    int frm_height;
+    int frm_width   = 0;
+    int frm_height  = 0;
+    int width       = 0;
+    int height      = 0;
+    int x_offset    = 0;
+    int y_offset    = 0;
 
     bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
         frm_width   = img_data->Frame[0].frame_info->Frame_Width;
         frm_height  = img_data->Frame[0].frame_info->Frame_Height;
+        width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;//      img_data->width;
+        height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;//      img_data->height;
+        x_offset    = img_data->Frame[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
+        y_offset    = img_data->Frame[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
     }
 
     //read in FRM data including animation frames
@@ -243,7 +251,9 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
 
         bool success = false;
         success = init_framebuffer(img_data);
