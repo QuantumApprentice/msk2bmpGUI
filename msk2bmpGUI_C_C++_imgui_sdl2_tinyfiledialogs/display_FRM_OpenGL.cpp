@@ -38,7 +38,8 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
     int frm_width  = img_data->Frame[*q].frame_info->Frame_Width;
     int frm_height = img_data->Frame[*q].frame_info->Frame_Height;
     uint32_t size  = img_data->Frame[*q].frame_info->Frame_Size;
-    uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
+    //uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
+    uint8_t* data = img_data->Frame[*q].frame_info->frame_start;
 
     glViewport(0, 0, 51, 79);
 
@@ -57,14 +58,6 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frm_width, frm_height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-
-
-
-        ////Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-        ////FRM's are aligned to 1-byte
-        //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        ////bind data to FRM_texture for display
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width2, height2, 0, GL_RED, GL_UNSIGNED_BYTE, data + pxl_ptr);
 
     }
     else {

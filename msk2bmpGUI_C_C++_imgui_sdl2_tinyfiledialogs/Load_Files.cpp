@@ -28,33 +28,37 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, s
                      1);
 
     //TODO: swap the if check so it returns false in an else instead
-    if (!FileName) { return false; }
+    if (FileName) {
 
-    memcpy(F_Prop->Opened_File, FileName, MAX_PATH);
-    F_Prop->c_name    = strrchr(F_Prop->Opened_File, '/\\') + 1;
-    F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
+        memcpy(F_Prop->Opened_File, FileName, MAX_PATH);
+        //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", FileName);
+        F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
+        F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
-    //TODO: clean up this function to work better for extensions
-    //      maybe also support for wide characters
-    if (F_Prop->extension[0] > 96) {
-        int i = 0;
-        char buff[5];
-        while (F_Prop->extension[i] != '\0')
-        {
-            buff[i] = toupper(F_Prop->extension[i]);
-            i++;
+        //TODO: clean up this function to work better for extensions
+        //      maybe also support for wide characters
+        if (F_Prop->extension[0] > 96) {
+            int i = 0;
+            char buff[5];
+            while (F_Prop->extension[i] != '\0')
+            {
+                buff[i] = toupper(F_Prop->extension[i]);
+                i++;
+            }
+            buff[i] = '\0';
+            F_Prop->extension = buff;
         }
-        buff[i] = '\0';
-        F_Prop->extension = buff;
+
+        std::filesystem::path p(F_Prop->Opened_File);
+        strncpy(user_info->default_load_path, p.parent_path().string().c_str(), MAX_PATH);
+        //TODO: remove this printf
+        printf("extension: %s\n", F_Prop->extension);
+
+        return File_Type_Check(F_Prop, shaders, img_data);
     }
-
-    std::filesystem::path p(FileName);
-    strncpy(user_info->default_load_path, p.parent_path().string().c_str(), MAX_PATH);
-    //TODO: remove this printf
-    printf("extension: %s\n", F_Prop->extension);
-
-    return File_Type_Check(F_Prop, shaders, img_data);
-
+    else {
+        return false;
+    }
 }
 
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)

@@ -389,6 +389,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             F_Prop->image_is_tileable = true;
 
         }
+
+        //frame movement button (need to convert to horizontal scroll bar)
         static int q = 0;
         if (ImGui::Button("increment frame")) {
             q++;
@@ -423,11 +425,13 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         //new openGL way of redrawing the FRM image to cycle colors?
         ImGui::Text(F_Prop->c_name);
-        char buff[256];
-        snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Height);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Width);
-        ImGui::Text(buff);
+        if (F_Prop->img_data.Frame) {
+            char buff[256];
+            snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Height);
+            ImGui::Text(buff);
+            snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Width);
+            ImGui::Text(buff);
+        }
 
         //show the original image for previewing
         Preview_Image(My_Variables, &F_Prop->img_data, q);
@@ -436,7 +440,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         float scale = F_Prop->img_data.scale;
         if (wrong_size) {
             ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-            //ImVec2 Origin = F_Prop->img_data.corner_pos;
             ImVec2 Origin;
             Origin.x = F_Prop->img_data.offset.x + ImGui::GetItemRectMin().x;
             Origin.y = F_Prop->img_data.offset.y + ImGui::GetItemRectMin().y;

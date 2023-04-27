@@ -30,6 +30,7 @@ typedef struct {
     uint32_t Frame_Size;                        // 0x0042
     int16_t  Shift_Offset_x;                    // 0x0046
     int16_t  Shift_Offset_y;                    // 0x0048
+    uint8_t  frame_start[];
 } FRM_Frame_Info;
 #pragma pack(pop)
 

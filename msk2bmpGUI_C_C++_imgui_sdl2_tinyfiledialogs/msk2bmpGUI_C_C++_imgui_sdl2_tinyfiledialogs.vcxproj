@@ -214,7 +214,6 @@
     <None Include="libs\libwebp-7.dll" />
     <None Include="libs\SDL2.dll" />
     <None Include="libs\SDL2_image.dll" />
-    <None Include="libs\tinyfiledialogs32.dll" />
     <None Include="libs\zlib1.dll" />
     <None Include="shaders\color_cycle_1D.frag" />
     <None Include="shaders\color_cycle_2D.frag" />

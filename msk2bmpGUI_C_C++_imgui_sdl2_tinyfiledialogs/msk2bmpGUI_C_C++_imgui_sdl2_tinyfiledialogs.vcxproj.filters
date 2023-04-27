@@ -235,9 +235,6 @@
     <None Include="libs\SDL2_image.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\tinyfiledialogs32.dll">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="libs\zlib1.dll">
       <Filter>Resource Files</Filter>
     </None>

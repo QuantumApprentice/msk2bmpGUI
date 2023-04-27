@@ -125,6 +125,15 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     return buffer;
 }
 
+void copy_header(image_data* img_data, FRM_Header* header)
+{
+    img_data->FRM_Info.Frames_Per_Orient = header->Frames_Per_Orient;
+    for (int i = 0; i < 6; i++)
+    {
+        img_data->FRM_Info.Frame_0_Offset[i] = header->Frame_0_Offset[i];
+    }
+}
+
 bool load_FRM_header(const char* file_name, image_data* img_data)
 {
     int file_size = 0;
@@ -135,20 +144,14 @@ bool load_FRM_header(const char* file_name, image_data* img_data)
     FRM_Header* header = (FRM_Header*)buffer;
     flip_header_endian(header);
 
-    //memcpy(img_data->FRM_Info, &header, sizeof(FRM_Header));
-
-    img_data->FRM_Info.Frames_Per_Orient = header->Frames_Per_Orient;
-    for (int i = 0; i < 6; i++)
-    {
-        img_data->FRM_Info.Frame_0_Offset[i] = header->Frame_0_Offset[i];
-    }
+    copy_header(img_data, header);
 
     FRM_Frame_Info* frame_info;
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->Frame = (FRM_Frame*)malloc(header->Frames_Per_Orient * sizeof(FRM_Frame*) * num_orients);
+    img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame*) * num_orients);
 
     buff_offset = hdr_size;
     for (int i = 0; i < num_orients; i++)
