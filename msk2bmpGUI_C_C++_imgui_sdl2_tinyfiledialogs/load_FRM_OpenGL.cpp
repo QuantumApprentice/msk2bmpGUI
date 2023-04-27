@@ -14,7 +14,7 @@ bool init_framebuffer(struct image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    int width = img_data->width;
+    int width  = img_data->width;
     int height = img_data->height;
 
     //allocate video memory for texture
@@ -117,6 +117,19 @@ void copy_header(image_data* img_data, FRM_Header* header)
     }
 }
 
+//#include <algorithm>
+//rectangle Union(rectangle a, rectangle b)
+//{
+//    int top     = std::min(a.y1, b.y1);
+//    int left    = std::min(a.x1, b.x1);
+//    int bottom  = std::max(a.y2, b.y2);
+//    int right   = std::max(a.x2, b.x2);
+//
+//    rectangle result = { top, left, bottom, right };
+//
+//    return result;
+//}
+
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size = 0;
@@ -136,8 +149,12 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
+    rectangle bounding_box = {};     
+    rectangle FRM_bounding_box = {}; 
+
+    FRM_Frame* frame = img_data->Frame;
     buff_offset = hdr_size;
-    int x = 0, y = 0;
+    int x = 0, y = 0, shift_x = 0, shift_y = 0;
     for (int i = 0; i < num_orients; i++)
     {
         for (int j = 0; j < num_frames; j++)
@@ -145,24 +162,48 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
             flip_frame_endian(frame_info);
 
-            img_data->Frame[j + (i * num_frames)].frame_number  = j;
-            img_data->Frame[j + (i * num_frames)].orientation   = i;
-            img_data->Frame[j + (i * num_frames)].frame_info    = frame_info;
+            //FRM_Frame* frame = &img_data->Frame[j + (i * num_frames)];
 
-            int largest = img_data->Frame[i].frame_info->Frame_Width;
+            frame->frame_number  = j;
+            frame->orientation   = i;
+            frame->frame_info    = frame_info;
+
+            bounding_box.x1 += frame_info->Shift_Offset_x;
+            bounding_box.y1 += frame_info->Shift_Offset_y;
+            bounding_box.x2  = bounding_box.x1 + frame_info->Frame_Width;
+            bounding_box.y2  = bounding_box.x1 + frame_info->Frame_Height;
+
+            frame->bounding_box = bounding_box;
+
+            if (bounding_box.x1 < FRM_bounding_box.x1) {
+                FRM_bounding_box.x1 = bounding_box.x1;
+            }
+            if (bounding_box.y1 < FRM_bounding_box.y1) {
+                FRM_bounding_box.y1 = bounding_box.y1;
+            }
+            if (bounding_box.x2 > FRM_bounding_box.x2) {
+                FRM_bounding_box.x2 = bounding_box.x2;
+            }
+            if (bounding_box.y2 > FRM_bounding_box.y2) {
+                FRM_bounding_box.y2 = bounding_box.y2;
+            }
+
+            int largest = frame_info->Frame_Width;
             if (largest > x) {
                 x = largest;
             }
-            largest = img_data->Frame[i].frame_info->Frame_Height;
+            largest = frame_info->Frame_Height;
             if (largest > y) {
                 y = largest;
             }
 
             buff_offset += frame_info->Frame_Size + info_size;
+            frame++;
         }
     }
-    img_data->width  = x;
-    img_data->height = y;
+    img_data->width  = FRM_bounding_box.x2 - FRM_bounding_box.x1;
+    img_data->height = FRM_bounding_box.y2 - FRM_bounding_box.y1;
+    img_data->FRM_bounding_box = FRM_bounding_box;
 
 
     img_data->FRM_data = buffer;

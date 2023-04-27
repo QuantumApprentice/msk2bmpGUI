@@ -5,6 +5,14 @@
 
 #include "imgui-docking/imgui.h"
 
+struct rectangle {
+    int x1;
+    int y1;
+
+    int x2;
+    int y2;
+};
+
 struct mesh {
     GLuint VBO = 0;
     GLuint VAO = 0;
@@ -38,12 +46,13 @@ struct FRM_Frame {
     int frame_number = 0;
     int orientation  = 0;
     FRM_Frame_Info* frame_info;
-    //uint8_t* Frame_Start;
+    rectangle bounding_box = {};
 };
 
 struct image_data {
     FRM_Header FRM_Info{};
     FRM_Frame* Frame;
+    rectangle FRM_bounding_box = {};
 
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
