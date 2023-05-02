@@ -460,8 +460,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         //show the original image for previewing
         Preview_Image(My_Variables, &F_Prop->img_data);
 
-        ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 40);
 
+        ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
+
+        const char* speeds[] = { "0x", "1/4x", "1/2x", "1x", "2x" };
+        ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
         const char* names[] = { "NE", "E", "SE", "SW", "W", "NW" };
         ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
         ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,

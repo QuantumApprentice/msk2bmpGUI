@@ -67,6 +67,7 @@ struct image_data {
     int height;
     int display_frame_num;
     int display_orient_num;
+    int playback_speed;
 
     float scale = 1.0;
 

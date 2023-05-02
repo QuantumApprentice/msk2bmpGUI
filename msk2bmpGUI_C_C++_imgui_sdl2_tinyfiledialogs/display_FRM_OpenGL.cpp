@@ -33,26 +33,15 @@ mesh load_giant_triangle()
 }
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
-                              image_data* img_data, clock_t time)
+                              image_data* img_data, clock_t current_time)
 {
     int orient      = img_data->display_orient_num;
-    int frame       = img_data->display_frame_num;
     int max_frm     = img_data->FRM_Info.Frames_Per_Orient;
-    int display_frame = orient * max_frm + frame;
+    float fps       = img_data->FRM_Info.FPS;// img_data->playback_speed;
 
-    int frm_width   = img_data->Frame[display_frame].frame_info->Frame_Width;
-    int frm_height  = img_data->Frame[display_frame].frame_info->Frame_Height;
-
-    //int width         = img_data->width;
-    //int height        = img_data->height;
     int width       = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height      = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 
-    int x_offset    = img_data->Frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset    = img_data->Frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
-    //uint32_t size  = img_data->Frame[display_frame].frame_info->Frame_Size;
-
-    uint8_t* data = img_data->Frame[display_frame].frame_info->frame_start;
 
     glViewport(0, 0, img_data->width, img_data->height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
@@ -60,10 +49,31 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
-    static int b = 0;
-    if (b != display_frame) {
+    static clock_t last_time = 0;
+    //static clock_t accumulated_delta_time = current_time - last_time;
+    //last_time = current_time;
 
-        b = display_frame;
+    if ((float)(current_time - last_time)/CLOCKS_PER_SEC > 1 / fps) {
+        last_time = current_time;
+
+        img_data->display_frame_num += 1;
+        if (img_data->display_frame_num >= img_data->FRM_Info.Frames_Per_Orient) {
+            img_data->display_frame_num = 0;
+        }
+
+        int frame       = img_data->display_frame_num;
+        int display_frame = orient * max_frm + frame;
+
+        int frm_width   = img_data->Frame[display_frame].frame_info->Frame_Width;
+        int frm_height  = img_data->Frame[display_frame].frame_info->Frame_Height;
+
+        int x_offset    = img_data->Frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
+        int y_offset    = img_data->Frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
+
+        uint8_t* data   = img_data->Frame[display_frame].frame_info->frame_start;
+
+
+
 
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte

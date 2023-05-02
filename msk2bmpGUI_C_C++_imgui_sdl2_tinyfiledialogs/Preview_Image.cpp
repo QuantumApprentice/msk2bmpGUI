@@ -13,10 +13,7 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data)
     int max_frm = img_data->FRM_Info.Frames_Per_Orient;
 
     float scale = img_data->scale;
-    //int width   = img_data->width;
-    //int height  = img_data->height;
-    //int width   = img_data->Frame[orient*max_frm + frame].frame_info->Frame_Width;
-    //int height  = img_data->Frame[orient*max_frm + frame].frame_info->Frame_Height;
+
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height  = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 

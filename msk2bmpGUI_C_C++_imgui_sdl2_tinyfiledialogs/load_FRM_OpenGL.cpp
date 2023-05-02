@@ -130,13 +130,6 @@ void copy_header(image_data* img_data, FRM_Header* header)
 //    return result;
 //}
 
-void print_stuff(int stuff, FILE* file_ptr)
-{
-    char buffer[10];
-    snprintf(buffer, 10, "%d\n", stuff);
-    fwrite(buffer, strlen(buffer), 1, file_ptr);
-}
-
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size = 0;
@@ -147,7 +140,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     FRM_Header* header = (FRM_Header*)buffer;
     flip_header_endian(header);
 
-    copy_header(img_data, header);
+    memcpy(&img_data->FRM_Info, buffer, sizeof(FRM_Header));
+
+    //copy_header(img_data, header);
 
     FRM_Frame_Info* frame_info;
 
