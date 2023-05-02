@@ -392,18 +392,31 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         //// Rotate the palette for animation
             //new openGL version of pallete cycling
-        if (My_Variables->Palette_Update) {
+        //if (My_Variables->Palette_Update) {
             //redraw FRM to framebuffer every time the palette update timer is true
             if (F_Prop->type == FRM) {
                 animate_FRM_to_framebuff(shaders->palette,
                                         &shaders->render_FRM_shader,
                                         &shaders->giant_triangle,
-                                        &F_Prop->img_data, My_Variables->CurrentTime);
+                                        &F_Prop->img_data,
+                                         My_Variables->CurrentTime,
+                                         My_Variables->Palette_Update);
 
                 //draw_FRM_to_framebuffer(shaders->palette,
                 //                       &shaders->render_FRM_shader,
                 //                       &shaders->giant_triangle,
                 //                       &F_Prop->img_data);
+            }
+        //}
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            static int last_selected_speed = 3;         //3 is index value for 1.0x speed in playback_speeds[]
+            if (F_Prop->img_data.playback_speed == 0) {
+                F_Prop->img_data.playback_speed = last_selected_speed;
+            }
+            else {
+                last_selected_speed = F_Prop->img_data.playback_speed;
+                F_Prop->img_data.playback_speed = 0;
             }
         }
 
@@ -465,6 +478,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         const char* speeds[] = { "0x", "1/4x", "1/2x", "1x", "2x" };
         ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
+
+
         const char* names[] = { "NE", "E", "SE", "SW", "W", "NW" };
         ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
         ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
