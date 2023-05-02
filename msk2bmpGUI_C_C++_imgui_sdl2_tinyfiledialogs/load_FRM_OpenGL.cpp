@@ -177,11 +177,11 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             frame->orientation   = i;
             frame->frame_info    = frame_info;
 
-            bounding_box.x1 += frame_info->Shift_Offset_x;
-            bounding_box.y1 += frame_info->Shift_Offset_y;
+            bounding_box.x1 += frame_info->Shift_Offset_x - frame_info->Frame_Width  / 2;
+            bounding_box.y1 += frame_info->Shift_Offset_y;// -frame_info->Frame_Height / 2;
 
             bounding_box.x2  = bounding_box.x1 + frame_info->Frame_Width;
-            bounding_box.y2  = bounding_box.x1 + frame_info->Frame_Height;
+            bounding_box.y2  = bounding_box.y1 + frame_info->Frame_Height;
 
             frame->bounding_box = bounding_box;
 
@@ -197,6 +197,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             if (bounding_box.y2 > FRM_bounding_box.y2) {
                 FRM_bounding_box.y2 = bounding_box.y2;
             }
+
+            bounding_box.x1 += frame_info->Frame_Width  / 2;
+            //bounding_box.y1 += frame_info->Frame_Height / 2;
 
             buff_offset += frame_info->Frame_Size + info_size;
             frame++;

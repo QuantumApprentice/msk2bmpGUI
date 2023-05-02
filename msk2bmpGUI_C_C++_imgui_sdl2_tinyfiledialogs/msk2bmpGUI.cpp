@@ -416,6 +416,12 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         s = F_Prop->img_data.FRM_Info.Frames_Per_Orient;
         char buff[256];
 
+        snprintf(buff, 256, "orient_shift_x: %d: ", F_Prop->img_data.FRM_Info.Shift_Orient_x[r]);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "orient_shift_y: %d: ", F_Prop->img_data.FRM_Info.Shift_Orient_y[r]);
+        ImGui::Text(buff);
+
+
         snprintf(buff, 256, "bounding_x1: %d\t", F_Prop->img_data.Frame[r*s + q].bounding_box.x1);
         ImGui::Text(buff);
         ImGui::SameLine();
