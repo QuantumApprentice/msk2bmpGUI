@@ -35,27 +35,26 @@ mesh load_giant_triangle()
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
                               image_data* img_data, clock_t time)
 {
-    int orient = img_data->display_orient_num;
-    int frame = img_data->display_frame_num;
-    int max_frm = img_data->FRM_Info.Frames_Per_Orient;
+    int orient      = img_data->display_orient_num;
+    int frame       = img_data->display_frame_num;
+    int max_frm     = img_data->FRM_Info.Frames_Per_Orient;
     int display_frame = orient * max_frm + frame;
 
     int frm_width   = img_data->Frame[display_frame].frame_info->Frame_Width;
     int frm_height  = img_data->Frame[display_frame].frame_info->Frame_Height;
 
-    int width         = img_data->width;
-    int height        = img_data->height;
-    //width           = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
-    //height          = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
+    //int width         = img_data->width;
+    //int height        = img_data->height;
+    int width       = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
+    int height      = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 
     int x_offset    = img_data->Frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset    = img_data->Frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
     //uint32_t size  = img_data->Frame[display_frame].frame_info->Frame_Size;
-    //uint8_t* data  = (uint8_t*)(img_data->Frame[*q].frame_info + 1);
+
     uint8_t* data = img_data->Frame[display_frame].frame_info->frame_start;
 
     glViewport(0, 0, img_data->width, img_data->height);
-
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle->VAO);
     glActiveTexture(GL_TEXTURE0);
@@ -70,10 +69,10 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        uint8_t * blank = (uint8_t*)calloc(1, width*height);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
-
-
+        free(blank);
     }
     else {
         glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);

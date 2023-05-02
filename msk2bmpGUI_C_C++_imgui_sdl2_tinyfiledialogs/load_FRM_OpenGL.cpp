@@ -16,8 +16,7 @@ bool init_framebuffer(struct image_data* img_data)
 
     int width   = img_data->width;
     int height  = img_data->height;
-    //width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;
-    //height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;
+
     //allocate video memory for texture
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -131,6 +130,13 @@ void copy_header(image_data* img_data, FRM_Header* header)
 //    return result;
 //}
 
+void print_stuff(int stuff, FILE* file_ptr)
+{
+    char buffer[10];
+    snprintf(buffer, 10, "%d\n", stuff);
+    fwrite(buffer, strlen(buffer), 1, file_ptr);
+}
+
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size = 0;
@@ -150,14 +156,16 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
-    rectangle bounding_box = {};     
-    rectangle FRM_bounding_box = {}; 
+    rectangle bounding_box = {};
+    rectangle FRM_bounding_box = {};
 
     FRM_Frame* frame = img_data->Frame;
     buff_offset = hdr_size;
-    int x = 0, y = 0, shift_x = 0, shift_y = 0;
+
     for (int i = 0; i < num_orients; i++)
     {
+        FRM_bounding_box = {};
+        bounding_box = {};
         for (int j = 0; j < num_frames; j++)
         {
             frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
@@ -171,6 +179,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
             bounding_box.x1 += frame_info->Shift_Offset_x;
             bounding_box.y1 += frame_info->Shift_Offset_y;
+
             bounding_box.x2  = bounding_box.x1 + frame_info->Frame_Width;
             bounding_box.y2  = bounding_box.x1 + frame_info->Frame_Height;
 
@@ -189,22 +198,13 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
                 FRM_bounding_box.y2 = bounding_box.y2;
             }
 
-            int largest = frame_info->Frame_Width;
-            if (largest > x) {
-                x = largest;
-            }
-            largest = frame_info->Frame_Height;
-            if (largest > y) {
-                y = largest;
-            }
-
             buff_offset += frame_info->Frame_Size + info_size;
             frame++;
         }
         img_data->FRM_bounding_box[i] = FRM_bounding_box;
     }
-    img_data->width  = FRM_bounding_box.x2 - FRM_bounding_box.x1;
-    img_data->height = FRM_bounding_box.y2 - FRM_bounding_box.y1;
+    img_data->width  = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;
+    img_data->height = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;
 
     img_data->FRM_data = buffer;
 
@@ -251,9 +251,10 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
+        uint8_t * blank = (uint8_t*)calloc(1, width*height);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
+        free(blank);
 
         bool success = false;
         success = init_framebuffer(img_data);

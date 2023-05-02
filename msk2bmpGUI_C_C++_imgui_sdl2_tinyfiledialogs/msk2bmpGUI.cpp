@@ -390,22 +390,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         }
 
-        //frame movement button (need to convert to horizontal scroll bar)
-        //static int q = 0;
-        //if (ImGui::Button("increment frame")) {
-        //    q++;
-        //    if (q > F_Prop->img_data.FRM_Info.Frames_Per_Orient) {
-        //        q = 0;
-        //    }
-        //}
-        //if (ImGui::Button("decrement frame")) {
-        //    q--;
-        //    if (q < 0) {
-        //        q = 0;
-        //    }
-        //}
-
-
         //// Rotate the palette for animation
             //new openGL version of pallete cycling
         if (My_Variables->Palette_Update) {
@@ -423,15 +407,49 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             }
         }
 
-        //new openGL way of redrawing the FRM image to cycle colors?
         ImGui::Text(F_Prop->c_name);
-        //if (F_Prop->img_data.Frame) {
-        //    char buff[256];
-        //    snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Height);
-        //    ImGui::Text(buff);
-        //    snprintf(buff, 256, "%d", F_Prop->img_data.Frame[q].frame_info->Frame_Width);
-        //    ImGui::Text(buff);
-        //}
+
+
+        int q, r, s;
+        q = F_Prop->img_data.display_frame_num;
+        r = F_Prop->img_data.display_orient_num;
+        s = F_Prop->img_data.FRM_Info.Frames_Per_Orient;
+        char buff[256];
+
+        snprintf(buff, 256, "bounding_x1: %d\t", F_Prop->img_data.Frame[r*s + q].bounding_box.x1);
+        ImGui::Text(buff);
+        ImGui::SameLine();
+        snprintf(buff, 256, "width: %d\t", F_Prop->img_data.Frame[r*s + q].frame_info->Frame_Width);
+        ImGui::Text(buff);
+        ImGui::SameLine();
+        snprintf(buff, 256, "x_offset: %d", F_Prop->img_data.Frame[r*s + q].frame_info->Shift_Offset_x);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "bounding_x2: %d", F_Prop->img_data.Frame[r*s + q].bounding_box.x2);
+        ImGui::Text(buff);
+
+        snprintf(buff, 256, "bounding_y1: %d\t", F_Prop->img_data.Frame[r*s + q].bounding_box.y1);
+        ImGui::Text(buff);
+        ImGui::SameLine();
+        snprintf(buff, 256, "height: %d\t", F_Prop->img_data.Frame[r*s + q].frame_info->Frame_Height);
+        ImGui::Text(buff);
+        ImGui::SameLine();
+        snprintf(buff, 256, "y_offset: %d", F_Prop->img_data.Frame[r*s + q].frame_info->Shift_Offset_y);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "bounding_y2: %d", F_Prop->img_data.Frame[r*s + q].bounding_box.y2);
+        ImGui::Text(buff);
+
+        snprintf(buff, 256, "FRM_bounding_x1: %d", F_Prop->img_data.FRM_bounding_box[r].x1);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "FRM_bounding_x2: %d", F_Prop->img_data.FRM_bounding_box[r].x2);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "FRM_bounding_y1: %d", F_Prop->img_data.FRM_bounding_box[r].y1);
+        ImGui::Text(buff);
+        snprintf(buff, 256, "FRM_bounding_y2: %d", F_Prop->img_data.FRM_bounding_box[r].y2);
+        ImGui::Text(buff);
+
+
+
+
 
         //show the original image for previewing
         Preview_Image(My_Variables, &F_Prop->img_data);
@@ -442,6 +460,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
         ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
             F_Prop->img_data.FRM_Info.Frames_Per_Orient - 1, NULL);
+
+
+
+
+
 
         // Draw red boxes to indicate where the tiles will be cut from
         float scale = F_Prop->img_data.scale;
