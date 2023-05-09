@@ -2,13 +2,13 @@
 #include "B_Endian.h"
 
 // Signed conversions
-void B_Endian::swap_16(uint16_t& in)
+inline void B_Endian::swap_16(uint16_t* in)
 {
-    in = (in << 8) | (in >> 8);
+    *in = (*in << 8) | (*in >> 8);
 }
-void B_Endian::swap_16(int16_t& in)
+inline void B_Endian::swap_16(int16_t* in)
 {
-    in = (in << 8) | (in >> 8);
+    *in = (*in << 8) | ((*in >> 8) & 0x0ff);
 }
 void B_Endian::swap_32(uint32_t& in)
 {
@@ -27,7 +27,42 @@ void byte_swap_16x4(uint64_t *p) {
     *p = q;
 }
 
+void Orientation(int16_t Frame_0_Orient[6])
+{
+    for (int i = 0; i < 6; i++)
+    {
+        B_Endian::swap_16(&Frame_0_Orient[i]);
+    }
+}
 
+void Offset(uint32_t Frame_0_Offset[6])
+{
+    for (int i = 0; i < 6; i++)
+    {
+        B_Endian::swap_32(Frame_0_Offset[i]);
+    }
+}
+
+void B_Endian::flip_header_endian(FRM_Header* header)
+{
+    B_Endian::swap_32(header->version);
+    B_Endian::swap_16(&header->FPS);
+    B_Endian::swap_16(&header->Action_Frame);
+    B_Endian::swap_16(&header->Frames_Per_Orient);
+    Orientation(header->Shift_Orient_x);
+    Orientation(header->Shift_Orient_y);
+    Offset(header->Frame_0_Offset);
+    B_Endian::swap_32(header->Frame_Area);
+}
+
+void B_Endian::flip_frame_endian(FRM_Frame_Info* frame_info)
+{
+    B_Endian::swap_16(&frame_info->Frame_Width);
+    B_Endian::swap_16(&frame_info->Frame_Height);
+    B_Endian::swap_32(frame_info->Frame_Size);
+    B_Endian::swap_16(&frame_info->Shift_Offset_x);
+    B_Endian::swap_16(&frame_info->Shift_Offset_y);
+}
 
 // Unsigned conversions
 uint32_t B_Endian::read_u32(std::istream& f)

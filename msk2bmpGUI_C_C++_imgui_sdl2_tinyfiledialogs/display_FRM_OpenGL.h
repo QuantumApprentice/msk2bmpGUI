@@ -1,5 +1,5 @@
 #pragma once
-#include "shaders/shader_class.h"
+#include "shader_class.h"
 #include "load_FRM_OpenGL.h"
 #include <SDL.h>
 #include <time.h>

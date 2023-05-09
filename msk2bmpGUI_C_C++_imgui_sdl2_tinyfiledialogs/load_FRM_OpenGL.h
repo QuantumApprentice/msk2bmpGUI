@@ -26,8 +26,8 @@ struct FRM_Header {
     uint16_t FPS = 0;                           // 0x0004
     uint16_t Action_Frame = 0;                  // 0x0006
     uint16_t Frames_Per_Orient;                 // 0x0008
-    uint16_t Shift_Orient_x[6];                 // 0x000A
-    uint16_t Shift_Orient_y[6];                 // 0x0016
+    int16_t  Shift_Orient_x[6];                 // 0x000A
+    int16_t  Shift_Orient_y[6];                 // 0x0016
     uint32_t Frame_0_Offset[6];                 // 0x0022
     uint32_t Frame_Area;                        // 0x003A
 };
@@ -43,6 +43,7 @@ struct FRM_Frame_Info {
 #pragma pack(pop)
 
 struct FRM_Frame {
+    //TODO: remove unnecesary info?
     int frame_number = 0;
     int orientation  = 0;
     FRM_Frame_Info* frame_info;
@@ -51,7 +52,7 @@ struct FRM_Frame {
 
 struct image_data {
     //TODO: convert FRM_Info to a pointer and adjust save function to handle
-    FRM_Header FRM_Info{};
+    FRM_Header* FRM_Info;
     FRM_Frame* Frame;
     rectangle FRM_bounding_box[6];
 

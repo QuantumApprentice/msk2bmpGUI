@@ -33,8 +33,10 @@ struct variables {
     bool edit_image_focused = false;
     bool tile_window_focused = false;
     bool render_wind_focused = false;
-    int SDL_color = 0;
 
+    ImFont* Font;
+    int global_font_size = 32;
+    int SDL_color = 0;
     int window_number_focus = -1;
 
 };

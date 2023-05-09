@@ -4,7 +4,7 @@
 
 #include "load_FRM_OpenGL.h"
 #include "Load_Settings.h"
-#include "shaders/shader_class.h"
+#include "shader_class.h"
 
 //File info
 struct LF {
@@ -14,6 +14,7 @@ struct LF {
     SDL_Surface* IMG_Surface = nullptr;
     SDL_Surface* PAL_Surface = nullptr;
     bool alpha = true;
+    bool show_stats = false;
 
     image_data img_data;
     image_data edit_data;
@@ -29,8 +30,8 @@ struct LF {
 
 struct shader_info {
     float palette[768];
-    Shader render_PAL_shader{ "shaders//passthru_shader.vert", "shaders//render_PAL.frag" };
-    Shader render_FRM_shader{ "shaders//passthru_shader.vert", "shaders//render_FRM.frag" };
+    Shader render_PAL_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_PAL.frag" };
+    Shader render_FRM_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_FRM.frag" };
     mesh giant_triangle;
 };
 

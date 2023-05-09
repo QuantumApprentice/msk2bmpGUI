@@ -159,7 +159,10 @@ int main(int, char**)
     // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    //io.Fonts->AddFontDefault();
+    
+    io.Fonts->AddFontDefault();
+    My_Variables.Font = io.Fonts->AddFontFromFileTTF("resources//fonts//OpenSans-Bold.ttf", My_Variables.global_font_size);
+    
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
@@ -167,8 +170,8 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
 
-    //Shader stuff
-    //Init Framebuffer stuff so I can use shaders
+    //this counter is used to identify which image slot is being used for now
+    //TODO: need to swap this for a linked list
     static int counter = 0;
 
     // Our state
@@ -216,7 +219,7 @@ int main(int, char**)
 
         }
 
-        {// Store these variables at frame start for cycling the palette colors
+        {// Store these variables at frame start for cycling palette colors and animations
             My_Variables.CurrentTime = clock();
             My_Variables.Palette_Update = false;
         }
@@ -348,7 +351,6 @@ int main(int, char**)
 }
 //end of main////////////////////////////////////////////////////////////////////////
 
-
 void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
 {
     shader_info* shaders = &My_Variables->shaders;
@@ -361,8 +363,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     char b[3];
     sprintf(b, "%02d", counter);
     std::string name = a + "###preview" + b;
+
     bool wrong_size;
 
+    // Check image size to match tile size (350x300 pixels)
     if (F_Prop->IMG_Surface == NULL) {
         wrong_size = NULL;
     }
@@ -379,36 +383,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             My_Variables->edit_image_focused = false;
         }
 
-        // Check image size to match tile size (350x300 pixels)
-        if (wrong_size) {
-            ImGui::Text("This image is the wrong size to make a tile...");
-            ImGui::Text("Size is %dx%d",
-                F_Prop->IMG_Surface->w,
-                F_Prop->IMG_Surface->h);
-            ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
-            F_Prop->image_is_tileable = true;
-
-        }
-
-        //// Rotate the palette for animation
-            //new openGL version of pallete cycling
-        //if (My_Variables->Palette_Update) {
-            //redraw FRM to framebuffer every time the palette update timer is true
-            if (F_Prop->type == FRM) {
-                animate_FRM_to_framebuff(shaders->palette,
-                                        &shaders->render_FRM_shader,
-                                        &shaders->giant_triangle,
-                                        &F_Prop->img_data,
-                                         My_Variables->CurrentTime,
-                                         My_Variables->Palette_Update);
-
-                //draw_FRM_to_framebuffer(shaders->palette,
-                //                       &shaders->render_FRM_shader,
-                //                       &shaders->giant_triangle,
-                //                       &F_Prop->img_data);
-            }
-        //}
-
         if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
             static int last_selected_speed = 3;         //3 is index value for 1.0x speed in playback_speeds[]
             if (F_Prop->img_data.playback_speed == 0) {
@@ -420,100 +394,69 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             }
         }
 
+        if (F_Prop->type == FRM) {
+            ImGui::Checkbox("Show FRM Stats", &F_Prop->show_stats);
+
+            //// Rotate the palette for animation
+            //new openGL version of pallete cycling
+            //redraws FRM to framebuffer every time the palette update timer is true or animates
+            animate_FRM_to_framebuff(shaders->palette,
+                                    &shaders->render_FRM_shader,
+                                    &shaders->giant_triangle,
+                                    &F_Prop->img_data,
+                                     My_Variables->CurrentTime,
+                                     My_Variables->Palette_Update);
+        }
+
+        //warn if wrong size for map tile
+        if (wrong_size) {
+            ImGui::Text("This image is the wrong size to make a tile...");
+            ImGui::Text("Size is %dx%d", F_Prop->IMG_Surface->w,
+                F_Prop->IMG_Surface->h);
+            ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
+            F_Prop->image_is_tileable = true;
+        }
         ImGui::Text(F_Prop->c_name);
 
+        //display stats for FRM image to troubleshoot?
+        ImVec2 current_pos = ImGui::GetCursorPos();
 
-        int q, r, s;
-        q = F_Prop->img_data.display_frame_num;
-        r = F_Prop->img_data.display_orient_num;
-        s = F_Prop->img_data.FRM_Info.Frames_Per_Orient;
-        char buff[256];
+        if (F_Prop->type == FRM) {
+            //show the original image for previewing
+            Preview_FRM_Image(My_Variables, &F_Prop->img_data);
 
-        snprintf(buff, 256, "orient_shift_x: %d: ", F_Prop->img_data.FRM_Info.Shift_Orient_x[r]);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "orient_shift_y: %d: ", F_Prop->img_data.FRM_Info.Shift_Orient_y[r]);
-        ImGui::Text(buff);
-
-
-        snprintf(buff, 256, "bounding_x1: %d\t", F_Prop->img_data.Frame[r*s + q].bounding_box.x1);
-        ImGui::Text(buff);
-        ImGui::SameLine();
-        snprintf(buff, 256, "width: %d\t", F_Prop->img_data.Frame[r*s + q].frame_info->Frame_Width);
-        ImGui::Text(buff);
-        ImGui::SameLine();
-        snprintf(buff, 256, "x_offset: %d", F_Prop->img_data.Frame[r*s + q].frame_info->Shift_Offset_x);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "bounding_x2: %d", F_Prop->img_data.Frame[r*s + q].bounding_box.x2);
-        ImGui::Text(buff);
-
-        snprintf(buff, 256, "bounding_y1: %d\t", F_Prop->img_data.Frame[r*s + q].bounding_box.y1);
-        ImGui::Text(buff);
-        ImGui::SameLine();
-        snprintf(buff, 256, "height: %d\t", F_Prop->img_data.Frame[r*s + q].frame_info->Frame_Height);
-        ImGui::Text(buff);
-        ImGui::SameLine();
-        snprintf(buff, 256, "y_offset: %d", F_Prop->img_data.Frame[r*s + q].frame_info->Shift_Offset_y);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "bounding_y2: %d", F_Prop->img_data.Frame[r*s + q].bounding_box.y2);
-        ImGui::Text(buff);
-
-        snprintf(buff, 256, "FRM_bounding_x1: %d", F_Prop->img_data.FRM_bounding_box[r].x1);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "FRM_bounding_x2: %d", F_Prop->img_data.FRM_bounding_box[r].x2);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "FRM_bounding_y1: %d", F_Prop->img_data.FRM_bounding_box[r].y1);
-        ImGui::Text(buff);
-        snprintf(buff, 256, "FRM_bounding_y2: %d", F_Prop->img_data.FRM_bounding_box[r].y2);
-        ImGui::Text(buff);
-
-
-
-
-
-        //show the original image for previewing
-        Preview_Image(My_Variables, &F_Prop->img_data);
-
-
-        ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
-
-        const char* speeds[] = { "0x", "1/4x", "1/2x", "1x", "2x" };
-        ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
-
-
-        const char* names[] = { "NE", "E", "SE", "SW", "W", "NW" };
-        ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
-        ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-            F_Prop->img_data.FRM_Info.Frames_Per_Orient - 1, NULL);
-
-
-
-
-
-
-        // Draw red boxes to indicate where the tiles will be cut from
-        float scale = F_Prop->img_data.scale;
-        if (wrong_size) {
-            ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-            ImVec2 Origin;
-            Origin.x = F_Prop->img_data.offset.x + ImGui::GetItemRectMin().x;
-            Origin.y = F_Prop->img_data.offset.y + ImGui::GetItemRectMin().y;
-
-            ImVec2 Top_Left;
-            ImVec2 Bottom_Right = { 0, 0 };
-            int max_box_x = F_Prop->IMG_Surface->w / 350;
-            int max_box_y = F_Prop->IMG_Surface->h / 300;
-
-            for (int i = 0; i < max_box_x; i++)
-            {
-                for (int j = 0; j < max_box_y; j++)
-                {
-                    Top_Left.x = Origin.x + (i * 350)*scale;
-                    Top_Left.y = Origin.y + (j * 300)*scale;
-                    Bottom_Right = { (float)(Top_Left.x + 350 * scale), (float)(Top_Left.y + 300 * scale) };
-                    Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-                }
-            }
+            //gui video controls
+            ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
+            const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
+            ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
+            //TODO: might have to adjust the names[] array to handle partial edits
+            //TODO: definitely have to adjust for .FR1, FR2, etc...
+            char* names1[] = { "NE", "no image", "no image", "no image", "no image", "no image" };
+            char* names2[] = { "NE", "E", "SE", "SW", "W", "NW" };
+            char** names = (F_Prop->img_data.FRM_Info->Frame_0_Offset[1] > 0) ? names2 : names1;
+            ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names1));
+            ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
+                             F_Prop->img_data.FRM_Info->Frames_Per_Orient - 1, NULL);
         }
+        else {
+            Preview_Image(My_Variables, &F_Prop->img_data);
+        }
+
+        draw_red_squares(F_Prop, wrong_size);
+
+        //display stats
+        ImGui::SetCursorPos(current_pos);
+        if (F_Prop->show_stats) {
+            show_image_stats(&F_Prop->img_data, My_Variables->Font);
+        }
+
+
+
+
+
+
+
+
     }
     ImGui::End();
     // Preview tiles from red boxes
@@ -749,7 +692,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 free(clear);
             }
             if (ImGui::Button("Export Image...")) {
-                Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
+                Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             }
             if (ImGui::Button("Save as Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
@@ -873,7 +816,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             else {
-                Save_FRM_OpenGL(&F_Prop->edit_data, &usr_info);
+                Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             }
         }
     }

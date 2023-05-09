@@ -4,13 +4,16 @@
 
 #include <cstdint>
 #include <fstream>
+#include "load_FRM_OpenGL.h"
 
 namespace B_Endian {
     // Convert signed values
+    void flip_header_endian(FRM_Header* header);
+    void flip_frame_endian(FRM_Frame_Info* frame_info);
 
-    void swap_16(uint16_t& in);
+    void swap_16(uint16_t* in);
+    void swap_16(int16_t*  in);
     void swap_32(uint32_t& in);
-    void swap_16(int16_t& in);
     // Convert unsigned values
     uint32_t read_u32(std::istream& f);
     uint32_t write_u32(int f);

@@ -174,7 +174,7 @@
     <ClCompile Include="Preview_Tiles.cpp" />
     <ClCompile Include="Save_Files.cpp" />
     <ClCompile Include="MSK_Convert.cpp" />
-    <ClCompile Include="shaders\shader_class.cpp" />
+    <ClCompile Include="shader_class.cpp" />
     <ClCompile Include="tinyfiledialogs.c" />
     <ClCompile Include="Zoom_Pan.cpp" />
   </ItemGroup>
@@ -203,26 +203,21 @@
     <ClInclude Include="Preview_Tiles.h" />
     <ClInclude Include="Save_Files.h" />
     <ClInclude Include="MSK_Convert.h" />
-    <ClInclude Include="shaders\shader_class.h" />
+    <ClInclude Include="shader_class.h" />
     <ClInclude Include="tinyfiledialogs.h" />
     <ClInclude Include="Zoom_Pan.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="libs\libjpeg-9.dll" />
-    <None Include="libs\libpng16-16.dll" />
-    <None Include="libs\libtiff-5.dll" />
-    <None Include="libs\libwebp-7.dll" />
-    <None Include="libs\SDL2.dll" />
-    <None Include="libs\SDL2_image.dll" />
-    <None Include="libs\zlib1.dll" />
-    <None Include="shaders\color_cycle_1D.frag" />
-    <None Include="shaders\color_cycle_2D.frag" />
-    <None Include="shaders\Palette_Shader.vert" />
-    <None Include="shaders\passthru_shader.vert" />
-    <None Include="shaders\pass_thru_shader.frag" />
-    <None Include="shaders\render_frm.frag" />
-    <None Include="shaders\render_PAL.frag" />
-    <None Include="shaders\zoom_shader.vert" />
+    <None Include="resources\libs\libjpeg-9.dll" />
+    <None Include="resources\libs\libpng16-16.dll" />
+    <None Include="resources\libs\libtiff-5.dll" />
+    <None Include="resources\libs\libwebp-7.dll" />
+    <None Include="resources\libs\SDL2.dll" />
+    <None Include="resources\libs\SDL2_image.dll" />
+    <None Include="resources\libs\zlib1.dll" />
+    <None Include="resources\shaders\passthru_shader.vert" />
+    <None Include="resources\shaders\render_FRM.frag" />
+    <None Include="resources\shaders\render_PAL.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

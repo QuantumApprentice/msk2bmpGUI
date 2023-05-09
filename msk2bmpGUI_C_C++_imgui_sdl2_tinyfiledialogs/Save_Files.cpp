@@ -77,15 +77,16 @@ void write_cfg_file(user_info* user_info);
 //    return Save_File_Name;
 //}
 
-char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
+char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 {
     int width  = img_data->width;
     int height = img_data->height;
     int size   = width * height;
 
-    FRM_Header FRM_Header;
-    FRM_Header.version                   = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orient         = B_Endian::write_u16(1);
+    FRM_Header header;
+    header.version                            = B_Endian::write_u32(4);
+    header.Frames_Per_Orient                  = B_Endian::write_u16(1);
+
 
     img_data->Frame->frame_info->Frame_Height = B_Endian::write_u16(height);
     img_data->Frame->frame_info->Frame_Width  = B_Endian::write_u16(width);
@@ -132,7 +133,7 @@ char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
             return NULL;
         }
         else {
-            fwrite(&FRM_Header, sizeof(FRM_Header), 1, File_ptr);
+            fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
 
             //create buffer from texture and original FRM_data
             uint8_t* blend_buffer = blend_PAL_texture(img_data);
@@ -146,6 +147,11 @@ char* Save_FRM_OpenGL(image_data* img_data, user_info* user_info)
         }
     }
     return Save_File_Name;
+}
+
+char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
+{
+    return "a";
 }
 
 char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
@@ -168,7 +174,7 @@ char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
     {
         //TODO: check for existing file first
         SDL_SaveBMP(b_surface, Save_File_Name);
-        //TODO: add support for more file formats
+        //TODO: add support for more file formats (GIF in particular)
         //IMG_SavePNG();
 
         //parse Save_File_Name to isolate the directory and store in default_save_path
@@ -259,21 +265,16 @@ void Set_Default_Path(user_info* user_info)
 
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
 {
-    FRM_Header FRM_Header;
-    FRM_Header.version                                = B_Endian::write_u32(4);
-    FRM_Header.Frames_Per_Orient                      = B_Endian::write_u16(1);
-    FRM_Header.Frame_Area                             = B_Endian::write_u32(TILE_SIZE);
+    FRM_Header FRM_Header = {};
+    FRM_Header.version           = (4);
+    FRM_Header.FPS               = (1);
+    FRM_Header.Frames_Per_Orient = (1);
+    FRM_Header.Frame_Area        = (TILE_SIZE);
 
-    F_Prop->edit_data.Frame->frame_info->Frame_Height = B_Endian::write_u16(TILE_H);
-    F_Prop->edit_data.Frame->frame_info->Frame_Width  = B_Endian::write_u16(TILE_W);
-    F_Prop->edit_data.Frame->frame_info->Frame_Size   = B_Endian::write_u32(TILE_SIZE);
-
-    //FRM_Header.Frame_0_Height         = B_Endian::write_u16(TILE_H);
-    //FRM_Header.Frame_0_Width          = B_Endian::write_u16(TILE_W);
-    //FRM_Header.Frame_0_Size           = B_Endian::write_u32(TILE_SIZE);
+    B_Endian::flip_header_endian(&FRM_Header);
 
     //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
-    //TODO: also need to create a toggle for transparency and maybe use index 255 for white instead (depending on if it works or not)
+    //TODO: need to color pick for transparency and maybe use index 255 for white instead (depending on if it works or not)
     Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header);
 
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
@@ -334,6 +335,16 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     char path[MAX_PATH];
     char Save_File_Name[MAX_PATH];
 
+    //create basic frame information for saving
+    FRM_Frame_Info frame_info;
+    memset(&frame_info, 0, sizeof(FRM_Frame_Info));
+
+    frame_info.Frame_Height      = (TILE_H);
+    frame_info.Frame_Width       = (TILE_W);
+    frame_info.Frame_Size        = (TILE_SIZE);
+
+    B_Endian::flip_frame_endian(&frame_info);
+
     FILE * File_ptr = NULL;
 
     if (!strcmp(user_info->default_game_path, "")) {
@@ -387,8 +398,8 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                 if (type == FRM) {
                     //Split buffer int 350x300 pixel tiles and write to file
                     //save header
-                    fwrite(frm_header,           sizeof(FRM_Header), 1, File_ptr);
-                    fwrite(img_data->Frame->frame_info, sizeof(FRM_Frame),  1, File_ptr);
+                    fwrite(frm_header,  sizeof(FRM_Header), 1, File_ptr);
+                    fwrite(&frame_info, sizeof(FRM_Frame),  1, File_ptr);
 
                     int tile_pointer = (y * img_width*TILE_H) + (x * TILE_W);
                     int row_pointer = 0;

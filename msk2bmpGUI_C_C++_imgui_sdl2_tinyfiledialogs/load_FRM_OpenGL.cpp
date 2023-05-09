@@ -43,42 +43,9 @@ bool init_framebuffer(struct image_data* img_data)
     }
 }
 
-void Orientation(uint16_t Frame_0_Orient[6])
-{
-    for (int i = 0; i < 6; i++)
-    {
-        B_Endian::swap_16(Frame_0_Orient[i]);
-    }
-}
 
-void Offset(uint32_t Frame_0_Offset[6])
-{
-    for (int i = 0; i < 6; i++)
-    {
-        B_Endian::swap_32(Frame_0_Offset[i]);
-    }
-}
 
-void flip_header_endian(FRM_Header* header)
-{
-    B_Endian::swap_32(header->version);
-    B_Endian::swap_16(header->FPS);
-    B_Endian::swap_16(header->Action_Frame);
-    B_Endian::swap_16(header->Frames_Per_Orient);
-    Orientation(header->Shift_Orient_x);
-    Orientation(header->Shift_Orient_y);
-    Offset(header->Frame_0_Offset);
-    B_Endian::swap_32(header->Frame_Area);
-}
 
-void flip_frame_endian(FRM_Frame_Info* frame_info)
-{
-    B_Endian::swap_16(frame_info->Frame_Width);
-    B_Endian::swap_16(frame_info->Frame_Height);
-    B_Endian::swap_32(frame_info->Frame_Size);
-    B_Endian::swap_16(frame_info->Shift_Offset_x);
-    B_Endian::swap_16(frame_info->Shift_Offset_y);
-}
 
 uint8_t* load_entire_file(const char* file_name, int* file_size)
 {
@@ -108,15 +75,6 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     return buffer;
 }
 
-void copy_header(image_data* img_data, FRM_Header* header)
-{
-    img_data->FRM_Info.Frames_Per_Orient = header->Frames_Per_Orient;
-    for (int i = 0; i < 6; i++)
-    {
-        img_data->FRM_Info.Frame_0_Offset[i] = header->Frame_0_Offset[i];
-    }
-}
-
 //#include <algorithm>
 //rectangle Union(rectangle a, rectangle b)
 //{
@@ -138,11 +96,11 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int hdr_size  = sizeof(FRM_Header);
     uint8_t* buffer = load_entire_file(file_name, &file_size);
     FRM_Header* header = (FRM_Header*)buffer;
-    flip_header_endian(header);
+    B_Endian::flip_header_endian(header);
 
-    memcpy(&img_data->FRM_Info, buffer, sizeof(FRM_Header));
+    img_data->FRM_Info = header;
 
-    //copy_header(img_data, header);
+    //memcpy(&img_data->FRM_Info, buffer, sizeof(FRM_Header));
 
     FRM_Frame_Info* frame_info;
 
@@ -151,8 +109,8 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
-    rectangle bounding_box = {};
-    rectangle FRM_bounding_box = {};
+    rectangle bounding_box      = {};
+    rectangle FRM_bounding_box  = {};
 
     FRM_Frame* frame = img_data->Frame;
     buff_offset = hdr_size;
@@ -164,7 +122,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
         for (int j = 0; j < num_frames; j++)
         {
             frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
-            flip_frame_endian(frame_info);
+            B_Endian::flip_frame_endian(frame_info);
 
             //FRM_Frame* frame = &img_data->Frame[j + (i * num_frames)];
 
@@ -172,8 +130,8 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             frame->orientation   = i;
             frame->frame_info    = frame_info;
 
-            bounding_box.x1 += frame_info->Shift_Offset_x - frame_info->Frame_Width  / 2;
-            bounding_box.y1 += frame_info->Shift_Offset_y;// -frame_info->Frame_Height / 2;
+            bounding_box.x1 += frame_info->Shift_Offset_x - frame_info->Frame_Width / 2;
+            bounding_box.y1 += frame_info->Shift_Offset_y - frame_info->Frame_Height;
 
             bounding_box.x2  = bounding_box.x1 + frame_info->Frame_Width;
             bounding_box.y2  = bounding_box.y1 + frame_info->Frame_Height;
@@ -194,7 +152,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             }
 
             bounding_box.x1 += frame_info->Frame_Width  / 2;
-            //bounding_box.y1 += frame_info->Frame_Height / 2;
+            bounding_box.y1 += frame_info->Frame_Height;
 
             buff_offset += frame_info->Frame_Size + info_size;
             frame++;

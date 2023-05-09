@@ -27,9 +27,7 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, s
                      NULL,
                      1);
 
-    //TODO: swap the if check so it returns false in an else instead
     if (FileName) {
-
         //if (strlen(FileName) < MAX_PATH) {
         //    memcpy(F_Prop->Opened_File, FileName, strlen(FileName));
         //}

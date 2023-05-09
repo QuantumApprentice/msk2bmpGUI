@@ -16,13 +16,13 @@
     <Filter Include="Source Files\imgui-docking">
       <UniqueIdentifier>{7c94c1f2-0c93-4599-9c50-94ff8e1a9127}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\OpenGL">
+    <Filter Include="Source Files\OpenGL">
       <UniqueIdentifier>{b833a7f1-20bb-4600-b1d6-7f6f38d06701}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\OpenGL\Image2Texture">
+    <Filter Include="Source Files\OpenGL\Image2Texture">
       <UniqueIdentifier>{53b58c10-480a-4117-981d-daa7d99c3e11}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\OpenGL\FRM">
+    <Filter Include="Source Files\OpenGL\FRM">
       <UniqueIdentifier>{cc314f19-68c8-4331-9347-75dff9713c25}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -64,7 +64,7 @@
       <Filter>Source Files\imgui-docking</Filter>
     </ClCompile>
     <ClCompile Include="Image2Texture.cpp">
-      <Filter>Header Files\OpenGL\Image2Texture</Filter>
+      <Filter>Source Files\OpenGL\Image2Texture</Filter>
     </ClCompile>
     <ClCompile Include="Save_Files.cpp">
       <Filter>Source Files</Filter>
@@ -81,17 +81,14 @@
     <ClCompile Include="MSK_Convert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shaders\shader_class.cpp">
-      <Filter>Header Files\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="load_FRM_OpenGL.cpp">
-      <Filter>Header Files\OpenGL\FRM</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClCompile>
     <ClCompile Include="display_FRM_OpenGL.cpp">
-      <Filter>Header Files\OpenGL\FRM</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClCompile>
     <ClCompile Include="Palette_Cycle.cpp">
-      <Filter>Header Files\OpenGL\FRM</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClCompile>
     <ClCompile Include="dependencies\GLAD\src\glad.c">
       <Filter>Source Files</Filter>
@@ -107,6 +104,9 @@
     </ClCompile>
     <ClCompile Include="Preview_Tiles.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="shader_class.cpp">
+      <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -156,7 +156,7 @@
       <Filter>Source Files\imgui-docking</Filter>
     </ClInclude>
     <ClInclude Include="Image2Texture.h">
-      <Filter>Header Files\OpenGL\Image2Texture</Filter>
+      <Filter>Source Files\OpenGL\Image2Texture</Filter>
     </ClInclude>
     <ClInclude Include="Load_Settings.h">
       <Filter>Header Files</Filter>
@@ -168,16 +168,13 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="load_FRM_OpenGL.h">
-      <Filter>Header Files\OpenGL\FRM</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClInclude>
     <ClInclude Include="display_FRM_OpenGL.h">
-      <Filter>Header Files\OpenGL\FRM</Filter>
-    </ClInclude>
-    <ClInclude Include="shaders\shader_class.h">
-      <Filter>Header Files</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClInclude>
     <ClInclude Include="Palette_Cycle.h">
-      <Filter>Header Files\OpenGL\FRM</Filter>
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </ClInclude>
     <ClInclude Include="Zoom_Pan.h">
       <Filter>Header Files</Filter>
@@ -191,52 +188,40 @@
     <ClInclude Include="Preview_Tiles.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="shader_class.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\Palette_Shader.vert">
-      <Filter>Header Files\OpenGL</Filter>
-    </None>
-    <None Include="shaders\color_cycle_1D.frag">
-      <Filter>Header Files\OpenGL</Filter>
-    </None>
-    <None Include="shaders\color_cycle_2D.frag">
-      <Filter>Header Files\OpenGL</Filter>
-    </None>
-    <None Include="shaders\pass_thru_shader.frag">
-      <Filter>Header Files\OpenGL</Filter>
-    </None>
-    <None Include="shaders\zoom_shader.vert">
-      <Filter>Header Files\OpenGL</Filter>
-    </None>
-    <None Include="shaders\passthru_shader.vert">
-      <Filter>Header Files\OpenGL\FRM</Filter>
-    </None>
-    <None Include="shaders\render_frm.frag">
-      <Filter>Header Files\OpenGL\FRM</Filter>
-    </None>
-    <None Include="shaders\render_PAL.frag">
-      <Filter>Header Files\OpenGL\FRM</Filter>
-    </None>
-    <None Include="libs\libjpeg-9.dll">
+    <None Include="resources\libs\libjpeg-9.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\libpng16-16.dll">
+    <None Include="resources\libs\libpng16-16.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\libtiff-5.dll">
+    <None Include="resources\libs\libtiff-5.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\libwebp-7.dll">
+    <None Include="resources\libs\libwebp-7.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\SDL2.dll">
+    <None Include="resources\libs\SDL2.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\SDL2_image.dll">
+    <None Include="resources\libs\SDL2_image.dll">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="libs\zlib1.dll">
+    <None Include="resources\libs\zlib1.dll">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resources\shaders\passthru_shader.vert">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </None>
+    <None Include="resources\shaders\render_FRM.frag">
+      <Filter>Source Files\OpenGL\FRM</Filter>
+    </None>
+    <None Include="resources\shaders\render_PAL.frag">
+      <Filter>Source Files\OpenGL\FRM</Filter>
     </None>
   </ItemGroup>
 </Project>
