@@ -61,6 +61,7 @@ void Set_Default_Path(struct user_info* usr_info);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
+void popup_save_menu(bool* open_window, int* save_type);
 
 
 
@@ -678,6 +679,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         int width = F_Prop->edit_data.width;
         int height = F_Prop->edit_data.height;
         ImGui::Text("Zoom: %%%.2f", My_Variables->F_Prop[window_number_focus].edit_data.scale * 100);
+
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
@@ -691,6 +693,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     0, GL_RED, GL_UNSIGNED_BYTE, clear);
                 free(clear);
             }
+            //TODO: add frame editing functions/frame saving functions
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             }
@@ -800,6 +803,25 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
     }
     ImGui::Separator();
+    //TODO: save as animated image, needs more work
+    static bool open_window = false;
+    static int save_type = OTHER;
+    if (F_Prop->img_data.FRM_Info->Frames_Per_Orient > 1) {
+        if (ImGui::Button("Save as Animation...")) {
+            open_window = true;
+
+        }
+    }
+    if (open_window) {
+        popup_save_menu(&open_window, &save_type);
+        if (save_type == OTHER) {
+            //TODO: save as GIF
+        }
+        if (save_type == FRM) {
+            Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info);
+        }
+    }
+
     if (My_Variables->tile_window_focused) {
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(F_Prop->extension, "FRM") == 0) {
@@ -811,13 +833,32 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
     }
     if (My_Variables->render_wind_focused) {
+        static bool open_window = false;
         if (ImGui::Button("Save as Image...")) {
-            if (F_Prop->type == FRM) {
+            open_window = true;
+            int save_type = OTHER;
+            popup_save_menu(&open_window, &save_type);
+
+            if (save_type == OTHER) {
                 Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
-            else {
+            if (save_type == FRM) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             }
         }
     }
+}
+
+void popup_save_menu(bool* open_window, int* save_type)
+{
+    ImGui::Begin("File type?", open_window);
+    if (ImGui::Button("Save as FRM...")) {
+        *save_type = FRM;
+        *open_window = false;
+    }
+    if (ImGui::Button("Save as BMP...")) {
+        *save_type = OTHER;
+        *open_window = false;
+    }
+    ImGui::End();
 }

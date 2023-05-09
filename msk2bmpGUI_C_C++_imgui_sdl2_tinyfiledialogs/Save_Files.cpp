@@ -151,7 +151,71 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 
 char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
 {
-    return "a";
+    FILE * File_ptr = NULL;
+    char * Save_File_Name;
+    char * lFilterPatterns[2] = { "", "*.FRM" };
+    Save_File_Name = tinyfd_saveFileDialog(
+        "default_name",
+        "temp001.FRM",
+        2,
+        lFilterPatterns,
+        nullptr
+    );
+
+    if (Save_File_Name != NULL)
+    {
+        //parse Save_File_Name to isolate the directory and save in default_save_path
+        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+        std::filesystem::path p(w_save_name);
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+
+        //fopen_s(&File_ptr, Save_File_Name, "wb");
+        _wfopen_s(&File_ptr, w_save_name, L"wb");
+
+        if (!File_ptr) {
+            tinyfd_messageBox(
+                "Error",
+                "Can not open this file in write mode",
+                "ok",
+                "error",
+                1);
+            return NULL;
+        }
+        else {
+
+            //uint8_t* buffer = (uint8_t*)&img_data->FRM_Info;
+            int num_orients = (img_data->FRM_Info->Frame_0_Offset[1] > 0) ? 6 : 1;
+            int frame_num = 0;
+            int size = 0;
+
+            FRM_Header header = {};
+            memcpy(&header, img_data->FRM_Info, sizeof(FRM_Header));
+            B_Endian::flip_header_endian(&header);
+
+            FRM_Frame_Info frame_info;
+            memset(&frame_info, 0, sizeof(FRM_Frame_Info));
+
+            fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+
+            for (int i = 0; i < num_orients; i++)
+            {
+                for (int j = 0; j < img_data->FRM_Info->Frames_Per_Orient; j++)
+                {
+                    frame_num = i * img_data->FRM_Info->Frames_Per_Orient + j;
+                    size = img_data->Frame[frame_num].frame_info->Frame_Size;
+
+                    memcpy(&frame_info, img_data->Frame[frame_num].frame_info, sizeof(FRM_Frame_Info));
+                    B_Endian::flip_frame_endian(&frame_info);
+
+                    //write to file
+                    fwrite(&frame_info, sizeof(FRM_Frame_Info), 1, File_ptr);
+                    fwrite(&img_data->Frame[frame_num].frame_info->frame_start, size, 1, File_ptr);
+                }
+            }
+            fclose(File_ptr);
+        }
+    }
+    return Save_File_Name;
 }
 
 char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)

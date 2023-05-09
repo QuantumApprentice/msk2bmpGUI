@@ -96,7 +96,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
         F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
         F_Prop->img_data.height = F_Prop->IMG_Surface->h;
 
-        F_Prop->type = other;
+        F_Prop->type = OTHER;
 
         Image2Texture(F_Prop->IMG_Surface,
                      &F_Prop->img_data.render_texture,
