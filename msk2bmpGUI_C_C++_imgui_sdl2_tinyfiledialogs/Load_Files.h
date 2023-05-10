@@ -37,4 +37,5 @@ struct shader_info {
 
 bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data);
-bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders);
+bool Drag_Drop_Load_Files(std::filesystem::path file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
+bool handle_directory(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);

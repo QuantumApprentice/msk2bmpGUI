@@ -208,21 +208,27 @@ int main(int, char**)
             if (event.type == SDL_DROPFILE) {
                 dropped_file_path = event.drop.file;
 
-                My_Variables.F_Prop[counter].file_open_window =
-                    Drag_Drop_Load_Files(dropped_file_path,
-                                    &My_Variables.F_Prop[counter],
-                                    &My_Variables.F_Prop[counter].img_data,
-                                    &usr_info,
-                                    &My_Variables.shaders);
 
-                if (My_Variables.F_Prop[counter].c_name) {
-                    (counter)++;
+
+                bool directory = handle_directory(dropped_file_path,
+                                                 My_Variables.F_Prop,
+                                                 &counter,
+                                                 &My_Variables.shaders);
+
+                if (!directory) {
+                    My_Variables.F_Prop[counter].file_open_window =
+                        Drag_Drop_Load_Files(dropped_file_path,
+                            &My_Variables.F_Prop[counter],
+                            &My_Variables.F_Prop[counter].img_data,
+                            &My_Variables.shaders);
+
+                    if (My_Variables.F_Prop[counter].c_name) {
+                        (counter)++;
+                    }
                 }
 
-                //SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
-                //                         "File dropped",
-                //                         dropped_file_path,
-                //                         window);
+
+
                 SDL_free(dropped_file_path);
             }
         }

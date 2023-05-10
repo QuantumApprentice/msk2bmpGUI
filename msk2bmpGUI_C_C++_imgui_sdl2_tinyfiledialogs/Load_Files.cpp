@@ -2,6 +2,8 @@
 #include <string.h>
 #include <SDL_image.h>
 #include <filesystem>
+#include <cstdint>
+#include <system_error>
 
 #include "Load_Files.h"
 #include "Load_Settings.h"
@@ -12,6 +14,54 @@
 #include "Edit_Image.h"
 
 #include "display_FRM_OpenGL.h"
+
+//TODO: make a define switch for linux when I move to there
+bool handle_directory(char* file_name, LF* F_Prop, int* counter, shader_info* shaders)
+{
+    char buffer[MAX_PATH];
+    wchar_t* temp_ptr = tinyfd_utf8to16(file_name);
+    std::filesystem::path path(temp_ptr);
+
+    std::error_code error;
+    bool is_directory = std::filesystem::is_directory(path, error);
+    if (error) {
+        //TODO: convert to tinyfdfiledialog() popup warning
+        printf("error checking if file_name is directory");
+        //TODO: handle differently, error means not just no directory, but something failed
+        //std::optional?
+        return false;
+    }
+
+    if (is_directory) {
+        for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(path))
+        {
+            //is_directory = std::filesystem::is_directory(path, error);
+
+            bool is_subdirectory = file.is_directory(error);
+            if (error) {
+                //TODO: convert to tinyfdfiledialog() popup warning
+                printf("error checking if file_name is directory");
+                continue;
+            }
+            if (is_subdirectory) {
+                //TODO: possibly handle different directions in subdirectories
+                continue;
+            }
+            //temp_ptr = tinyfd_utf8to16(file.path());
+
+            F_Prop->file_open_window =
+                Drag_Drop_Load_Files(file.path(),
+                                    &F_Prop[*counter],
+                                    &F_Prop->img_data,
+                                     shaders);
+            (*counter)++;
+        }
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
 
 void identify_extension(LF* F_Prop, user_info* usr_info)
@@ -30,19 +80,22 @@ void identify_extension(LF* F_Prop, user_info* usr_info)
         F_Prop->extension = buff;
     }
 
-    //std::filesystem::path file_path(F_Prop->Opened_File);
-    //strncpy(usr_info->default_load_path, file_path.parent_path().string().c_str(), MAX_PATH);
+    if (usr_info != NULL) {
+        std::filesystem::path file_path(F_Prop->Opened_File);
+        //TODO: snprintf
+        strncpy(usr_info->default_load_path, file_path.parent_path().string().c_str(), MAX_PATH);
+    }
     //TODO: remove this printf
     printf("extension: %s\n", F_Prop->extension);
 }
 
-bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders)
+bool Drag_Drop_Load_Files(std::filesystem::path file_name, LF* F_Prop, image_data* img_data, shader_info* shaders)
 {
-    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", file_name);
+    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", tinyfd_utf16to8(file_name.c_str()));
     F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
-    identify_extension(F_Prop, usr_info);
+    identify_extension(F_Prop, NULL);
 
     return File_Type_Check(F_Prop, shaders, img_data);
 
