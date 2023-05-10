@@ -832,6 +832,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
         }
     }
+
+
+
+
+
     if (My_Variables->render_wind_focused) {
         static bool open_window = false;
         if (ImGui::Button("Save as Image...")) {
@@ -849,6 +854,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     }
 }
 
+//TODO: make this menu nicer
 void popup_save_menu(bool* open_window, int* save_type)
 {
     ImGui::Begin("File type?", open_window);
