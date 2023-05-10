@@ -13,10 +13,47 @@
 
 #include "display_FRM_OpenGL.h"
 
-bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders)
+
+void identify_extension(LF* F_Prop, user_info* usr_info)
+{
+    //TODO: clean up this function to work better for extensions
+    //      maybe also support for wide characters
+    if (F_Prop->extension[0] > 96) {
+        int i = 0;
+        char buff[5];
+        while (F_Prop->extension[i] != '\0')
+        {
+            buff[i] = toupper(F_Prop->extension[i]);
+            i++;
+        }
+        buff[i] = '\0';
+        F_Prop->extension = buff;
+    }
+
+    //std::filesystem::path file_path(F_Prop->Opened_File);
+    //strncpy(usr_info->default_load_path, file_path.parent_path().string().c_str(), MAX_PATH);
+    //TODO: remove this printf
+    printf("extension: %s\n", F_Prop->extension);
+}
+
+bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders)
+{
+    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", file_name);
+    F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
+    F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
+
+    identify_extension(F_Prop, usr_info);
+
+    return File_Type_Check(F_Prop, shaders, img_data);
+
+}
+
+
+
+bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* usr_info, shader_info* shaders)
 {
     char load_path[MAX_PATH];
-    snprintf(load_path, MAX_PATH, "%s\\", user_info->default_load_path);
+    snprintf(load_path, MAX_PATH, "%s\\", usr_info->default_load_path);
     char * FilterPattern1[5] = { "*.bmp" , "*.png", "*.frm", "*.msk", "*.jpg" };
 
     char *FileName = tinyfd_openFileDialog(
@@ -35,24 +72,7 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, s
         F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
         F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
-        //TODO: clean up this function to work better for extensions
-        //      maybe also support for wide characters
-        if (F_Prop->extension[0] > 96) {
-            int i = 0;
-            char buff[5];
-            while (F_Prop->extension[i] != '\0')
-            {
-                buff[i] = toupper(F_Prop->extension[i]);
-                i++;
-            }
-            buff[i] = '\0';
-            F_Prop->extension = buff;
-        }
-
-        std::filesystem::path p(F_Prop->Opened_File);
-        strncpy(user_info->default_load_path, p.parent_path().string().c_str(), MAX_PATH);
-        //TODO: remove this printf
-        printf("extension: %s\n", F_Prop->extension);
+        identify_extension(F_Prop, usr_info);
 
         return File_Type_Check(F_Prop, shaders, img_data);
     }

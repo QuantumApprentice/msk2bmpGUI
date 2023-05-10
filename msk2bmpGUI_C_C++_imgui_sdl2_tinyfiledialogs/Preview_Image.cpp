@@ -93,7 +93,6 @@ void draw_red_squares(LF* F_Prop, bool wrong_size)
 
 void show_image_stats(image_data* img_data, ImFont* font)
 {
-
     int q, r, s;
     q =  img_data->display_frame_num;
     r = (img_data->FRM_Info->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
@@ -101,9 +100,12 @@ void show_image_stats(image_data* img_data, ImFont* font)
     char buff[256];
 
     ImGui::PushFont(font);
-    snprintf(buff, 256, "orient_shift_x: %d: ", img_data->FRM_Info->Shift_Orient_x[r]);
+    snprintf(buff, 256, "framerate: %d", img_data->FRM_Info->FPS);
     ImGui::Text(buff);
-    snprintf(buff, 256, "orient_shift_y: %d: ", img_data->FRM_Info->Shift_Orient_y[r]);
+
+    snprintf(buff, 256, "orient_shift_x: %d", img_data->FRM_Info->Shift_Orient_x[r]);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "orient_shift_y: %d", img_data->FRM_Info->Shift_Orient_y[r]);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "bounding_x1: %d\t",    img_data->Frame[r*s + q].bounding_box.x1);

@@ -256,12 +256,16 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
     {   //handle boolean
         usr_info->save_full_MSK_warning = (config->val_buffer[0] == '1');
     }
+    if (strncmp(config->key_buffer, "Show_Image_Stats", sizeof(config->val_buffer)) == 0)
+    {   //handle boolean
+        usr_info->show_image_stats = (config->val_buffer[0] == '1');
+    }
 }
 
 //TODO: change to add all lines to a buffer then fwrite entire buffer
 void write_cfg_file(struct user_info* usr_info)
 {
-     FILE * config_file_ptr = NULL;
+    FILE * config_file_ptr = NULL;
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
     _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"wb");
 
@@ -273,11 +277,17 @@ void write_cfg_file(struct user_info* usr_info)
     fwrite(usr_info->default_load_path, strlen(usr_info->default_load_path), 1, config_file_ptr);
 
     //handle boolean?
-    //TODO: might need to write a handler?
+    //TODO: might need to write a boolean handler?
     fwrite("\r\nSave_Full_MSK_Warn=", strlen("\r\nSave_Full_MSK_Warn="), 1, config_file_ptr);
     char buffer[2];
     snprintf(buffer, 2, "%d", usr_info->save_full_MSK_warning);
     fwrite(buffer, strlen(buffer), 1, config_file_ptr);
+
+    fwrite("\r\nShow_Image_Stats=", strlen("\r\nShow_Image_Stats="), 1, config_file_ptr);
+    snprintf(buffer, 2, "%d", usr_info->show_image_stats);
+    fwrite(buffer, strlen(buffer), 1, config_file_ptr);
+
+
 
     fclose(config_file_ptr);
 }

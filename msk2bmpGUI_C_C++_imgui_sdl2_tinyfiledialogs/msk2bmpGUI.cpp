@@ -179,6 +179,7 @@ int main(int, char**)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // used to reset the default layout back to original
     bool firstframe = true;
+    char* dropped_file_path = NULL;
 
     // Main loop
     bool done = false;
@@ -203,6 +204,26 @@ int main(int, char**)
                         done = true;
                         break;
                 }
+            }
+            if (event.type == SDL_DROPFILE) {
+                dropped_file_path = event.drop.file;
+
+                My_Variables.F_Prop[counter].file_open_window =
+                    Drag_Drop_Load_Files(dropped_file_path,
+                                    &My_Variables.F_Prop[counter],
+                                    &My_Variables.F_Prop[counter].img_data,
+                                    &usr_info,
+                                    &My_Variables.shaders);
+
+                if (My_Variables.F_Prop[counter].c_name) {
+                    (counter)++;
+                }
+
+                //SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
+                //                         "File dropped",
+                //                         dropped_file_path,
+                //                         window);
+                SDL_free(dropped_file_path);
             }
         }
 
@@ -447,7 +468,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         //display stats
         ImGui::SetCursorPos(current_pos);
-        if (F_Prop->show_stats) {
+        if (F_Prop->show_stats || usr_info.show_image_stats) {
             show_image_stats(&F_Prop->img_data, My_Variables->Font);
         }
 
@@ -606,6 +627,27 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
     }
 }
 
+//TODO: Need to test wide character support
+void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
+    // Assigns image to Load_Files.image and loads palette for the image
+    // TODO: image needs to be less than 1 million pixels (1000x1000)
+    // to be viewable in Titanium FRM viewer, what's the limit in the game?
+    // (limit is greater than 1600x1200 for menus at least - tested on MR)
+    LF* F_Prop = &My_Variables->F_Prop[*counter];
+
+    if (My_Variables->pxlFMT_FO_Pal == NULL)
+    {
+        printf("Error: Palette not loaded...");
+        My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
+    }
+
+    F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
+
+    if (My_Variables->F_Prop[*counter].c_name) {
+        (*counter)++;
+    }
+}
+
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 {
     if (ImGui::BeginMainMenuBar())
@@ -615,21 +657,28 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             ImGui::MenuItem("(demo menu)", NULL, false, false);
             if (ImGui::MenuItem("New - Unimplemented yet...")) {
                 /*TODO: add a new file option w/blank surfaces*/ }
-            if (ImGui::MenuItem("Open", "Ctrl+O"))
-            { 
+            if (ImGui::MenuItem("Open", "Ctrl+O")) { 
                 Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
-            if (ImGui::MenuItem("Default Fallout Path"))
-            {
+            if (ImGui::MenuItem("Default Fallout Path")) {
                 Set_Default_Path(&usr_info);
             }
-            if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning"))
-            {
+            if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning")) {
                 if (usr_info.save_full_MSK_warning) {
                     usr_info.save_full_MSK_warning = false;
                 }
                 else {
                     usr_info.save_full_MSK_warning = true;
+                }
+            }
+            if (ImGui::MenuItem("Toggle Image Stats")) {
+                if (usr_info.show_image_stats) {
+                    usr_info.show_image_stats = false;
+                    My_Variables->F_Prop[*counter].show_stats = false;
+                }
+                else {
+                    usr_info.show_image_stats = true;
+                    My_Variables->F_Prop[*counter].show_stats = true;
                 }
             }
             //if (ImGui::BeginMenu("Open Recent")) {}
@@ -647,25 +696,6 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
         }
         ImGui::EndMainMenuBar();
     }
-}
-
-//TODO: Need to test wide character support
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
-    // Assigns image to Load_Files.image and loads palette for the image
-    // TODO: image needs to be less than 1 million pixels (1000x1000)
-    // to be viewable in Titanium FRM viewer, what's the limit in the game?
-    // (limit is greater than 1600x1200 for menus at least - tested on MR)
-    LF* F_Prop = &My_Variables->F_Prop[*counter];
-
-    if (My_Variables->pxlFMT_FO_Pal == NULL)
-    {
-        printf("Error: Palette not loaded...");
-        My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
-    }
-
-    F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
-
-    if (My_Variables->F_Prop[*counter].c_name) { (*counter)++; }
 }
 
 void contextual_buttons(variables* My_Variables, int window_number_focus)
@@ -806,7 +836,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     static bool open_window = false;
     static int save_type = OTHER;
-    if (F_Prop->img_data.FRM_Info->Frames_Per_Orient > 1) {
+    if (F_Prop->type == FRM && F_Prop->img_data.FRM_Info->Frames_Per_Orient > 1) {
         if (ImGui::Button("Save as Animation...")) {
             open_window = true;
 
