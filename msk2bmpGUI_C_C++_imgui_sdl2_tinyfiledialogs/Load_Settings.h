@@ -14,8 +14,8 @@ struct user_info {
 };
 
 enum img_type {
-    MSK = 0,
-    FRM = 1,
+    MSK   = 0,
+    FRM   = 1,
     OTHER = 2
 };
 

@@ -276,7 +276,6 @@ void write_cfg_file(struct user_info* usr_info)
     fwrite("\r\nDefault_Load_Path=", strlen("\r\nDefault_Load_Path="), 1, config_file_ptr);
     fwrite(usr_info->default_load_path, strlen(usr_info->default_load_path), 1, config_file_ptr);
 
-    //handle boolean?
     //TODO: might need to write a boolean handler?
     fwrite("\r\nSave_Full_MSK_Warn=", strlen("\r\nSave_Full_MSK_Warn="), 1, config_file_ptr);
     char buffer[2];

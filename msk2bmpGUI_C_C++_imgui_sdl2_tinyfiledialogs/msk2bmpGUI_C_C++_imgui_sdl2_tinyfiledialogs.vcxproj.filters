@@ -108,6 +108,9 @@
     <ClCompile Include="shader_class.cpp">
       <Filter>Source Files\OpenGL</Filter>
     </ClCompile>
+    <ClCompile Include="Load_Animation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="tinyfiledialogs.h">
@@ -191,6 +194,9 @@
     <ClInclude Include="shader_class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Load_Animation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="resources\libs\libjpeg-9.dll">
@@ -222,6 +228,9 @@
     </None>
     <None Include="resources\shaders\render_PAL.frag">
       <Filter>Source Files\OpenGL\FRM</Filter>
+    </None>
+    <None Include="passthru_shader.frag">
+      <Filter>Source Files\OpenGL</Filter>
     </None>
   </ItemGroup>
 </Project>

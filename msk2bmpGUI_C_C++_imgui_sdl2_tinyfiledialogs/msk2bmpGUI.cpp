@@ -208,26 +208,17 @@ int main(int, char**)
             if (event.type == SDL_DROPFILE) {
                 dropped_file_path = event.drop.file;
 
-
-
-                bool directory = handle_directory(dropped_file_path,
+                bool directory = handle_directory_drop(dropped_file_path,
                                                  My_Variables.F_Prop,
                                                  &counter,
                                                  &My_Variables.shaders);
 
                 if (!directory) {
-                    My_Variables.F_Prop[counter].file_open_window =
-                        Drag_Drop_Load_Files(dropped_file_path,
-                            &My_Variables.F_Prop[counter],
-                            &My_Variables.F_Prop[counter].img_data,
-                            &My_Variables.shaders);
-
-                    if (My_Variables.F_Prop[counter].c_name) {
-                        (counter)++;
-                    }
+                    handle_file_drop(dropped_file_path,
+                                    &My_Variables.F_Prop[counter],
+                                    &counter,
+                                    &My_Variables.shaders);
                 }
-
-
 
                 SDL_free(dropped_file_path);
             }
@@ -434,6 +425,14 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                                     &F_Prop->img_data,
                                      My_Variables->CurrentTime,
                                      My_Variables->Palette_Update);
+        }
+
+        if (F_Prop->type == OTHER) {
+            animate_OTHER_to_framebuff(&My_Variables->shaders.render_OTHER_shader,
+                                       &My_Variables->shaders.giant_triangle,
+                                       &F_Prop->img_data,
+                                        My_Variables->CurrentTime);
+
         }
 
         //warn if wrong size for map tile

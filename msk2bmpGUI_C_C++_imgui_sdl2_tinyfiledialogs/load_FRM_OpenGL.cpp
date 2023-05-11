@@ -107,12 +107,12 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->Frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
+    img_data->FRM_frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
 
     rectangle bounding_box      = {};
     rectangle FRM_bounding_box  = {};
 
-    FRM_Frame* frame = img_data->Frame;
+    FRM_Frame* frame = img_data->FRM_frame;
     buff_offset = hdr_size;
 
     for (int i = 0; i < num_orients; i++)
@@ -191,18 +191,18 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
-        frm_width   = img_data->Frame[0].frame_info->Frame_Width;
-        frm_height  = img_data->Frame[0].frame_info->Frame_Height;
+        frm_width   = img_data->FRM_frame[0].frame_info->Frame_Width;
+        frm_height  = img_data->FRM_frame[0].frame_info->Frame_Height;
         width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;//      img_data->width;
         height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;//      img_data->height;
-        x_offset    = img_data->Frame[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
-        y_offset    = img_data->Frame[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
+        x_offset    = img_data->FRM_frame[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
+        y_offset    = img_data->FRM_frame[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
     }
 
     //read in FRM data including animation frames
 
     if (img_data->FRM_data) {
-        uint8_t* data = img_data->Frame[0].frame_info->frame_start;
+        uint8_t* data = img_data->FRM_frame[0].frame_info->frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

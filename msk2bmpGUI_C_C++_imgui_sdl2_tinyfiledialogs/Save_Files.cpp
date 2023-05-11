@@ -88,9 +88,9 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     header.Frames_Per_Orient                  = B_Endian::write_u16(1);
 
 
-    img_data->Frame->frame_info->Frame_Height = B_Endian::write_u16(height);
-    img_data->Frame->frame_info->Frame_Width  = B_Endian::write_u16(width);
-    img_data->Frame->frame_info->Frame_Size   = B_Endian::write_u32(size);
+    img_data->FRM_frame->frame_info->Frame_Height = B_Endian::write_u16(height);
+    img_data->FRM_frame->frame_info->Frame_Width  = B_Endian::write_u16(width);
+    img_data->FRM_frame->frame_info->Frame_Size   = B_Endian::write_u32(size);
     //img_data->Frame_Info->Shift_Offset_x = 
     //img_data->Frame_Info->Shift_Offset_y = 
 
@@ -202,14 +202,14 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
                 for (int j = 0; j < img_data->FRM_Info->Frames_Per_Orient; j++)
                 {
                     frame_num = i * img_data->FRM_Info->Frames_Per_Orient + j;
-                    size = img_data->Frame[frame_num].frame_info->Frame_Size;
+                    size = img_data->FRM_frame[frame_num].frame_info->Frame_Size;
 
-                    memcpy(&frame_info, img_data->Frame[frame_num].frame_info, sizeof(FRM_Frame_Info));
+                    memcpy(&frame_info, img_data->FRM_frame[frame_num].frame_info, sizeof(FRM_Frame_Info));
                     B_Endian::flip_frame_endian(&frame_info);
 
                     //write to file
                     fwrite(&frame_info, sizeof(FRM_Frame_Info), 1, File_ptr);
-                    fwrite(&img_data->Frame[frame_num].frame_info->frame_start, size, 1, File_ptr);
+                    fwrite(&img_data->FRM_frame[frame_num].frame_info->frame_start, size, 1, File_ptr);
                 }
             }
             fclose(File_ptr);

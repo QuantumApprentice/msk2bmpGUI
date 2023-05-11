@@ -12,3 +12,4 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle, im
 void draw_FRM_to_framebuffer(float* palette, Shader* shader, mesh* triangle, struct image_data* img_data);
 void draw_PAL_to_framebuffer(float* palette, Shader* shader, mesh* triangle, struct image_data* img_data);
 void draw_MSK_to_framebuffer(float* palette, Shader* shader, mesh* triangle, struct image_data* img_data);
+void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, clock_t current_time);

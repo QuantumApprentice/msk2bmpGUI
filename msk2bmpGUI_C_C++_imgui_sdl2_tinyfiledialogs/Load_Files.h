@@ -32,10 +32,13 @@ struct shader_info {
     float palette[768];
     Shader render_PAL_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_PAL.frag" };
     Shader render_FRM_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_FRM.frag" };
+    Shader render_OTHER_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//passthru_shader.frag" };
     mesh giant_triangle;
 };
 
 bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data);
-bool Drag_Drop_Load_Files(std::filesystem::path file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
-bool handle_directory(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
+bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
+bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
+void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
+void prep_extension(LF* F_Prop, user_info* usr_info);

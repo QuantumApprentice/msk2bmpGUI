@@ -4,14 +4,7 @@
 #include <stdlib.h>
 
 #include "imgui-docking/imgui.h"
-
-struct rectangle {
-    int x1;
-    int y1;
-
-    int x2;
-    int y2;
-};
+#include "Load_Animation.h"
 
 struct mesh {
     GLuint VBO = 0;
@@ -53,7 +46,9 @@ struct FRM_Frame {
 struct image_data {
     //TODO: convert FRM_Info to a pointer and adjust save function to handle
     FRM_Header* FRM_Info;
-    FRM_Frame* Frame;
+    FRM_Frame*  FRM_frame;
+    Anim_Header*ANIM_hdr;
+    Anim_Frame* ANIM_frame;
     rectangle FRM_bounding_box[6];
 
     uint8_t* FRM_data = NULL;
