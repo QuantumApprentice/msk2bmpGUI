@@ -43,8 +43,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     for (int i = 0; i < path_vector.size(); i++)
     {
         frame_info[i].frame_start  = IMG_Load(tinyfd_utf16to8(path_vector[i].c_str()));
-
-
     }
 
     F_Prop->img_data.ANIM_hdr = header;
@@ -52,6 +50,9 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     F_Prop->img_data.ANIM_frame->frame_info = frame_info;
 
     F_Prop->type = OTHER;
+    F_Prop->img_data.width  = frame_info->frame_start->w;
+    F_Prop->img_data.height = frame_info->frame_start->h;
+
 
     //assign_direction(direction, &frame_1);
 

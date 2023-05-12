@@ -81,7 +81,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     //bind data to FRM_texture for display
     uint8_t * blank = (uint8_t*)calloc(1, width*height);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, blank);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
     glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data->pixels);
     free(blank);
 }
