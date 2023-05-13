@@ -16,6 +16,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 {
     char buffer[MAX_PATH];
     char direction[MAX_PATH];
+    image_data* img_data = &F_Prop->img_data;
 
     snprintf(direction, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].parent_path().filename().c_str()));
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].c_str()));
@@ -42,21 +43,56 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     for (int i = 0; i < path_vector.size(); i++)
     {
-        frame_info[i].frame_start  = IMG_Load(tinyfd_utf16to8(path_vector[i].c_str()));
+        char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
+        frame_info[i].frame_start  = IMG_Load(converted_path);
+        frame_info[i].Frame_Width  = frame_info[i].frame_start->w;
+        frame_info[i].Frame_Height = frame_info[i].frame_start->h;
     }
 
-    F_Prop->img_data.ANIM_hdr = header;
-    F_Prop->img_data.ANIM_frame = frame;
-    F_Prop->img_data.ANIM_frame->frame_info = frame_info;
+    img_data->ANIM_hdr   = header;
+    img_data->ANIM_frame = frame;
+    img_data->ANIM_frame->frame_info = frame_info;
 
     F_Prop->type = OTHER;
-    F_Prop->img_data.width  = frame_info->frame_start->w;
-    F_Prop->img_data.height = frame_info->frame_start->h;
+    img_data->width  = frame_info[0].frame_start->w;
+    img_data->height = frame_info[0].frame_start->h;
 
 
     //assign_direction(direction, &frame_1);
 
 
+    //load & gen texture
+    glGenTextures(1, &img_data->FRM_texture);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+    //texture settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    if (img_data->ANIM_frame->frame_info) {
+        SDL_Surface* data = img_data->ANIM_frame->frame_info[0].frame_start;
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //FRM's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+        //bind data to FRM_texture for display
+        //uint8_t * blank = (uint8_t*)calloc(1, data->w*data->h);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->w, data->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
+        //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
+        //free(blank);
+
+        bool success = false;
+        success = init_framebuffer(img_data);
+        if (!success) {
+            printf("image framebuffer failed to attach correctly?\n");
+            return false;
+        }
+        return true;
+    }
+    else {
+        printf("FRM image didn't load...\n");
+        return false;
+    }
 
     prep_extension(F_Prop, NULL);
     return true;

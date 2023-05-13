@@ -68,32 +68,31 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int max_frm = img_data->ANIM_hdr->Frames_Per_Orient;
     int display_frame = orient * max_frm + frame;
 
-    int frm_width  = img_data->ANIM_frame[display_frame].frame_info->Frame_Width;
-    int frm_height = img_data->ANIM_frame[display_frame].frame_info->Frame_Height;
+    int frm_width  = img_data->ANIM_frame->frame_info[0].frame_start->w;
+    int frm_height = img_data->ANIM_frame->frame_info[0].frame_start->h;
 
-    int x_offset = img_data->ANIM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset = img_data->ANIM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
+    int x_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    SDL_Surface* data = img_data->ANIM_frame[display_frame].frame_info->frame_start;
+    SDL_Surface* data = img_data->ANIM_frame->frame_info[display_frame].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     //bind data to FRM_texture for display
     uint8_t * blank = (uint8_t*)calloc(1, width*height);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
+    //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data->pixels);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     free(blank);
 }
 
-//temporary
-#define magic_speed 10
 
 void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, clock_t current_time)
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
-    float fps = magic_speed * playback_speeds[img_data->playback_speed];
+    float fps = 10;// magic_speed * playback_speeds[img_data->playback_speed];
 
     int orient = img_data->display_orient_num;
     int width  = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
@@ -116,10 +115,10 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         last_time = current_time;
 
         img_data->display_frame_num += 1;
-        if (img_data->display_frame_num >= img_data->FRM_Info->Frames_Per_Orient) {
+        if (img_data->display_frame_num >= img_data->ANIM_hdr->Frames_Per_Orient) {
             img_data->display_frame_num = 0;
         }
-        render_OTHER_OpenGL(img_data, width, height);
+        render_OTHER_OpenGL(img_data, img_width, img_height);
     }
 
     //shader

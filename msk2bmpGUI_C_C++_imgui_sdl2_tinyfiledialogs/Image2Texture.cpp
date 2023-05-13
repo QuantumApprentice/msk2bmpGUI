@@ -48,11 +48,7 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
         printf("glError: %d\n", glGetError());
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-            Surface->w,
-            Surface->h,
-            0, GL_RGBA, GL_UNSIGNED_BYTE,
-            Surface->pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Surface->w, Surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, Surface->pixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 
