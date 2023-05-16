@@ -48,7 +48,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     img_data->ANIM_frame[temp_orient].orientation = temp_orient;
 
-
     for (int i = 0; i < path_vector.size(); i++)
     {
         char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
