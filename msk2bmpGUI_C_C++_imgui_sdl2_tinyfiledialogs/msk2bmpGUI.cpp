@@ -465,13 +465,13 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             //TODO: definitely have to adjust for .FR1, FR2, etc...
             char* names1[] = { "NE", "no image", "no image", "no image", "no image", "no image" };
             char* names2[] = { "NE", "E", "SE", "SW", "W", "NW" };
-            char** names = (F_Prop->img_data.FRM_Info->Frame_0_Offset[1] > 0) ? names2 : names1;
+            char** names = (F_Prop->img_data.FRM_hdr->Frame_0_Offset[1] > 0) ? names2 : names1;
             ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names1));
             ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                             F_Prop->img_data.FRM_Info->Frames_Per_Orient - 1, NULL);
+                             F_Prop->img_data.FRM_hdr->Frames_Per_Orient - 1, NULL);
         }
         else {
-            if (F_Prop->img_data.ANIM_hdr->Frames_Per_Orient > 1) {
+            if (F_Prop->img_data.ANM_hdr->Frames_Per_Orient > 1) {
                 Preview_Image(My_Variables, &F_Prop->img_data);
 
                 //gui video controls
@@ -486,7 +486,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 //char** names = (F_Prop->img_data.ANIM_hdr->Frame_0_Offset[1] > 0) ? names2 : names1;
                 ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
                 ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                    F_Prop->img_data.ANIM_hdr->Frames_Per_Orient - 1, NULL);
+                    F_Prop->img_data.ANM_hdr->Frames_Per_Orient - 1, NULL);
             }
         }
 
@@ -867,7 +867,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     static bool open_window = false;
     static int save_type = OTHER;
-    if (F_Prop->type == FRM && F_Prop->img_data.FRM_Info->Frames_Per_Orient > 1) {
+    if (F_Prop->type == FRM && F_Prop->img_data.FRM_hdr->Frames_Per_Orient > 1) {
         if (ImGui::Button("Save as Animation...")) {
             open_window = true;
 

@@ -32,8 +32,8 @@ struct LF {
 
 struct shader_info {
     float palette[768];
-    Shader render_PAL_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_PAL.frag" };
-    Shader render_FRM_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//render_FRM.frag" };
+    Shader render_PAL_shader{   "resources//shaders//passthru_shader.vert", "resources//shaders//render_PAL.frag" };
+    Shader render_FRM_shader{   "resources//shaders//passthru_shader.vert", "resources//shaders//render_FRM.frag" };
     Shader render_OTHER_shader{ "resources//shaders//passthru_shader.vert", "resources//shaders//passthru_shader.frag" };
     mesh giant_triangle;
 };

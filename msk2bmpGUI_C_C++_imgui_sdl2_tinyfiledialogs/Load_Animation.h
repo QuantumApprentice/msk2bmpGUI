@@ -10,7 +10,7 @@ struct rectangle {
     int y2;
 };
 
-struct Anim_Header {
+struct ANM_Header {
     uint16_t FPS = 0;
     uint16_t Action_Frame = 0;
     uint16_t Frames_Per_Orient;
@@ -20,7 +20,7 @@ struct Anim_Header {
     uint32_t Frame_Area;
 };
 
-struct Anim_Frame_Info {
+struct ANM_Frame {
     uint16_t Frame_Width;
     uint16_t Frame_Height;
     uint32_t Frame_Size;
@@ -40,15 +40,13 @@ enum Orientation
     NW      =  5
 };
 
-struct Anim_Frame {
+struct ANM_Orient {
     //TODO: remove unnecesary info?
     int frame_number = 0;
     Orientation orientation = no_data;
-    Anim_Frame_Info* frame_info;
+    ANM_Frame* frame_info;
     rectangle bounding_box = {};
 };
-
-
 
 struct LF;
 struct image_data;

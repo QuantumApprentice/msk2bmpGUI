@@ -42,7 +42,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec4 tint   = My_Variables->tint_col;
-    ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+    ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
 
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();

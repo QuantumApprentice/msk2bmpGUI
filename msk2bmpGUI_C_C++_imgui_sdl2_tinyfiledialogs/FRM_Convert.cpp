@@ -264,7 +264,7 @@ void Euclidian_Distance_Color_Match(
             //TODO: need to clean this up
             //      used to keep track of palettization
             if (i == c) {
-                printf("SDL color match loop #: %d\n", i);
+                printf("Euclidian color match loop #: %d\n", i);
                 c *= 10;
             }
 

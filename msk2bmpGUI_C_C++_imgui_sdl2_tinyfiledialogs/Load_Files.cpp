@@ -30,7 +30,6 @@ void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* sh
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders)
 {
     char buffer[MAX_PATH];
-    //wchar_t* temp_ptr = tinyfd_utf8to16(file_name);
     std::filesystem::path path(file_name);
     std::vector <std::filesystem::path> path_vector;
 
@@ -39,8 +38,7 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
     if (error) {
         //TODO: convert to tinyfdfiledialog() popup warning
         printf("error checking if file_name is directory");
-        //TODO: handle differently, error means not just no directory, but something failed
-        //std::optional?
+        //TODO: handle differently? error means not just no directory, but something failed
         return std::nullopt;
     }
 

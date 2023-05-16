@@ -44,10 +44,10 @@ struct FRM_Frame {
 };
 
 struct image_data {
-    FRM_Header* FRM_Info;
+    FRM_Header* FRM_hdr;
     FRM_Frame*  FRM_frame;
-    Anim_Header*ANIM_hdr;
-    Anim_Frame* ANIM_frame;
+    ANM_Header* ANM_hdr;
+    ANM_Orient* ANM_orient;
     rectangle FRM_bounding_box[6];
 
     uint8_t* FRM_data = NULL;

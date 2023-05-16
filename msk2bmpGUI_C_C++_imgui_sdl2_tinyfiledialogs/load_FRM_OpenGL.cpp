@@ -98,7 +98,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     FRM_Header* header = (FRM_Header*)buffer;
     B_Endian::flip_header_endian(header);
 
-    img_data->FRM_Info = header;
+    img_data->FRM_hdr = header;
 
     //memcpy(&img_data->FRM_Info, buffer, sizeof(FRM_Header));
 

@@ -184,12 +184,12 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
         else {
 
             //uint8_t* buffer = (uint8_t*)&img_data->FRM_Info;
-            int num_orients = (img_data->FRM_Info->Frame_0_Offset[1] > 0) ? 6 : 1;
+            int num_orients = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? 6 : 1;
             int frame_num = 0;
             int size = 0;
 
             FRM_Header header = {};
-            memcpy(&header, img_data->FRM_Info, sizeof(FRM_Header));
+            memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
             B_Endian::flip_header_endian(&header);
 
             FRM_Frame_Info frame_info;
@@ -199,9 +199,9 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
 
             for (int i = 0; i < num_orients; i++)
             {
-                for (int j = 0; j < img_data->FRM_Info->Frames_Per_Orient; j++)
+                for (int j = 0; j < img_data->FRM_hdr->Frames_Per_Orient; j++)
                 {
-                    frame_num = i * img_data->FRM_Info->Frames_Per_Orient + j;
+                    frame_num = i * img_data->FRM_hdr->Frames_Per_Orient + j;
                     size = img_data->FRM_frame[frame_num].frame_info->Frame_Size;
 
                     memcpy(&frame_info, img_data->FRM_frame[frame_num].frame_info, sizeof(FRM_Frame_Info));

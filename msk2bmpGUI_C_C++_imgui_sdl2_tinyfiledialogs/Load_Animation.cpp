@@ -32,21 +32,21 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
     int num_frames = path_vector.size();
-    if (img_data->ANIM_hdr == NULL) {
-        img_data->ANIM_hdr = (Anim_Header*)malloc(sizeof(Anim_Header));
-        img_data->ANIM_hdr->Frames_Per_Orient = num_frames;
+    if (img_data->ANM_hdr == NULL) {
+        img_data->ANM_hdr = (ANM_Header*)malloc(sizeof(ANM_Header));
+        img_data->ANM_hdr->Frames_Per_Orient = num_frames;
     }
 
-    if (img_data->ANIM_frame == NULL) {
-        img_data->ANIM_frame = (Anim_Frame*)malloc(sizeof(Anim_Frame) * 6);
+    if (img_data->ANM_orient == NULL) {
+        img_data->ANM_orient = (ANM_Orient*)malloc(sizeof(ANM_Orient) * 6);
     }
 
-    Anim_Frame_Info* frame_info = (Anim_Frame_Info*)malloc(sizeof(Anim_Frame_Info) * num_frames);
+    ANM_Frame* frame_info = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     Orientation temp_orient = assign_direction(direction);
 
     std::sort(path_vector.begin(), path_vector.end());
 
-    img_data->ANIM_frame[temp_orient].orientation = temp_orient;
+    img_data->ANM_orient[temp_orient].orientation = temp_orient;
 
     for (int i = 0; i < path_vector.size(); i++)
     {
@@ -56,7 +56,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         frame_info[i].Frame_Height = frame_info[i].frame_start->h;
     }
 
-    img_data->ANIM_frame[temp_orient].frame_info = frame_info;
+    img_data->ANM_orient[temp_orient].frame_info = frame_info;
 
 
     F_Prop->type = OTHER;
@@ -77,8 +77,8 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    if (img_data->ANIM_frame[temp_orient].frame_info) {
-        SDL_Surface* data = img_data->ANIM_frame[temp_orient].frame_info[0].frame_start;
+    if (img_data->ANM_orient[temp_orient].frame_info) {
+        SDL_Surface* data = img_data->ANM_orient[temp_orient].frame_info[0].frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -133,7 +133,7 @@ void set_names(char** names_array, image_data* img_data)
 {
     for (int i = 0; i < 6; i++)
     {
-        switch (img_data->ANIM_frame[i].orientation)
+        switch (img_data->ANM_orient[i].orientation)
         {
         case(NE):
             names_array[i] = "NE";
