@@ -91,7 +91,7 @@ void draw_red_squares(LF* F_Prop, bool wrong_size)
     }
 }
 
-void show_image_stats(image_data* img_data, ImFont* font)
+void show_image_stats_FRM(image_data* img_data, ImFont* font)
 {
     int q, r, s;
     q =  img_data->display_frame_num;
@@ -128,6 +128,57 @@ void show_image_stats(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "y_offset: %d",         img_data->FRM_frame[r*s + q].frame_info->Shift_Offset_y);
     ImGui::Text(buff);
     snprintf(buff, 256, "bounding_y2: %d",      img_data->FRM_frame[r*s + q].bounding_box.y2);
+    ImGui::Text(buff);
+
+    snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[r].x1);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "FRM_bounding_x2: %d",  img_data->FRM_bounding_box[r].x2);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "FRM_bounding_y1: %d",  img_data->FRM_bounding_box[r].y1);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "FRM_bounding_y2: %d",  img_data->FRM_bounding_box[r].y2);
+    ImGui::Text(buff);
+    ImGui::PopFont();
+}
+
+void show_image_stats_ANIM(image_data* img_data, ImFont* font)
+{
+    int q, r, s;
+    q =  img_data->display_frame_num;
+    r = (img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
+    s =  img_data->ANIM_hdr->Frames_Per_Orient;
+    char buff[256];
+    int frame_num = r * s + q;
+
+    ImGui::PushFont(font);
+    snprintf(buff, 256, "framerate: %d", img_data->ANIM_hdr->FPS);
+    ImGui::Text(buff);
+
+    snprintf(buff, 256, "orient_shift_x: %d", img_data->ANIM_hdr->Shift_Orient_x[r]);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "orient_shift_y: %d", img_data->ANIM_hdr->Shift_Orient_y[r]);
+    ImGui::Text(buff);
+
+    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANIM_frame->bounding_box.x1);
+    ImGui::Text(buff);
+    ImGui::SameLine();
+    snprintf(buff, 256, "width: %d\t",          img_data->ANIM_frame->frame_info[frame_num].Frame_Width);
+    ImGui::Text(buff);
+    ImGui::SameLine();
+    snprintf(buff, 256, "x_offset: %d",         img_data->ANIM_frame->frame_info[frame_num].Shift_Offset_x);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANIM_frame->bounding_box.x2);
+    ImGui::Text(buff);
+
+    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANIM_frame->bounding_box.y1);
+    ImGui::Text(buff);
+    ImGui::SameLine();
+    snprintf(buff, 256, "height: %d\t",         img_data->ANIM_frame->frame_info[frame_num].Frame_Height);
+    ImGui::Text(buff);
+    ImGui::SameLine();
+    snprintf(buff, 256, "y_offset: %d",         img_data->ANIM_frame->frame_info[frame_num].Shift_Offset_y);
+    ImGui::Text(buff);
+    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANIM_frame->bounding_box.y2);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[r].x1);

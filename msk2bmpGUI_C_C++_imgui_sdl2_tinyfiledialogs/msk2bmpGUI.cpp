@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <optional>
 
 // My header files
 #include "Load_Files.h"
@@ -208,16 +209,19 @@ int main(int, char**)
             if (event.type == SDL_DROPFILE) {
                 dropped_file_path = event.drop.file;
 
-                bool directory = handle_directory_drop(dropped_file_path,
+                std::optional<bool> directory = handle_directory_drop(dropped_file_path,
                                                  My_Variables.F_Prop,
-                                                 &counter,
-                                                 &My_Variables.shaders);
-
-                if (!directory) {
-                    handle_file_drop(dropped_file_path,
-                                    &My_Variables.F_Prop[counter],
-                                    &counter,
-                                    &My_Variables.shaders);
+                                                &My_Variables.window_number_focus,
+                                                &counter,
+                                                &My_Variables.shaders);
+        //TODO: maybe I should handle these as an enum instead of std::optional<>
+                if (directory.has_value()) {
+                    if (!directory.operator*()) {
+                        handle_file_drop(dropped_file_path,
+                            &My_Variables.F_Prop[counter],
+                            &counter,
+                            &My_Variables.shaders);
+                    }
                 }
 
                 SDL_free(dropped_file_path);
@@ -428,6 +432,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         }
 
         if (F_Prop->type == OTHER) {
+            ImGui::Checkbox("Show frame Stats", &F_Prop->show_stats);
             animate_OTHER_to_framebuff(&My_Variables->shaders.render_OTHER_shader,
                                        &My_Variables->shaders.giant_triangle,
                                        &F_Prop->img_data,
@@ -466,7 +471,23 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                              F_Prop->img_data.FRM_Info->Frames_Per_Orient - 1, NULL);
         }
         else {
-            Preview_Image(My_Variables, &F_Prop->img_data);
+            if (F_Prop->img_data.ANIM_hdr->Frames_Per_Orient > 1) {
+                Preview_Image(My_Variables, &F_Prop->img_data);
+
+                //gui video controls
+                ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
+                const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
+                ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
+                //TODO: might have to adjust the names[] array to handle partial edits
+                //TODO: definitely have to adjust for .FR1, FR2, etc...
+                char* names[6];// = { "NE", "no image", "no image", "no image", "no image", "no image" };
+                set_names(names, &F_Prop->img_data);
+                //char* names2[] = { "NE", "E", "SE", "SW", "W", "NW" };
+                //char** names = (F_Prop->img_data.ANIM_hdr->Frame_0_Offset[1] > 0) ? names2 : names1;
+                ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
+                ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
+                    F_Prop->img_data.ANIM_hdr->Frames_Per_Orient - 1, NULL);
+            }
         }
 
         draw_red_squares(F_Prop, wrong_size);
@@ -474,7 +495,12 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         //display stats
         ImGui::SetCursorPos(current_pos);
         if (F_Prop->show_stats || usr_info.show_image_stats) {
-            show_image_stats(&F_Prop->img_data, My_Variables->Font);
+            if (F_Prop->type == FRM) {
+                show_image_stats_FRM(&F_Prop->img_data, My_Variables->Font);
+            }
+            else {
+                show_image_stats_ANIM(&F_Prop->img_data, My_Variables->Font);
+            }
         }
 
 

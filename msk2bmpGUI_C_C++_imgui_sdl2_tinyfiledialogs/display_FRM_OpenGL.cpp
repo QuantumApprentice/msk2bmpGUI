@@ -63,18 +63,20 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
 
 void render_OTHER_OpenGL(image_data* img_data, int width, int height)
 {
-    int frame = img_data->display_frame_num;
-    int orient = (img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-    int max_frm = img_data->ANIM_hdr->Frames_Per_Orient;
-    int display_frame = orient * max_frm + frame;
+    int orient = img_data->display_orient_num; //(img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
 
-    int frm_width  = img_data->ANIM_frame->frame_info[0].frame_start->w;
-    int frm_height = img_data->ANIM_frame->frame_info[0].frame_start->h;
+    int frame_num = img_data->display_frame_num;
+
+    int max_frm = img_data->ANIM_hdr->Frames_Per_Orient;
+    //int display_frame = orient * max_frm + frame;
+
+    int frm_width  = img_data->ANIM_frame[orient].frame_info[0].frame_start->w;
+    int frm_height = img_data->ANIM_frame[orient].frame_info[0].frame_start->h;
 
     int x_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    SDL_Surface* data = img_data->ANIM_frame->frame_info[display_frame].frame_start;
+    SDL_Surface* data = img_data->ANIM_frame[orient].frame_info[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
@@ -92,14 +94,14 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
-    float fps = 10;// magic_speed * playback_speeds[img_data->playback_speed];
+    float fps = 10 * playback_speeds[img_data->playback_speed];
 
     int orient = img_data->display_orient_num;
     int width  = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 
-    int img_width  = img_data->ANIM_frame->frame_info[0].frame_start->w;
-    int img_height = img_data->ANIM_frame->frame_info[0].frame_start->h;
+    int img_width  = img_data->ANIM_frame[orient].frame_info[0].frame_start->w;
+    int img_height = img_data->ANIM_frame[orient].frame_info[0].frame_start->h;
 
     glViewport(0, 0, img_width, img_height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);

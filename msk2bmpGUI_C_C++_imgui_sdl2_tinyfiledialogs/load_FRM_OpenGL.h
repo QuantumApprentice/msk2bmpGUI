@@ -44,7 +44,6 @@ struct FRM_Frame {
 };
 
 struct image_data {
-    //TODO: convert FRM_Info to a pointer and adjust save function to handle
     FRM_Header* FRM_Info;
     FRM_Frame*  FRM_frame;
     Anim_Header*ANIM_hdr;

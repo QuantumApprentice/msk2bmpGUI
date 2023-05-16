@@ -3,7 +3,6 @@
 
 #include <cstdint>
 
-
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "tinyfiledialogs.h"
@@ -33,13 +32,22 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
     int num_frames = path_vector.size();
-    Anim_Header* header = (Anim_Header*)malloc(sizeof(Anim_Header));
-    header->Frames_Per_Orient = num_frames;
-    Anim_Frame* frame = (Anim_Frame*)malloc(sizeof(Anim_Frame));
+    if (img_data->ANIM_hdr == NULL) {
+        img_data->ANIM_hdr = (Anim_Header*)malloc(sizeof(Anim_Header));
+        img_data->ANIM_hdr->Frames_Per_Orient = num_frames;
+    }
+
+    if (img_data->ANIM_frame == NULL) {
+        img_data->ANIM_frame = (Anim_Frame*)malloc(sizeof(Anim_Frame) * 6);
+    }
 
     Anim_Frame_Info* frame_info = (Anim_Frame_Info*)malloc(sizeof(Anim_Frame_Info) * num_frames);
+    Orientation temp_orient = assign_direction(direction);
 
     std::sort(path_vector.begin(), path_vector.end());
+
+    img_data->ANIM_frame[temp_orient].orientation = temp_orient;
+
 
     for (int i = 0; i < path_vector.size(); i++)
     {
@@ -49,16 +57,16 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         frame_info[i].Frame_Height = frame_info[i].frame_start->h;
     }
 
-    img_data->ANIM_hdr   = header;
-    img_data->ANIM_frame = frame;
-    img_data->ANIM_frame->frame_info = frame_info;
+    img_data->ANIM_frame[temp_orient].frame_info = frame_info;
+
 
     F_Prop->type = OTHER;
     img_data->width  = frame_info[0].frame_start->w;
     img_data->height = frame_info[0].frame_start->h;
+    img_data->display_orient_num = temp_orient;
 
 
-    //assign_direction(direction, &frame_1);
+
 
 
     //load & gen texture
@@ -70,8 +78,8 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    if (img_data->ANIM_frame->frame_info) {
-        SDL_Surface* data = img_data->ANIM_frame->frame_info[0].frame_start;
+    if (img_data->ANIM_frame[temp_orient].frame_info) {
+        SDL_Surface* data = img_data->ANIM_frame[temp_orient].frame_info[0].frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -98,25 +106,57 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     return true;
 }
 
-void assign_direction(char* direction, Anim_Frame* frame)
+Orientation assign_direction(char* direction)
 {
-    if      (!strncmp(direction, "NE\0", sizeof("NE\0"))) {
-        frame->orientation = NE;
+    if (!strncmp(direction, "NE\0", sizeof("NE\0"))) {
+        return NE;
     }
-    else if (!strncmp(direction, "E\0",  sizeof("E\0")))  {
-        frame->orientation = E;
+    if (!strncmp(direction, "E\0",  sizeof("E\0")))  {
+        return E;
     }
-    else if (!strncmp(direction, "SE\0", sizeof("SE\0"))) {
-        frame->orientation = SE;
+    if (!strncmp(direction, "SE\0", sizeof("SE\0"))) {
+        return SE;
     }
-    else if (!strncmp(direction, "SW\0", sizeof("SW\0"))) {
-        frame->orientation = SW;
+    if (!strncmp(direction, "SW\0", sizeof("SW\0"))) {
+        return SW;
     }
-    else if (!strncmp(direction, "W\0",  sizeof("W\0")))  {
-        frame->orientation = W;
+    if (!strncmp(direction, "W\0",  sizeof("W\0")))  {
+        return W;
     }
-    else if (!strncmp(direction, "NW\0", sizeof("NW\0"))) {
-        frame->orientation = NW;
+    if (!strncmp(direction, "NW\0", sizeof("NW\0"))) {
+        return NW;
     }
+    //default
+    return NE;
+}
 
+void set_names(char** names_array, image_data* img_data)
+{
+    for (int i = 0; i < 6; i++)
+    {
+        switch (img_data->ANIM_frame[i].orientation)
+        {
+        case(NE):
+            names_array[i] = "NE";
+            break;
+        case(E):
+            names_array[i] = "E";
+            break;
+        case(SE):
+            names_array[i] = "SE";
+            break;
+        case(SW):
+            names_array[i] = "SW";
+            break;
+        case(W):
+            names_array[i] = "W";
+            break;
+        case(NW):
+            names_array[i] = "NW";
+            break;
+        default:
+            names_array[i] = "no image";
+            break;
+        }
+    }
 }

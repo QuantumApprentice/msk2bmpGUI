@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL.h>
+
 #include <filesystem>
+#include <optional>
 
 #include "load_FRM_OpenGL.h"
 #include "Load_Settings.h"
@@ -39,6 +41,6 @@ struct shader_info {
 bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data);
 bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
-bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
+std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 void prep_extension(LF* F_Prop, user_info* usr_info);

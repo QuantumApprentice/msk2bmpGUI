@@ -27,7 +27,7 @@ void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* sh
 }
 
 //TODO: make a define switch for linux when I move to there
-bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders)
+std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders)
 {
     char buffer[MAX_PATH];
     //wchar_t* temp_ptr = tinyfd_utf8to16(file_name);
@@ -41,7 +41,7 @@ bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_inf
         printf("error checking if file_name is directory");
         //TODO: handle differently, error means not just no directory, but something failed
         //std::optional?
-        return false;
+        return std::nullopt;
     }
 
     if (is_directory) {
@@ -50,8 +50,8 @@ bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_inf
             bool is_subdirectory = file.is_directory(error);
             if (error) {
                 //TODO: convert to tinyfd_filedialog() popup warning
-                printf("error checking if file_name is directory");
-                continue;
+                printf("error when checking if file_name is directory");
+                return std::nullopt;
             }
             if (is_subdirectory) {
                 //TODO: possibly handle different directions in subdirectories
@@ -80,8 +80,14 @@ bool handle_directory_drop(char* file_name, LF* F_Prop, int* counter, shader_inf
             }
         }
         else if (type == 1) {
-            F_Prop[*counter].file_open_window = Drag_Drop_Load_Animation(path_vector, &F_Prop[*counter]);
-            (*counter)++;
+            bool does_window_exist = (*window_number_focus > -1);
+            int num = does_window_exist ? *window_number_focus : *counter;
+
+            F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vector, &F_Prop[num]);
+
+            if (!does_window_exist) {
+                (*counter)++;
+            }
         }
         else if (type == 0) {
             return false;
