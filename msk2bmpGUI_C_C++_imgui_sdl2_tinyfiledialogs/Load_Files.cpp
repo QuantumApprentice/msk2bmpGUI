@@ -26,72 +26,123 @@ void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* sh
     }
 }
 
+bool open_multiple_files(std::vector <std::filesystem::path> path_vector,
+                         LF* F_Prop, shader_info* shaders,
+                         int* counter, int* window_number_focus)
+{
+    char buffer[MAX_PATH] = {};
+    snprintf(buffer, MAX_PATH, "%s\nIs this a group of sequential animation frames?", tinyfd_utf16to8(path_vector[0].parent_path().c_str()));
+    //returns 1 for yes, 2 for no, 0 for cancel
+    int type = tinyfd_messageBox("Animation? or Single Images?",
+        buffer,
+        "yesnocancel", "question", 2);
+
+    if (type == 2) {
+        for (int i = 0; i < path_vector.size(); i++)
+        {
+            F_Prop[*counter].file_open_window =
+                Drag_Drop_Load_Files(tinyfd_utf16to8(path_vector[i].c_str()),
+                                    &F_Prop[*counter],
+                                    &F_Prop[*counter].img_data,
+                                     shaders);
+            (*counter)++;
+        }
+        return true;
+    }
+    else if (type == 1) {
+        bool does_window_exist = (*window_number_focus > -1);
+        int num = does_window_exist ? *window_number_focus : *counter;
+
+        F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vector, &F_Prop[num]);
+
+        if (!does_window_exist) {
+            (*counter)++;
+            (*window_number_focus) = 0;
+        }
+
+        return true;
+    }
+    else if (type == 0) {
+        return false;
+    }
+}
+
+
+std::optional<std::vector <std::filesystem::path>> handle_subdirectory(const std::filesystem::path& directory)
+{
+    std::vector <std::filesystem::path> animation_images;
+    std::error_code error;
+    for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(directory))
+    {
+        bool is_subdirectory = file.is_directory(error);
+        if (error) {
+            //TODO: convert to tinyfd_filedialog() popup warning
+            printf("error when checking if file_name is directory");
+            return std::nullopt;
+        }
+        if (is_subdirectory) {
+            //TODO: handle different directions in subdirectories
+            //handle_subdirectory(file.path());
+            continue;
+        }
+        else {
+            animation_images.push_back(file);
+        }
+    }
+    std::sort(animation_images.begin(), animation_images.end());
+
+    return animation_images;
+}
+
 //TODO: make a define switch for linux when I move to there
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders)
 {
     char buffer[MAX_PATH];
     std::filesystem::path path(file_name);
-    std::vector <std::filesystem::path> path_vector;
+    std::vector <std::filesystem::path> animation_images;
 
     std::error_code error;
     bool is_directory = std::filesystem::is_directory(path, error);
     if (error) {
         //TODO: convert to tinyfdfiledialog() popup warning
         printf("error checking if file_name is directory");
-        //TODO: handle differently? error means not just no directory, but something failed
         return std::nullopt;
     }
 
     if (is_directory) {
+        bool is_subdirectory = false;
         for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(path))
         {
-            bool is_subdirectory = file.is_directory(error);
+            is_subdirectory = file.is_directory(error);
             if (error) {
                 //TODO: convert to tinyfd_filedialog() popup warning
                 printf("error when checking if file_name is directory");
                 return std::nullopt;
             }
             if (is_subdirectory) {
-                //TODO: possibly handle different directions in subdirectories
+                //handle different directions in subdirectories (1 level so far)
+                std::optional<std::vector <std::filesystem::path>> images = handle_subdirectory(file.path());
+                if (images.has_value() && !(*images).empty()) {
+                    open_multiple_files(*images, F_Prop, shaders, counter, window_number_focus);
+                }
+
                 continue;
             }
             else {
-                path_vector.push_back(file);
-            }
-
-        }
-
-        //returns 1 for yes, 2 for no, 0 for cancel
-        int type = tinyfd_messageBox("Animation? or Single Images?",
-            "Is this a group of sequential animation frames?",
-            "yesnocancel", "question", 2);
-
-        if (type == 2) {
-            for (int i = 0; i < path_vector.size(); i++)
-            {
-                F_Prop[*counter].file_open_window =
-                    Drag_Drop_Load_Files(tinyfd_utf16to8(path_vector[i].c_str()),
-                                        &F_Prop[*counter],
-                                        &F_Prop[*counter].img_data,
-                                         shaders);
-                (*counter)++;
+                animation_images.push_back(file);
             }
         }
-        else if (type == 1) {
-            bool does_window_exist = (*window_number_focus > -1);
-            int num = does_window_exist ? *window_number_focus : *counter;
-
-            F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vector, &F_Prop[num]);
-
-            if (!does_window_exist) {
-                (*counter)++;
+        if (is_subdirectory) {
+            return true;
+        }
+        else {
+            if (animation_images.empty()) {
+                return false;
+            }
+            else {
+                return open_multiple_files(animation_images, F_Prop, shaders, counter, window_number_focus);
             }
         }
-        else if (type == 0) {
-            return false;
-        }
-
-        return true;
     }
     else {
         return false;

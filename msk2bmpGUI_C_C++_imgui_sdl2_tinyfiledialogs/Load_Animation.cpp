@@ -16,6 +16,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     char buffer[MAX_PATH];
     char direction[MAX_PATH];
     image_data* img_data = &F_Prop->img_data;
+    std::sort(path_vector.begin(), path_vector.end());
 
     snprintf(direction, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].parent_path().filename().c_str()));
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].c_str()));
@@ -31,22 +32,38 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     //TODO: probably don't want to store folder name here?
     //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
-    int num_frames = path_vector.size();
-    if (img_data->ANM_hdr == NULL) {
-        img_data->ANM_hdr = (ANM_Header*)malloc(sizeof(ANM_Header));
-        img_data->ANM_hdr->Frames_Per_Orient = num_frames;
-    }
-
-    if (img_data->ANM_orient == NULL) {
-        img_data->ANM_orient = (ANM_Orient*)malloc(sizeof(ANM_Orient) * 6);
-    }
-
-    ANM_Frame* frame_info = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     Orientation temp_orient = assign_direction(direction);
-
-    std::sort(path_vector.begin(), path_vector.end());
+    int num_frames = path_vector.size();
+    if (img_data->ANM_orient == NULL) {
+        //img_data->ANM_orient = new(ANM_Orient[6]);
+        img_data->ANM_orient = (ANM_Orient*)malloc(sizeof(ANM_Orient) * 6);
+        new(img_data->ANM_orient) ANM_Orient[6];
+        //memset(img_data->ANM_orient, 0, sizeof(ANM_Orient) * 6);
+        //for (int i = 0; i < 6; i++)
+        //{
+        //    img_data->ANM_orient[i].orientation = no_data;
+        //}
+    }
 
     img_data->ANM_orient[temp_orient].orientation = temp_orient;
+    if (img_data->ANM_orient[temp_orient].num_frames != num_frames) {
+        img_data->ANM_orient[temp_orient].num_frames = num_frames;
+    }
+
+    ANM_Frame* frame_info = img_data->ANM_orient[temp_orient].frame_info;
+    if (frame_info != NULL) {
+        free(frame_info);
+    }
+    frame_info = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
+    if (!frame_info) {
+        //TODO: change to tinyfd_dialog() warning
+        printf("Unable to allocate enough memory");
+        return false;
+    }
+    else {
+        img_data->ANM_orient[temp_orient].frame_info = frame_info;
+    }
+
 
     for (int i = 0; i < path_vector.size(); i++)
     {
@@ -56,7 +73,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         frame_info[i].Frame_Height = frame_info[i].frame_start->h;
     }
 
-    img_data->ANM_orient[temp_orient].frame_info = frame_info;
 
 
     F_Prop->type = OTHER;

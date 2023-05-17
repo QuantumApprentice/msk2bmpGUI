@@ -42,9 +42,9 @@ enum Orientation
 
 struct ANM_Orient {
     //TODO: remove unnecesary info?
-    int frame_number = 0;
+    int num_frames = 0;
     Orientation orientation = no_data;
-    ANM_Frame* frame_info;
+    ANM_Frame* frame_info = NULL;
     rectangle bounding_box = {};
 };
 

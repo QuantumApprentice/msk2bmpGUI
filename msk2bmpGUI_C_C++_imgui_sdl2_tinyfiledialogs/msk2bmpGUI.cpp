@@ -471,22 +471,21 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                              F_Prop->img_data.FRM_hdr->Frames_Per_Orient - 1, NULL);
         }
         else {
-            if (F_Prop->img_data.ANM_hdr->Frames_Per_Orient > 1) {
+            if (F_Prop->img_data.ANM_orient[F_Prop->img_data.display_orient_num].num_frames > 1) {
                 Preview_Image(My_Variables, &F_Prop->img_data);
 
                 //gui video controls
                 ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
                 const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
                 ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
-                //TODO: might have to adjust the names[] array to handle partial edits
+                
                 //TODO: definitely have to adjust for .FR1, FR2, etc...
-                char* names[6];// = { "NE", "no image", "no image", "no image", "no image", "no image" };
+                //populate names[] only with existing directions
+                char* names[6];
                 set_names(names, &F_Prop->img_data);
-                //char* names2[] = { "NE", "E", "SE", "SW", "W", "NW" };
-                //char** names = (F_Prop->img_data.ANIM_hdr->Frame_0_Offset[1] > 0) ? names2 : names1;
                 ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
                 ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                    F_Prop->img_data.ANM_hdr->Frames_Per_Orient - 1, NULL);
+                    F_Prop->img_data.ANM_orient[F_Prop->img_data.display_orient_num].num_frames - 1, NULL);
             }
         }
 
@@ -499,7 +498,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 show_image_stats_FRM(&F_Prop->img_data, My_Variables->Font);
             }
             else {
-                show_image_stats_ANIM(&F_Prop->img_data, My_Variables->Font);
+                show_image_stats_ANM(&F_Prop->img_data, My_Variables->Font);
             }
         }
 

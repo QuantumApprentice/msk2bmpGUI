@@ -141,53 +141,52 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
     ImGui::PopFont();
 }
 
-void show_image_stats_ANIM(image_data* img_data, ImFont* font)
+void show_image_stats_ANM(image_data* img_data, ImFont* font)
 {
-    int q, r, s;
-    q =  img_data->display_frame_num;
-    r = (img_data->ANM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-    s =  img_data->ANM_hdr->Frames_Per_Orient;
+    int frame_num, rotation, num_frames;
+    frame_num  = img_data->display_frame_num;
+    rotation   = img_data->display_orient_num;
+    num_frames = img_data->ANM_orient[rotation].num_frames;
     char buff[256];
-    int frame_num = r * s + q;
 
     ImGui::PushFont(font);
-    snprintf(buff, 256, "framerate: %d", img_data->ANM_hdr->FPS);
-    ImGui::Text(buff);
+    //snprintf(buff, 256, "framerate: %d", img_data->ANM_hdr->FPS);
+    //ImGui::Text(buff);
 
-    snprintf(buff, 256, "orient_shift_x: %d", img_data->ANM_hdr->Shift_Orient_x[r]);
-    ImGui::Text(buff);
-    snprintf(buff, 256, "orient_shift_y: %d", img_data->ANM_hdr->Shift_Orient_y[r]);
-    ImGui::Text(buff);
+    //snprintf(buff, 256, "orient_shift_x: %d", img_data->ANM_hdr->Shift_Orient_x[r]);
+    //ImGui::Text(buff);
+    //snprintf(buff, 256, "orient_shift_y: %d", img_data->ANM_hdr->Shift_Orient_y[r]);
+    //ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_orient->bounding_box.x1);
+    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_orient[rotation].bounding_box.x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",          img_data->ANM_orient->frame_info[frame_num].Frame_Width);
+    snprintf(buff, 256, "width: %d\t",          img_data->ANM_orient[rotation].frame_info[frame_num].Frame_Width);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_orient->frame_info[frame_num].Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_orient[rotation].frame_info[frame_num].Shift_Offset_x);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_orient->bounding_box.x2);
+    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_orient[rotation].bounding_box.x2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_orient->bounding_box.y1);
+    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_orient[rotation].bounding_box.y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",         img_data->ANM_orient->frame_info[frame_num].Frame_Height);
+    snprintf(buff, 256, "height: %d\t",         img_data->ANM_orient[rotation].frame_info[frame_num].Frame_Height);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_orient->frame_info[frame_num].Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_orient[rotation].frame_info[frame_num].Shift_Offset_y);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_orient->bounding_box.y2);
+    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_orient[rotation].bounding_box.y2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[r].x1);
+    snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[rotation].x1);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_x2: %d",  img_data->FRM_bounding_box[r].x2);
+    snprintf(buff, 256, "FRM_bounding_x2: %d",  img_data->FRM_bounding_box[rotation].x2);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_y1: %d",  img_data->FRM_bounding_box[r].y1);
+    snprintf(buff, 256, "FRM_bounding_y1: %d",  img_data->FRM_bounding_box[rotation].y1);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_y2: %d",  img_data->FRM_bounding_box[r].y2);
+    snprintf(buff, 256, "FRM_bounding_y2: %d",  img_data->FRM_bounding_box[rotation].y2);
     ImGui::Text(buff);
     ImGui::PopFont();
 }

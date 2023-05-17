@@ -39,7 +39,7 @@ struct FRM_Frame {
     //TODO: remove unnecesary info?
     int frame_number = 0;
     int orientation  = 0;
-    FRM_Frame_Info* frame_info;
+    FRM_Frame_Info* frame_info = NULL;
     rectangle bounding_box = {};
 };
 

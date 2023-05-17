@@ -67,7 +67,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
 
     int frame_num = img_data->display_frame_num;
 
-    int max_frm = img_data->ANM_hdr->Frames_Per_Orient;
+    int max_frm = img_data->ANM_orient[orient].num_frames;
     //int display_frame = orient * max_frm + frame;
 
     int frm_width  = img_data->ANM_orient[orient].frame_info[0].frame_start->w;
@@ -117,7 +117,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         last_time = current_time;
 
         img_data->display_frame_num += 1;
-        if (img_data->display_frame_num >= img_data->ANM_hdr->Frames_Per_Orient) {
+        if (img_data->display_frame_num >= img_data->ANM_orient[orient].num_frames) {
             img_data->display_frame_num = 0;
         }
         render_OTHER_OpenGL(img_data, img_width, img_height);
