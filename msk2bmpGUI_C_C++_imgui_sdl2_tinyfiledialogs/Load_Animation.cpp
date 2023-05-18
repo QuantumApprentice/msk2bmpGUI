@@ -5,7 +5,7 @@
 
 #include "Load_Files.h"
 #include "Load_Animation.h"
-#include "tinyfiledialogs.h"
+//#include "tinyfiledialogs.h"
 
 
 
@@ -18,11 +18,11 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     image_data* img_data = &F_Prop->img_data;
     std::sort(path_vector.begin(), path_vector.end());
 
-    snprintf(direction, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].parent_path().filename().c_str()));
-    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", tinyfd_utf16to8(path_vector[0].c_str()));
+    snprintf(direction, MAX_PATH, "%s", path_vector[0].parent_path().filename().u8string().c_str());
+    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", path_vector[0].u8string().c_str());
 
     F_Prop->c_name    = strrchr(F_Prop->Opened_File, '/\\') + 1;
-    F_Prop->extension = strrchr(F_Prop->Opened_File, '.')   + 1;
+    F_Prop->extension = strrchr(F_Prop->Opened_File, '.'  ) + 1;
 
     //char* dir_ptr = strrchr(path_vector, '/\\');
     //snprintf(buffer, (strlen(file_names[0]) - (strlen(dir_ptr)-1)), "%s", file_names[0]);
@@ -38,6 +38,8 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         //img_data->ANM_orient = new(ANM_Orient[6]);
         img_data->ANM_orient = (ANM_Orient*)malloc(sizeof(ANM_Orient) * 6);
         new(img_data->ANM_orient) ANM_Orient[6];
+        //TODO: add error checking for memory allocation
+
         //memset(img_data->ANM_orient, 0, sizeof(ANM_Orient) * 6);
         //for (int i = 0; i < 6; i++)
         //{
@@ -47,7 +49,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     img_data->ANM_orient[temp_orient].orientation = temp_orient;
     if (img_data->ANM_orient[temp_orient].num_frames != num_frames) {
-        img_data->ANM_orient[temp_orient].num_frames = num_frames;
+        img_data->ANM_orient[temp_orient].num_frames  = num_frames;
     }
 
     ANM_Frame* frame_info = img_data->ANM_orient[temp_orient].frame_info;
@@ -67,8 +69,8 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     for (int i = 0; i < path_vector.size(); i++)
     {
-        char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
-        frame_info[i].frame_start  = IMG_Load(converted_path);
+        //char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
+        frame_info[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
         frame_info[i].Frame_Width  = frame_info[i].frame_start->w;
         frame_info[i].Frame_Height = frame_info[i].frame_start->h;
     }
