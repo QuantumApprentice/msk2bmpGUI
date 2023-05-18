@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <SDL_image.h>
+#include <Windows.h>
 
 #include <filesystem>
 #include <cstdint>
@@ -16,6 +17,31 @@
 #include "Edit_Image.h"
 
 #include "display_FRM_OpenGL.h"
+
+
+char* Program_Directory()
+{
+    wchar_t buff[MAX_PATH];
+    //char* utf8_buff = (char*)malloc(MAX_PATH*sizeof(char));
+
+    GetModuleFileNameW(NULL, buff, MAX_PATH);
+
+    char* utf8_buff = strdup(tinyfd_utf16to8(buff));
+    //memcpy(utf8_buff, tinyfd_utf16to8(buff), MAX_PATH);
+
+    char* ptr = strrchr(utf8_buff, '/\\') + 1;
+    *ptr = '\0';
+
+    //MessageBoxW(NULL,
+    //    buff,
+    //    L"string",
+    //    MB_ABORTRETRYIGNORE);
+
+    return utf8_buff;
+}
+
+
+
 
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders)
 {
@@ -231,7 +257,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
         F_Prop->type = FRM;
 
         draw_FRM_to_framebuffer(shaders->palette,
-                               &shaders->render_FRM_shader,
+                               shaders->render_FRM_shader,
                                &shaders->giant_triangle,
                                 img_data);
     }
@@ -242,7 +268,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
         F_Prop->type = MSK;
 
         draw_MSK_to_framebuffer(shaders->palette,
-                               &shaders->render_FRM_shader,
+                                shaders->render_FRM_shader,
                                &shaders->giant_triangle,
                                 img_data);
 

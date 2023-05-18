@@ -16,8 +16,7 @@
 #include "Load_Settings.h"
 #include "MSK_Convert.h"
 
-void Set_Default_Path(user_info* user_info);
-void write_cfg_file(user_info* user_info);
+void write_cfg_file(user_info* user_info, char* exe_path);
 
 //char* Save_FRM_SDL(SDL_Surface *f_surface, user_info* user_info)
 //{
@@ -248,16 +247,19 @@ char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
     return Save_File_Name;
 }
 
-char* check_cfg_file(char* folder_name, user_info* user_info)
+char* check_cfg_file(char* folder_name, user_info* user_info, char* exe_path)
 {
+    char path_buffer[MAX_PATH];
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
+
     FILE * config_file_ptr = NULL;
     //wide character stuff
-    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"rb");
+    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
 
     if (!config_file_ptr) {
         folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
 
-        write_cfg_file(user_info);
+        write_cfg_file(user_info, exe_path);
         return folder_name;
     }
     else
@@ -276,24 +278,24 @@ char* check_cfg_file(char* folder_name, user_info* user_info)
     }
 }
 
-void Set_Default_Path(user_info* user_info)
+void Set_Default_Path(user_info* user_info, char* exe_path)
 {
     char *ptr = user_info->default_game_path;
     if (ptr) {
-        ptr = check_cfg_file(ptr, user_info);
+        ptr = check_cfg_file(ptr, user_info, exe_path);
         if (!ptr) { return; }
 
         strcpy(user_info->default_game_path, ptr);
         if (!strcmp(user_info->default_save_path, "\0")) {
             strcpy(user_info->default_save_path, ptr);
         }
-        write_cfg_file(user_info);
+        write_cfg_file(user_info, exe_path);
     }
     else {
         ptr = user_info->default_save_path;
 
         if (!ptr) {
-            ptr = check_cfg_file(ptr, user_info);
+            ptr = check_cfg_file(ptr, user_info, exe_path);
             if (!ptr) { return; }
             strcpy(user_info->default_game_path, ptr);
             strcpy(user_info->default_save_path, ptr);
@@ -301,7 +303,7 @@ void Set_Default_Path(user_info* user_info)
         else {
             strcpy(user_info->default_game_path, ptr);
         }
-        write_cfg_file(user_info);
+        write_cfg_file(user_info, exe_path);
     }
 }
 
@@ -327,7 +329,7 @@ void Set_Default_Path(user_info* user_info)
 //    tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 //}
 
-void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
+void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 {
     FRM_Header FRM_Header = {};
     FRM_Header.version           = (4);
@@ -339,22 +341,22 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info)
 
     //TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
     //TODO: need to color pick for transparency and maybe use index 255 for white instead (depending on if it works or not)
-    Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header);
+    Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header, exe_path);
 
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
 
-void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info)
-{
-    //TODO: export mask tiles using msk2bmp2020 code
-    tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
-    Split_to_Tiles_SDL(MSK_surface, user_info, MSK, NULL);
-}
+//void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info)
+//{
+//    //TODO: export mask tiles using msk2bmp2020 code
+//    tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
+//    Split_to_Tiles_SDL(MSK_surface, user_info, MSK, NULL);
+//}
 //wrapper to save MSK tiles
-void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info)
+void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, char* exe_path)
 {
     //tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
-    Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL);
+    Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL, exe_path);
 }
 
 uint8_t* blend_PAL_texture(image_data* img_data)
@@ -387,7 +389,7 @@ uint8_t* blend_PAL_texture(image_data* img_data)
     return blend_buffer;
 }
 
-void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header)
+void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header, char* exe_path)
 {
     int img_width  = img_data->width;
     int img_height = img_data->height;
@@ -412,7 +414,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     FILE * File_ptr = NULL;
 
     if (!strcmp(user_info->default_game_path, "")) {
-        Set_Default_Path(user_info);
+        Set_Default_Path(user_info, exe_path);
         if (!strcmp(user_info->default_game_path, "")) { return; }
     }
     strncpy(path, user_info->default_game_path, MAX_PATH);
@@ -517,91 +519,91 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     }
 }
 
-void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
-{
-    int num_tiles_x = surface->w / TILE_W;
-    int num_tiles_y = surface->h / TILE_H;
-    int tile_num = 0;
-    char path[MAX_PATH];
-    char Save_File_Name[MAX_PATH];
-
-    FILE * File_ptr = NULL;
-
-
-    if (!strcmp(user_info->default_game_path, "")) {
-        Set_Default_Path(user_info);
-        if (!strcmp(user_info->default_game_path, "")) { return; }
-    }
-    strncpy(path, user_info->default_game_path, MAX_PATH);
-
-    for (int y = 0; y < num_tiles_y; y++)
-    {
-        for (int x = 0; x < num_tiles_x; x++)
-        {
-            char buffer[MAX_PATH];
-            strncpy_s(buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
-
-            //check for existing file first
-            check_file(type, File_ptr, path, buffer, tile_num, Save_File_Name);
-            if (buffer == NULL) { return; }
-
-            wchar_t* w_save_name = tinyfd_utf8to16(buffer);
-            _wfopen_s(&File_ptr, w_save_name, L"wb");
-
-            if (!File_ptr) {
-                tinyfd_messageBox(
-                    "Error",
-                    "Can not open this file in write mode.\n"
-                    "Make sure the default game path is set.",
-                    "ok",
-                    "error",
-                    1);
-                return;
-            }
-            else {
-                // FRM = 1, MSK = 0
-                if (type == FRM)
-                {
-                    //save header
-                    fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
-
-                    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
-                    for (int pixel_i = 0; pixel_i < TILE_H; pixel_i++)
-                    {
-                        //write out one row of pixels in each loop
-                        fwrite((uint8_t*)surface->pixels + pixel_pointer, TILE_W, 1, File_ptr);
-                        pixel_pointer += surface->pitch;
-                    }
-                    fclose(File_ptr);
-                }
-///////////////////////////////////////////////////////////////////////////
-                if (type == MSK)
-                {
-                //Split the surface up into 350x300 pixel surfaces
-                //      and pass them to Save_Mask()
-                    Save_MSK_Image_SDL(surface, File_ptr, x, y);
-
-///////////////////////////////////////////////////////////////////////////
-                ///*Blit combination not supported :(
-                                    /// looks like SDL can't convert anything to binary bitmap
-                //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
-                                    // 350, 300 };
-                                    //SDL_Rect dst = { 0,0, 350, 300 };
-                                    //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
-                                    //binary_bitmap = SDL_ConvertSurface(surface, pxlfmt, 0);
-                                    //binary_bitmap = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_INDEX1MSB, 0);
-                                    //printf(SDL_GetError());
-                                    //int error = SDL_BlitSurface(surface, &tile, binary_bitmap, &dst);
-                                    //if (error != 0)
-                                    //{
-                                    //    printf(SDL_GetError());
-                                    //}
-                }
-            }
-        }
-    tile_num++;
-    }
-}
+//void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* frm_header)
+//{
+//    int num_tiles_x = surface->w / TILE_W;
+//    int num_tiles_y = surface->h / TILE_H;
+//    int tile_num = 0;
+//    char path[MAX_PATH];
+//    char Save_File_Name[MAX_PATH];
+//
+//    FILE * File_ptr = NULL;
+//
+//
+//    if (!strcmp(user_info->default_game_path, "")) {
+//        Set_Default_Path(user_info);
+//        if (!strcmp(user_info->default_game_path, "")) { return; }
+//    }
+//    strncpy(path, user_info->default_game_path, MAX_PATH);
+//
+//    for (int y = 0; y < num_tiles_y; y++)
+//    {
+//        for (int x = 0; x < num_tiles_x; x++)
+//        {
+//            char buffer[MAX_PATH];
+//            strncpy_s(buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
+//
+//            //check for existing file first
+//            check_file(type, File_ptr, path, buffer, tile_num, Save_File_Name);
+//            if (buffer == NULL) { return; }
+//
+//            wchar_t* w_save_name = tinyfd_utf8to16(buffer);
+//            _wfopen_s(&File_ptr, w_save_name, L"wb");
+//
+//            if (!File_ptr) {
+//                tinyfd_messageBox(
+//                    "Error",
+//                    "Can not open this file in write mode.\n"
+//                    "Make sure the default game path is set.",
+//                    "ok",
+//                    "error",
+//                    1);
+//                return;
+//            }
+//            else {
+//                // FRM = 1, MSK = 0
+//                if (type == FRM)
+//                {
+//                    //save header
+//                    fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
+//
+//                    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
+//                    for (int pixel_i = 0; pixel_i < TILE_H; pixel_i++)
+//                    {
+//                        //write out one row of pixels in each loop
+//                        fwrite((uint8_t*)surface->pixels + pixel_pointer, TILE_W, 1, File_ptr);
+//                        pixel_pointer += surface->pitch;
+//                    }
+//                    fclose(File_ptr);
+//                }
+/////////////////////////////////////////////////////////////////////////////
+//                if (type == MSK)
+//                {
+//                //Split the surface up into 350x300 pixel surfaces
+//                //      and pass them to Save_Mask()
+//                    Save_MSK_Image_SDL(surface, File_ptr, x, y);
+//
+/////////////////////////////////////////////////////////////////////////////
+//                ///*Blit combination not supported :(
+//                                    /// looks like SDL can't convert anything to binary bitmap
+//                //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
+//                                    // 350, 300 };
+//                                    //SDL_Rect dst = { 0,0, 350, 300 };
+//                                    //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
+//                                    //binary_bitmap = SDL_ConvertSurface(surface, pxlfmt, 0);
+//                                    //binary_bitmap = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_INDEX1MSB, 0);
+//                                    //printf(SDL_GetError());
+//                                    //int error = SDL_BlitSurface(surface, &tile, binary_bitmap, &dst);
+//                                    //if (error != 0)
+//                                    //{
+//                                    //    printf(SDL_GetError());
+//                                    //}
+//                }
+//            }
+//        }
+//    tile_num++;
+//    }
+//}
 
 void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name)
 {
@@ -781,44 +783,44 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
     fclose(File_ptr);
 }
 
-void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
-{
-    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
-    uint8_t *outp = out_buffer;
-
-    int shift = 0;
-    uint8_t bitmask = 0;
-    bool mask_1_or_0;
-
-    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
-    //don't need to flip for the MSK (maybe need to flip for bitmaps)
-    for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
-    {
-        for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
-        {
-            bitmask <<= 1;
-            mask_1_or_0 =
-                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
-            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
-            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
-            bitmask |= mask_1_or_0;
-            if (++shift == 8)
-            {
-                *outp = bitmask;
-                ++outp;
-                shift = 0;
-                bitmask = 0;
-            }
-        }
-        bitmask <<= 2 /* final shift */;
-        *outp = bitmask;
-        ++outp;
-        shift = 0;
-        bitmask = 0;
-    }
-    writelines(File_ptr, out_buffer);
-    fclose(File_ptr);
-}
+//void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
+//{
+//    uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
+//    uint8_t *outp = out_buffer;
+//
+//    int shift = 0;
+//    uint8_t bitmask = 0;
+//    bool mask_1_or_0;
+//
+//    int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
+//    //don't need to flip for the MSK (maybe need to flip for bitmaps)
+//    for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
+//    {
+//        for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
+//        {
+//            bitmask <<= 1;
+//            mask_1_or_0 =
+//                *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
+//            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
+//            //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
+//            bitmask |= mask_1_or_0;
+//            if (++shift == 8)
+//            {
+//                *outp = bitmask;
+//                ++outp;
+//                shift = 0;
+//                bitmask = 0;
+//            }
+//        }
+//        bitmask <<= 2 /* final shift */;
+//        *outp = bitmask;
+//        ++outp;
+//        shift = 0;
+//        bitmask = 0;
+//    }
+//    writelines(File_ptr, out_buffer);
+//    fclose(File_ptr);
+//}
 
 void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 {

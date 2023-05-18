@@ -15,7 +15,7 @@ void preview_tiles(variables* My_Variables, image_data* img_data)
     shader_info* shaders = &My_Variables->shaders;
 
     draw_FRM_to_framebuffer(shaders->palette,
-                           &shaders->render_FRM_shader,
+                            shaders->render_FRM_shader,
                            &shaders->giant_triangle,
                             img_data);
 

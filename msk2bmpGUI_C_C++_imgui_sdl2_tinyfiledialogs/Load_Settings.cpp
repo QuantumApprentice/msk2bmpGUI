@@ -1,4 +1,5 @@
 #include "Load_Settings.h"
+#include "tinyfiledialogs.h"
 
 #include <iostream>
 #include <string>
@@ -20,22 +21,25 @@ struct config_data {
 
 } config;
 
-void Load_Config(struct user_info *usr_info)
+void Load_Config(struct user_info *usr_info, char* exe_path)
 {
     //regular char
-    char buffer[MAX_PATH];
+    //char buffer[MAX_PATH];
     char* file_data;
+
+    char path_buffer[MAX_PATH];
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
 
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
     FILE * config_file_ptr = NULL;
     errno_t error =
-    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"rb");
+    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
 
     if (!config_file_ptr) {
-        //check if directory exists
         
     //// C version of the code using <sys/stats.h>
+        ////check if directory exists
         //struct stat stats;
         //stat("config\\", &stats);
         //if (stats.st_mode & S_IFDIR) {
@@ -47,19 +51,19 @@ void Load_Config(struct user_info *usr_info)
         //    write_cfg_file(user_info);
         //}
 
-        std::filesystem::path p("config\\");
-        if (std::filesystem::is_directory(p)) {
-            write_cfg_file(usr_info);
+        std::filesystem::path p(path_buffer);
+        if (std::filesystem::is_directory(p.parent_path())) {
+            write_cfg_file(usr_info, exe_path);
   
         }
         else {
             std::filesystem::create_directory("config\\");
-            write_cfg_file(usr_info);
+            write_cfg_file(usr_info, exe_path);
         }
     }
     else
     {
-        size_t file_size = std::filesystem::file_size("config\\msk2bmpGUI.cfg");
+        size_t file_size = std::filesystem::file_size(path_buffer);
 
         file_data = (char*)malloc(file_size + 1);
         fread(file_data, file_size, 1, config_file_ptr);
@@ -263,11 +267,14 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
 }
 
 //TODO: change to add all lines to a buffer then fwrite entire buffer
-void write_cfg_file(struct user_info* usr_info)
+void write_cfg_file(struct user_info* usr_info, char* exe_path)
 {
+    char path_buffer[MAX_PATH];
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
+
     FILE * config_file_ptr = NULL;
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-    _wfopen_s(&config_file_ptr, L"config\\msk2bmpGUI.cfg", L"wb");
+    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"wb");
 
     fwrite("Default_Save_Path=",     strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(usr_info->default_save_path, strlen(usr_info->default_save_path), 1, config_file_ptr);

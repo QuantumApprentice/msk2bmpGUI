@@ -13,7 +13,7 @@ void image_render(variables* My_Variables, image_data* img_data)
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
     draw_FRM_to_framebuffer(shaders->palette,
-                           &shaders->render_FRM_shader,
+                            shaders->render_FRM_shader,
                            &shaders->giant_triangle,
                             img_data);
 

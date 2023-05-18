@@ -12,6 +12,7 @@ struct variables {
     ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Bottom-right
 
     bool Palette_Update = false;
+    char* program_directory = NULL;
 
     clock_t CurrentTime = 0;
 

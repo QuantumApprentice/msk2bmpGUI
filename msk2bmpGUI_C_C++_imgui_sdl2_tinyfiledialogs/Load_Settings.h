@@ -19,8 +19,8 @@ enum img_type {
     OTHER = 2
 };
 
-void Load_Config    (struct user_info *user_info);
-void write_cfg_file (struct user_info* user_info);
+void Load_Config    (struct user_info *user_info, char* exe_path);
+void write_cfg_file (struct user_info* user_info, char* exe_path);
 
 void parse_data     (char *file_data, size_t size, struct user_info *user_info);
 void parse_key      (char *file_data, size_t size, struct config_data *config_data);

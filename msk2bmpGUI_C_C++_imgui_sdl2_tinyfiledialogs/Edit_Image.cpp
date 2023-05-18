@@ -63,7 +63,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //Converts unpalettized image to texture for display
     if (Palette_Update || image_edited) {
         draw_PAL_to_framebuffer(shaders->palette,
-                               &shaders->render_PAL_shader,
+                                shaders->render_PAL_shader,
                                &shaders->giant_triangle,
                                edit_data);
     }

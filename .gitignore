@@ -29,3 +29,5 @@ msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Release/
 # ignore the imgui.ini file
 msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/imgui.ini
 msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/images
+
+Release/

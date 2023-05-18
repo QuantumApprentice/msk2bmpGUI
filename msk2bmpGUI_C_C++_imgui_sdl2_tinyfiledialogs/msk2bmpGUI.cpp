@@ -11,6 +11,7 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
+#define SDL_MAIN_HANDLED
 
 // ImGui header files
 #include "imgui-docking/imgui.h"
@@ -38,6 +39,7 @@
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
+#include "tinyfiledialogs.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
@@ -58,24 +60,29 @@ void Show_Palette_Window(struct variables *My_Variables);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
 void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
-void Set_Default_Path(struct user_info* usr_info);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
 void popup_save_menu(bool* open_window, int* save_type);
 
-
-
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-//    PSTR lpCmdLine, INT nCmdShow)
+//                   PSTR lpCmdLine, INT nCmdShow)
 //{
+//    //int size = GetCurrentDirectory(0, NULL);
+//    //char* buffer = (char*)malloc(size*(sizeof(char)));
+//    //GetCurrentDirectory(size, buffer);
+//
 //    return main(0, NULL);
 //}
 
 // Main code
-int main(int, char**)
+int main(int argc, char** argv)
 {
-    // Setup SDL    
+    int my_argc;
+    LPWSTR* my_argv = CommandLineToArgvW(GetCommandLineW(), &my_argc);
+
+
+    // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
@@ -118,10 +125,28 @@ int main(int, char**)
 
     //State variables
     struct variables My_Variables = {};
-    Load_Config(&usr_info);
+    My_Variables.program_directory = Program_Directory();
+
+    char vbuffer[MAX_PATH];
+    char fbuffer[MAX_PATH];
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//render_PAL.frag");
+    My_Variables.shaders.render_PAL_shader = new Shader( vbuffer, fbuffer );
+
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//render_FRM.frag");
+    My_Variables.shaders.render_FRM_shader = new Shader(vbuffer, fbuffer);
+
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.frag");
+    My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
+
+
+
+    Load_Config(&usr_info, My_Variables.program_directory);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
-    bool success = load_palette_to_array(My_Variables.shaders.palette);
+    bool success = load_palette_to_array(My_Variables.shaders.palette, My_Variables.program_directory);
     if (!success) { printf("failed to load palette to array\n"); }
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
@@ -161,10 +186,11 @@ int main(int, char**)
     // - The fonts will be rasterized at a given size (w/ oversampling) and stored into a texture when calling ImFontAtlas::Build()/GetTexDataAsXXXX(), which ImGui_ImplXXXX_NewFrame below will call.
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
-    
+
+    snprintf(vbuffer, MAX_PATH, "%s%s", My_Variables.program_directory, "resources//fonts//OpenSans-Bold.ttf");
     io.Fonts->AddFontDefault();
-    My_Variables.Font = io.Fonts->AddFontFromFileTTF("resources//fonts//OpenSans-Bold.ttf", My_Variables.global_font_size);
-    
+    My_Variables.Font = io.Fonts->AddFontFromFileTTF(vbuffer, My_Variables.global_font_size);
+
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
@@ -175,6 +201,30 @@ int main(int, char**)
     //this counter is used to identify which image slot is being used for now
     //TODO: need to swap this for a linked list
     static int counter = 0;
+
+
+    if (my_argv == NULL) {
+        MessageBox(NULL,
+            "Something went wrong?",
+            "string",
+            MB_ABORTRETRYIGNORE);
+    }
+    else {
+        for (int i = 0; i < my_argc; i++)
+        {
+            MessageBoxW(NULL,
+                my_argv[i],
+                L"AAARrrrrrgggghhhhv",
+                MB_ABORTRETRYIGNORE);
+        }
+        if (my_argc == 2) {
+            handle_file_drop(tinyfd_utf16to8(my_argv[1]),
+                &My_Variables.F_Prop[counter],
+                &counter,
+                &My_Variables.shaders);
+        }
+    }
+
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
@@ -368,8 +418,8 @@ int main(int, char**)
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    write_cfg_file(&usr_info);
-
+    write_cfg_file(&usr_info, My_Variables.program_directory);
+    LocalFree(my_argv);
     return 0;
 }
 //end of main////////////////////////////////////////////////////////////////////////
@@ -424,7 +474,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             //new openGL version of pallete cycling
             //redraws FRM to framebuffer every time the palette update timer is true or animates
             animate_FRM_to_framebuff(shaders->palette,
-                                    &shaders->render_FRM_shader,
+                                     shaders->render_FRM_shader,
                                     &shaders->giant_triangle,
                                     &F_Prop->img_data,
                                      My_Variables->CurrentTime,
@@ -433,10 +483,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
         if (F_Prop->type == OTHER) {
             ImGui::Checkbox("Show frame Stats", &F_Prop->show_stats);
-            animate_OTHER_to_framebuff(&My_Variables->shaders.render_OTHER_shader,
-                                       &My_Variables->shaders.giant_triangle,
-                                       &F_Prop->img_data,
-                                        My_Variables->CurrentTime);
+            animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
+                                      &My_Variables->shaders.giant_triangle,
+                                      &F_Prop->img_data,
+                                       My_Variables->CurrentTime);
 
         }
 
@@ -691,7 +741,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                 Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path")) {
-                Set_Default_Path(&usr_info);
+                Set_Default_Path(&usr_info, My_Variables->program_directory);
             }
             if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning")) {
                 if (usr_info.save_full_MSK_warning) {
@@ -759,7 +809,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Save as Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
-                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info);
+                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->program_directory);
             }
             if (ImGui::Button("Edit MSK Layer...")) {
                 F_Prop->edit_MSK = true;
@@ -770,7 +820,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 F_Prop->edit_MSK = true;
 
                 draw_PAL_to_framebuffer(My_Variables->shaders.palette,
-                                       &My_Variables->shaders.render_PAL_shader,
+                                        My_Variables->shaders.render_PAL_shader,
                                        &My_Variables->shaders.giant_triangle,
                                        &F_Prop->edit_data);
             }
@@ -802,7 +852,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Export Mask Tiles...")) {
                 //export mask tiles
-                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info);
+                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->program_directory);
             }
             if (ImGui::Button("Load MSK to this slot...")) {
                 Load_Files(F_Prop, &F_Prop->edit_data, &usr_info, &My_Variables->shaders);
@@ -885,10 +935,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     if (My_Variables->tile_window_focused) {
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(F_Prop->extension, "FRM") == 0) {
-                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                //Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             else {
-                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info);
+                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->program_directory);
             }
         }
     }
@@ -905,7 +955,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             popup_save_menu(&open_window, &save_type);
 
             if (save_type == OTHER) {
-                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                //Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             if (save_type == FRM) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
