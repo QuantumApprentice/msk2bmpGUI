@@ -210,14 +210,14 @@ int main(int argc, char** argv)
             MB_ABORTRETRYIGNORE);
     }
     else {
-        for (int i = 0; i < my_argc; i++)
-        {
-            MessageBoxW(NULL,
-                my_argv[i],
-                L"AAARrrrrrgggghhhhv",
-                MB_ABORTRETRYIGNORE);
-        }
-        if (my_argc == 2) {
+        //for (int i = 0; i < my_argc; i++)
+        //{
+        //    MessageBoxW(NULL,
+        //        my_argv[i],
+        //        L"AAARrrrrrgggghhhhv",
+        //        MB_ABORTRETRYIGNORE);
+        //}
+        if (my_argc > 1) {
             handle_file_drop(tinyfd_utf16to8(my_argv[1]),
                 &My_Variables.F_Prop[counter],
                 &counter,
@@ -256,6 +256,7 @@ int main(int argc, char** argv)
                         break;
                 }
             }
+            //TODO: SDL_DROPFILE doesn't support wide characters :_(
             if (event.type == SDL_DROPFILE) {
                 dropped_file_path = event.drop.file;
 
@@ -935,7 +936,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     if (My_Variables->tile_window_focused) {
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(F_Prop->extension, "FRM") == 0) {
-                //Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             else {
                 Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->program_directory);
@@ -955,7 +956,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             popup_save_menu(&open_window, &save_type);
 
             if (save_type == OTHER) {
-                //Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
             }
             if (save_type == FRM) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);

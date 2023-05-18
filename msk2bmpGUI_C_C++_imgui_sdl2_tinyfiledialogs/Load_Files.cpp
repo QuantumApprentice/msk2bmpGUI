@@ -124,7 +124,7 @@ std::optional<std::vector <std::filesystem::path>> handle_subdirectory(const std
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders)
 {
     char buffer[MAX_PATH];
-    std::filesystem::path path(file_name);
+    std::filesystem::path path(tinyfd_utf8to16(file_name));
     std::vector <std::filesystem::path> animation_images;
 
     std::error_code error;

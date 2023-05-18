@@ -1,5 +1,6 @@
 #include "load_FRM_OpenGL.h"
 #include "B_Endian.h"
+#include "tinyfiledialogs.h"
 
 //returns true/false for success/failure
 bool init_framebuffer(struct image_data* img_data)
@@ -51,7 +52,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 {
     FILE* File_ptr;
     int file_length = 0;
-    fopen_s(&File_ptr, file_name, "rb");
+    _wfopen_s(&File_ptr, tinyfd_utf8to16(file_name), L"rb");
     if (!File_ptr) {
         printf("error, can't open file");
         return NULL;

@@ -128,12 +128,12 @@ void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t 
 
 bool load_palette_to_array(float* palette, char* exe_path)
 {
-    char buffer[MAX_PATH];
-    snprintf(buffer, sizeof(buffer), "%s%s", exe_path, "palette/fo_color.pal");
+    char path_buffer[MAX_PATH];
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "palette/fo_color.pal");
 
     //file management
     FILE *File_ptr;
-    errno_t error = _wfopen_s(&File_ptr, tinyfd_utf8to16(buffer), L"rb");
+    errno_t error = _wfopen_s(&File_ptr, tinyfd_utf8to16(path_buffer), L"rb");
     if (error != 0) {
         printf("error %d, can't open palette", error);
         return false;

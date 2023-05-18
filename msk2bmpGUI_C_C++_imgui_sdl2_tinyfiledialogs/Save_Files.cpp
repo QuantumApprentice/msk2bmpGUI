@@ -289,7 +289,6 @@ void Set_Default_Path(user_info* user_info, char* exe_path)
         if (!strcmp(user_info->default_save_path, "\0")) {
             strcpy(user_info->default_save_path, ptr);
         }
-        write_cfg_file(user_info, exe_path);
     }
     else {
         ptr = user_info->default_save_path;
@@ -303,8 +302,8 @@ void Set_Default_Path(user_info* user_info, char* exe_path)
         else {
             strcpy(user_info->default_game_path, ptr);
         }
-        write_cfg_file(user_info, exe_path);
     }
+    write_cfg_file(user_info, exe_path);
 }
 
 //Fallout map tile size hardcoded in engine to 350x300 pixels WxH
