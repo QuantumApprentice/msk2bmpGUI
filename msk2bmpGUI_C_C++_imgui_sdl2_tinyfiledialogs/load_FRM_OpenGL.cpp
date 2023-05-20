@@ -45,9 +45,6 @@ bool init_framebuffer(struct image_data* img_data)
 }
 
 
-
-
-
 uint8_t* load_entire_file(const char* file_name, int* file_size)
 {
     FILE* File_ptr;
@@ -65,6 +62,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     else {
         return NULL;
     }
+
     uint8_t* buffer = (uint8_t*)malloc(file_length);
     fread(buffer, file_length, 1, File_ptr);
     fclose(File_ptr);
@@ -91,29 +89,27 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
-    int file_size = 0;
+    int file_size   = 0;
     int buff_offset = 0;
-    int info_size = sizeof(FRM_Frame_Info);
-    int hdr_size  = sizeof(FRM_Header);
+    int frame_size  = sizeof(FRM_Frame);
+    int hdr_size    = sizeof(FRM_Header);
     uint8_t* buffer = load_entire_file(file_name, &file_size);
     FRM_Header* header = (FRM_Header*)buffer;
     B_Endian::flip_header_endian(header);
 
     img_data->FRM_hdr = header;
 
-    //memcpy(&img_data->FRM_Info, buffer, sizeof(FRM_Header));
-
-    FRM_Frame_Info* frame_info;
+    FRM_Frame* frame_data;
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->FRM_frame = (FRM_Frame*)malloc(num_frames * sizeof(FRM_Frame) * num_orients);
+    img_data->FRM_dir = (FRM_Dir*)malloc(num_frames * sizeof(FRM_Dir) * num_orients);
 
     rectangle bounding_box      = {};
     rectangle FRM_bounding_box  = {};
 
-    FRM_Frame* frame = img_data->FRM_frame;
+    FRM_Dir* frame = img_data->FRM_dir;
     buff_offset = hdr_size;
 
     for (int i = 0; i < num_orients; i++)
@@ -122,20 +118,18 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
         bounding_box = {};
         for (int j = 0; j < num_frames; j++)
         {
-            frame_info = (FRM_Frame_Info*)(buffer + buff_offset);
-            B_Endian::flip_frame_endian(frame_info);
+            frame_data = (FRM_Frame*)(buffer + buff_offset);
+            B_Endian::flip_frame_endian(frame_data);
 
-            //FRM_Frame* frame = &img_data->Frame[j + (i * num_frames)];
+            frame->num_frames  = j;
+            frame->orientation = i;
+            frame->frame_data  = frame_data;
 
-            frame->frame_number  = j;
-            frame->orientation   = i;
-            frame->frame_info    = frame_info;
+            bounding_box.x1 += frame_data->Shift_Offset_x - frame_data->Frame_Width / 2;
+            bounding_box.y1 += frame_data->Shift_Offset_y - frame_data->Frame_Height;
 
-            bounding_box.x1 += frame_info->Shift_Offset_x - frame_info->Frame_Width / 2;
-            bounding_box.y1 += frame_info->Shift_Offset_y - frame_info->Frame_Height;
-
-            bounding_box.x2  = bounding_box.x1 + frame_info->Frame_Width;
-            bounding_box.y2  = bounding_box.y1 + frame_info->Frame_Height;
+            bounding_box.x2  = bounding_box.x1 + frame_data->Frame_Width;
+            bounding_box.y2  = bounding_box.y1 + frame_data->Frame_Height;
 
             frame->bounding_box = bounding_box;
 
@@ -152,10 +146,10 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
                 FRM_bounding_box.y2 = bounding_box.y2;
             }
 
-            bounding_box.x1 += frame_info->Frame_Width  / 2;
-            bounding_box.y1 += frame_info->Frame_Height;
+            bounding_box.x1 += frame_data->Frame_Width  / 2;
+            bounding_box.y1 += frame_data->Frame_Height;
 
-            buff_offset += frame_info->Frame_Size + info_size;
+            buff_offset += frame_data->Frame_Size + frame_size;
             frame++;
         }
         img_data->FRM_bounding_box[i] = FRM_bounding_box;
@@ -189,21 +183,20 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     int x_offset    = 0;
     int y_offset    = 0;
 
+    //read in FRM data including animation frames
     bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
-        frm_width   = img_data->FRM_frame[0].frame_info->Frame_Width;
-        frm_height  = img_data->FRM_frame[0].frame_info->Frame_Height;
+        frm_width   = img_data->FRM_dir[0].frame_data->Frame_Width;
+        frm_height  = img_data->FRM_dir[0].frame_data->Frame_Height;
         width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;//      img_data->width;
         height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;//      img_data->height;
-        x_offset    = img_data->FRM_frame[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
-        y_offset    = img_data->FRM_frame[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
+        x_offset    = img_data->FRM_dir[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
+        y_offset    = img_data->FRM_dir[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
     }
 
-    //read in FRM data including animation frames
-
     if (img_data->FRM_data) {
-        uint8_t* data = img_data->FRM_frame[0].frame_info->frame_start;
+        uint8_t* data = img_data->FRM_dir[0].frame_data->frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -219,7 +212,6 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
-        //img_data->FRM_data = img_data->FRM_data;
         return true;
     }
     else {

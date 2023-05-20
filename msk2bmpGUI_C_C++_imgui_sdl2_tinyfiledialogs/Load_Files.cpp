@@ -60,8 +60,7 @@ bool open_multiple_files(std::vector <std::filesystem::path> path_vector,
     snprintf(buffer, MAX_PATH, "%s\nIs this a group of sequential animation frames?", tinyfd_utf16to8(path_vector[0].parent_path().c_str()));
     //returns 1 for yes, 2 for no, 0 for cancel
     int type = tinyfd_messageBox("Animation? or Single Images?",
-        buffer,
-        "yesnocancel", "question", 2);
+                                 buffer, "yesnocancel", "question", 2);
 
     if (type == 2) {
         for (int i = 0; i < path_vector.size(); i++)
@@ -130,7 +129,9 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
     std::error_code error;
     bool is_directory = std::filesystem::is_directory(path, error);
     if (error) {
-        //TODO: convert to tinyfdfiledialog() popup warning
+        tinyfd_notifyPopup("Error checking if dropped file is a directory",
+                           "This usually happens when the text encoding is not UTF8/16.",
+                           "info");
         printf("error checking if file_name is directory");
         return std::nullopt;
     }

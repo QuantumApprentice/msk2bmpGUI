@@ -522,7 +522,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                              F_Prop->img_data.FRM_hdr->Frames_Per_Orient - 1, NULL);
         }
         else {
-            if (F_Prop->img_data.ANM_orient[F_Prop->img_data.display_orient_num].num_frames > 1) {
+            if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
                 Preview_Image(My_Variables, &F_Prop->img_data);
 
                 //gui video controls
@@ -536,7 +536,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 set_names(names, &F_Prop->img_data);
                 ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
                 ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                    F_Prop->img_data.ANM_orient[F_Prop->img_data.display_orient_num].num_frames - 1, NULL);
+                    F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames - 1, NULL);
             }
         }
 

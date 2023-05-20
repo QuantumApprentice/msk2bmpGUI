@@ -9,7 +9,7 @@
 namespace B_Endian {
     // Convert signed values
     void flip_header_endian(FRM_Header* header);
-    void flip_frame_endian(FRM_Frame_Info* frame_info);
+    void flip_frame_endian(FRM_Frame* frame_data);
 
     void swap_16(uint16_t* in);
     void swap_16(int16_t*  in);

@@ -25,7 +25,7 @@ struct FRM_Header {
     uint32_t Frame_Area;                        // 0x003A
 };
 
-struct FRM_Frame_Info {
+struct FRM_Frame {
     uint16_t Frame_Width;                       // 0x003E
     uint16_t Frame_Height;                      // 0x0040
     uint32_t Frame_Size;                        // 0x0042
@@ -35,19 +35,19 @@ struct FRM_Frame_Info {
 };
 #pragma pack(pop)
 
-struct FRM_Frame {
+struct FRM_Dir {
     //TODO: remove unnecesary info?
-    int frame_number = 0;
+    int num_frames = 0;
     int orientation  = 0;
-    FRM_Frame_Info* frame_info = NULL;
+    FRM_Frame* frame_data = NULL;
     rectangle bounding_box = {};
 };
 
 struct image_data {
     FRM_Header* FRM_hdr;
-    FRM_Frame*  FRM_frame;
+    FRM_Dir*    FRM_dir;
     ANM_Header* ANM_hdr;
-    ANM_Orient* ANM_orient;
+    ANM_Dir*    ANM_dir;
     rectangle FRM_bounding_box[6];
 
     uint8_t* FRM_data = NULL;

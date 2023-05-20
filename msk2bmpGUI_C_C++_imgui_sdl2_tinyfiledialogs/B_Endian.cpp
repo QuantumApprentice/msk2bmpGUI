@@ -55,13 +55,13 @@ void B_Endian::flip_header_endian(FRM_Header* header)
     B_Endian::swap_32(header->Frame_Area);
 }
 
-void B_Endian::flip_frame_endian(FRM_Frame_Info* frame_info)
+void B_Endian::flip_frame_endian(FRM_Frame* frame_data)
 {
-    B_Endian::swap_16(&frame_info->Frame_Width);
-    B_Endian::swap_16(&frame_info->Frame_Height);
-    B_Endian::swap_32(frame_info->Frame_Size);
-    B_Endian::swap_16(&frame_info->Shift_Offset_x);
-    B_Endian::swap_16(&frame_info->Shift_Offset_y);
+    B_Endian::swap_16(&frame_data->Frame_Width);
+    B_Endian::swap_16(&frame_data->Frame_Height);
+    B_Endian::swap_32( frame_data->Frame_Size);
+    B_Endian::swap_16(&frame_data->Shift_Offset_x);
+    B_Endian::swap_16(&frame_data->Shift_Offset_y);
 }
 
 // Unsigned conversions

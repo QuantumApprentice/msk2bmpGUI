@@ -8,9 +8,6 @@
 //#include "tinyfiledialogs.h"
 
 
-
-
-
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, LF* F_Prop)
 {
     char buffer[MAX_PATH];
@@ -34,52 +31,55 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     Orientation temp_orient = assign_direction(direction);
     int num_frames = path_vector.size();
-    if (img_data->ANM_orient == NULL) {
-        //img_data->ANM_orient = new(ANM_Orient[6]);
-        img_data->ANM_orient = (ANM_Orient*)malloc(sizeof(ANM_Orient) * 6);
-        new(img_data->ANM_orient) ANM_Orient[6];
-        //TODO: add error checking for memory allocation
+    if (img_data->ANM_dir == NULL) {
+        //img_data->ANM_dir = new(ANM_Orient[6]);
+        img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
+        new(img_data->ANM_dir) ANM_Dir[6];
+        if (!img_data->ANM_dir) {
+            //TODO: change to tinyfd_dialog() warning
+            printf("Unable to allocate enough memory");
+        }
 
-        //memset(img_data->ANM_orient, 0, sizeof(ANM_Orient) * 6);
+        //memset(img_data->ANM_dir, 0, sizeof(ANM_Orient) * 6);
         //for (int i = 0; i < 6; i++)
         //{
-        //    img_data->ANM_orient[i].orientation = no_data;
+        //    img_data->ANM_dir[i].orientation = no_data;
         //}
     }
 
-    img_data->ANM_orient[temp_orient].orientation = temp_orient;
-    if (img_data->ANM_orient[temp_orient].num_frames != num_frames) {
-        img_data->ANM_orient[temp_orient].num_frames  = num_frames;
+    img_data->ANM_dir[temp_orient].orientation = temp_orient;
+    if (img_data->ANM_dir[temp_orient].num_frames != num_frames) {
+        img_data->ANM_dir[temp_orient].num_frames  = num_frames;
     }
 
-    ANM_Frame* frame_info = img_data->ANM_orient[temp_orient].frame_info;
-    if (frame_info != NULL) {
-        free(frame_info);
+    ANM_Frame* frame_data = img_data->ANM_dir[temp_orient].frame_data;
+    if (frame_data != NULL) {
+        free(frame_data);
     }
-    frame_info = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
-    if (!frame_info) {
+    frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
+    if (!frame_data) {
         //TODO: change to tinyfd_dialog() warning
         printf("Unable to allocate enough memory");
         return false;
     }
     else {
-        img_data->ANM_orient[temp_orient].frame_info = frame_info;
+        img_data->ANM_dir[temp_orient].frame_data = frame_data;
     }
 
 
     for (int i = 0; i < path_vector.size(); i++)
     {
         //char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
-        frame_info[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
-        frame_info[i].Frame_Width  = frame_info[i].frame_start->w;
-        frame_info[i].Frame_Height = frame_info[i].frame_start->h;
+        frame_data[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
+        frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
+        frame_data[i].Frame_Height = frame_data[i].frame_start->h;
     }
 
 
 
     F_Prop->type = OTHER;
-    img_data->width  = frame_info[0].frame_start->w;
-    img_data->height = frame_info[0].frame_start->h;
+    img_data->width  = frame_data[0].frame_start->w;
+    img_data->height = frame_data[0].frame_start->h;
     img_data->display_orient_num = temp_orient;
 
 
@@ -95,8 +95,8 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    if (img_data->ANM_orient[temp_orient].frame_info) {
-        SDL_Surface* data = img_data->ANM_orient[temp_orient].frame_info[0].frame_start;
+    if (img_data->ANM_dir[temp_orient].frame_data) {
+        SDL_Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -151,7 +151,7 @@ void set_names(char** names_array, image_data* img_data)
 {
     for (int i = 0; i < 6; i++)
     {
-        switch (img_data->ANM_orient[i].orientation)
+        switch (img_data->ANM_dir[i].orientation)
         {
         case(NE):
             names_array[i] = "NE";

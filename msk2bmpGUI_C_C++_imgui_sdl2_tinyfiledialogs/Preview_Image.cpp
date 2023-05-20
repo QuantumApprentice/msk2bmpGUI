@@ -108,26 +108,26 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "orient_shift_y: %d", img_data->FRM_hdr->Shift_Orient_y[r]);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->FRM_frame[r*s + q].bounding_box.x1);
+    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->FRM_dir[r*s + q].bounding_box.x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",          img_data->FRM_frame[r*s + q].frame_info->Frame_Width);
+    snprintf(buff, 256, "width: %d\t",          img_data->FRM_dir[r*s + q].frame_data->Frame_Width);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",         img_data->FRM_frame[r*s + q].frame_info->Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",         img_data->FRM_dir[r*s + q].frame_data->Shift_Offset_x);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_x2: %d",      img_data->FRM_frame[r*s + q].bounding_box.x2);
+    snprintf(buff, 256, "bounding_x2: %d",      img_data->FRM_dir[r*s + q].bounding_box.x2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->FRM_frame[r*s + q].bounding_box.y1);
+    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->FRM_dir[r*s + q].bounding_box.y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",         img_data->FRM_frame[r*s + q].frame_info->Frame_Height);
+    snprintf(buff, 256, "height: %d\t",         img_data->FRM_dir[r*s + q].frame_data->Frame_Height);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",         img_data->FRM_frame[r*s + q].frame_info->Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",         img_data->FRM_dir[r*s + q].frame_data->Shift_Offset_y);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_y2: %d",      img_data->FRM_frame[r*s + q].bounding_box.y2);
+    snprintf(buff, 256, "bounding_y2: %d",      img_data->FRM_dir[r*s + q].bounding_box.y2);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[r].x1);
@@ -146,7 +146,7 @@ void show_image_stats_ANM(image_data* img_data, ImFont* font)
     int frame_num, rotation, num_frames;
     frame_num  = img_data->display_frame_num;
     rotation   = img_data->display_orient_num;
-    num_frames = img_data->ANM_orient[rotation].num_frames;
+    num_frames = img_data->ANM_dir[rotation].num_frames;
     char buff[256];
 
     ImGui::PushFont(font);
@@ -158,26 +158,26 @@ void show_image_stats_ANM(image_data* img_data, ImFont* font)
     //snprintf(buff, 256, "orient_shift_y: %d", img_data->ANM_hdr->Shift_Orient_y[r]);
     //ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_orient[rotation].bounding_box.x1);
+    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_dir[rotation].bounding_box.x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",          img_data->ANM_orient[rotation].frame_info[frame_num].Frame_Width);
+    snprintf(buff, 256, "width: %d\t",          img_data->ANM_dir[rotation].frame_data[frame_num].Frame_Width);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_orient[rotation].frame_info[frame_num].Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_dir[rotation].frame_data[frame_num].Shift_Offset_x);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_orient[rotation].bounding_box.x2);
+    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_dir[rotation].bounding_box.x2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_orient[rotation].bounding_box.y1);
+    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_dir[rotation].bounding_box.y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",         img_data->ANM_orient[rotation].frame_info[frame_num].Frame_Height);
+    snprintf(buff, 256, "height: %d\t",         img_data->ANM_dir[rotation].frame_data[frame_num].Frame_Height);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_orient[rotation].frame_info[frame_num].Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_dir[rotation].frame_data[frame_num].Shift_Offset_y);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_orient[rotation].bounding_box.y2);
+    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_dir[rotation].bounding_box.y2);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[rotation].x1);

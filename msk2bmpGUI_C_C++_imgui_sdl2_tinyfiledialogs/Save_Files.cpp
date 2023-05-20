@@ -87,9 +87,9 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     header.Frames_Per_Orient                  = B_Endian::write_u16(1);
 
 
-    img_data->FRM_frame->frame_info->Frame_Height = B_Endian::write_u16(height);
-    img_data->FRM_frame->frame_info->Frame_Width  = B_Endian::write_u16(width);
-    img_data->FRM_frame->frame_info->Frame_Size   = B_Endian::write_u32(size);
+    img_data->FRM_dir->frame_data->Frame_Height = B_Endian::write_u16(height);
+    img_data->FRM_dir->frame_data->Frame_Width  = B_Endian::write_u16(width);
+    img_data->FRM_dir->frame_data->Frame_Size   = B_Endian::write_u32(size);
     //img_data->Frame_Info->Shift_Offset_x = 
     //img_data->Frame_Info->Shift_Offset_y = 
 
@@ -191,8 +191,8 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
             memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
             B_Endian::flip_header_endian(&header);
 
-            FRM_Frame_Info frame_info;
-            memset(&frame_info, 0, sizeof(FRM_Frame_Info));
+            FRM_Frame frame_data;
+            memset(&frame_data, 0, sizeof(FRM_Frame));
 
             fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
 
@@ -201,14 +201,14 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
                 for (int j = 0; j < img_data->FRM_hdr->Frames_Per_Orient; j++)
                 {
                     frame_num = i * img_data->FRM_hdr->Frames_Per_Orient + j;
-                    size = img_data->FRM_frame[frame_num].frame_info->Frame_Size;
+                    size = img_data->FRM_dir[frame_num].frame_data->Frame_Size;
 
-                    memcpy(&frame_info, img_data->FRM_frame[frame_num].frame_info, sizeof(FRM_Frame_Info));
-                    B_Endian::flip_frame_endian(&frame_info);
+                    memcpy(&frame_data, img_data->FRM_dir[frame_num].frame_data, sizeof(FRM_Frame));
+                    B_Endian::flip_frame_endian(&frame_data);
 
                     //write to file
-                    fwrite(&frame_info, sizeof(FRM_Frame_Info), 1, File_ptr);
-                    fwrite(&img_data->FRM_frame[frame_num].frame_info->frame_start, size, 1, File_ptr);
+                    fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+                    fwrite(&img_data->FRM_dir[frame_num].frame_data->frame_start, size, 1, File_ptr);
                 }
             }
             fclose(File_ptr);
@@ -401,14 +401,14 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     char Save_File_Name[MAX_PATH];
 
     //create basic frame information for saving
-    FRM_Frame_Info frame_info;
-    memset(&frame_info, 0, sizeof(FRM_Frame_Info));
+    FRM_Frame frame_data;
+    memset(&frame_data, 0, sizeof(FRM_Frame));
 
-    frame_info.Frame_Height      = (TILE_H);
-    frame_info.Frame_Width       = (TILE_W);
-    frame_info.Frame_Size        = (TILE_SIZE);
+    frame_data.Frame_Height      = (TILE_H);
+    frame_data.Frame_Width       = (TILE_W);
+    frame_data.Frame_Size        = (TILE_SIZE);
 
-    B_Endian::flip_frame_endian(&frame_info);
+    B_Endian::flip_frame_endian(&frame_data);
 
     FILE * File_ptr = NULL;
 
@@ -464,7 +464,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                     //Split buffer int 350x300 pixel tiles and write to file
                     //save header
                     fwrite(frm_header,  sizeof(FRM_Header), 1, File_ptr);
-                    fwrite(&frame_info, sizeof(FRM_Frame),  1, File_ptr);
+                    fwrite(&frame_data, sizeof(FRM_Frame),  1, File_ptr);
 
                     int tile_pointer = (y * img_width*TILE_H) + (x * TILE_W);
                     int row_pointer = 0;

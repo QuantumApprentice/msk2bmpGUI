@@ -40,11 +40,11 @@ enum Orientation
     NW      =  5
 };
 
-struct ANM_Orient {
+struct ANM_Dir {
     //TODO: remove unnecesary info?
     int num_frames = 0;
     Orientation orientation = no_data;
-    ANM_Frame* frame_info = NULL;
+    ANM_Frame* frame_data = NULL;
     rectangle bounding_box = {};
 };
 

@@ -40,18 +40,18 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
     int display_frame = orient * max_frm + frame;
 
-    int frm_width  = img_data->FRM_frame[display_frame].frame_info->Frame_Width;
-    int frm_height = img_data->FRM_frame[display_frame].frame_info->Frame_Height;
+    int frm_width  = img_data->FRM_dir[display_frame].frame_data->Frame_Width;
+    int frm_height = img_data->FRM_dir[display_frame].frame_data->Frame_Height;
 
-    int x_offset   = img_data->FRM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset   = img_data->FRM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
+    int x_offset   = img_data->FRM_dir[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset   = img_data->FRM_dir[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    uint8_t* data  = img_data->FRM_frame[display_frame].frame_info->frame_start;
+    uint8_t* data  = img_data->FRM_dir[display_frame].frame_data->frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    //bind data to FRM_texture for display
+    //bind blank background to FRM_texture for display, then paint data onto texture
     uint8_t * blank = (uint8_t*)calloc(1, width*height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
     glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
@@ -67,16 +67,16 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
 
     int frame_num = img_data->display_frame_num;
 
-    int max_frm = img_data->ANM_orient[orient].num_frames;
+    int max_frm = img_data->ANM_dir[orient].num_frames;
     //int display_frame = orient * max_frm + frame;
 
-    int frm_width  = img_data->ANM_orient[orient].frame_info[0].frame_start->w;
-    int frm_height = img_data->ANM_orient[orient].frame_info[0].frame_start->h;
+    int frm_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
+    int frm_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
 
     int x_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    SDL_Surface* data = img_data->ANM_orient[orient].frame_info[frame_num].frame_start;
+    SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
@@ -100,8 +100,8 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     int width  = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 
-    int img_width  = img_data->ANM_orient[orient].frame_info[0].frame_start->w;
-    int img_height = img_data->ANM_orient[orient].frame_info[0].frame_start->h;
+    int img_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
+    int img_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
 
     glViewport(0, 0, img_width, img_height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
@@ -117,7 +117,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         last_time = current_time;
 
         img_data->display_frame_num += 1;
-        if (img_data->display_frame_num >= img_data->ANM_orient[orient].num_frames) {
+        if (img_data->display_frame_num >= img_data->ANM_dir[orient].num_frames) {
             img_data->display_frame_num = 0;
         }
         render_OTHER_OpenGL(img_data, img_width, img_height);
