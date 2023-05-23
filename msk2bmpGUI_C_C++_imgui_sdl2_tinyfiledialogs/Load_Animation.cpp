@@ -5,6 +5,7 @@
 
 #include "Load_Files.h"
 #include "Load_Animation.h"
+#include "Edit_Animation.h"
 //#include "tinyfiledialogs.h"
 
 
@@ -29,7 +30,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     //TODO: probably don't want to store folder name here?
     //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
-    Orientation temp_orient = assign_direction(direction);
+    Direction temp_orient = assign_direction(direction);
     int num_frames = path_vector.size();
     if (img_data->ANM_dir == NULL) {
         //img_data->ANM_dir = new(ANM_Orient[6]);
@@ -97,6 +98,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     if (img_data->ANM_dir[temp_orient].frame_data) {
         SDL_Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
+        Crop_Animation(img_data);
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -123,7 +125,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     return true;
 }
 
-Orientation assign_direction(char* direction)
+Direction assign_direction(char* direction)
 {
     if (!strncmp(direction, "NE\0", sizeof("NE\0"))) {
         return NE;

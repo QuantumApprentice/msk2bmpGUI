@@ -94,12 +94,10 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int frame_size  = sizeof(FRM_Frame);
     int hdr_size    = sizeof(FRM_Header);
     uint8_t* buffer = load_entire_file(file_name, &file_size);
+
     FRM_Header* header = (FRM_Header*)buffer;
     B_Endian::flip_header_endian(header);
-
     img_data->FRM_hdr = header;
-
-    FRM_Frame* frame_data;
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
@@ -109,6 +107,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     rectangle bounding_box      = {};
     rectangle FRM_bounding_box  = {};
 
+    FRM_Frame* frame_data;
     FRM_Dir* frame = img_data->FRM_dir;
     buff_offset = hdr_size;
 

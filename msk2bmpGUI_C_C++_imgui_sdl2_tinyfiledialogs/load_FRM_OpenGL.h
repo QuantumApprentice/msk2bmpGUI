@@ -63,6 +63,7 @@ struct image_data {
     int display_frame_num;
     int display_orient_num;
     int playback_speed;
+    int alpha_threshold = 5;
 
     float scale = 1.0;
 

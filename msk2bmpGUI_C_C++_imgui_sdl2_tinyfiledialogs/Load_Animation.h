@@ -29,7 +29,7 @@ struct ANM_Frame {
     SDL_Surface* frame_start;
 };
 
-enum Orientation
+enum Direction
 {
     no_data = -1,
     NE      =  0,
@@ -43,7 +43,7 @@ enum Orientation
 struct ANM_Dir {
     //TODO: remove unnecesary info?
     int num_frames = 0;
-    Orientation orientation = no_data;
+    Direction orientation = no_data;
     ANM_Frame* frame_data = NULL;
     rectangle bounding_box = {};
 };
@@ -52,5 +52,5 @@ struct LF;
 struct image_data;
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, LF* F_Prop);
-Orientation assign_direction(char* direction);
+Direction assign_direction(char* direction);
 void set_names(char** names_array, image_data* img_data);
