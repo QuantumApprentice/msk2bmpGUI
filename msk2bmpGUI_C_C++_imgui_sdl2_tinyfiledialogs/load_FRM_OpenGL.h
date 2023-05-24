@@ -46,9 +46,11 @@ struct FRM_Dir {
 struct image_data {
     FRM_Header* FRM_hdr;
     FRM_Dir*    FRM_dir;
+    rectangle FRM_bounding_box[6];
+
     ANM_Header* ANM_hdr;
     ANM_Dir*    ANM_dir;
-    rectangle FRM_bounding_box[6];
+    rectangle ANM_bounding_box[6];
 
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;

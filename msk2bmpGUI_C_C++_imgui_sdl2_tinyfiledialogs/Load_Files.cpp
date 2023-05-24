@@ -120,7 +120,8 @@ std::optional<std::vector <std::filesystem::path>> handle_subdirectory(const std
 }
 
 //TODO: make a define switch for linux when I move to there
-std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders)
+std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter,
+                                          shader_info* shaders)
 {
     char buffer[MAX_PATH];
     std::filesystem::path path(tinyfd_utf8to16(file_name));

@@ -81,7 +81,7 @@ SDL_PixelFormat* loadPalette(char * name)
 
 
 // Converts the color space to Fallout's paletted format
-uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int SDL)
+uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int color_match_type)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
     SDL_Surface* Surface_8;
@@ -115,10 +115,10 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int SD
     }
 
     //switch to change between euclidian and sdl color match algorithms
-    if (SDL == 0) {
+    if (color_match_type == 0) {
         SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
     }
-    else if (SDL == 1)
+    else if (color_match_type == 1)
     {
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     }
@@ -137,9 +137,7 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int SD
     for (int y = 0; y < height; y++)
     {
         //write out one row of pixels in each loop
-        memcpy(data + (width*y),
-              ((uint8_t*)Surface_8->pixels + pixel_pointer),
-              width);
+        memcpy(data + (width*y), ((uint8_t*)Surface_8->pixels + pixel_pointer), width);
 
         pixel_pointer += Surface_8->pitch;
     }

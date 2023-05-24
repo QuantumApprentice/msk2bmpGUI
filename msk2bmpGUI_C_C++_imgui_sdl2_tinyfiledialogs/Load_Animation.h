@@ -41,7 +41,6 @@ enum Direction
 };
 
 struct ANM_Dir {
-    //TODO: remove unnecesary info?
     int num_frames = 0;
     Direction orientation = no_data;
     ANM_Frame* frame_data = NULL;
