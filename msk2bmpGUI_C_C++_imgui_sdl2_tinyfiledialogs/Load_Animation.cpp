@@ -36,16 +36,17 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         //img_data->ANM_dir = new(ANM_Orient[6]);
         img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
         new(img_data->ANM_dir) ANM_Dir[6];
-        if (!img_data->ANM_dir) {
-            //TODO: change to tinyfd_dialog() warning
-            printf("Unable to allocate enough memory");
-        }
-
         //memset(img_data->ANM_dir, 0, sizeof(ANM_Orient) * 6);
         //for (int i = 0; i < 6; i++)
         //{
         //    img_data->ANM_dir[i].orientation = no_data;
         //}
+        if (!img_data->ANM_dir) {
+            //TODO: change to tinyfd_dialog() warning
+            printf("Unable to allocate enough memory");
+        }
+
+
     }
 
     img_data->ANM_dir[temp_orient].orientation = temp_orient;
@@ -98,7 +99,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     if (img_data->ANM_dir[temp_orient].frame_data) {
         SDL_Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
-        Crop_Animation(img_data);
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);

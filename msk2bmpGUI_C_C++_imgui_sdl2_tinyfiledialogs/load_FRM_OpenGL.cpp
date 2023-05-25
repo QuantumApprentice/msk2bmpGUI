@@ -49,9 +49,12 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 {
     FILE* File_ptr;
     int file_length = 0;
-    _wfopen_s(&File_ptr, tinyfd_utf8to16(file_name), L"rb");
+    errno_t err = _wfopen_s(&File_ptr, tinyfd_utf8to16(file_name), L"rb");
     if (!File_ptr) {
-        printf("error, can't open file");
+        printf("error, can't open file, error: %d", err);
+        if (err == 13) {
+            printf("file opened by another program?");
+        }
         return NULL;
     }
     int error = fseek(File_ptr, 0, SEEK_END);
@@ -102,35 +105,39 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->FRM_dir = (FRM_Dir*)malloc(num_frames * sizeof(FRM_Dir) * num_orients);
+    img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * num_orients);
 
     rectangle bounding_box      = {};
     rectangle FRM_bounding_box  = {};
 
-    FRM_Frame* frame_data;
-    FRM_Dir* frame = img_data->FRM_dir;
+    FRM_Frame* frame_start;
+    FRM_Dir* frm_dir = img_data->FRM_dir;
     buff_offset = hdr_size;
+    frame_start = (FRM_Frame*)(buffer + buff_offset);
 
     for (int i = 0; i < num_orients; i++)
     {
+        frm_dir[i].frame_data = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
+        frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle) * num_frames);
+
         FRM_bounding_box = {};
         bounding_box = {};
+
+        frm_dir[i].num_frames = num_frames;
+        frm_dir[i].orientation = i;
         for (int j = 0; j < num_frames; j++)
         {
-            frame_data = (FRM_Frame*)(buffer + buff_offset);
-            B_Endian::flip_frame_endian(frame_data);
+            frm_dir[i].frame_data[j] = frame_start;
 
-            frame->num_frames  = j;
-            frame->orientation = i;
-            frame->frame_data  = frame_data;
+            B_Endian::flip_frame_endian(frame_start);
 
-            bounding_box.x1 += frame_data->Shift_Offset_x - frame_data->Frame_Width / 2;
-            bounding_box.y1 += frame_data->Shift_Offset_y - frame_data->Frame_Height;
+            bounding_box.x1 += frame_start->Shift_Offset_x - frame_start->Frame_Width / 2;
+            bounding_box.y1 += frame_start->Shift_Offset_y - frame_start->Frame_Height;
 
-            bounding_box.x2  = bounding_box.x1 + frame_data->Frame_Width;
-            bounding_box.y2  = bounding_box.y1 + frame_data->Frame_Height;
+            bounding_box.x2  = bounding_box.x1 + frame_start->Frame_Width;
+            bounding_box.y2  = bounding_box.y1 + frame_start->Frame_Height;
 
-            frame->bounding_box = bounding_box;
+            frm_dir[i].bounding_box[j] = bounding_box;
 
             if (bounding_box.x1 < FRM_bounding_box.x1) {
                 FRM_bounding_box.x1 = bounding_box.x1;
@@ -145,11 +152,11 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
                 FRM_bounding_box.y2 = bounding_box.y2;
             }
 
-            bounding_box.x1 += frame_data->Frame_Width  / 2;
-            bounding_box.y1 += frame_data->Frame_Height;
+            bounding_box.x1 += frame_start->Frame_Width  / 2;
+            bounding_box.y1 += frame_start->Frame_Height;
 
-            buff_offset += frame_data->Frame_Size + frame_size;
-            frame++;
+            buff_offset += frame_start->Frame_Size + frame_size;
+            frame_start = (FRM_Frame*)(buffer + buff_offset);
         }
         img_data->FRM_bounding_box[i] = FRM_bounding_box;
     }
@@ -186,16 +193,16 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
-        frm_width   = img_data->FRM_dir[0].frame_data->Frame_Width;
-        frm_height  = img_data->FRM_dir[0].frame_data->Frame_Height;
+        frm_width   = img_data->FRM_dir[0].frame_data[0]->Frame_Width;
+        frm_height  = img_data->FRM_dir[0].frame_data[0]->Frame_Height;
         width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;//      img_data->width;
         height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;//      img_data->height;
-        x_offset    = img_data->FRM_dir[0].bounding_box.x1 - img_data->FRM_bounding_box[0].x1;
-        y_offset    = img_data->FRM_dir[0].bounding_box.y1 - img_data->FRM_bounding_box[0].y1;
+        x_offset    = img_data->FRM_dir[0].bounding_box[0].x1 - img_data->FRM_bounding_box[0].x1;
+        y_offset    = img_data->FRM_dir[0].bounding_box[0].y1 - img_data->FRM_bounding_box[0].y1;
     }
 
     if (img_data->FRM_data) {
-        uint8_t* data = img_data->FRM_dir[0].frame_data->frame_start;
+        uint8_t* data = img_data->FRM_dir[0].frame_data[0]->frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

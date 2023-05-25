@@ -39,8 +39,8 @@ struct FRM_Dir {
     //TODO: remove unnecesary info?
     int num_frames = 0;
     int orientation  = 0;
-    FRM_Frame* frame_data = NULL;
-    rectangle bounding_box = {};
+    FRM_Frame** frame_data = NULL;
+    rectangle* bounding_box = {};
 };
 
 struct image_data {

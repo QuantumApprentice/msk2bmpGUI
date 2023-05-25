@@ -16,6 +16,8 @@ struct pixel_position {
     int r_pxl = 0;              //right most pixel
     int t_pxl = INT_MAX;        //top most pixel
     int b_pxl = 0;              //bottom most pixel
+    int w = 0;
+    int h = 0;
 };
 
 struct offsets {
@@ -23,12 +25,12 @@ struct offsets {
     int16_t y_offset = 0;
 };
 
-uint8_t* Crop_Frame(pixel_position* pos_data, FRM_Frame* frm_frame, ANM_Frame* anm_frame)
+uint8_t* Crop_Frame(pixel_position* pos_data, /*FRM_Frame* frm_frame,*/ ANM_Frame* anm_frame)
 {
-    int Frame_Width = pos_data->r_pxl - pos_data->l_pxl;
+    int Frame_Width = pos_data->r_pxl  - pos_data->l_pxl;
     int Frame_Height = pos_data->b_pxl - pos_data->t_pxl;
-    frm_frame->Frame_Width = Frame_Width;
-    frm_frame->Frame_Height = Frame_Height;
+    //frm_frame->Frame_Width = Frame_Width;
+    //frm_frame->Frame_Height = Frame_Height;
 
     SDL_Rect src_rectangle;
     src_rectangle.w = Frame_Width;
@@ -42,7 +44,6 @@ uint8_t* Crop_Frame(pixel_position* pos_data, FRM_Frame* frm_frame, ANM_Frame* a
     dst_rectangle.x = 0;
     dst_rectangle.y = 0;
 
-    //SDL_Surface* out_surface = SDL_CreateRGBSurface(0, Frame_Width, Frame_Height, 32, 0,0,0,0);
     SDL_Surface* out_surface = SDL_CreateRGBSurfaceWithFormat(0, Frame_Width, Frame_Height, 32, SDL_PIXELFORMAT_RGBA8888);
 
     SDL_BlitSurface(anm_frame->frame_start, &src_rectangle, out_surface, &dst_rectangle);
@@ -54,7 +55,7 @@ uint8_t* Crop_Frame(pixel_position* pos_data, FRM_Frame* frm_frame, ANM_Frame* a
     return out_data;
 }
 
-void Crop_Animation(image_data* img_data)
+void Crop_Animation(image_data* img_data, bool* window)
 {
     int num_frames = img_data->ANM_dir[img_data->display_orient_num].num_frames;
 
@@ -62,7 +63,6 @@ void Crop_Animation(image_data* img_data)
     pixel_position* pos_data = (pixel_position*)malloc(sizeof(pixel_position)*num_frames);
     new(pos_data) pixel_position[num_frames];
 
-    //TODO: loop over all frames in one direction
     //TODO: loop over all frames in all directions
     //for (int i = 0; i < 6; i++)
     //{
@@ -70,6 +70,7 @@ void Crop_Animation(image_data* img_data)
     //    }
     //}
 
+    // loop over all frames in one direction
     for (int j = 0; j < num_frames; j++)
     {
         SDL_Surface* surface = img_data->ANM_dir[img_data->display_orient_num].frame_data[j].frame_start;
@@ -116,6 +117,14 @@ void Crop_Animation(image_data* img_data)
         }
     }
 
+    int total_size = 0;
+    for (int i = 0; i < num_frames; i++)
+    {
+        pos_data[i].w = pos_data[i].r_pxl - pos_data[i].l_pxl;
+        pos_data[i].h = pos_data[i].b_pxl - pos_data[i].t_pxl;
+        total_size   += pos_data[i].w * pos_data[i].h;
+    }
+
     int left   = INT_MAX;
     int right  = 0;
     int top    = INT_MAX;
@@ -142,25 +151,78 @@ void Crop_Animation(image_data* img_data)
     total_width  = right  - left;
     total_height = bottom - top;
 
-    FRM_Dir*   FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
-    FRM_Frame* FRM_frame = (FRM_Frame*)malloc(sizeof(FRM_Frame)*num_frames);
-    FRM_dir[img_data->display_orient_num].frame_data = FRM_frame;
+    FRM_Dir* FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+    //uint8_t* buffer  = (uint8_t*)malloc(sizeof(FRM_Frame)*num_frames + total_size);
     img_data->FRM_dir = FRM_dir;
+    FRM_dir[img_data->display_orient_num].num_frames = num_frames;
+    FRM_dir[img_data->display_orient_num].orientation = (img_data->display_orient_num);
 
-    FRM_Frame* frm_frame = img_data->FRM_dir[img_data->display_orient_num].frame_data; //(offsets*)malloc(sizeof(offsets)*num_frames);
-    frm_frame[0].Shift_Offset_x = 0;// (pos_data[0].r_pxl - pos_data[0].l_pxl) / 2;
-    frm_frame[0].Shift_Offset_y = 0;//  pos_data[0].t_pxl - pos_data[0].b_pxl;
-
+    FRM_Frame** frm_frame = (FRM_Frame**)malloc(sizeof(FRM_Frame*)*num_frames);
+    //set frame 0 info
+    int data_frame_size = pos_data[0].w*pos_data[0].h;
+    int FRM_frame_size = sizeof(FRM_Frame);
+    FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
+    frame_data->Frame_Width    = pos_data[0].w;
+    frame_data->Frame_Height   = pos_data[0].h;
+    frame_data->Frame_Size     = data_frame_size;
+    frame_data->Shift_Offset_x = 0;
+    frame_data->Shift_Offset_y = 0;
+    uint8_t* data = Crop_Frame(&pos_data[0], &img_data->ANM_dir[img_data->display_orient_num].frame_data[0]);
+    memcpy((uint8_t*)frame_data + 12, data, data_frame_size);
+    frm_frame[0] = frame_data;
+    free(data);
+    //set the rest of the frames
     for (int i = 1; i < num_frames; i++)
     {
-        frm_frame[i].Shift_Offset_x = (pos_data[i].l_pxl + pos_data[i].r_pxl) / 2 - (pos_data[i - 1].l_pxl + pos_data[i - 1].r_pxl) / 2;
-        frm_frame[i].Shift_Offset_y =  pos_data[i].b_pxl - pos_data[i - 1].b_pxl;
+        int data_frame_size = pos_data[i].w*pos_data[i].h;
+        FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
 
-        img_data->FRM_data = Crop_Frame(&pos_data[i], &frm_frame[i], &img_data->ANM_dir[img_data->display_orient_num].frame_data[i]);
+        frame_data->Frame_Width    = pos_data[i].w;
+        frame_data->Frame_Height   = pos_data[i].h;
+        frame_data->Frame_Size     = data_frame_size;
+        frame_data->Shift_Offset_x = (pos_data[i].l_pxl + pos_data[i].r_pxl) / 2 - (pos_data[i - 1].l_pxl + pos_data[i - 1].r_pxl) / 2;
+        frame_data->Shift_Offset_y =  pos_data[i].b_pxl - pos_data[i - 1].b_pxl;
+
+        uint8_t* data = Crop_Frame(&pos_data[i], &img_data->ANM_dir[img_data->display_orient_num].frame_data[i]);
+        memcpy((uint8_t*)frame_data + 12, data, data_frame_size);
+        frm_frame[i] = frame_data;
+        free(data);
+
+    }
+    FRM_dir[img_data->display_orient_num].frame_data = &frame_data;
+
+    if (img_data->FRM_dir[img_data->display_orient_num].frame_data) {
+        int frm_width  = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->Frame_Width;
+        int frm_height = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->Frame_Height;
+
+        uint8_t* data = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->frame_start;
+        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+        //FRM's are aligned to 1-byte
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        //bind data to FRM_texture for display
+        uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
+        free(blank);
+
+        bool success = false;
+        success = init_framebuffer(img_data);
+        if (!success) {
+            printf("image framebuffer failed to attach correctly?\n");
+            *window = false;
+        }
+        *window = true;
+    }
+    else {
+        printf("FRM image couldn't convert...\n");
+        *window = false;
     }
 
+    init_framebuffer(img_data);
 
-    printf("just a place to set a break");
+    *window = true;
+
+    printf("just a place to set a break point");
 }
 
 

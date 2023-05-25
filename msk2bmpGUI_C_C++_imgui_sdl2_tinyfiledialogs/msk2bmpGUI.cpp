@@ -46,6 +46,7 @@
 #include "Image_Render.h"
 #include "Preview_Tiles.h"
 #include "MSK_Convert.h"
+#include "Edit_Animation.h"
 
 // Our state
 user_info usr_info;
@@ -932,7 +933,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info);
         }
     }
-
+    if (F_Prop->type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+        if (ImGui::Button("Convert Animation to FRM for Editing")) {
+            Crop_Animation(&F_Prop->img_data, &F_Prop->edit_image_window);
+        }
+    }
     if (My_Variables->tile_window_focused) {
         if (ImGui::Button("Save as Map Tiles...")) {
             if (strcmp(F_Prop->extension, "FRM") == 0) {

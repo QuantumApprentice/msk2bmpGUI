@@ -37,16 +37,16 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     int frame = img_data->display_frame_num;
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
     int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-    int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
-    int display_frame = orient * max_frm + frame;
+    //int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
+    //int display_frame = orient * max_frm + frame;
 
-    int frm_width  = img_data->FRM_dir[display_frame].frame_data->Frame_Width;
-    int frm_height = img_data->FRM_dir[display_frame].frame_data->Frame_Height;
+    int frm_width  = img_data->FRM_dir[orient].frame_data[frame]->Frame_Width;
+    int frm_height = img_data->FRM_dir[orient].frame_data[frame]->Frame_Height;
 
-    int x_offset   = img_data->FRM_dir[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset   = img_data->FRM_dir[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
+    int x_offset   = img_data->FRM_dir[orient].bounding_box[frame].x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset   = img_data->FRM_dir[orient].bounding_box[frame].y1 - img_data->FRM_bounding_box[orient].y1;
 
-    uint8_t* data  = img_data->FRM_dir[display_frame].frame_data->frame_start;
+    uint8_t* data  = img_data->FRM_dir[orient].frame_data[frame]->frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
@@ -110,6 +110,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
     static clock_t last_time = 0;
+    static int last_frame;
     //static clock_t accumulated_delta_time = current_time - last_time;
     //last_time = current_time;
 
@@ -120,6 +121,10 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         if (img_data->display_frame_num >= img_data->ANM_dir[orient].num_frames) {
             img_data->display_frame_num = 0;
         }
+        render_OTHER_OpenGL(img_data, img_width, img_height);
+    }
+    else if (last_frame != img_data->display_frame_num) {
+        last_frame = img_data->display_frame_num;
         render_OTHER_OpenGL(img_data, img_width, img_height);
     }
 

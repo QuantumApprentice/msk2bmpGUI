@@ -87,9 +87,9 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     header.Frames_Per_Orient                  = B_Endian::write_u16(1);
 
 
-    img_data->FRM_dir->frame_data->Frame_Height = B_Endian::write_u16(height);
-    img_data->FRM_dir->frame_data->Frame_Width  = B_Endian::write_u16(width);
-    img_data->FRM_dir->frame_data->Frame_Size   = B_Endian::write_u32(size);
+    img_data->FRM_dir[0].frame_data[0]->Frame_Height = B_Endian::write_u16(height);
+    img_data->FRM_dir[0].frame_data[0]->Frame_Width  = B_Endian::write_u16(width);
+    img_data->FRM_dir[0].frame_data[0]->Frame_Size   = B_Endian::write_u32(size);
     //img_data->Frame_Info->Shift_Offset_x = 
     //img_data->Frame_Info->Shift_Offset_y = 
 
@@ -184,7 +184,7 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
 
             //uint8_t* buffer = (uint8_t*)&img_data->FRM_Info;
             int num_orients = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? 6 : 1;
-            int frame_num = 0;
+            //int frame_num = 0;
             int size = 0;
 
             FRM_Header header = {};
@@ -196,19 +196,19 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info)
 
             fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
 
-            for (int i = 0; i < num_orients; i++)
+            for (int direction = 0; direction < num_orients; direction++)
             {
-                for (int j = 0; j < img_data->FRM_hdr->Frames_Per_Orient; j++)
+                for (int frame_num = 0; frame_num < img_data->FRM_hdr->Frames_Per_Orient; frame_num++)
                 {
-                    frame_num = i * img_data->FRM_hdr->Frames_Per_Orient + j;
-                    size = img_data->FRM_dir[frame_num].frame_data->Frame_Size;
+                    //frame_num = i * img_data->FRM_hdr->Frames_Per_Orient + j;
+                    size = img_data->FRM_dir[direction].frame_data[frame_num]->Frame_Size;
 
                     memcpy(&frame_data, img_data->FRM_dir[frame_num].frame_data, sizeof(FRM_Frame));
                     B_Endian::flip_frame_endian(&frame_data);
 
                     //write to file
                     fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
-                    fwrite(&img_data->FRM_dir[frame_num].frame_data->frame_start, size, 1, File_ptr);
+                    fwrite(&img_data->FRM_dir[direction].frame_data[frame_num]->frame_start, size, 1, File_ptr);
                 }
             }
             fclose(File_ptr);
