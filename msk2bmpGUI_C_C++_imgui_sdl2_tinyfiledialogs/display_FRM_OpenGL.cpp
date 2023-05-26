@@ -37,6 +37,7 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     int frame = img_data->display_frame_num;
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
     int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
+    orient = img_data->display_orient_num;
     //int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
     //int display_frame = orient * max_frm + frame;
 
@@ -143,12 +144,12 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
-    int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_hdr->Frames_Per_Orient > 1) ? 10 : img_data->FRM_hdr->FPS;
-    float fps = FRM_fps * playback_speeds[img_data->playback_speed];
-
     int orient      = img_data->display_orient_num;
     int width       = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height      = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
+
+    int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
+    float fps = FRM_fps * playback_speeds[img_data->playback_speed];
 
     glViewport(0, 0, img_data->width, img_data->height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);

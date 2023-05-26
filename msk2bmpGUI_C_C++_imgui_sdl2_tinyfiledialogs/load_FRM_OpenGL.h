@@ -15,14 +15,14 @@ struct mesh {
 
 #pragma pack(push, 1)
 struct FRM_Header {
-    uint32_t version;                           // 0x0000
+    uint32_t version = 0;                       // 0x0000
     uint16_t FPS = 0;                           // 0x0004
     uint16_t Action_Frame = 0;                  // 0x0006
-    uint16_t Frames_Per_Orient;                 // 0x0008
-    int16_t  Shift_Orient_x[6];                 // 0x000A
-    int16_t  Shift_Orient_y[6];                 // 0x0016
-    uint32_t Frame_0_Offset[6];                 // 0x0022
-    uint32_t Frame_Area;                        // 0x003A
+    uint16_t Frames_Per_Orient = 0;             // 0x0008
+    int16_t  Shift_Orient_x[6] = {};            // 0x000A
+    int16_t  Shift_Orient_y[6] = {};            // 0x0016
+    uint32_t Frame_0_Offset[6] = {};            // 0x0022
+    uint32_t Frame_Area = 0;                    // 0x003A
 };
 
 struct FRM_Frame {

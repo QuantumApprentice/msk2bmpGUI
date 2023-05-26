@@ -472,23 +472,21 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         if (F_Prop->type == FRM) {
             ImGui::Checkbox("Show FRM Stats", &F_Prop->show_stats);
 
-            //// Rotate the palette for animation
-            //new openGL version of pallete cycling
-            //redraws FRM to framebuffer every time the palette update timer is true or animates
-            animate_FRM_to_framebuff(shaders->palette,
-                                     shaders->render_FRM_shader,
-                                    &shaders->giant_triangle,
-                                    &F_Prop->img_data,
-                                     My_Variables->CurrentTime,
-                                     My_Variables->Palette_Update);
+
+            //animate_FRM_to_framebuff(shaders->palette,
+            //                         shaders->render_FRM_shader,
+            //                        &shaders->giant_triangle,
+            //                        &F_Prop->img_data,
+            //                         My_Variables->CurrentTime,
+            //                         My_Variables->Palette_Update);
         }
 
         if (F_Prop->type == OTHER) {
             ImGui::Checkbox("Show frame Stats", &F_Prop->show_stats);
-            animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
-                                      &My_Variables->shaders.giant_triangle,
-                                      &F_Prop->img_data,
-                                       My_Variables->CurrentTime);
+            //animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
+            //                          &My_Variables->shaders.giant_triangle,
+            //                          &F_Prop->img_data,
+            //                           My_Variables->CurrentTime);
 
         }
 
@@ -664,7 +662,7 @@ void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int 
     char b[3];
     sprintf(b, "%02d", counter);
     std::string a = My_Variables->F_Prop[counter].c_name;
-    std::string name = a + " Preview Window...###render" + b;
+    std::string name = a + "Render Window...###render" + b;
 
     LF* F_Prop = &My_Variables->F_Prop[counter];
 
@@ -676,7 +674,7 @@ void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int 
             My_Variables->tile_window_focused = false;
         }
 
-        image_render(My_Variables, &F_Prop->edit_data);
+        Preview_FRM_Image(My_Variables, &F_Prop->img_data);
 
     }
     ImGui::End();
@@ -935,7 +933,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     }
     if (F_Prop->type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
         if (ImGui::Button("Convert Animation to FRM for Editing")) {
-            Crop_Animation(&F_Prop->img_data, &F_Prop->edit_image_window);
+            //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
+            F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data);
         }
     }
     if (My_Variables->tile_window_focused) {

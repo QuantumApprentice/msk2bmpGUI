@@ -1,4 +1,5 @@
 #include "imgui-docking/imgui_internal.h"
+#include "display_FRM_OpenGL.h"
 #include "Preview_Image.h"
 #include "Zoom_Pan.h"
 
@@ -8,16 +9,35 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data)
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
+    //new openGL version of pallete cycling
+    //redraws FRM to framebuffer every time the palette update timer is true or animates
+    shader_info* shaders = &My_Variables->shaders;
+    animate_FRM_to_framebuff(shaders->palette,
+        shaders->render_FRM_shader,
+       &shaders->giant_triangle,
+        img_data,
+        My_Variables->CurrentTime,
+        My_Variables->Palette_Update);
+
+    //draw_FRM_to_framebuffer(shaders->palette,
+    //    shaders->render_FRM_shader,
+    //    &shaders->giant_triangle,
+    //    img_data);
+
+
+
+
     //handle frame display by orientation and number
     int orient  = img_data->display_orient_num;
     int frame   = img_data->display_frame_num;
-    int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
+    int max_frm = img_data->FRM_dir[orient].num_frames;
+
+
+
 
     float scale = img_data->scale;
-
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height  = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
-
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
@@ -40,12 +60,16 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data)
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
+    shader_info* shaders = &My_Variables->shaders;
+    animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
+        &My_Variables->shaders.giant_triangle,
+        img_data,
+        My_Variables->CurrentTime);
+
     //handle frame display by orientation and number
     float scale = img_data->scale;
-
     int width  = img_data->width;
     int height = img_data->height;
-
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));

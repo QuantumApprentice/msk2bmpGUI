@@ -55,7 +55,7 @@ uint8_t* Crop_Frame(pixel_position* pos_data, /*FRM_Frame* frm_frame,*/ ANM_Fram
     return out_data;
 }
 
-void Crop_Animation(image_data* img_data, bool* window)
+bool Crop_Animation(image_data* img_data)
 {
     int num_frames = img_data->ANM_dir[img_data->display_orient_num].num_frames;
 
@@ -151,9 +151,17 @@ void Crop_Animation(image_data* img_data, bool* window)
     total_width  = right  - left;
     total_height = bottom - top;
 
+    FRM_Header* FRM_header = (FRM_Header*)malloc(sizeof(FRM_Header));
+    new(FRM_header) FRM_Header;
+    if (num_frames > 1) {
+        FRM_header->FPS = 10;
+    }
+    else {
+        FRM_header->FPS = 0;
+    }
+
     FRM_Dir* FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
-    //uint8_t* buffer  = (uint8_t*)malloc(sizeof(FRM_Frame)*num_frames + total_size);
-    img_data->FRM_dir = FRM_dir;
+    new (FRM_dir) FRM_Dir[6];
     FRM_dir[img_data->display_orient_num].num_frames = num_frames;
     FRM_dir[img_data->display_orient_num].orientation = (img_data->display_orient_num);
 
@@ -189,7 +197,43 @@ void Crop_Animation(image_data* img_data, bool* window)
         free(data);
 
     }
-    FRM_dir[img_data->display_orient_num].frame_data = &frame_data;
+
+    rectangle bounding_box = {};
+    rectangle FRM_bounding_box = {};
+
+    FRM_dir[img_data->display_orient_num].bounding_box = (rectangle*)malloc(sizeof(rectangle) * num_frames);
+    for (int j = 0; j < num_frames; j++)
+    {
+        bounding_box.x1 += frm_frame[j]->Shift_Offset_x - frm_frame[j]->Frame_Width / 2;
+        bounding_box.y1 += frm_frame[j]->Shift_Offset_y - frm_frame[j]->Frame_Height;
+
+        bounding_box.x2 = bounding_box.x1 + frm_frame[j]->Frame_Width;
+        bounding_box.y2 = bounding_box.y1 + frm_frame[j]->Frame_Height;
+
+        FRM_dir[img_data->display_orient_num].bounding_box[j] = bounding_box;
+
+        if (bounding_box.x1 < FRM_bounding_box.x1) {
+            FRM_bounding_box.x1 = bounding_box.x1;
+        }
+        if (bounding_box.y1 < FRM_bounding_box.y1) {
+            FRM_bounding_box.y1 = bounding_box.y1;
+        }
+        if (bounding_box.x2 > FRM_bounding_box.x2) {
+            FRM_bounding_box.x2 = bounding_box.x2;
+        }
+        if (bounding_box.y2 > FRM_bounding_box.y2) {
+            FRM_bounding_box.y2 = bounding_box.y2;
+        }
+
+        bounding_box.x1 += frm_frame[j]->Frame_Width / 2;
+        bounding_box.y1 += frm_frame[j]->Frame_Height;
+
+    }
+    img_data->FRM_bounding_box[img_data->display_orient_num] = FRM_bounding_box;
+
+    FRM_dir[img_data->display_orient_num].frame_data = frm_frame;
+    img_data->FRM_hdr = FRM_header;
+    img_data->FRM_dir = FRM_dir;
 
     if (img_data->FRM_dir[img_data->display_orient_num].frame_data) {
         int frm_width  = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->Frame_Width;
@@ -200,7 +244,7 @@ void Crop_Animation(image_data* img_data, bool* window)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
         //bind data to FRM_texture for display
-        uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
+        uint8_t* blank = (uint8_t*)calloc(1, total_width*total_height);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
         free(blank);
@@ -209,20 +253,16 @@ void Crop_Animation(image_data* img_data, bool* window)
         success = init_framebuffer(img_data);
         if (!success) {
             printf("image framebuffer failed to attach correctly?\n");
-            *window = false;
+            return false;
         }
-        *window = true;
+        printf("just a place to set a break point");
+        return true;
     }
     else {
         printf("FRM image couldn't convert...\n");
-        *window = false;
+        return false;
     }
 
-    init_framebuffer(img_data);
-
-    *window = true;
-
-    printf("just a place to set a break point");
 }
 
 

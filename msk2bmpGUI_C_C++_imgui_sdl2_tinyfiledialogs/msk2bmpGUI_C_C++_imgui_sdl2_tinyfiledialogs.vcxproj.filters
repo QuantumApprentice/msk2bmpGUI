@@ -99,9 +99,6 @@
     <ClCompile Include="Preview_Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Image_Render.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Preview_Tiles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -186,9 +183,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Preview_Image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Image_Render.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Preview_Tiles.h">
