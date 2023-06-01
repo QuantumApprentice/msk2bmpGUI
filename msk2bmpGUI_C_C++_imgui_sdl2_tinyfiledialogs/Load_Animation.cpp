@@ -48,6 +48,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     ANM_Frame* frame_data = img_data->ANM_dir[temp_orient].frame_data;
     if (frame_data != NULL) {
+        memset(frame_data, 0, sizeof(ANM_Frame));
         free(frame_data);
     }
     frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
@@ -63,7 +64,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
 
     for (int i = 0; i < path_vector.size(); i++)
     {
-        //char* converted_path = tinyfd_utf16to8(path_vector[i].c_str());
         frame_data[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
@@ -71,17 +71,11 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         frame_data[i].Shift_Offset_y = 0;
     }
 
-
-
     F_Prop->img_data.type = OTHER;
     //TODO: refactor img_data.width/height out in favor of FRM_boundary_box?
     img_data->width  = frame_data[0].frame_start->w;
     img_data->height = frame_data[0].frame_start->h;
     img_data->display_orient_num = temp_orient;
-
-
-
-
 
     //load & gen texture
     glGenTextures(1, &img_data->FRM_texture);

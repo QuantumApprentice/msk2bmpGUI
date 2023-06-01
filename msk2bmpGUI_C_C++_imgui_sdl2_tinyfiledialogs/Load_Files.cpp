@@ -40,9 +40,6 @@ char* Program_Directory()
     return utf8_buff;
 }
 
-
-
-
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders)
 {
     F_Prop->file_open_window = Drag_Drop_Load_Files(file_name, F_Prop, &F_Prop->img_data, shaders);
@@ -81,8 +78,8 @@ bool open_multiple_files(std::vector <std::filesystem::path> path_vector,
         F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vector, &F_Prop[num]);
 
         if (!does_window_exist) {
+            (*window_number_focus) = (*counter);
             (*counter)++;
-            (*window_number_focus) = 0;
         }
 
         return true;
@@ -281,27 +278,46 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     else
     {
         F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
+        if (!F_Prop->img_data.ANM_dir) {
+            printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+        }
+        else {
+            new(img_data->ANM_dir) ANM_Dir[6];
+        }
+
         F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
+        if (!F_Prop->img_data.ANM_dir->frame_data) {
+            printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
+        }
+        else {
+            new(img_data->ANM_dir->frame_data) ANM_Frame;
+        }
+
         F_Prop->img_data.ANM_dir->frame_data->frame_start = IMG_Load(F_Prop->Opened_File);
 
         if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
             F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;}
+            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
 
-        //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
-        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+            //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
+            //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+            //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
 
-        F_Prop->img_data.type = OTHER;
-        
-        Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
-                     &F_Prop->img_data.render_texture,
-                     &F_Prop->file_open_window);
-        //Image2Texture(F_Prop->IMG_Surface,
-        //             &F_Prop->img_data.render_texture,
-        //             &F_Prop->file_open_window);
-        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+            F_Prop->img_data.type = OTHER;
+
+            Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                         &F_Prop->img_data.render_texture,
+                         &F_Prop->file_open_window);
+            //Image2Texture(F_Prop->IMG_Surface,
+            //             &F_Prop->img_data.render_texture,
+            //             &F_Prop->file_open_window);
+            //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+            //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+        }
+        else {
+            printf("Unable to load image: %s", F_Prop->Opened_File);
+            return false;
+        }
     }
 
     //if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)

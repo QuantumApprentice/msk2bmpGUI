@@ -74,8 +74,8 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int frm_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
     int frm_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
 
-    int x_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset = 0;//img_data->ANIM_frame[display_frame].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
+    int x_offset = img_data->ANM_dir[frame_num].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset = img_data->ANM_dir[frame_num].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
     SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
@@ -230,7 +230,6 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
     //printf("glGetError: %d\n", glGetError());
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
-
 
     //bind framebuffer back to default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

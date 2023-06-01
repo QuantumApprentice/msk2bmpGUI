@@ -73,8 +73,8 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
 
     //handle frame display by orientation and number
     float scale = img_data->scale;
-    int width  = img_data->width;
-    int height = img_data->height;
+    int width   = img_data->width;
+    int height  = img_data->height;
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));

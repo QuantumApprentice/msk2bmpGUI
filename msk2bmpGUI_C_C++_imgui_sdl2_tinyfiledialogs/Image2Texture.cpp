@@ -134,12 +134,6 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         F_Prop->edit_data.height = height;
 
         if (alpha_off) {
-            //for (int i = 0; i < size; i++)
-            //{
-            //    if (F_Prop->img_data.FRM_data[i] == 0) {
-            //        F_Prop->img_data.FRM_data[i] = 1;
-            //    }
-            //}
             for (int i = 0; i < size; i++)
             {
                 if (F_Prop->edit_data.FRM_data[i] == 0) {

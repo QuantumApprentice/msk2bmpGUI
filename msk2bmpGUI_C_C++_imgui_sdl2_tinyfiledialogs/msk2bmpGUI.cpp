@@ -231,12 +231,14 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // used to reset the default layout back to original
     bool firstframe = true;
-    char* dropped_file_path = NULL;
+    std::vector<std::string> dropped_file_path;
 
     // Main loop
     bool done = false;
     while (!done)
     {
+        //handling dropped files in different windows
+        bool file_dropping_frame = false;
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
@@ -259,24 +261,12 @@ int main(int argc, char** argv)
             }
             //TODO: SDL_DROPFILE doesn't support wide characters :_(
             if (event.type == SDL_DROPFILE) {
-                dropped_file_path = event.drop.file;
 
-                std::optional<bool> directory = handle_directory_drop(dropped_file_path,
-                                                 My_Variables.F_Prop,
-                                                &My_Variables.window_number_focus,
-                                                &counter,
-                                                &My_Variables.shaders);
-        //TODO: maybe I should handle these as an enum instead of std::optional<>
-                if (directory.has_value()) {
-                    if (!directory.operator*()) {
-                        handle_file_drop(dropped_file_path,
-                            &My_Variables.F_Prop[counter],
-                            &counter,
-                            &My_Variables.shaders);
-                    }
-                }
+                dropped_file_path.emplace_back(event.drop.file);
+                SDL_free(event.drop.file);
 
-                SDL_free(dropped_file_path);
+                file_dropping_frame = true;
+
             }
         }
 
@@ -356,7 +346,7 @@ int main(int argc, char** argv)
                 }
 
                 ImGui::SameLine();
-                ImGui::Text("counter = %d", counter);
+                ImGui::Text("Number Windows = %d", counter);
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
                 //contextual buttons for each image slot
@@ -364,7 +354,37 @@ int main(int argc, char** argv)
                 {
                     contextual_buttons(&My_Variables, My_Variables.window_number_focus);
                 }
+
+            //set contextual menu for main window
+            if (ImGui::IsWindowHovered() && file_dropping_frame) {
+                My_Variables.window_number_focus = -1;
+                My_Variables.edit_image_focused = false;
+            }
+
             ImGui::End();
+
+            //handle opening dropped files
+            if (file_dropping_frame) {
+                for (std::string& path : dropped_file_path)
+                {
+                    std::optional<bool> directory = handle_directory_drop(path.data(),
+                                                        My_Variables.F_Prop,
+                                                        &My_Variables.window_number_focus,
+                                                        &counter,
+                                                        &My_Variables.shaders);
+                    //TODO: maybe I should handle these as an enum instead of std::optional<>
+                    if (directory.has_value()) {
+                        if (!directory.operator*()) {
+                            handle_file_drop(path.data(),
+                                &My_Variables.F_Prop[counter],
+                                &counter,
+                                &My_Variables.shaders);
+                        }
+                    }
+                }
+                dropped_file_path.clear();
+                file_dropping_frame = false;
+            }
 
             //contextual palette window for MSK vs FRM editing
             if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK) {
@@ -491,11 +511,13 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         else if (F_Prop->img_data.type == OTHER)
         {
             if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
-                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
 
+                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
                 //gui video controls
                 Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
-
+            }
+            else {
+                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
             }
         }
 
