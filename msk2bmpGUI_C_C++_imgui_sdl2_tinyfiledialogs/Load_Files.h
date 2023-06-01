@@ -14,14 +14,13 @@ struct LF {
     char * c_name;
     char * extension;
     SDL_Surface* IMG_Surface = nullptr;
-    SDL_Surface* PAL_Surface = nullptr;
+    //SDL_Surface* PAL_Surface = nullptr;
     bool alpha = true;
     bool show_stats = false;
 
     image_data img_data;
     image_data edit_data;
 
-    img_type type;
     bool file_open_window = false;
     bool preview_tiles_window = false;
     bool show_image_render = false;
@@ -32,9 +31,9 @@ struct LF {
 
 struct shader_info {
     float palette[768];
-    Shader* render_PAL_shader;  // { "resources//shaders//passthru_shader.vert", "resources//shaders//render_PAL.frag" };
-    Shader* render_FRM_shader;  // { "resources//shaders//passthru_shader.vert", "resources//shaders//render_FRM.frag" };
-    Shader* render_OTHER_shader;// { "resources//shaders//passthru_shader.vert", "resources//shaders//passthru_shader.frag" };
+    Shader* render_PAL_shader;
+    Shader* render_FRM_shader;
+    Shader* render_OTHER_shader;
     mesh giant_triangle;
 };
 

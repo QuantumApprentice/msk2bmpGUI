@@ -13,6 +13,7 @@ struct mesh {
     GLuint vertexCount = 0;
 };
 
+
 #pragma pack(push, 1)
 struct FRM_Header {
     uint32_t version = 0;                       // 0x0000
@@ -36,9 +37,8 @@ struct FRM_Frame {
 #pragma pack(pop)
 
 struct FRM_Dir {
-    //TODO: remove unnecesary info?
-    int num_frames = 0;
-    int orientation  = 0;
+    int num_frames  = 0;
+    Direction orientation = no_data;
     FRM_Frame** frame_data = NULL;
     rectangle* bounding_box = {};
 };
@@ -52,6 +52,7 @@ struct image_data {
     ANM_Dir*    ANM_dir;
     rectangle ANM_bounding_box[6];
 
+    img_type type;
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
 
@@ -75,3 +76,5 @@ struct image_data {
 //FRM loading
 bool init_framebuffer(struct image_data* img_data);
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data);
+void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box, FRM_Frame* frame_start, FRM_Dir* frm_dir, int i, int j);
+bool Render_FRM0_OpenGL(image_data* img_data, int dir);

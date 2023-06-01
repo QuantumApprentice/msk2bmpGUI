@@ -191,7 +191,8 @@ void prep_extension(LF* F_Prop, user_info* usr_info)
             i++;
         }
         buff[i] = '\0';
-        F_Prop->extension = buff;
+        snprintf(F_Prop->extension, 5, "%s", buff);
+        //F_Prop->extension = buff;
     }
 
     if (usr_info != NULL) {
@@ -256,7 +257,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
         //The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);
 
-        F_Prop->type = FRM;
+        F_Prop->img_data.type = FRM;
 
         draw_FRM_to_framebuffer(shaders->palette,
                                shaders->render_FRM_shader,
@@ -267,7 +268,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     {
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
 
-        F_Prop->type = MSK;
+        F_Prop->img_data.type = MSK;
 
         draw_MSK_to_framebuffer(shaders->palette,
                                 shaders->render_FRM_shader,
@@ -279,20 +280,32 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     //TODO: add another type for other generic image types?
     else
     {
-        F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
-        F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-        F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+        F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
+        F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
+        F_Prop->img_data.ANM_dir->frame_data->frame_start = IMG_Load(F_Prop->Opened_File);
 
-        F_Prop->type = OTHER;
+        if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
+            F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
+            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;}
 
-        Image2Texture(F_Prop->IMG_Surface,
+        //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
+        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+
+        F_Prop->img_data.type = OTHER;
+        
+        Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                      &F_Prop->img_data.render_texture,
                      &F_Prop->file_open_window);
-        F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-        F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+        //Image2Texture(F_Prop->IMG_Surface,
+        //             &F_Prop->img_data.render_texture,
+        //             &F_Prop->file_open_window);
+        //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+        //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
     }
 
-    if ((F_Prop->IMG_Surface == NULL) && F_Prop->type != FRM && F_Prop->type != MSK)
+    //if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
+    if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
     {
         printf("Unable to open image file %s! SDL Error: %s\n",
             F_Prop->Opened_File,

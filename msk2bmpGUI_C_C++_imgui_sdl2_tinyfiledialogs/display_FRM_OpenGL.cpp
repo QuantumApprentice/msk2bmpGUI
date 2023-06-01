@@ -34,20 +34,20 @@ mesh load_giant_triangle()
 
 void render_FRM_OpenGL(image_data* img_data, int width, int height)
 {
-    int frame = img_data->display_frame_num;
+    int frame_num = img_data->display_frame_num;
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
     int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
     orient = img_data->display_orient_num;
     //int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
     //int display_frame = orient * max_frm + frame;
 
-    int frm_width  = img_data->FRM_dir[orient].frame_data[frame]->Frame_Width;
-    int frm_height = img_data->FRM_dir[orient].frame_data[frame]->Frame_Height;
+    int frm_width  = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Width;
+    int frm_height = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Height;
 
-    int x_offset   = img_data->FRM_dir[orient].bounding_box[frame].x1 - img_data->FRM_bounding_box[orient].x1;
-    int y_offset   = img_data->FRM_dir[orient].bounding_box[frame].y1 - img_data->FRM_bounding_box[orient].y1;
+    int x_offset   = img_data->FRM_dir[orient].bounding_box[frame_num].x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset   = img_data->FRM_dir[orient].bounding_box[frame_num].y1 - img_data->FRM_bounding_box[orient].y1;
 
-    uint8_t* data  = img_data->FRM_dir[orient].frame_data[frame]->frame_start;
+    uint8_t* data  = img_data->FRM_dir[orient].frame_data[frame_num]->frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
@@ -89,7 +89,6 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     free(blank);
 }
-
 
 void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, clock_t current_time)
 {
@@ -139,7 +138,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 }
 
 
-void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
+void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, clock_t current_time, bool palette_update)
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
@@ -153,7 +152,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
 
     glViewport(0, 0, img_data->width, img_data->height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
-    glBindVertexArray(triangle->VAO);
+    glBindVertexArray(triangle.VAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
@@ -179,7 +178,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh* triangle,
     glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
     shader->setInt("Indexed_FRM", 0);
     //draw image to framebuffer
-    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+    glDrawArrays(GL_TRIANGLES, 0, triangle.vertexCount);
 
     //bind framebuffer back to default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

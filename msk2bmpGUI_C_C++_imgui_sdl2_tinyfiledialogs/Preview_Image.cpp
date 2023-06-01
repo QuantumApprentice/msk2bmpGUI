@@ -4,8 +4,10 @@
 #include "Zoom_Pan.h"
 
 
-void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data)
+void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, bool show_stats)
 {
+    ImVec2 top_of_window = ImGui::GetCursorPos();
+
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
@@ -13,27 +15,21 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data)
     //redraws FRM to framebuffer every time the palette update timer is true or animates
     shader_info* shaders = &My_Variables->shaders;
     animate_FRM_to_framebuff(shaders->palette,
-        shaders->render_FRM_shader,
-       &shaders->giant_triangle,
-        img_data,
-        My_Variables->CurrentTime,
-        My_Variables->Palette_Update);
+                             shaders->render_FRM_shader,
+                             shaders->giant_triangle,
+                             img_data,
+                             My_Variables->CurrentTime,
+                             My_Variables->Palette_Update);
 
     //draw_FRM_to_framebuffer(shaders->palette,
     //    shaders->render_FRM_shader,
     //    &shaders->giant_triangle,
     //    img_data);
 
-
-
-
     //handle frame display by orientation and number
     int orient  = img_data->display_orient_num;
     int frame   = img_data->display_frame_num;
     int max_frm = img_data->FRM_dir[orient].num_frames;
-
-
-
 
     float scale = img_data->scale;
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
@@ -41,6 +37,7 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data)
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
@@ -53,10 +50,18 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data)
     //TODO: need to figure out how I'm going to handle scrolling on large images
     ImGui::Dummy(size);
 
+    //show FRM stats over FRM
+    ImGui::SetCursorPos(top_of_window);
+    if (show_stats) {
+        show_image_stats_FRM(img_data, My_Variables->Font);
+    }
+
 }
 
-void Preview_Image(variables* My_Variables, struct image_data* img_data)
+void Preview_Image(variables* My_Variables, struct image_data* img_data, bool show_stats)
 {
+    ImVec2 top_of_window = ImGui::GetCursorPos();
+
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
@@ -84,6 +89,12 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data)
 
     //TODO: need to figure out how I'm going to handle scrolling on large images
     ImGui::Dummy(size);
+
+    //show image stats over image
+    ImGui::SetCursorPos(top_of_window);
+    if (show_stats) {
+        show_image_stats_ANM(img_data, My_Variables->Font);
+    }
 
 }
 
@@ -120,16 +131,15 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
     int num, dir, max;
     num =  img_data->display_frame_num;
     dir = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-    max =  img_data->FRM_hdr->Frames_Per_Orient;
     char buff[256];
 
     ImGui::PushFont(font);
-    snprintf(buff, 256, "framerate: %d", img_data->FRM_hdr->FPS);
+    snprintf(buff, 256, "framerate: %d",        img_data->FRM_hdr->FPS);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "orient_shift_x: %d", img_data->FRM_hdr->Shift_Orient_x[dir]);
+    snprintf(buff, 256, "orient_shift_x: %d",   img_data->FRM_hdr->Shift_Orient_x[dir]);
     ImGui::Text(buff);
-    snprintf(buff, 256, "orient_shift_y: %d", img_data->FRM_hdr->Shift_Orient_y[dir]);
+    snprintf(buff, 256, "orient_shift_y: %d",   img_data->FRM_hdr->Shift_Orient_y[dir]);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "bounding_x1: %d\t",    img_data->FRM_dir[dir].bounding_box[num].x1);
@@ -167,10 +177,9 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
 
 void show_image_stats_ANM(image_data* img_data, ImFont* font)
 {
-    int frame_num, rotation, num_frames;
-    frame_num  = img_data->display_frame_num;
-    rotation   = img_data->display_orient_num;
-    num_frames = img_data->ANM_dir[rotation].num_frames;
+    int num, dir, max;
+    num = img_data->display_frame_num;
+    dir = img_data->display_orient_num;
     char buff[256];
 
     ImGui::PushFont(font);
@@ -182,35 +191,35 @@ void show_image_stats_ANM(image_data* img_data, ImFont* font)
     //snprintf(buff, 256, "orient_shift_y: %d", img_data->ANM_hdr->Shift_Orient_y[r]);
     //ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_dir[rotation].bounding_box.x1);
+    snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_dir[dir].bounding_box.x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",          img_data->ANM_dir[rotation].frame_data[frame_num].Frame_Width);
+    snprintf(buff, 256, "width: %d\t",          img_data->ANM_dir[dir].frame_data[num].Frame_Width);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_dir[rotation].frame_data[frame_num].Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_dir[dir].frame_data[num].Shift_Offset_x);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_dir[rotation].bounding_box.x2);
+    snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_dir[dir].bounding_box.x2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_dir[rotation].bounding_box.y1);
+    snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_dir[dir].bounding_box.y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",         img_data->ANM_dir[rotation].frame_data[frame_num].Frame_Height);
+    snprintf(buff, 256, "height: %d\t",         img_data->ANM_dir[dir].frame_data[num].Frame_Height);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_dir[rotation].frame_data[frame_num].Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_dir[dir].frame_data[num].Shift_Offset_y);
     ImGui::Text(buff);
-    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_dir[rotation].bounding_box.y2);
+    snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_dir[dir].bounding_box.y2);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "FRM_bounding_x1: %d",  img_data->FRM_bounding_box[rotation].x1);
+    snprintf(buff, 256, "ANM_bounding_x1: %d",  img_data->ANM_bounding_box[dir].x1);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_x2: %d",  img_data->FRM_bounding_box[rotation].x2);
+    snprintf(buff, 256, "ANM_bounding_x2: %d",  img_data->ANM_bounding_box[dir].x2);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_y1: %d",  img_data->FRM_bounding_box[rotation].y1);
+    snprintf(buff, 256, "ANM_bounding_y1: %d",  img_data->ANM_bounding_box[dir].y1);
     ImGui::Text(buff);
-    snprintf(buff, 256, "FRM_bounding_y2: %d",  img_data->FRM_bounding_box[rotation].y2);
+    snprintf(buff, 256, "ANM_bounding_y2: %d",  img_data->ANM_bounding_box[dir].y2);
     ImGui::Text(buff);
     ImGui::PopFont();
 }

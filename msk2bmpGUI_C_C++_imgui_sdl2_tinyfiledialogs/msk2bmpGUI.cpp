@@ -469,93 +469,37 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             }
         }
 
-        if (F_Prop->type == FRM) {
-            ImGui::Checkbox("Show FRM Stats", &F_Prop->show_stats);
-
-
-            //animate_FRM_to_framebuff(shaders->palette,
-            //                         shaders->render_FRM_shader,
-            //                        &shaders->giant_triangle,
-            //                        &F_Prop->img_data,
-            //                         My_Variables->CurrentTime,
-            //                         My_Variables->Palette_Update);
-        }
-
-        if (F_Prop->type == OTHER) {
-            ImGui::Checkbox("Show frame Stats", &F_Prop->show_stats);
-            //animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
-            //                          &My_Variables->shaders.giant_triangle,
-            //                          &F_Prop->img_data,
-            //                           My_Variables->CurrentTime);
-
-        }
+        ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
         //warn if wrong size for map tile
         if (wrong_size) {
             ImGui::Text("This image is the wrong size to make a tile...");
-            ImGui::Text("Size is %dx%d", F_Prop->IMG_Surface->w,
-                F_Prop->IMG_Surface->h);
+            ImGui::Text("Size is %dx%d", F_Prop->IMG_Surface->w, F_Prop->IMG_Surface->h);
             ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
             F_Prop->image_is_tileable = true;
         }
         ImGui::Text(F_Prop->c_name);
 
-        //display stats for FRM image to troubleshoot?
-        ImVec2 current_pos = ImGui::GetCursorPos();
-
-        if (F_Prop->type == FRM) {
+        if (F_Prop->img_data.type == FRM) {
             //show the original image for previewing
-            Preview_FRM_Image(My_Variables, &F_Prop->img_data);
+            //TODO: finish setting up usr.info.show_image_stats in settings config in menu
+            Preview_FRM_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
 
             //gui video controls
-            ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
-            const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
-            ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
-            //TODO: might have to adjust the names[] array to handle partial edits
-            //TODO: definitely have to adjust for .FR1, FR2, etc...
-            char* names1[] = { "NE", "no image", "no image", "no image", "no image", "no image" };
-            char* names2[] = { "NE", "E", "SE", "SW", "W", "NW" };
-            char** names = (F_Prop->img_data.FRM_hdr->Frame_0_Offset[1] > 0) ? names2 : names1;
-            ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names1));
-            ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                             F_Prop->img_data.FRM_hdr->Frames_Per_Orient - 1, NULL);
+            Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
-        else {
+        else if (F_Prop->img_data.type == OTHER)
+        {
             if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
-                Preview_Image(My_Variables, &F_Prop->img_data);
+                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
 
                 //gui video controls
-                ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
-                const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
-                ImGui::Combo("Playback Speed", &F_Prop->img_data.playback_speed, speeds, IM_ARRAYSIZE(speeds));
-                
-                //TODO: definitely have to adjust for .FR1, FR2, etc...
-                //populate names[] only with existing directions
-                char* names[6];
-                set_names(names, &F_Prop->img_data);
-                ImGui::Combo("Direction", &F_Prop->img_data.display_orient_num, names, IM_ARRAYSIZE(names));
-                ImGui::SliderInt("Frame Number", &F_Prop->img_data.display_frame_num, 0,
-                    F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames - 1, NULL);
+                Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
+
             }
         }
 
         draw_red_squares(F_Prop, wrong_size);
-
-        //display stats
-        ImGui::SetCursorPos(current_pos);
-        if (F_Prop->show_stats || usr_info.show_image_stats) {
-            if (F_Prop->type == FRM) {
-                show_image_stats_FRM(&F_Prop->img_data, My_Variables->Font);
-            }
-            else {
-                show_image_stats_ANM(&F_Prop->img_data, My_Variables->Font);
-            }
-        }
-
-
-
-
-
 
 
 
@@ -575,7 +519,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 }
 
-void Show_Palette_Window(variables *My_Variables) {
+void Show_Palette_Window(variables* My_Variables) {
 
     shader_info* shaders = &My_Variables->shaders;
 
@@ -633,7 +577,7 @@ void Show_MSK_Palette_Window(variables* My_Variables)
     ImGui::End();
 }
 
-void Preview_Tiles_Window(variables *My_Variables, int counter)
+void Preview_Tiles_Window(variables* My_Variables, int counter)
 {
     std::string a = My_Variables->F_Prop[counter].c_name;
     char b[3];
@@ -657,7 +601,7 @@ void Preview_Tiles_Window(variables *My_Variables, int counter)
     ImGui::End();
 }
 
-void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter)
+void Show_Image_Render(variables* My_Variables, struct user_info* usr_info, int counter)
 {
     char b[3];
     sprintf(b, "%02d", counter);
@@ -674,8 +618,11 @@ void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int 
             My_Variables->tile_window_focused = false;
         }
 
-        Preview_FRM_Image(My_Variables, &F_Prop->img_data);
+        ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
+        Preview_FRM_Image(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
+
+        Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
     }
     ImGui::End();
 }
@@ -916,7 +863,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     static bool open_window = false;
     static int save_type = OTHER;
-    if (F_Prop->type == FRM && F_Prop->img_data.FRM_hdr->Frames_Per_Orient > 1) {
+    if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_hdr->Frames_Per_Orient > 1) {
         if (ImGui::Button("Save as Animation...")) {
             open_window = true;
 
@@ -931,10 +878,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info);
         }
     }
-    if (F_Prop->type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+    if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
         if (ImGui::Button("Convert Animation to FRM for Editing")) {
             //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
-            F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data);
+            F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data);
         }
     }
     if (My_Variables->tile_window_focused) {

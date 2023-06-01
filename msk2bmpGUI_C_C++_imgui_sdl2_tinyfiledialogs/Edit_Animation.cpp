@@ -25,12 +25,10 @@ struct offsets {
     int16_t y_offset = 0;
 };
 
-uint8_t* Crop_Frame(pixel_position* pos_data, /*FRM_Frame* frm_frame,*/ ANM_Frame* anm_frame)
+uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame)
 {
     int Frame_Width = pos_data->r_pxl  - pos_data->l_pxl;
     int Frame_Height = pos_data->b_pxl - pos_data->t_pxl;
-    //frm_frame->Frame_Width = Frame_Width;
-    //frm_frame->Frame_Height = Frame_Height;
 
     SDL_Rect src_rectangle;
     src_rectangle.w = Frame_Width;
@@ -55,208 +53,180 @@ uint8_t* Crop_Frame(pixel_position* pos_data, /*FRM_Frame* frm_frame,*/ ANM_Fram
     return out_data;
 }
 
-bool Crop_Animation(image_data* img_data)
+bool Crop_Animation(image_data* img_data, image_data* edit_data)
 {
-    int num_frames = img_data->ANM_dir[img_data->display_orient_num].num_frames;
-
+    int FRM_frame_size = sizeof(FRM_Frame);
+    int num_frames = 0;
     Pxl_RGBA_32 rgba;
-    pixel_position* pos_data = (pixel_position*)malloc(sizeof(pixel_position)*num_frames);
-    new(pos_data) pixel_position[num_frames];
 
-    //TODO: loop over all frames in all directions
-    //for (int i = 0; i < 6; i++)
-    //{
-    //    if (img_data->ANM_dir[i].orientation > -1) {
-    //    }
-    //}
-
-    // loop over all frames in one direction
-    for (int j = 0; j < num_frames; j++)
-    {
-        SDL_Surface* surface = img_data->ANM_dir[img_data->display_orient_num].frame_data[j].frame_start;
-        int width  = surface->w;
-        int height = surface->h;
-        int pitch  = surface->pitch;
-
-        SDL_Surface* Surface_32 = NULL;
-
-        if (surface->format->format != SDL_PIXELFORMAT_ABGR8888) {
-            SDL_PixelFormat* pxlFMT_UnPal;
-            pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
-            Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
-        }
-        else {
-            Surface_32 = surface;
-        }
-        if (!Surface_32) {
-            printf("Error: %s\n", SDL_GetError());
-        }
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                int i = (pitch * y) + x * (sizeof(Pxl_RGBA_32));
-                memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_RGBA_32));
-
-                if (rgba.a > img_data->alpha_threshold) {
-                    if (x < pos_data[j].l_pxl) {
-                        pos_data[j].l_pxl = x;
-                    }
-                    if (x > pos_data[j].r_pxl) {
-                        pos_data[j].r_pxl = x;
-                    }
-                    if (y < pos_data[j].t_pxl) {
-                        pos_data[j].t_pxl = y;
-                    }
-                    if (y > pos_data[j].b_pxl) {
-                        pos_data[j].b_pxl = y;
-                    }
-                }
-            }
-        }
+    SDL_PixelFormat* pxlFMT_UnPal;
+    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
+    if (!pxlFMT_UnPal) {
+        printf("Unable to allocate memory for pxlFMT_UnPal: %d\n", SDL_GetError);
+        return false;
     }
-
-    int total_size = 0;
-    for (int i = 0; i < num_frames; i++)
-    {
-        pos_data[i].w = pos_data[i].r_pxl - pos_data[i].l_pxl;
-        pos_data[i].h = pos_data[i].b_pxl - pos_data[i].t_pxl;
-        total_size   += pos_data[i].w * pos_data[i].h;
-    }
-
-    int left   = INT_MAX;
-    int right  = 0;
-    int top    = INT_MAX;
-    int bottom = 0;
-
-    int total_width  = 0;
-    int total_height = 0;
-
-    for (int i = 0; i < num_frames; i++)
-    {
-        if (left < pos_data[i].l_pxl) {
-            left = pos_data[i].l_pxl;
-        }
-        if (right > pos_data[i].r_pxl) {
-            right = pos_data[i].r_pxl;
-        }
-        if (top < pos_data[i].t_pxl) {
-            top = pos_data[i].t_pxl;
-        }
-        if (bottom > pos_data[i].b_pxl) {
-            bottom = pos_data[i].b_pxl;
-        }
-    }
-    total_width  = right  - left;
-    total_height = bottom - top;
+    bool free_surface = false;
 
     FRM_Header* FRM_header = (FRM_Header*)malloc(sizeof(FRM_Header));
-    new(FRM_header) FRM_Header;
-    if (num_frames > 1) {
-        FRM_header->FPS = 10;
+    if (!FRM_header) {
+        printf("Unable to allocate memory for FRM_header: %d\n", __LINE__);
+        return false;
     }
     else {
-        FRM_header->FPS = 0;
+        new(FRM_header) FRM_Header;
     }
 
     FRM_Dir* FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
-    new (FRM_dir) FRM_Dir[6];
-    FRM_dir[img_data->display_orient_num].num_frames = num_frames;
-    FRM_dir[img_data->display_orient_num].orientation = (img_data->display_orient_num);
-
-    FRM_Frame** frm_frame = (FRM_Frame**)malloc(sizeof(FRM_Frame*)*num_frames);
-    //set frame 0 info
-    int data_frame_size = pos_data[0].w*pos_data[0].h;
-    int FRM_frame_size = sizeof(FRM_Frame);
-    FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
-    frame_data->Frame_Width    = pos_data[0].w;
-    frame_data->Frame_Height   = pos_data[0].h;
-    frame_data->Frame_Size     = data_frame_size;
-    frame_data->Shift_Offset_x = 0;
-    frame_data->Shift_Offset_y = 0;
-    uint8_t* data = Crop_Frame(&pos_data[0], &img_data->ANM_dir[img_data->display_orient_num].frame_data[0]);
-    memcpy((uint8_t*)frame_data + 12, data, data_frame_size);
-    frm_frame[0] = frame_data;
-    free(data);
-    //set the rest of the frames
-    for (int i = 1; i < num_frames; i++)
-    {
-        int data_frame_size = pos_data[i].w*pos_data[i].h;
-        FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
-
-        frame_data->Frame_Width    = pos_data[i].w;
-        frame_data->Frame_Height   = pos_data[i].h;
-        frame_data->Frame_Size     = data_frame_size;
-        frame_data->Shift_Offset_x = (pos_data[i].l_pxl + pos_data[i].r_pxl) / 2 - (pos_data[i - 1].l_pxl + pos_data[i - 1].r_pxl) / 2;
-        frame_data->Shift_Offset_y =  pos_data[i].b_pxl - pos_data[i - 1].b_pxl;
-
-        uint8_t* data = Crop_Frame(&pos_data[i], &img_data->ANM_dir[img_data->display_orient_num].frame_data[i]);
-        memcpy((uint8_t*)frame_data + 12, data, data_frame_size);
-        frm_frame[i] = frame_data;
-        free(data);
-
+    if (!FRM_dir) {
+        printf("Unable to allocate memory for FRM_dir: %d\n", __LINE__);
+        return false;
+    }
+    else {
+        new (FRM_dir) FRM_Dir[6];
+        //FRM_dir[img_data->display_orient_num].orientation = (img_data->display_orient_num);
     }
 
-    rectangle bounding_box = {};
-    rectangle FRM_bounding_box = {};
+    edit_data->display_orient_num = img_data->display_orient_num;
 
-    FRM_dir[img_data->display_orient_num].bounding_box = (rectangle*)malloc(sizeof(rectangle) * num_frames);
-    for (int j = 0; j < num_frames; j++)
+    //loop over all frames in all directions
+    for (int i = 0; i < 6; i++)
     {
-        bounding_box.x1 += frm_frame[j]->Shift_Offset_x - frm_frame[j]->Frame_Width / 2;
-        bounding_box.y1 += frm_frame[j]->Shift_Offset_y - frm_frame[j]->Frame_Height;
+        if (img_data->ANM_dir[i].orientation > -1) {
 
-        bounding_box.x2 = bounding_box.x1 + frm_frame[j]->Frame_Width;
-        bounding_box.y2 = bounding_box.y1 + frm_frame[j]->Frame_Height;
+            num_frames = img_data->ANM_dir[i].num_frames;
+            FRM_dir[i].num_frames  = num_frames;
+            FRM_dir[i].orientation = (Direction)i;
 
-        FRM_dir[img_data->display_orient_num].bounding_box[j] = bounding_box;
+            pixel_position* pos_data = (pixel_position*)malloc(sizeof(pixel_position)*num_frames);
+            if (!pos_data) {
+                printf("Unable to allocate memory for pos_data[]: %d\n", __LINE__);
+                return false;
+            }
+            else {
+                new(pos_data) pixel_position[num_frames];
+            }
 
-        if (bounding_box.x1 < FRM_bounding_box.x1) {
-            FRM_bounding_box.x1 = bounding_box.x1;
-        }
-        if (bounding_box.y1 < FRM_bounding_box.y1) {
-            FRM_bounding_box.y1 = bounding_box.y1;
-        }
-        if (bounding_box.x2 > FRM_bounding_box.x2) {
-            FRM_bounding_box.x2 = bounding_box.x2;
-        }
-        if (bounding_box.y2 > FRM_bounding_box.y2) {
-            FRM_bounding_box.y2 = bounding_box.y2;
-        }
+            FRM_Frame** frm_frame_ptrs = (FRM_Frame**)malloc(sizeof(FRM_Frame*)*num_frames);
+            if (!frm_frame_ptrs) {
+                printf("Unable to allocate memory for frm_frame: %d\n", __LINE__);
+            }
+            FRM_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle) * num_frames);
+            if (!FRM_dir[i].bounding_box) {
+                printf("Unable to allocate memory for FRM_dir[]->bounding_box: %d", __LINE__);
+                return false;
+            }
 
-        bounding_box.x1 += frm_frame[j]->Frame_Width / 2;
-        bounding_box.y1 += frm_frame[j]->Frame_Height;
+            rectangle bounding_box = {};
+            rectangle FRM_bounding_box = {};
+
+            // loop over all frames in one direction
+            for (int j = 0; j < num_frames; j++)
+            {
+                SDL_Surface* surface = img_data->ANM_dir[i].frame_data[j].frame_start;
+                int width = surface->w;
+                int height = surface->h;
+                int pitch = surface->pitch;
+
+                SDL_Surface* Surface_32 = NULL;
+
+                if (surface->format->format != SDL_PIXELFORMAT_ABGR8888) {
+                    Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
+                    free_surface = true;
+                }
+                else {
+                    Surface_32 = surface;
+                }
+                if (!Surface_32) {
+                    printf("Error: %s\n", SDL_GetError());
+                }
+
+                //check every pixel in a frame for edge of cropped image
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        int i = (pitch * y) + x * (sizeof(Pxl_RGBA_32));
+                        memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_RGBA_32));
+
+                        if (rgba.a > img_data->alpha_threshold) {
+                            if (x < pos_data[j].l_pxl) {
+                                pos_data[j].l_pxl = x;
+                            }
+                            if (x > pos_data[j].r_pxl) {
+                                pos_data[j].r_pxl = x;
+                            }
+                            if (y < pos_data[j].t_pxl) {
+                                pos_data[j].t_pxl = y;
+                            }
+                            if (y > pos_data[j].b_pxl) {
+                                pos_data[j].b_pxl = y;
+                            }
+                        }
+                    }
+                }
+
+                //assign width and height from pixel edge data
+                pos_data[j].w = pos_data[j].r_pxl - pos_data[j].l_pxl;
+                pos_data[j].h = pos_data[j].b_pxl - pos_data[j].t_pxl;
+
+                int data_frame_size = pos_data[j].w*pos_data[j].h;
+
+                FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
+                if (!frame_data) {
+                    printf("Unable to allocate memory for frame_data: frame: %d, line: %d\n", j, __LINE__);
+                    return false;
+                }
+
+                frame_data->Frame_Width = pos_data[j].w;
+                frame_data->Frame_Height = pos_data[j].h;
+                frame_data->Frame_Size = data_frame_size;
+                if (j > 0) {
+                    frame_data->Shift_Offset_x = (pos_data[j].l_pxl + pos_data[j].r_pxl) / 2 - (pos_data[j - 1].l_pxl + pos_data[j - 1].r_pxl) / 2;
+                    frame_data->Shift_Offset_y = pos_data[j].b_pxl - pos_data[j - 1].b_pxl;
+                }
+                else {
+                    //set frame 0 offset
+                    frame_data->Shift_Offset_x = 0;
+                    frame_data->Shift_Offset_y = 0;
+                }
+
+                //convert each frame to 8-bit paletted, copy to FRM_frame_ptrs at correct position
+                uint8_t* data = Crop_Frame(&pos_data[j], &img_data->ANM_dir[i].frame_data[j]);
+                memcpy((uint8_t*)frame_data + FRM_frame_size, data, data_frame_size);
+                frm_frame_ptrs[j] = frame_data;
+                free(data);
+
+                calculate_bounding_box(&bounding_box, &FRM_bounding_box, frm_frame_ptrs[j], FRM_dir, i, j);
+
+                if (free_surface) {
+                    SDL_FreeSurface(Surface_32);
+                }
+            }
+            //assign all the malloc'd stuff to appropriate positions in the img_data struct
+            edit_data->FRM_bounding_box[i] = FRM_bounding_box;
+            FRM_dir[i].frame_data = frm_frame_ptrs;
+            edit_data->FRM_hdr = FRM_header;
+            edit_data->FRM_dir = FRM_dir;
+            edit_data->width  = edit_data->FRM_bounding_box[edit_data->display_orient_num].x2 - edit_data->FRM_bounding_box[edit_data->display_orient_num].x1;
+            edit_data->height = edit_data->FRM_bounding_box[edit_data->display_orient_num].y2 - edit_data->FRM_bounding_box[edit_data->display_orient_num].y1;
+        }
+    }
+
+    if (num_frames > 1) {
+        FRM_header->FPS = 10;
+        FRM_header->Frames_Per_Orient = num_frames;
+    }
+    else {
+        FRM_header->FPS = 0;
+        FRM_header->Frames_Per_Orient = 1;
 
     }
-    img_data->FRM_bounding_box[img_data->display_orient_num] = FRM_bounding_box;
+    edit_data->type = FRM;
 
-    FRM_dir[img_data->display_orient_num].frame_data = frm_frame;
-    img_data->FRM_hdr = FRM_header;
-    img_data->FRM_dir = FRM_dir;
+    SDL_FreeFormat(pxlFMT_UnPal);
 
-    if (img_data->FRM_dir[img_data->display_orient_num].frame_data) {
-        int frm_width  = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->Frame_Width;
-        int frm_height = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->Frame_Height;
-
-        uint8_t* data = img_data->FRM_dir[img_data->display_orient_num].frame_data[0]->frame_start;
-        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-        //FRM's are aligned to 1-byte
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        //bind data to FRM_texture for display
-        uint8_t* blank = (uint8_t*)calloc(1, total_width*total_height);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
-        free(blank);
-
-        bool success = false;
-        success = init_framebuffer(img_data);
-        if (!success) {
-            printf("image framebuffer failed to attach correctly?\n");
-            return false;
-        }
-        printf("just a place to set a break point");
-        return true;
+    if (edit_data->FRM_dir[edit_data->display_orient_num].frame_data) {
+        return Render_FRM0_OpenGL(edit_data, edit_data->display_orient_num);
     }
     else {
         printf("FRM image couldn't convert...\n");

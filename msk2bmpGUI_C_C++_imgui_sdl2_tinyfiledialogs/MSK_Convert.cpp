@@ -383,7 +383,7 @@ void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* im
         }
     }
     img_data->MSK_data = data;
-    F_Prop->type = MSK;
+    F_Prop->img_data.type = MSK;
 }
 
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName)

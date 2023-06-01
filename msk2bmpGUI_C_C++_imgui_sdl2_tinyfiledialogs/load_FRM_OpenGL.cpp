@@ -90,6 +90,34 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 //    return result;
 //}
 
+void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box,
+                            FRM_Frame* frame_start, FRM_Dir* frm_dir, int i, int j)
+{
+    bounding_box->x1 += frame_start->Shift_Offset_x - frame_start->Frame_Width / 2;
+    bounding_box->y1 += frame_start->Shift_Offset_y - frame_start->Frame_Height;
+
+    bounding_box->x2 = bounding_box->x1 + frame_start->Frame_Width;
+    bounding_box->y2 = bounding_box->y1 + frame_start->Frame_Height;
+
+    frm_dir[i].bounding_box[j] = *bounding_box;
+
+    if (bounding_box->x1 < FRM_bounding_box->x1) {
+        FRM_bounding_box->x1 = bounding_box->x1;
+    }
+    if (bounding_box->y1 < FRM_bounding_box->y1) {
+        FRM_bounding_box->y1 = bounding_box->y1;
+    }
+    if (bounding_box->x2 > FRM_bounding_box->x2) {
+        FRM_bounding_box->x2 = bounding_box->x2;
+    }
+    if (bounding_box->y2 > FRM_bounding_box->y2) {
+        FRM_bounding_box->y2 = bounding_box->y2;
+    }
+
+    bounding_box->x1 += frame_start->Frame_Width / 2;
+    bounding_box->y1 += frame_start->Frame_Height;
+}
+
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size   = 0;
@@ -106,6 +134,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int num_frames  = header->Frames_Per_Orient;
 
     img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * num_orients);
+    if (!img_data->FRM_dir) {
+        printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
+    }
 
     rectangle bounding_box      = {};
     rectangle FRM_bounding_box  = {};
@@ -117,43 +148,29 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     for (int i = 0; i < num_orients; i++)
     {
-        frm_dir[i].frame_data = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
-        frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle) * num_frames);
+        frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
+        if (!frm_dir[i].frame_data) {
+            printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
+            return false;
+        }
+        frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
+        if (!frm_dir[i].bounding_box) {
+            printf("Unable to allocate memory for frm_dir[%d].bounding_box: %d", i, __LINE__);
+            return false;
+        }
 
         FRM_bounding_box = {};
         bounding_box = {};
 
         frm_dir[i].num_frames = num_frames;
-        frm_dir[i].orientation = i;
+        frm_dir[i].orientation = (Direction)i;
         for (int j = 0; j < num_frames; j++)
         {
             frm_dir[i].frame_data[j] = frame_start;
 
             B_Endian::flip_frame_endian(frame_start);
 
-            bounding_box.x1 += frame_start->Shift_Offset_x - frame_start->Frame_Width / 2;
-            bounding_box.y1 += frame_start->Shift_Offset_y - frame_start->Frame_Height;
-
-            bounding_box.x2  = bounding_box.x1 + frame_start->Frame_Width;
-            bounding_box.y2  = bounding_box.y1 + frame_start->Frame_Height;
-
-            frm_dir[i].bounding_box[j] = bounding_box;
-
-            if (bounding_box.x1 < FRM_bounding_box.x1) {
-                FRM_bounding_box.x1 = bounding_box.x1;
-            }
-            if (bounding_box.y1 < FRM_bounding_box.y1) {
-                FRM_bounding_box.y1 = bounding_box.y1;
-            }
-            if (bounding_box.x2 > FRM_bounding_box.x2) {
-                FRM_bounding_box.x2 = bounding_box.x2;
-            }
-            if (bounding_box.y2 > FRM_bounding_box.y2) {
-                FRM_bounding_box.y2 = bounding_box.y2;
-            }
-
-            bounding_box.x1 += frame_start->Frame_Width  / 2;
-            bounding_box.y1 += frame_start->Frame_Height;
+            calculate_bounding_box(&bounding_box, &FRM_bounding_box, frame_start, frm_dir, i, j);
 
             buff_offset += frame_start->Frame_Size + frame_size;
             frame_start = (FRM_Frame*)(buffer + buff_offset);
@@ -168,11 +185,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     return true;
 }
 
-//load FRM image from char* file_name
-//stores GLuint and size info to img_data
-//returns true on success, else false
-bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
+bool Render_FRM0_OpenGL(image_data* img_data, int dir)
 {
+
     //load & gen texture
     glGenTextures(1, &img_data->FRM_texture);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
@@ -182,46 +197,51 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    int frm_width   = 0;
-    int frm_height  = 0;
-    int width       = 0;
-    int height      = 0;
-    int x_offset    = 0;
-    int y_offset    = 0;
+    int frm_width    = img_data->FRM_dir[dir].frame_data[0]->Frame_Width;
+    int frm_height   = img_data->FRM_dir[dir].frame_data[0]->Frame_Height;
+    int total_width  = img_data->FRM_bounding_box[dir].x2 - img_data->FRM_bounding_box[dir].x1;
+    int total_height = img_data->FRM_bounding_box[dir].y2 - img_data->FRM_bounding_box[dir].y1;
+    int x_offset     = img_data->FRM_dir[dir].bounding_box[0].x1 - img_data->FRM_bounding_box[dir].x1;
+    int y_offset     = img_data->FRM_dir[dir].bounding_box[0].y1 - img_data->FRM_bounding_box[dir].y1;
+
+    uint8_t* data = img_data->FRM_dir[dir].frame_data[0]->frame_start;
+    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    //FRM's are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //bind data to FRM_texture for display
+    uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
+    if (!blank) {
+        printf("Unable to allocate memory for blank background: %d\n", __LINE__);
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
+    free(blank);
+
+    bool success = false;
+    success = init_framebuffer(img_data);
+    if (!success) {
+        printf("image framebuffer failed to attach correctly?\n");
+        return false;
+    }
+    return true;
+}
+
+//load FRM image from char* file_name
+//stores GLuint and size info to img_data
+//returns true on success, else false
+bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
+{
+
 
     //read in FRM data including animation frames
     bool success = load_FRM_img_data(file_name, img_data);
 
     if (success) {
-        frm_width   = img_data->FRM_dir[0].frame_data[0]->Frame_Width;
-        frm_height  = img_data->FRM_dir[0].frame_data[0]->Frame_Height;
-        width       = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;//      img_data->width;
-        height      = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;//      img_data->height;
-        x_offset    = img_data->FRM_dir[0].bounding_box[0].x1 - img_data->FRM_bounding_box[0].x1;
-        y_offset    = img_data->FRM_dir[0].bounding_box[0].y1 - img_data->FRM_bounding_box[0].y1;
-    }
-
-    if (img_data->FRM_data) {
-        uint8_t* data = img_data->FRM_dir[0].frame_data[0]->frame_start;
-        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-        //FRM's are aligned to 1-byte
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        //bind data to FRM_texture for display
-        uint8_t * blank = (uint8_t*)calloc(1, width*height);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
-        free(blank);
-
-        bool success = false;
-        success = init_framebuffer(img_data);
-        if (!success) {
-            printf("image framebuffer failed to attach correctly?\n");
-            return false;
-        }
-        return true;
+        //TODO: need to handle .FR0 thru .FR5 file formats for different directions
+        return Render_FRM0_OpenGL(img_data, 0);
     }
     else {
-        printf("FRM image didn't load...\n");
+        printf("Couldn't load FRM image data...\n");
         return false;
     }
 }

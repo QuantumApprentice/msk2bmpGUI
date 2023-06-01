@@ -49,7 +49,9 @@ struct ANM_Dir {
 
 struct LF;
 struct image_data;
+enum img_type;
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, LF* F_Prop);
 Direction assign_direction(char* direction);
 void set_names(char** names_array, image_data* img_data);
+void Gui_Video_Controls(image_data* img_data, img_type type);

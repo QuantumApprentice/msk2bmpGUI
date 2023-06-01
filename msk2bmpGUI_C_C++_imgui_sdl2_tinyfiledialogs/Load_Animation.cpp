@@ -33,20 +33,12 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     Direction temp_orient = assign_direction(direction);
     int num_frames = path_vector.size();
     if (img_data->ANM_dir == NULL) {
-        //img_data->ANM_dir = new(ANM_Orient[6]);
         img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
         new(img_data->ANM_dir) ANM_Dir[6];
-        //memset(img_data->ANM_dir, 0, sizeof(ANM_Orient) * 6);
-        //for (int i = 0; i < 6; i++)
-        //{
-        //    img_data->ANM_dir[i].orientation = no_data;
-        //}
         if (!img_data->ANM_dir) {
             //TODO: change to tinyfd_dialog() warning
             printf("Unable to allocate enough memory");
         }
-
-
     }
 
     img_data->ANM_dir[temp_orient].orientation = temp_orient;
@@ -75,11 +67,14 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         frame_data[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
+        frame_data[i].Shift_Offset_x = 0;
+        frame_data[i].Shift_Offset_y = 0;
     }
 
 
 
-    F_Prop->type = OTHER;
+    F_Prop->img_data.type = OTHER;
+    //TODO: refactor img_data.width/height out in favor of FRM_boundary_box?
     img_data->width  = frame_data[0].frame_start->w;
     img_data->height = frame_data[0].frame_start->h;
     img_data->display_orient_num = temp_orient;
@@ -151,9 +146,18 @@ Direction assign_direction(char* direction)
 
 void set_names(char** names_array, image_data* img_data)
 {
+    Direction* dir_ptr = NULL;
+
     for (int i = 0; i < 6; i++)
     {
-        switch (img_data->ANM_dir[i].orientation)
+        if (img_data->type == OTHER) {
+            dir_ptr = &img_data->ANM_dir[i].orientation;
+        }
+        else if (img_data->type == FRM ) {
+            dir_ptr = &img_data->FRM_dir[i].orientation;
+        }
+        assert(dir_ptr != NULL && "Not FRM or OTHER?");
+        switch (*dir_ptr)
         {
         case(NE):
             names_array[i] = "NE";
@@ -177,5 +181,27 @@ void set_names(char** names_array, image_data* img_data)
             names_array[i] = "no image";
             break;
         }
+    }
+}
+
+void Gui_Video_Controls(image_data* img_data, img_type type)
+{
+    //gui video controls
+    ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
+    const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
+    ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
+
+    //TODO: definitely have to adjust for .FR1, FR2, etc...
+    //populate names[] only with existing directions
+    char* names[6];
+    set_names(names, img_data);
+    ImGui::Combo("Direction", &img_data->display_orient_num, names, IM_ARRAYSIZE(names));
+    if (type == OTHER) {
+        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
+            img_data->ANM_dir[img_data->display_orient_num].num_frames - 1, NULL);
+    }
+    else if (type == FRM) {
+        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
+            img_data->FRM_hdr->Frames_Per_Orient - 1, NULL);
     }
 }

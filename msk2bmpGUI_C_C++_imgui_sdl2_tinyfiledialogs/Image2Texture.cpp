@@ -54,6 +54,7 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
 
     }
 }
+
 //TODO: remove when everything else has been moved to new opengl stuff
 void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 {
@@ -80,7 +81,7 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 //Palettize to 8-bit FO pallet, and dither
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
 
-    if (F_Prop->type == FRM) {
+    if (F_Prop->img_data.type == FRM) {
         //copy the FRM_data pointer for editing
         //TODO: maybe copy by value instead?
         F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
@@ -91,12 +92,12 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         F_Prop->edit_data.offset = F_Prop->img_data.offset;
 
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
+        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);
         //set edit window bool to true, opens edit window
         *window = true;
 
     }
-    else if (F_Prop->type == MSK) {
+    else if (F_Prop->img_data.type == MSK) {
         //copy the MSK_data pointer for editing
         //TODO: maybe copy by value instead?
         F_Prop->edit_data.MSK_data = F_Prop->img_data.MSK_data;
@@ -107,7 +108,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         F_Prop->edit_data.offset = F_Prop->img_data.offset;
 
         //bind edit data for editing
-        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->type);
+        bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);
 
         //set edit window bool to true, opens edit window
         *window = true;
