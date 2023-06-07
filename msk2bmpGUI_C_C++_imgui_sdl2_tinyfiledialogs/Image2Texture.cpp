@@ -116,12 +116,12 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
     }
     else {
         F_Prop->edit_data.FRM_data
-            = FRM_Color_Convert(F_Prop->IMG_Surface,
+            = FRM_Color_Convert(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 pxlFMT_FO_Pal,
                                 color_match);
 
-        int width  = F_Prop->IMG_Surface->w;
-        int height = F_Prop->IMG_Surface->h;
+        int width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
+        int height = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
         int size = width * height;
 
         F_Prop->edit_data.scale = F_Prop->img_data.scale;

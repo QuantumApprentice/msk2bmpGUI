@@ -246,10 +246,29 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* usr_info, sh
     }
 }
 
+bool FR_check(char* ext)
+{
+    if (
+           !(strncmp(ext, "FRM", 4))
+        || !(strncmp(ext, "FR0", 4))
+        || !(strncmp(ext, "FR1", 4))
+        || !(strncmp(ext, "FR2", 4))
+        || !(strncmp(ext, "FR3", 4))
+        || !(strncmp(ext, "FR4", 4))
+        || !(strncmp(ext, "FR5", 4))
+        ) {
+        return true;
+    }
+    else {
+        return false;
+    }
+
+}
+
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
 {
     // TODO change strncmp to more secure varient when I figure out what that is :P
-    if (!(strncmp (F_Prop->extension, "FRM", 4)))
+    if (FR_check(F_Prop->extension))
     {
         //The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);
@@ -321,12 +340,14 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     }
 
     //if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
-    if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
-    {
-        printf("Unable to open image file %s! SDL Error: %s\n",
-            F_Prop->Opened_File,
-            SDL_GetError());
-        return false;
+    if (F_Prop->img_data.ANM_dir != NULL) {
+        if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
+        {
+            printf("Unable to open image file %s! SDL Error: %s\n",
+                F_Prop->Opened_File,
+                SDL_GetError());
+            return false;
+        }
     }
     // Set display window to open
     return true;

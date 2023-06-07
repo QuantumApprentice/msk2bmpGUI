@@ -83,6 +83,7 @@ SDL_PixelFormat* loadPalette(char * name)
 // Converts the color space to Fallout's paletted format
 uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int color_match_type)
 {
+    pxlFMT = loadPalette(NULL);
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
     SDL_Surface* Surface_8;
     SDL_PixelFormat* pxlFMT_UnPal;

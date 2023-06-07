@@ -133,9 +133,12 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
 
-    img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * num_orients);
+    img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
     if (!img_data->FRM_dir) {
         printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
+    }
+    else {
+        new(img_data->FRM_dir) FRM_Dir[6];
     }
 
     rectangle bounding_box      = {};
@@ -167,9 +170,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
         for (int j = 0; j < num_frames; j++)
         {
             frm_dir[i].frame_data[j] = frame_start;
-
             B_Endian::flip_frame_endian(frame_start);
-
             calculate_bounding_box(&bounding_box, &FRM_bounding_box, frame_start, frm_dir, i, j);
 
             buff_offset += frame_start->Frame_Size + frame_size;

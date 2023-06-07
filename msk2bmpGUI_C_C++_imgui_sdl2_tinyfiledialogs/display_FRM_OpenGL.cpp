@@ -38,8 +38,6 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
     int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
     orient = img_data->display_orient_num;
-    //int max_frm = img_data->FRM_hdr->Frames_Per_Orient;
-    //int display_frame = orient * max_frm + frame;
 
     int frm_width  = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Width;
     int frm_height = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Height;
@@ -59,18 +57,33 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     free(blank);
 }
 
+void render_NULL_OpenGL(image_data* img_data, mesh* triangle, Shader* shader, int width, int height)
+{
+    glViewport(0, 0, width, height);
+    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+    glBindVertexArray(triangle->VAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
+    uint8_t * blank = (uint8_t*)calloc(1, width*height);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
+    free(blank);
+
+    //shader
+    shader->use();
+    //draw image to framebuffer
+    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+
+    //bind framebuffer back to default
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 
 void render_OTHER_OpenGL(image_data* img_data, int width, int height)
 {
     int orient = img_data->display_orient_num; //(img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-
     int frame_num = img_data->display_frame_num;
-
     int max_frm = img_data->ANM_dir[orient].num_frames;
-    //int display_frame = orient * max_frm + frame;
-
     int frm_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
     int frm_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
 
@@ -80,14 +93,11 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-    //FRM's are aligned to 1-byte
+    //FRM's are aligned to 1-byte, SDL_Surfaces are typically 4-byte
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     //bind data to FRM_texture for display
-    uint8_t * blank = (uint8_t*)calloc(1, width*height);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
-    //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data->pixels);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    free(blank);
 }
 
 void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, clock_t current_time)
@@ -97,8 +107,8 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     float fps = 10 * playback_speeds[img_data->playback_speed];
 
     int orient = img_data->display_orient_num;
-    int width  = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
-    int height = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
+    int width  = img_data->ANM_bounding_box[orient].x2 - img_data->ANM_bounding_box[orient].x1;
+    int height = img_data->ANM_bounding_box[orient].y2 - img_data->ANM_bounding_box[orient].y1;
 
     int img_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
     int img_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;

@@ -510,15 +510,18 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         }
         else if (F_Prop->img_data.type == OTHER)
         {
-            if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+            Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
 
-                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
-                //gui video controls
-                Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
-            }
-            else {
-                Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
-            }
+            //if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+
+            //    Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            //    //gui video controls
+            //    Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
+            //}
+            //else {
+            //    Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            //}
         }
 
         draw_red_squares(F_Prop, wrong_size);
@@ -881,25 +884,20 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             F_Prop->edit_MSK = true;
         }
     }
+
     ImGui::Separator();
     //TODO: save as animated image, needs more work
     static bool open_window = false;
     static int save_type = OTHER;
-    if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_hdr->Frames_Per_Orient > 1) {
+
+
+    //render window buttons
+    if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
         if (ImGui::Button("Save as Animation...")) {
             open_window = true;
+        }
+    }
 
-        }
-    }
-    if (open_window) {
-        popup_save_menu(&open_window, &save_type);
-        if (save_type == OTHER) {
-            //TODO: save as GIF
-        }
-        if (save_type == FRM) {
-            Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info);
-        }
-    }
     if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
         if (ImGui::Button("Convert Animation to FRM for Editing")) {
             //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
@@ -920,22 +918,52 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
 
 
-
     if (My_Variables->render_wind_focused) {
-        static bool open_window = false;
-        if (ImGui::Button("Save as Image...")) {
-            open_window = true;
-            int save_type = OTHER;
+        if (open_window) {
             popup_save_menu(&open_window, &save_type);
-
             if (save_type == OTHER) {
-                Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                //TODO: save as GIF
             }
             if (save_type == FRM) {
-                Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
+                Save_FRM_Animation_OpenGL(&F_Prop->edit_data, &usr_info, F_Prop->c_name);
+            }
+        }
+        if (F_Prop->edit_data.type == FRM && F_Prop->edit_data.FRM_hdr->Frames_Per_Orient > 1) {
+            if (ImGui::Button("...Save as Animation...")) {
+                open_window = true;
+
+                //if (save_type == OTHER) {
+                //    //TODO: save as GIF
+                //}
+                //if (save_type == FRM) {
+                //    Save_FRM_Animation_OpenGL(&F_Prop->edit_data, &usr_info);
+                //}
+            }
+            if (ImGui::Button("Save as Single Image...")) {
+                open_window = true;
+
+                if (save_type == OTHER) {
+                    Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                }
+                if (save_type == FRM) {
+                    Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
+                }
             }
         }
     }
+    else {
+        if (open_window) {
+            popup_save_menu(&open_window, &save_type);
+            if (save_type == OTHER) {
+                //TODO: save as GIF
+            }
+            if (save_type == FRM) {
+                Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info, F_Prop->c_name);
+            }
+        }
+    }
+
+
 }
 
 //TODO: make this menu nicer

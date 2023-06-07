@@ -190,12 +190,29 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     char* names[6];
     set_names(names, img_data);
     ImGui::Combo("Direction", &img_data->display_orient_num, names, IM_ARRAYSIZE(names));
+    int max_frame = 0;
+
+
     if (type == OTHER) {
+        if (img_data->ANM_dir[img_data->display_orient_num].num_frames > 0) {
+            max_frame = img_data->ANM_dir[img_data->display_orient_num].num_frames - 1;
+        }
+        else {
+            img_data->display_frame_num = 0;
+            max_frame = 0;
+        }
         ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
-            img_data->ANM_dir[img_data->display_orient_num].num_frames - 1, NULL);
+            max_frame, NULL);
     }
     else if (type == FRM) {
+        if (img_data->FRM_dir[img_data->display_orient_num].num_frames > 0) {
+            max_frame = img_data->FRM_dir[img_data->display_orient_num].num_frames - 1;
+        }
+        else {
+            img_data->display_frame_num = 0;
+            max_frame = 0;
+        }
         ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
-            img_data->FRM_hdr->Frames_Per_Orient - 1, NULL);
+            max_frame, NULL);
     }
 }
