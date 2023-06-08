@@ -64,7 +64,7 @@ void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFM
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
-void popup_save_menu(bool* open_window, int* save_type);
+void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 
 //int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 //                   PSTR lpCmdLine, INT nCmdShow)
@@ -478,17 +478,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             My_Variables->edit_image_focused = false;
         }
 
-        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
-            static int last_selected_speed = 3;         //3 is index value for 1.0x speed in playback_speeds[]
-            if (F_Prop->img_data.playback_speed == 0) {
-                F_Prop->img_data.playback_speed = last_selected_speed;
-            }
-            else {
-                last_selected_speed = F_Prop->img_data.playback_speed;
-                F_Prop->img_data.playback_speed = 0;
-            }
-        }
-
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
         //warn if wrong size for map tile
@@ -512,16 +501,6 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         {
             Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
-
-            //if (F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
-
-            //    Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
-            //    //gui video controls
-            //    Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
-            //}
-            //else {
-            //    Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
-            //}
         }
 
         draw_red_squares(F_Prop, wrong_size);
@@ -889,6 +868,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     static bool open_window = false;
     static int save_type = OTHER;
+    static bool single_dir = false;
 
 
     //render window buttons
@@ -920,12 +900,25 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
     if (My_Variables->render_wind_focused) {
         if (open_window) {
-            popup_save_menu(&open_window, &save_type);
+            popup_save_menu(&open_window, &save_type, &single_dir);
             if (save_type == OTHER) {
                 //TODO: save as GIF
             }
             if (save_type == FRM) {
                 Save_FRM_Animation_OpenGL(&F_Prop->edit_data, &usr_info, F_Prop->c_name);
+                open_window = false;
+            }
+            if (save_type == FRx && !single_dir) {
+                Save_FRx_Animation_OpenGL(&F_Prop->edit_data, usr_info.default_save_path, F_Prop->c_name);
+            }
+            if (save_type == FRx && single_dir) {
+                if (F_Prop->edit_data.FRM_dir[F_Prop->edit_data.display_orient_num].orientation < 0)
+                    tinyfd_messageBox("You done effed up!",
+                                      "The selected direction has no data.",
+                                      "ok", "error", 1);
+                single_dir = false;
+                Save_Single_FRx_Animation_OpenGL(&F_Prop->edit_data, F_Prop->edit_data.display_orient_num, F_Prop->c_name);
+
             }
         }
         if (F_Prop->edit_data.type == FRM && F_Prop->edit_data.FRM_hdr->Frames_Per_Orient > 1) {
@@ -951,27 +944,36 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
         }
     }
-    else {
-        if (open_window) {
-            popup_save_menu(&open_window, &save_type);
-            if (save_type == OTHER) {
-                //TODO: save as GIF
-            }
-            if (save_type == FRM) {
-                Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info, F_Prop->c_name);
-            }
-        }
-    }
+    //else {
+    //    if (open_window) {
+    //        popup_save_menu(&open_window, &save_type);
+    //        if (save_type == OTHER) {
+    //            //TODO: save as GIF
+    //        }
+    //        if (save_type == FRM) {
+    //            Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info, F_Prop->c_name);
+    //        }
+    //    }
+    //}
 
 
 }
 
 //TODO: make this menu nicer
-void popup_save_menu(bool* open_window, int* save_type)
+void popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
 {
     ImGui::Begin("File type?", open_window);
     if (ImGui::Button("Save as FRM...")) {
         *save_type = FRM;
+        *open_window = false;
+    }
+    if (ImGui::Button("Save selected direction as FRx...")) {
+        *save_type = FRx;
+        *single_dir = true;
+        *open_window = false;
+    }
+    if (ImGui::Button("Save all available directions as FRx...")) {
+        *save_type = FRx;
         *open_window = false;
     }
     if (ImGui::Button("Save as BMP...")) {

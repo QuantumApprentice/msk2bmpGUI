@@ -143,40 +143,48 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 
 char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
 {
-    if (num_dirs > 5) {
+    if (num_dirs > 1) {
         Direction* dir_ptr = NULL;
+        //if (img_data->type == OTHER) {
+        //    dir_ptr = &img_data->ANM_dir[current_dir].orientation;
+        //}
+        //else if (img_data->type == FRM) {
+        //    dir_ptr = &img_data->FRM_dir[current_dir].orientation;
+        //}
 
-        if (img_data->type == OTHER) {
-            dir_ptr = &img_data->ANM_dir[current_dir].orientation;
-        }
-        else if (img_data->type == FRM) {
-            dir_ptr = &img_data->FRM_dir[current_dir].orientation;
-        }
-        assert(dir_ptr != NULL && "Not FRM or OTHER?");
-        if (*dir_ptr > -1) {
-            switch (*dir_ptr)
-            {
-            case(NE):
-                return ".FR0";
-                break;
-            case(E):
-                return ".FR1";
-                break;
-            case(SE):
-                return ".FR2";
-                break;
-            case(SW):
-                return ".FR3";
-                break;
-            case(W):
-                return ".FR4";
-                break;
-            case(NW):
-                return ".FR5";
-                break;
-            default:
-                return ".FRM";
-                break;
+        for (int i = 0; i < 6; i++)
+        {
+            dir_ptr = &img_data->FRM_dir[i].orientation;
+
+            assert(dir_ptr != NULL && "Not FRM or OTHER?");
+            if (*dir_ptr > -1) {
+                switch (*dir_ptr)
+                {
+                case(NE):
+                    return ".FR0";
+                    break;
+                case(E):
+                    return ".FR1";
+                    break;
+                case(SE):
+                    return ".FR2";
+                    break;
+                case(SW):
+                    return ".FR3";
+                    break;
+                case(W):
+                    return ".FR4";
+                    break;
+                case(NW):
+                    return ".FR5";
+                    break;
+                default:
+                    return ".FRM";
+                    break;
+                }
+            }
+            else {
+                continue;
             }
         }
     }
@@ -206,9 +214,119 @@ int Set_Save_Patterns(char*** filter, image_data* img_data)
     }
 }
 
+bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, int dir, char* Save_File_Name)
+{
+    assert((dir > -1) && "Exporting this direction is invalid");
+    FILE* File_ptr = nullptr;
+    //If directions are split up then open new file for each direction
+    Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
+    wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+    if (!File_ptr) {
+        _wfopen_s(&File_ptr, w_save_name, L"wb");
+
+        if (!File_ptr) {
+            tinyfd_messageBox(
+                "Error",
+                "Unable to open this file in write mode",
+                "ok",
+                "error",
+                1);
+            return NULL;
+        }
+        else {
+            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+        }
+    }
+
+    int size = 0;
+    uint32_t total_frame_size = 0;
+    FRM_Frame frame_data;
+    memset(&frame_data, 0, sizeof(FRM_Frame));
+
+    //Write out all the frame data
+    for (int frame_num = 0; frame_num < img_data->FRM_dir[dir].num_frames; frame_num++)
+    {
+        size = img_data->FRM_dir[dir].frame_data[frame_num]->Frame_Size;
+        total_frame_size += size + sizeof(FRM_Frame);
+
+        memcpy(&frame_data, img_data->FRM_dir[dir].frame_data[frame_num], sizeof(FRM_Frame));
+        B_Endian::flip_frame_endian(&frame_data);
+
+        //write to file
+        fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+        fwrite(&img_data->FRM_dir[dir].frame_data[frame_num]->frame_start, size, 1, File_ptr);
+    }
+
+    //If directions are split up then write to header for each one and close file
+    img_data->FRM_hdr->Frame_Area = total_frame_size;
+
+    FRM_Header header = {};
+    memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
+    B_Endian::flip_header_endian(&header);
+    fseek(File_ptr, 0, SEEK_SET);
+    fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+    fclose(File_ptr);
+    File_ptr = nullptr;
+}
+
+char* file_open_stuff(image_data* img_data, char* name)
+{
+    char * Save_File_Name;
+    int num_patterns = 6;
+    static const char* const lFilterPatterns[6] = { "*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5" };
+    char* ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
+    int buffsize = strlen(name) + 5;
+    char* temp_name = (char*)malloc(sizeof(char) * buffsize);
+    snprintf(temp_name, buffsize, "%s%s", name, ext);
+
+    Save_File_Name = tinyfd_saveFileDialog(
+        "default_name",
+        temp_name,
+        num_patterns,
+        lFilterPatterns,
+        nullptr
+    );
+    free(temp_name);
+
+    return Save_File_Name;
+}
 
 
-char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char* name)
+char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name)
+{
+    char * Save_File_Name = file_open_stuff(img_data, name);
+
+
+
+    if (Save_File_Name != NULL)
+    {
+        //parse Save_File_Name to isolate the directory and save in default_save_path
+        //wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+        //std::filesystem::path p(w_save_name);
+        std::filesystem::path p(Save_File_Name);
+        strncpy(default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+
+        img_data->FRM_hdr->version = 4;
+
+        for (int i = 0; i < 6; i++)
+        {
+            //Check if current direction contains valid data
+            Direction dir = img_data->FRM_dir[i].orientation;
+            if (dir < 0) {
+                continue;
+            }
+
+            Save_Single_FRx_Animation_OpenGL(img_data, dir, Save_File_Name);
+
+        }
+    }
+
+    return Save_File_Name;
+}
+
+
+
+char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char* name)
 {
     FILE * File_ptr = NULL;
     char * Save_File_Name;
@@ -231,13 +349,20 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char
 
     if (Save_File_Name != NULL)
     {
+        if (num_patterns > 1) {
+            Save_File_Name[strlen(Save_File_Name) - 1] = '0';
+        }
         //parse Save_File_Name to isolate the directory and save in default_save_path
         wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
         std::filesystem::path p(w_save_name);
-        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+        strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+
+        FRM_Header header = {};
+        img_data->FRM_hdr->version = 4;
 
         //fopen_s(&File_ptr, Save_File_Name, "wb");       //regular
         _wfopen_s(&File_ptr, w_save_name, L"wb");       //wide
+        fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
 
         if (!File_ptr) {
             tinyfd_messageBox(
@@ -250,60 +375,76 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char
         }
         else {
 
-            //uint8_t* buffer = (uint8_t*)&img_data->FRM_Info;
-            //int num_orients = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? 6 : 1;
-            //int frame_num = 0;
-            int size = 0; // sizeof(FRM_Header);
-
-            FRM_Header header = {};
-            memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
-            header.version = 4;
-            B_Endian::flip_header_endian(&header);
-            fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
-
             FRM_Frame frame_data;
             memset(&frame_data, 0, sizeof(FRM_Frame));
-            uint32_t sum = 0;
+            int size = 0;
+            uint32_t total_frame_size = 0;
 
-            for (int dir = 0; dir < 6; dir++)
+            for (int i = 0; i < 6; i++)
             {
-                if (img_data->FRM_dir[dir].orientation > -1) {
-                    for (int frame_num = 0; frame_num < img_data->FRM_hdr->Frames_Per_Orient; frame_num++)
-                    {
-                        size = img_data->FRM_dir[dir].frame_data[frame_num]->Frame_Size;
-                        sum += size;
-                        sum += sizeof(FRM_Frame);
-
-                        memcpy(&frame_data, img_data->FRM_dir[dir].frame_data[frame_num], sizeof(FRM_Frame));
-                        B_Endian::flip_frame_endian(&frame_data);
-
-                        //write to file
-                        fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
-                        fwrite(&img_data->FRM_dir[dir].frame_data[frame_num]->frame_start, size, 1, File_ptr);
-                    }
-
-
-
-                    if (num_patterns > 1) {
-                        B_Endian::swap_32(sum);
-                        fseek(File_ptr, sizeof(FRM_Header) - sizeof(uint32_t), SEEK_SET);
-                        fwrite(&size, sizeof(uint32_t), 1, File_ptr);
-                        fclose(File_ptr);
-
-                        //TODO: this needs more wWOOOORRRRKKKK
-                        size = sizeof(FRM_Header);
-                        //snprintf(temp_name, buffsize, "%s%s%d", name, "FR", dir);
-                        Save_File_Name[strlen(Save_File_Name) - 1] = dir+49;
-
-
-                        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+                //Check if current direction contains valid data
+                Direction dir = img_data->FRM_dir[i].orientation;
+                if (dir < 0) {
+                    continue;
+                }
+                //If directions are split up then open new file for each direction
+                if (num_patterns > 1) {
+                    Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
+                    w_save_name = tinyfd_utf8to16(Save_File_Name);
+                    if (!File_ptr) {
                         _wfopen_s(&File_ptr, w_save_name, L"wb");
+                        if (!File_ptr) {
+                            tinyfd_messageBox(
+                                "Error",
+                                "Unable to open this file in write mode",
+                                "ok",
+                                "error",
+                                1);
+                            return NULL;
+                        }
+                        else {
+                            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+                        }
                     }
                 }
+                else {
+                    img_data->FRM_hdr->Frame_0_Offset[i] = total_frame_size;
+                }
+
+                //Write out all the frame data
+                for (int frame_num = 0; frame_num < img_data->FRM_dir[i].num_frames; frame_num++)
+                {
+                    size = img_data->FRM_dir[i].frame_data[frame_num]->Frame_Size;
+                    total_frame_size += size + sizeof(FRM_Frame);
+
+                    memcpy(&frame_data, img_data->FRM_dir[i].frame_data[frame_num], sizeof(FRM_Frame));
+                    B_Endian::flip_frame_endian(&frame_data);
+
+                    //write to file
+                    fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+                    fwrite(&img_data->FRM_dir[i].frame_data[frame_num]->frame_start, size, 1, File_ptr);
+                }
+
+                //If directions are split up then write to header for each one and close file
+                if (num_patterns > 1) {
+                    img_data->FRM_hdr->Frame_Area = total_frame_size;
+                    memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
+                    B_Endian::flip_header_endian(&header);
+                    fseek(File_ptr, 0, SEEK_SET);
+                    fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+                    fclose(File_ptr);
+
+                    File_ptr = nullptr;
+                    total_frame_size = 0;
+                }
             }
+            //If full FRM then write header this way instead
             if (num_patterns == 1) {
-                fseek(File_ptr, sizeof(FRM_Header) - sizeof(uint32_t), SEEK_SET);
-                fwrite(&size, sizeof(uint32_t), 1, File_ptr);
+                img_data->FRM_hdr->Frame_Area = total_frame_size;
+                memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
+                B_Endian::flip_header_endian(&header);
+                fseek(File_ptr, 0, SEEK_SET);
+                fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
                 fclose(File_ptr);
             }
         }

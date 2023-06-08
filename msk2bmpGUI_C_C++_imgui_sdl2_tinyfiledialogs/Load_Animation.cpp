@@ -192,6 +192,18 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     ImGui::Combo("Direction", &img_data->display_orient_num, names, IM_ARRAYSIZE(names));
     int max_frame = 0;
 
+    if (ImGui::IsWindowFocused()) {
+        if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
+            static int last_selected_speed = 3;         //3 is index value for 1.0x speed in playback_speeds[]
+            if (img_data->playback_speed == 0) {
+                img_data->playback_speed = last_selected_speed;
+            }
+            else {
+                last_selected_speed = img_data->playback_speed;
+                img_data->playback_speed = 0;
+            }
+        }
+    }
 
     if (type == OTHER) {
         if (img_data->ANM_dir[img_data->display_orient_num].num_frames > 0) {
