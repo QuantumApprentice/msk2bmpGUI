@@ -145,46 +145,34 @@ char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
 {
     if (num_dirs > 1) {
         Direction* dir_ptr = NULL;
-        //if (img_data->type == OTHER) {
-        //    dir_ptr = &img_data->ANM_dir[current_dir].orientation;
-        //}
-        //else if (img_data->type == FRM) {
-        //    dir_ptr = &img_data->FRM_dir[current_dir].orientation;
-        //}
 
-        for (int i = 0; i < 6; i++)
-        {
-            dir_ptr = &img_data->FRM_dir[i].orientation;
+        dir_ptr = &img_data->FRM_dir[current_dir].orientation;
 
-            assert(dir_ptr != NULL && "Not FRM or OTHER?");
-            if (*dir_ptr > -1) {
-                switch (*dir_ptr)
-                {
-                case(NE):
-                    return ".FR0";
-                    break;
-                case(E):
-                    return ".FR1";
-                    break;
-                case(SE):
-                    return ".FR2";
-                    break;
-                case(SW):
-                    return ".FR3";
-                    break;
-                case(W):
-                    return ".FR4";
-                    break;
-                case(NW):
-                    return ".FR5";
-                    break;
-                default:
-                    return ".FRM";
-                    break;
-                }
-            }
-            else {
-                continue;
+        assert(dir_ptr != NULL && "Not FRM or OTHER?");
+        if (*dir_ptr > -1) {
+            switch (*dir_ptr)
+            {
+            case(NE):
+                return ".FR0";
+                break;
+            case(E):
+                return ".FR1";
+                break;
+            case(SE):
+                return ".FR2";
+                break;
+            case(SW):
+                return ".FR3";
+                break;
+            case(W):
+                return ".FR4";
+                break;
+            case(NW):
+                return ".FR5";
+                break;
+            default:
+                return ".FRM";
+                break;
             }
         }
     }
@@ -193,6 +181,7 @@ char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
     }
 }
 
+//TODO: need to delete, no longer used (deprecated?)
 int Set_Save_Patterns(char*** filter, image_data* img_data)
 {
     int num_dirs = 0;
@@ -214,34 +203,14 @@ int Set_Save_Patterns(char*** filter, image_data* img_data)
     }
 }
 
-bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, int dir, char* Save_File_Name)
+bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir)
 {
-    assert((dir > -1) && "Exporting this direction is invalid");
-    FILE* File_ptr = nullptr;
-    //If directions are split up then open new file for each direction
-    Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
-    wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
-    if (!File_ptr) {
-        _wfopen_s(&File_ptr, w_save_name, L"wb");
-
-        if (!File_ptr) {
-            tinyfd_messageBox(
-                "Error",
-                "Unable to open this file in write mode",
-                "ok",
-                "error",
-                1);
-            return NULL;
-        }
-        else {
-            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
-        }
-    }
-
     int size = 0;
     uint32_t total_frame_size = 0;
     FRM_Frame frame_data;
     memset(&frame_data, 0, sizeof(FRM_Frame));
+
+    fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
 
     //Write out all the frame data
     for (int frame_num = 0; frame_num < img_data->FRM_dir[dir].num_frames; frame_num++)
@@ -265,11 +234,13 @@ bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, int dir, char* Save_
     B_Endian::flip_header_endian(&header);
     fseek(File_ptr, 0, SEEK_SET);
     fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
-    fclose(File_ptr);
-    File_ptr = nullptr;
+
+
+
+    return true;
 }
 
-char* file_open_stuff(image_data* img_data, char* name)
+char* Set_Save_File_Name(image_data* img_data, char* name)
 {
     char * Save_File_Name;
     int num_patterns = 6;
@@ -278,6 +249,7 @@ char* file_open_stuff(image_data* img_data, char* name)
     int buffsize = strlen(name) + 5;
     char* temp_name = (char*)malloc(sizeof(char) * buffsize);
     snprintf(temp_name, buffsize, "%s%s", name, ext);
+
 
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
@@ -294,15 +266,11 @@ char* file_open_stuff(image_data* img_data, char* name)
 
 char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name)
 {
-    char * Save_File_Name = file_open_stuff(img_data, name);
-
-
+    char * Save_File_Name = Set_Save_File_Name(img_data, name);
 
     if (Save_File_Name != NULL)
     {
         //parse Save_File_Name to isolate the directory and save in default_save_path
-        //wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
-        //std::filesystem::path p(w_save_name);
         std::filesystem::path p(Save_File_Name);
         strncpy(default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
@@ -315,9 +283,34 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
             if (dir < 0) {
                 continue;
             }
+            assert((dir > -1) && "Exporting this direction is invalid");
 
-            Save_Single_FRx_Animation_OpenGL(img_data, dir, Save_File_Name);
+            FILE* File_ptr = nullptr;
+            //If directions are split up then open new file for each direction
+            Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
+            wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
 
+            _wfopen_s(&File_ptr, w_save_name, L"wb");
+            if (!File_ptr) {
+                tinyfd_messageBox(
+                        "Error",
+                        "Unable to open this file in write mode",
+                        "ok",
+                        "error",
+                        1);
+                return false;
+            }
+            //else {
+            //    fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+            //}
+
+            bool success = Save_Single_FRx_Animation_OpenGL(img_data, File_ptr, dir);
+            if (!success) {
+                return NULL;
+            }
+
+            fclose(File_ptr);
+            File_ptr = nullptr;
         }
     }
 
