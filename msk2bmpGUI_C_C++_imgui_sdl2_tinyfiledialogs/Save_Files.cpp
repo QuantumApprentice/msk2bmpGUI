@@ -203,7 +203,45 @@ int Set_Save_Patterns(char*** filter, image_data* img_data)
     }
 }
 
-bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir)
+bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir)
+{
+    FILE* File_ptr = NULL;
+    wchar_t* w_save_name = NULL;
+    char * Save_File_Name = Set_Save_File_Name(img_data, c_name);
+    if (!Save_File_Name) {
+        return false;
+    }
+
+    w_save_name = tinyfd_utf8to16(Save_File_Name);
+    _wfopen_s(&File_ptr, w_save_name, L"wb");
+    if (!File_ptr) {
+        tinyfd_messageBox(
+            "Error",
+            "Unable to open this file in write mode",
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+
+    bool success = Save_Single_Dir_Animation_OpenGL(img_data, File_ptr, img_data->display_orient_num);
+    if (!success) {
+        tinyfd_messageBox("Error",
+            "Problem saving file.",
+            "ok",
+            "error",
+            1);
+        return false;
+    }
+    else {
+        fclose(File_ptr);
+        return true;
+    }
+}
+
+
+
+bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir)
 {
     int size = 0;
     uint32_t total_frame_size = 0;
@@ -274,8 +312,6 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
         std::filesystem::path p(Save_File_Name);
         strncpy(default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
-        img_data->FRM_hdr->version = 4;
-
         for (int i = 0; i < 6; i++)
         {
             //Check if current direction contains valid data
@@ -304,7 +340,7 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
             //    fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
             //}
 
-            bool success = Save_Single_FRx_Animation_OpenGL(img_data, File_ptr, dir);
+            bool success = Save_Single_Dir_Animation_OpenGL(img_data, File_ptr, dir);
             if (!success) {
                 return NULL;
             }

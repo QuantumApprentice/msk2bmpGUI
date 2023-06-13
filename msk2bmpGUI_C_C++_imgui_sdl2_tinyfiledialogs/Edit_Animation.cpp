@@ -222,6 +222,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data)
 
     }
     edit_data->type = FRM;
+    edit_data->FRM_hdr->version = 4;
 
     SDL_FreeFormat(pxlFMT_UnPal);
 

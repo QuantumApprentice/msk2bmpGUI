@@ -17,6 +17,7 @@ struct LF {
     //SDL_Surface* PAL_Surface = nullptr;
     bool alpha = true;
     bool show_stats = false;
+    std::optional<std::vector <std::filesystem::path>> file_list;
 
     image_data img_data;
     image_data edit_data;

@@ -734,7 +734,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //shortcuts, need to replace with direct calls?
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
     SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
-
+    //TODO: save as animated image, needs more work
+    static bool open_window     = false;
+    static bool single_dir      = false;
+    static int  save_type       = UNK;
+    static image_data* data_ptr = NULL;
 
     //Edit_Image buttons
     if (My_Variables->edit_image_focused) {
@@ -824,11 +828,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     }
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
-        //TODO: save as animated image, needs more work
-        static bool open_window = false;
-        static int save_type = OTHER;
-        static bool single_dir = false;
-
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
         bool alpha_off = alpha_handler(&F_Prop->alpha);
         char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
@@ -876,66 +875,9 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Save as Animation...")) {
                 open_window = true;
+                data_ptr = &F_Prop->img_data;
             }
         }
-        if (open_window) {
-            popup_save_menu(&open_window, &save_type, &single_dir);
-            if (save_type == OTHER) {
-                //TODO: save as GIF
-            }
-            if (save_type == FRM) {
-                Save_FRM_Animation_OpenGL(&F_Prop->img_data, &usr_info, F_Prop->c_name);
-            }
-
-            if (save_type == FRx && single_dir) {
-                if (F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].orientation < 0) {
-                    tinyfd_messageBox("You done effed up!",
-                        "The selected direction has no data.",
-                        "ok", "error", 1);
-                }
-                else {
-                    FILE* File_ptr = NULL;
-                    wchar_t* w_save_name = NULL;
-                    char * Save_File_Name = Set_Save_File_Name(&F_Prop->img_data, F_Prop->c_name);
-                    if (!Save_File_Name) {
-                        return;
-                    }
-
-                    w_save_name = tinyfd_utf8to16(Save_File_Name);
-                    _wfopen_s(&File_ptr, w_save_name, L"wb");
-                    if (!File_ptr) {
-                        tinyfd_messageBox(
-                            "Error",
-                            "Unable to open this file in write mode",
-                            "ok",
-                            "error",
-                            1);
-                        return;
-                    }
-                    else {
-                        fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
-                    }
-
-                    bool success = Save_Single_FRx_Animation_OpenGL(&F_Prop->img_data, File_ptr, F_Prop->img_data.display_orient_num);
-                    if (!success) {
-                        tinyfd_messageBox("Error",
-                            "Problem saving file.",
-                            "ok",
-                            "error",
-                            1);
-                    }
-                    else {
-                        fclose(File_ptr);
-                    }
-                }
-                single_dir = false;
-            }
-        }
-
-
-
-
-
 
         if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Convert Animation to FRM for Editing")) {
@@ -960,22 +902,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
     //render window buttons
     if (My_Variables->render_wind_focused) {
-        //TODO: save as animated image, needs more work
-        static bool open_window = false;
-        static int save_type = UNK;
-        static bool single_dir = false;
-
 
         if (F_Prop->edit_data.type == FRM && F_Prop->edit_data.FRM_hdr->Frames_Per_Orient > 1) {
             if (ImGui::Button("...Save as Animation...")) {
                 open_window = true;
-
-                //if (save_type == OTHER) {
-                //    //TODO: save as GIF
-                //}
-                //if (save_type == FRM) {
-                //    Save_FRM_Animation_OpenGL(&F_Prop->edit_data, &usr_info);
-                //}
+                data_ptr = &F_Prop->edit_data;
             }
             if (ImGui::Button("Save as Single Image...")) {
                 open_window = true;
@@ -988,71 +919,53 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 }
             }
         }
+    }
 
 
-        if (open_window) {
-            popup_save_menu(&open_window, &save_type, &single_dir);
-            if (save_type == OTHER) {
-                //TODO: save as GIF
-            }
-            if (save_type == FRM) {
-                Save_FRM_Animation_OpenGL(&F_Prop->edit_data, &usr_info, F_Prop->c_name);
+
+
+    if (open_window) {
+        popup_save_menu(&open_window, &save_type, &single_dir);
+        if (save_type == OTHER) {
+            //TODO: save as GIF
+        }
+        if (save_type == FRM) {
+            Save_FRM_Animation_OpenGL(data_ptr, &usr_info, F_Prop->c_name);
+            open_window = false;
+            single_dir  = false;
+            save_type   = UNK;
+            data_ptr    = NULL;
+        }
+        if (save_type == FRx && !single_dir) {
+            Save_FRx_Animation_OpenGL(data_ptr, usr_info.default_save_path, F_Prop->c_name);
+            open_window = false;
+            single_dir  = false;
+            save_type   = UNK;
+            data_ptr    = NULL;
+        }
+        if (save_type == FRx && single_dir) {
+            if (data_ptr->FRM_dir[data_ptr->display_orient_num].orientation < 0) {
+                tinyfd_messageBox("You done effed up!",
+                    "The selected direction has no data.",
+                    "ok", "error", 1);
                 open_window = false;
+                single_dir  = false;
+                save_type   = UNK;
+                data_ptr    = NULL;
             }
-            if (save_type == FRx && !single_dir) {
-                Save_FRx_Animation_OpenGL(&F_Prop->edit_data, usr_info.default_save_path, F_Prop->c_name);
-                open_window = false;
-            }
-            if (save_type == FRx && single_dir) {
-                if (F_Prop->edit_data.FRM_dir[F_Prop->edit_data.display_orient_num].orientation < 0) {
-                    tinyfd_messageBox("You done effed up!",
-                        "The selected direction has no data.",
-                        "ok", "error", 1);
-                }
-                else {
-                    F_Prop->edit_data.FRM_hdr->version = 4;
-
-                    FILE* File_ptr = NULL;
-                    wchar_t* w_save_name = NULL;
-                    char * Save_File_Name = Set_Save_File_Name(&F_Prop->edit_data, F_Prop->c_name);
-                    if (!Save_File_Name) {
+            else {
+                bool success = Save_Single_FRx_Animation_OpenGL(data_ptr, F_Prop->c_name, data_ptr->display_orient_num);
+                if (!success) {
                         open_window = false;
-                        single_dir = false;
-                        save_type = UNK;
-                        return;
-                    }
-
-                    w_save_name = tinyfd_utf8to16(Save_File_Name);
-                    _wfopen_s(&File_ptr, w_save_name, L"wb");
-                    if (!File_ptr) {
-                        tinyfd_messageBox(
-                            "Error",
-                            "Unable to open this file in write mode",
-                            "ok",
-                            "error",
-                            1);
-                        open_window = false;
-                        single_dir = false;
-                        save_type = UNK;
-                        return;
-                    }
-
-                    bool success = Save_Single_FRx_Animation_OpenGL(&F_Prop->edit_data, File_ptr, F_Prop->edit_data.display_orient_num);
-                    if (!success) {
-                        tinyfd_messageBox("Error",
-                            "Problem saving file.",
-                            "ok",
-                            "error",
-                            1);
-                    }
-                    else {
-                        fclose(File_ptr);
-                    }
+                        single_dir  = false;
+                        save_type   = UNK;
+                        data_ptr    = NULL;
                 }
-                open_window = false;
-                single_dir = false;
-                save_type = UNK;
             }
+            open_window = false;
+            single_dir  = false;
+            save_type   = UNK;
+            data_ptr    = NULL;
         }
     }
 
@@ -1075,6 +988,7 @@ void popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
     }
     if (ImGui::Button("Save all available directions as FRx...")) {
         *save_type = FRx;
+        *single_dir = false;
         *open_window = false;
     }
     if (ImGui::Button("Save as BMP...")) {

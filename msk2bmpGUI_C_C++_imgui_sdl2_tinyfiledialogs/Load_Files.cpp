@@ -40,6 +40,11 @@ char* Program_Directory()
     return utf8_buff;
 }
 
+//std::vector <std::filesystem::directory_entry> Get_File_List(std::filesystem::path& directory)
+//{
+//    for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(directory))
+//}
+
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders)
 {
     F_Prop->file_open_window = Drag_Drop_Load_Files(file_name, F_Prop, &F_Prop->img_data, shaders);
@@ -207,6 +212,9 @@ bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, sha
     F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
+    std::filesystem::path file_path(F_Prop->Opened_File);
+    F_Prop->file_list = handle_subdirectory(file_path.parent_path());
+
     prep_extension(F_Prop, NULL);
 
     return File_Type_Check(F_Prop, shaders, img_data);
@@ -246,7 +254,7 @@ bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* usr_info, sh
     }
 }
 
-bool FR_check(char* ext)
+bool FRx_check(char* ext)
 {
     if (
            !(strncmp(ext, "FRM", 4))
@@ -268,7 +276,8 @@ bool FR_check(char* ext)
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
 {
     // TODO change strncmp to more secure varient when I figure out what that is :P
-    if (FR_check(F_Prop->extension))
+    //FR_check checks extension to make sure it's one of the FRM variants (FRM, FR0, FR1...FR5)
+    if (FRx_check(F_Prop->extension))
     {
         //The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);

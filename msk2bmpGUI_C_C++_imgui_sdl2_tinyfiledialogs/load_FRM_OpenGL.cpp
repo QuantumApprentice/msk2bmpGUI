@@ -118,6 +118,30 @@ void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box
     bounding_box->y1 += frame_start->Frame_Height;
 }
 
+Direction assign_direction_FRM(const char* direction)
+{
+    if (!strncmp(direction, "FR0\n", sizeof("FR0\n"))) {
+        return NE;
+    }
+    if (!strncmp(direction, "FR1\0", sizeof("FR1\0"))) {
+        return E;
+    }
+    if (!strncmp(direction, "FR2\0", sizeof("FR2\0"))) {
+        return SE;
+    }
+    if (!strncmp(direction, "FR3\0", sizeof("FR3\0"))) {
+        return SW;
+    }
+    if (!strncmp(direction, "FR4\0", sizeof("FR4\0"))) {
+        return W;
+    }
+    if (!strncmp(direction, "FR5\0", sizeof("FR5\0"))) {
+        return NW;
+    }
+    //default
+    return NE;
+}
+
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     int file_size   = 0;
@@ -132,6 +156,12 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
+    Direction dir = no_data;
+    const char* ext_ptr = strrchr(file_name, '.') + 1;
+    if (num_orients < 6) {
+        dir = assign_direction_FRM(ext_ptr);
+        img_data->display_orient_num = dir;
+    }
 
     img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
     if (!img_data->FRM_dir) {
@@ -151,6 +181,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     for (int i = 0; i < num_orients; i++)
     {
+        if (num_orients < 6) {
+            i = dir;
+        }
         frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
         if (!frm_dir[i].frame_data) {
             printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
@@ -178,8 +211,9 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
         }
         img_data->FRM_bounding_box[i] = FRM_bounding_box;
     }
-    img_data->width  = img_data->FRM_bounding_box[0].x2 - img_data->FRM_bounding_box[0].x1;
-    img_data->height = img_data->FRM_bounding_box[0].y2 - img_data->FRM_bounding_box[0].y1;
+    int this_time = (num_orients < 6) ? dir : 0;
+    img_data->width  = img_data->FRM_bounding_box[this_time].x2 - img_data->FRM_bounding_box[this_time].x1;
+    img_data->height = img_data->FRM_bounding_box[this_time].y2 - img_data->FRM_bounding_box[this_time].y1;
 
     img_data->FRM_data = buffer;
 
@@ -239,7 +273,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
 
     if (success) {
         //TODO: need to handle .FR0 thru .FR5 file formats for different directions
-        return Render_FRM0_OpenGL(img_data, 0);
+        return Render_FRM0_OpenGL(img_data, img_data->display_orient_num);
     }
     else {
         printf("Couldn't load FRM image data...\n");

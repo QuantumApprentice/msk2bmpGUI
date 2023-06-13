@@ -9,7 +9,8 @@ uint8_t* blend_PAL_texture(image_data* img_data);
 char* Save_FRM_Image_OpenGL(image_data* img_data, struct user_info* user_info);
 char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char* name);
 char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name);
-bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir);
+bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir);
+bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir);
 char* Set_Save_File_Name(image_data* img_data, char* name);
 
 char* Save_IMG_SDL(SDL_Surface *b_surface, struct user_info* user_info);
