@@ -6,23 +6,23 @@
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Edit_Animation.h"
-//#include "tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 
 
-bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, LF* F_Prop)
+bool Drag_Drop_Load_Animation(std::set <std::filesystem::path>& path_set, LF* F_Prop)
 {
     char buffer[MAX_PATH];
     char direction[MAX_PATH];
     image_data* img_data = &F_Prop->img_data;
-    std::sort(path_vector.begin(), path_vector.end());
+    //std::sort(path_set.begin(), path_set.end());
 
-    snprintf(direction, MAX_PATH, "%s", path_vector[0].parent_path().filename().u8string().c_str());
-    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", path_vector[0].u8string().c_str());
+    snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
+    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
 
     F_Prop->c_name    = strrchr(F_Prop->Opened_File, '/\\') + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.'  ) + 1;
 
-    //char* dir_ptr = strrchr(path_vector, '/\\');
+    //char* dir_ptr = strrchr(path_set, '/\\');
     //snprintf(buffer, (strlen(file_names[0]) - (strlen(dir_ptr)-1)), "%s", file_names[0]);
     //dir_ptr = strrchr(buffer, '/\\');
     //snprintf(direction, strlen(dir_ptr), "%s", dir_ptr+1);
@@ -31,7 +31,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
     //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
     Direction temp_orient = assign_direction(direction);
-    int num_frames = path_vector.size();
+    int num_frames = path_set.size();
     if (img_data->ANM_dir == NULL) {
         img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
         new(img_data->ANM_dir) ANM_Dir[6];
@@ -61,14 +61,15 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         img_data->ANM_dir[temp_orient].frame_data = frame_data;
     }
 
+    int i = 0;
+    for (const std::filesystem::path& path : path_set) {
 
-    for (int i = 0; i < path_vector.size(); i++)
-    {
-        frame_data[i].frame_start  = IMG_Load(path_vector[i].u8string().c_str());
+        frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
         frame_data[i].Shift_Offset_x = 0;
         frame_data[i].Shift_Offset_y = 0;
+        i++;
     }
 
     F_Prop->img_data.type = OTHER;
@@ -110,7 +111,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, 
         return false;
     }
 
-    prep_extension(F_Prop, NULL);
+    prep_extension(F_Prop, NULL, (char*)(*path_set.begin()).parent_path().u8string().c_str());
     return true;
 }
 
@@ -178,6 +179,56 @@ void set_names(char** names_array, image_data* img_data)
     }
 }
 
+void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
+{
+
+    if (ImGui::Button("prev")) {
+
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("next")) {
+
+        wchar_t* w_filename = tinyfd_utf8to16(F_Prop->c_name);
+        //int path_size = &F_Prop->c_name - &F_Prop->Opened_File;
+        int path_size = strlen(F_Prop->Opened_File) - strlen(F_Prop->c_name);
+
+        if (F_Prop->file_vec.size() > 0) {
+
+            for (int i = 0; i < F_Prop->file_vec.size(); i++)
+            {
+            //    //if (F_Prop->file_vec[i].filename() == F_Prop->c_name) {
+            //    //    F_Prop->file_position = i;
+            //    //    break;
+            //    //}
+                wchar_t* w_file = F_Prop->file_vec[i].c_str() + path_size;
+                //if (wcscmp((F_Prop->file_vec[i].c_str() + path_size) , w_filename)) {
+                //    F_Prop->file_position = i;
+                //    break;
+                //}
+            }
+        }
+
+
+        ////determine the position of the currently opened file and assign to iter (all this was for when using a set)
+        //std::set<std::filesystem::path>::iterator current_file_iter = F_Prop->file_set.find(F_Prop->Opened_File);
+        //if (current_file_iter != F_Prop->file_set.end()) {
+        //    std::set<std::filesystem::path>::iterator next_file_iter = std::next(current_file_iter);
+        //    if (next_file_iter != F_Prop->file_set.end()) {
+
+        //        bool temp = Drag_Drop_Load_Files((char*)(*next_file_iter).u8string().c_str(), F_Prop, img_data, shaders);
+
+
+        //    }
+        //}
+
+    }
+
+
+
+}
+
 void Gui_Video_Controls(image_data* img_data, img_type type)
 {
     //gui video controls
@@ -185,7 +236,6 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
     ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
 
-    //TODO: definitely have to adjust for .FR1, FR2, etc...
     //populate names[] only with existing directions
     char* names[6];
     set_names(names, img_data);
@@ -227,4 +277,6 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
         ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
             max_frame, NULL);
     }
+
+
 }

@@ -1,5 +1,7 @@
 #pragma once
 #include <filesystem>
+#include <set>
+
 #include <SDL.h>
 
 struct rectangle {
@@ -51,7 +53,7 @@ struct LF;
 struct image_data;
 enum img_type;
 
-bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_vector, LF* F_Prop);
+bool Drag_Drop_Load_Animation(std::set <std::filesystem::path>& path_set, LF* F_Prop);
 Direction assign_direction(char* direction);
 void set_names(char** names_array, image_data* img_data);
 void Gui_Video_Controls(image_data* img_data, img_type type);
