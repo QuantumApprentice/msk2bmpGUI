@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+//#include <stringapiset.h>
 #include <SDL_image.h>
 #include <Windows.h>
 
@@ -228,21 +229,23 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
     return animation_images;
 }
 
-void next_prev_file(const std::filesystem::path& directory, char* next, char* prev, char* first, char* last, char* current)
+void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current)
 {
+    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    LARGE_INTEGER Frequency;
+    QueryPerformanceFrequency(&Frequency);
+    QueryPerformanceCounter(&StartingTime);
+
+
+    std::filesystem::path file_path(current);
+    const std::filesystem::path& directory = file_path.parent_path();
     size_t parent_path_size = directory.native().size();
+
     wchar_t* w_current = tinyfd_utf8to16(current);
-    //std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
-//           [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
-//            { 
-//              const wchar_t* a_file = a.c_str() + parent_path_size;
-//              const wchar_t* b_file = b.c_str() + parent_path_size;
-//              return (wcscmp(a_file, b_file) < 0);
-//            });
-    const wchar_t* w_next;
-    const wchar_t* w_prev;
-    const wchar_t* w_frst;
-    const wchar_t* w_last;
+    std::filesystem::path w_next;
+    std::filesystem::path w_prev;
+    std::filesystem::path w_frst;
+    std::filesystem::path w_last;
     const wchar_t* iter_file;
     std::error_code error;
     for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(directory))
@@ -259,19 +262,80 @@ void next_prev_file(const std::filesystem::path& directory, char* next, char* pr
         }
         else {
 
+
             iter_file = (file.path().c_str() + parent_path_size);
-            int cmp = wcscmp(iter_file, w_current);
+
+            //if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
+            if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                                    iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
+                                    NULL, NULL, NULL)-2 < 0)) {
+                w_frst = file;
+            }
+            //if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
+            if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                                    iter_file, -1, (w_last.c_str() + parent_path_size), -1,
+                                    NULL, NULL, NULL)-2 > 0)) {
+                w_last = file;
+            }
+
+
+            //int cmp = wcscmp(iter_file, w_current + parent_path_size);
+            int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                        iter_file, -1, (w_current + parent_path_size), -1,
+                        NULL, NULL, NULL)-2;
 
             if (cmp < 0) {
-                w_prev = iter_file;
+                //if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
+                if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                                    iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
+                                    NULL, NULL, NULL)-2 > 0)) {
+                    w_prev = file;
+                }
             }
             else if (cmp > 0) {
-                w_next = iter_file;
+                //if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
+                if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                                    iter_file, -1, (w_next.c_str() + parent_path_size), -1,
+                                    NULL, NULL, NULL)-2 < 0)) {
+                    w_next = file;
+                }
             }
-
-
         }
     }
+
+    if (w_prev.empty()) {
+        w_prev = w_last;
+    }
+    if (w_next.empty()) {
+        w_next = w_frst;
+    }
+
+    char* temp = tinyfd_utf16to8(w_prev.c_str());
+    int temp_size = strlen(temp);
+    memcpy(prev, temp, temp_size);
+    prev[temp_size] = '\0';
+
+    temp = tinyfd_utf16to8(w_next.c_str());
+    temp_size = strlen(temp);
+    memcpy(next, temp, temp_size);
+    next[temp_size] = '\0';
+
+    temp = tinyfd_utf16to8(w_frst.c_str());
+    temp_size = strlen(temp);
+    memcpy(frst, temp, temp_size);
+    frst[temp_size] = '\0';
+
+    temp = tinyfd_utf16to8(w_last.c_str());
+    temp_size = strlen(temp);
+    memcpy(last, temp, temp_size);
+    last[temp_size] = '\0';
+
+    QueryPerformanceCounter(&EndingTime);
+    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    ElapsedMicroseconds.QuadPart *= 1000000;
+    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+
+    printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
 }
 
 
@@ -399,15 +463,14 @@ void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name)
 
     ///////////////////////////////////////////////////////
     //create an array of files in this directory for navigating through
-    std::filesystem::path file_path(F_Prop->Opened_File);
     //F_Prop->file_set = handle_subdirectory(file_path.parent_path());
     //F_Prop->file_vec = handle_subdirectory_vec(file_path.parent_path());
-
-
+    Next_Prev_File(F_Prop->Next_File, F_Prop->Prev_File, F_Prop->Frst_File, F_Prop->Last_File, F_Prop->Opened_File);
 
     ///////////////////////////////////////////////////////
 
     if (usr_info != NULL) {
+        std::filesystem::path file_path(F_Prop->Opened_File);
         snprintf(usr_info->default_load_path, MAX_PATH, "%s", file_path.parent_path().string().c_str());
     }
     //TODO: remove this printf
@@ -499,42 +562,47 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     //TODO: add another type for other generic image types?
     else
     {
-        F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
-        if (!F_Prop->img_data.ANM_dir) {
-            printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
-        }
-        else {
-            new(img_data->ANM_dir) ANM_Dir[6];
-        }
+        SDL_Surface* temp_surface = nullptr;
+        temp_surface = IMG_Load(F_Prop->Opened_File);
+        if (temp_surface) {
 
-        F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
-        if (!F_Prop->img_data.ANM_dir->frame_data) {
-            printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
-        }
-        else {
-            new(img_data->ANM_dir->frame_data) ANM_Frame;
-        }
+            F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
+            if (!F_Prop->img_data.ANM_dir) {
+                printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+            }
+            else {
+                new(img_data->ANM_dir) ANM_Dir[6];
+            }
 
-        F_Prop->img_data.ANM_dir->frame_data->frame_start = IMG_Load(F_Prop->Opened_File);
+            F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
+            if (!F_Prop->img_data.ANM_dir->frame_data) {
+                printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
+            }
+            else {
+                new(img_data->ANM_dir->frame_data) ANM_Frame;
+            }
 
-        if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
-            F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
+            F_Prop->img_data.ANM_dir->frame_data->frame_start = temp_surface;
 
-            //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
-            //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-            //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+            if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
+                F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
+                F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
 
-            F_Prop->img_data.type = OTHER;
+                //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
+                //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+                //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
 
-            Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
-                         &F_Prop->img_data.render_texture,
-                         &F_Prop->file_open_window);
-            //Image2Texture(F_Prop->IMG_Surface,
-            //             &F_Prop->img_data.render_texture,
-            //             &F_Prop->file_open_window);
-            //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-            //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+                F_Prop->img_data.type = OTHER;
+
+                Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    &F_Prop->img_data.render_texture,
+                    &F_Prop->file_open_window);
+                //Image2Texture(F_Prop->IMG_Surface,
+                //             &F_Prop->img_data.render_texture,
+                //             &F_Prop->file_open_window);
+                //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
+                //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+            }
         }
         else {
             printf("Unable to load image: %s", F_Prop->Opened_File);

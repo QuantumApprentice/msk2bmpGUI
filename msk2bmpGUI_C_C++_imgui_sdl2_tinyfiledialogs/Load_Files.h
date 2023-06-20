@@ -59,3 +59,4 @@ bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, sha
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name);
+void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);

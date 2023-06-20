@@ -503,6 +503,9 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
 
+        ImGui::SameLine();
+        Next_Prev_Buttons(F_Prop, &F_Prop->img_data, shaders);
+
         draw_red_squares(F_Prop, wrong_size);
 
 

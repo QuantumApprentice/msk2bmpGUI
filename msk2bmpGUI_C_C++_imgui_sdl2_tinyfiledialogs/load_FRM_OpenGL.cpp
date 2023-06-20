@@ -66,15 +66,20 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
         return NULL;
     }
 
-    uint8_t* buffer = (uint8_t*)malloc(file_length);
-    fread(buffer, file_length, 1, File_ptr);
-    fclose(File_ptr);
+    if (file_length > 0) {
+        uint8_t* buffer = (uint8_t*)malloc(file_length);
+        fread(buffer, file_length, 1, File_ptr);
+        fclose(File_ptr);
 
-    if (file_size != NULL) {
-        *file_size = file_length;
+        if (file_size != NULL) {
+            *file_size = file_length;
+        }
+
+        return buffer;
     }
-
-    return buffer;
+    else {
+        return NULL;
+    }
 }
 
 //#include <algorithm>
@@ -149,6 +154,10 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     int frame_size  = sizeof(FRM_Frame);
     int hdr_size    = sizeof(FRM_Header);
     uint8_t* buffer = load_entire_file(file_name, &file_size);
+
+    if (!buffer) {
+        return false;
+    }
 
     FRM_Header* header = (FRM_Header*)buffer;
     B_Endian::flip_header_endian(header);
@@ -273,6 +282,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
 
     if (success) {
         //TODO: need to handle .FR0 thru .FR5 file formats for different directions
+        img_data->display_frame_num = 0;
         return Render_FRM0_OpenGL(img_data, img_data->display_orient_num);
     }
     else {

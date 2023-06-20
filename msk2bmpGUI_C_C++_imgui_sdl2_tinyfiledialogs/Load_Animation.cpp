@@ -179,54 +179,21 @@ void set_names(char** names_array, image_data* img_data)
     }
 }
 
-void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
+bool Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
 {
-
+    //ImVec2 size = {}
+    ImVec2 pos = ImGui::GetCursorPos();
     if (ImGui::Button("prev")) {
-
+        prep_extension(F_Prop, NULL, F_Prop->Prev_File);
+        return File_Type_Check(F_Prop, shaders, img_data);
     }
-
-    ImGui::SameLine();
+    ImGui::SetCursorPosX(pos.x);
+    ImGui::SetCursorPosY(pos.y - 40);
 
     if (ImGui::Button("next")) {
-
-        wchar_t* w_filename = tinyfd_utf8to16(F_Prop->c_name);
-        //int path_size = &F_Prop->c_name - &F_Prop->Opened_File;
-        int path_size = strlen(F_Prop->Opened_File) - strlen(F_Prop->c_name);
-
-        if (F_Prop->file_vec.size() > 0) {
-
-            for (int i = 0; i < F_Prop->file_vec.size(); i++)
-            {
-            //    //if (F_Prop->file_vec[i].filename() == F_Prop->c_name) {
-            //    //    F_Prop->file_position = i;
-            //    //    break;
-            //    //}
-                wchar_t* w_file = F_Prop->file_vec[i].c_str() + path_size;
-                //if (wcscmp((F_Prop->file_vec[i].c_str() + path_size) , w_filename)) {
-                //    F_Prop->file_position = i;
-                //    break;
-                //}
-            }
-        }
-
-
-        ////determine the position of the currently opened file and assign to iter (all this was for when using a set)
-        //std::set<std::filesystem::path>::iterator current_file_iter = F_Prop->file_set.find(F_Prop->Opened_File);
-        //if (current_file_iter != F_Prop->file_set.end()) {
-        //    std::set<std::filesystem::path>::iterator next_file_iter = std::next(current_file_iter);
-        //    if (next_file_iter != F_Prop->file_set.end()) {
-
-        //        bool temp = Drag_Drop_Load_Files((char*)(*next_file_iter).u8string().c_str(), F_Prop, img_data, shaders);
-
-
-        //    }
-        //}
-
+        prep_extension(F_Prop, NULL, F_Prop->Next_File);
+        return File_Type_Check(F_Prop, shaders, img_data);
     }
-
-
-
 }
 
 void Gui_Video_Controls(image_data* img_data, img_type type)
@@ -277,6 +244,4 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
         ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
             max_frame, NULL);
     }
-
-
 }
