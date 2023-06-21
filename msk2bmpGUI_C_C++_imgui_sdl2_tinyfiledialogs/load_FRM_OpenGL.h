@@ -56,6 +56,7 @@ struct image_data {
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
 
+    GLuint OTR_texture;
     GLuint FRM_texture;
     GLuint MSK_texture;
     GLuint PAL_texture;

@@ -17,21 +17,12 @@ struct LF {
     char Next_File[MAX_PATH];
     char Last_File[MAX_PATH];
 
-
     char * c_name;
     char * extension;
     SDL_Surface* IMG_Surface = nullptr;
     //SDL_Surface* PAL_Surface = nullptr;
     bool alpha = true;
     bool show_stats = false;
-
-
-
-    //int file_position;
-    //std::vector<std::filesystem::path> file_vec;
-    //std::set<std::filesystem::path> file_set;
-
-
 
     image_data img_data;
     image_data edit_data;
@@ -60,3 +51,4 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
+SDL_Surface* Surface_32_Check(SDL_Surface* surface);

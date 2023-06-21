@@ -461,6 +461,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
     bool wrong_size;
 
+    //TODO: need to fix this, F_Prop->IMG_Surface isn't being used anymore
     // Check image size to match tile size (350x300 pixels)
     if (F_Prop->IMG_Surface == NULL) {
         wrong_size = NULL;

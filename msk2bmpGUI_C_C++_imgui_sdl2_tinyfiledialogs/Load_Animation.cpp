@@ -9,7 +9,7 @@
 #include "tinyfiledialogs.h"
 
 
-bool Drag_Drop_Load_Animation(std::set <std::filesystem::path>& path_set, LF* F_Prop)
+bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF* F_Prop)
 {
     char buffer[MAX_PATH];
     char direction[MAX_PATH];
@@ -65,6 +65,9 @@ bool Drag_Drop_Load_Animation(std::set <std::filesystem::path>& path_set, LF* F_
     for (const std::filesystem::path& path : path_set) {
 
         frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
+        //handle image bit depth less than 32bpp
+        frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
+
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
         frame_data[i].Shift_Offset_x = 0;

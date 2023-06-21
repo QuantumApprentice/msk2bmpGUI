@@ -52,18 +52,18 @@ void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* sh
     }
 }
 
-bool open_multiple_files(std::set <std::filesystem::path> path_set,
+bool open_multiple_files(std::vector <std::filesystem::path> path_vec,
                          LF* F_Prop, shader_info* shaders,
                          int* counter, int* window_number_focus)
 {
     char buffer[MAX_PATH] = {};
-    snprintf(buffer, MAX_PATH, "%s\nIs this a group of sequential animation frames?", tinyfd_utf16to8((*path_set.begin()).parent_path().c_str()));
+    snprintf(buffer, MAX_PATH, "%s\nIs this a group of sequential animation frames?", tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
     //returns 1 for yes, 2 for no, 0 for cancel
     int type = tinyfd_messageBox("Animation? or Single Images?",
                                  buffer, "yesnocancel", "question", 2);
 
     if (type == 2) {
-        for (const std::filesystem::path& path : path_set) {
+        for (const std::filesystem::path& path : path_vec) {
             F_Prop[*counter].file_open_window =
                 Drag_Drop_Load_Files(tinyfd_utf16to8(path.c_str()),
                                     &F_Prop[*counter],
@@ -77,7 +77,7 @@ bool open_multiple_files(std::set <std::filesystem::path> path_set,
         bool does_window_exist = (*window_number_focus > -1);
         int num = does_window_exist ? *window_number_focus : *counter;
 
-        F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_set, &F_Prop[num]);
+        F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vec, &F_Prop[num]);
 
         if (!does_window_exist) {
             (*window_number_focus) = (*counter);
@@ -91,6 +91,39 @@ bool open_multiple_files(std::set <std::filesystem::path> path_set,
     }
 }
 
+bool Supported_Format(const std::filesystem::path& file)
+{
+    wchar_t buffer[5] = {};
+    memcpy(buffer, file.extension().c_str(), 5 * sizeof(wchar_t));
+    buffer[4] = L'\0';
+    int i = 0;
+    //make the extension all uppercase for easier identification
+    while (buffer[i] != L'\0')
+    {
+        if (buffer[i] >= L'a' && buffer[i] <= L'z') {
+            buffer[i] += (-L'a' + L'A');
+        }
+        i++;
+    }
+
+    //array of compatible filetype extensions
+    constexpr const static wchar_t supported[5][6]{ L".FRM", L".MSK", L".PNG", L".JPG", L".JPEG" };
+
+    //actual extension check
+    i = 0;
+    int k = sizeof(supported) / (6 * sizeof(wchar_t));
+    while (i < k)
+    {
+        if (wcscmp(buffer, supported[i]) == 0) {
+            return true;
+        }
+        i++;
+    }
+
+    return false;
+}
+
+//tried to handle a subdirectory in C, but didn't actually finish making this
 char** handle_subdirectory_char(const std::filesystem::path& directory)
 {
     char** array_of_paths = NULL;
@@ -118,10 +151,9 @@ char** handle_subdirectory_char(const std::filesystem::path& directory)
             i++;
         }
     }
-
     return array_of_paths;
-
 }
+
 
 std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesystem::path& directory)
 {
@@ -140,15 +172,16 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
             //handle_subdirectory(file.path());
             continue;
         }
-        else {
+        else if (Supported_Format(file)) {
             animation_images.push_back(file);
         }
     }
 
-    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
+    ////timing code
+    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    //LARGE_INTEGER Frequency;
+    //QueryPerformanceFrequency(&Frequency);
+    //QueryPerformanceCounter(&StartingTime);
 
     //std::sort(animation_images.begin(), animation_images.end());                                        // ~50ms
     //std::sort(std::execution::seq, animation_images.begin(), animation_images.end());                   // ~50ms
@@ -172,14 +205,14 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
     //          { const wchar_t* a_file = wcspbrk(a.c_str(), L"/\\");
     //            const wchar_t* b_file = wcspbrk(b.c_str(), L"/\\");
     //            return (wcscmp(a_file, b_file) < 0); });                                                // ~13ms
-    //size_t parent_path_size = directory.native().size();
-    //std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
-    //           [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
-    //            { 
-    //              const wchar_t* a_file = a.c_str() + parent_path_size;
-    //              const wchar_t* b_file = b.c_str() + parent_path_size;
-    //              return (wcscmp(a_file, b_file) < 0);
-    //            });                                                                                     // ~1ms
+    size_t parent_path_size = directory.native().size();
+    std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
+               [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
+                { 
+                  const wchar_t* a_file = a.c_str() + parent_path_size;
+                  const wchar_t* b_file = b.c_str() + parent_path_size;
+                  return (wcscmp(a_file, b_file) < 0);
+                });                                                                                     // ~1ms
     //std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
     //           [](std::filesystem::path& a, std::filesystem::path& b)
     //            {
@@ -218,23 +251,24 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
     //             });                                                                                    // ~3ms
 
 
+    ////timing code
+    //QueryPerformanceCounter(&EndingTime);
+    //ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    //ElapsedMicroseconds.QuadPart *= 1000000;
+    //ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
-    QueryPerformanceCounter(&EndingTime);
-    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    ElapsedMicroseconds.QuadPart *= 1000000;
-    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-
-    printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
+    //printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
 
     return animation_images;
 }
 
+
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current)
 {
-    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    LARGE_INTEGER Frequency;
-    QueryPerformanceFrequency(&Frequency);
-    QueryPerformanceCounter(&StartingTime);
+    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    //LARGE_INTEGER Frequency;
+    //QueryPerformanceFrequency(&Frequency);
+    //QueryPerformanceCounter(&StartingTime);
 
 
     std::filesystem::path file_path(current);
@@ -261,43 +295,43 @@ void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* curren
             continue;
         }
         else {
+            if (Supported_Format(file)) {
 
+                iter_file = (file.path().c_str() + parent_path_size);
 
-            iter_file = (file.path().c_str() + parent_path_size);
-
-            //if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
-            if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                    iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
-                                    NULL, NULL, NULL)-2 < 0)) {
-                w_frst = file;
-            }
-            //if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
-            if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                    iter_file, -1, (w_last.c_str() + parent_path_size), -1,
-                                    NULL, NULL, NULL)-2 > 0)) {
-                w_last = file;
-            }
-
-
-            //int cmp = wcscmp(iter_file, w_current + parent_path_size);
-            int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                        iter_file, -1, (w_current + parent_path_size), -1,
-                        NULL, NULL, NULL)-2;
-
-            if (cmp < 0) {
-                //if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
-                if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                    iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
-                                    NULL, NULL, NULL)-2 > 0)) {
-                    w_prev = file;
+                //if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
+                if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
+                    NULL, NULL, NULL) - 2 < 0)) {
+                    w_frst = file;
                 }
-            }
-            else if (cmp > 0) {
-                //if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
-                if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                    iter_file, -1, (w_next.c_str() + parent_path_size), -1,
-                                    NULL, NULL, NULL)-2 < 0)) {
-                    w_next = file;
+                //if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
+                if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    iter_file, -1, (w_last.c_str() + parent_path_size), -1,
+                    NULL, NULL, NULL) - 2 > 0)) {
+                    w_last = file;
+                }
+
+                //int cmp = wcscmp(iter_file, w_current + parent_path_size);
+                int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    iter_file, -1, (w_current + parent_path_size), -1,
+                    NULL, NULL, NULL) - 2;
+
+                if (cmp < 0) {
+                    //if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
+                    if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                        iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
+                        NULL, NULL, NULL) - 2 > 0)) {
+                        w_prev = file;
+                    }
+                }
+                else if (cmp > 0) {
+                    //if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
+                    if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                        iter_file, -1, (w_next.c_str() + parent_path_size), -1,
+                        NULL, NULL, NULL) - 2 < 0)) {
+                        w_next = file;
+                    }
                 }
             }
         }
@@ -330,16 +364,17 @@ void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* curren
     memcpy(last, temp, temp_size);
     last[temp_size] = '\0';
 
-    QueryPerformanceCounter(&EndingTime);
-    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    ElapsedMicroseconds.QuadPart *= 1000000;
-    ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+    //QueryPerformanceCounter(&EndingTime);
+    //ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    //ElapsedMicroseconds.QuadPart *= 1000000;
+    //ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
-    printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
+    //printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
 }
 
-
-std::set <std::filesystem::path> handle_subdirectory(const std::filesystem::path& directory)
+//was testing out using a std::set instead of a std::vector, but because it was so slow
+//ended up just storing the filename, making this kind of broken
+std::set <std::filesystem::path> handle_subdirectory_set(const std::filesystem::path& directory)
 {
     std::set <std::filesystem::path> animation_images;
     std::error_code error;
@@ -387,7 +422,7 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
 {
     char buffer[MAX_PATH];
     std::filesystem::path path(tinyfd_utf8to16(file_name));
-    std::set <std::filesystem::path> animation_images;
+    std::vector <std::filesystem::path> animation_images;
 
     std::error_code error;
     bool is_directory = std::filesystem::is_directory(path, error);
@@ -411,7 +446,7 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
             }
             if (is_subdirectory) {
                 //handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
-                std::set <std::filesystem::path> images = handle_subdirectory(file.path());
+                std::vector <std::filesystem::path> images = handle_subdirectory_vec(file.path());
                 if (!images.empty()) {
                     open_multiple_files(images, F_Prop, shaders, counter, window_number_focus);
                 }
@@ -419,7 +454,7 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
                 continue;
             }
             else {
-                animation_images.insert(file);
+                animation_images.push_back(file);
             }
         }
         if (is_subdirectory) {
@@ -448,6 +483,7 @@ void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name)
 
     //TODO: clean up this function to work better for extensions
     //      maybe also support for wide characters?
+    //  ....Supported_Format() does this now, maybe remove this?....
     if (F_Prop->extension[0] > 96) {
         int i = 0;
         char buff[5];
@@ -458,16 +494,10 @@ void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name)
         }
         buff[i] = '\0';
         snprintf(F_Prop->extension, 5, "%s", buff);
-        //F_Prop->extension = buff;
     }
 
-    ///////////////////////////////////////////////////////
-    //create an array of files in this directory for navigating through
-    //F_Prop->file_set = handle_subdirectory(file_path.parent_path());
-    //F_Prop->file_vec = handle_subdirectory_vec(file_path.parent_path());
+    //store filepaths in this directory for navigating through
     Next_Prev_File(F_Prop->Next_File, F_Prop->Prev_File, F_Prop->Frst_File, F_Prop->Last_File, F_Prop->Opened_File);
-
-    ///////////////////////////////////////////////////////
 
     if (usr_info != NULL) {
         std::filesystem::path file_path(F_Prop->Opened_File);
@@ -530,6 +560,29 @@ bool FRx_check(char* ext)
 
 }
 
+
+SDL_Surface* Surface_32_Check(SDL_Surface* surface)
+{
+    if (surface)
+    {
+        if (surface->format->BitsPerPixel < 32) {
+            SDL_Surface* Temp_Surface = NULL;
+            Temp_Surface = Unpalettize_Image(surface);
+
+            SDL_FreeSurface(surface);
+            return Temp_Surface;
+        }
+        else {
+            return surface;
+        }
+    }
+    else {
+        return nullptr;
+    }
+}
+
+
+
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
 {
     // TODO change strncmp to more secure varient when I figure out what that is :P
@@ -566,6 +619,8 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
         temp_surface = IMG_Load(F_Prop->Opened_File);
         if (temp_surface) {
 
+            temp_surface = Surface_32_Check(temp_surface);
+
             F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
             if (!F_Prop->img_data.ANM_dir) {
                 printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
@@ -588,20 +643,14 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
                 F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
                 F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
 
-                //F_Prop->IMG_Surface     = IMG_Load(F_Prop->Opened_File);
-                //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
-                //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-
                 F_Prop->img_data.type = OTHER;
 
+            //TODO: rewrite this function
                 Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
-                    &F_Prop->img_data.render_texture,
+                    &F_Prop->img_data.FRM_texture,
                     &F_Prop->file_open_window);
-                //Image2Texture(F_Prop->IMG_Surface,
-                //             &F_Prop->img_data.render_texture,
-                //             &F_Prop->file_open_window);
-                //F_Prop->img_data.height = F_Prop->IMG_Surface->h;
-                //F_Prop->img_data.width  = F_Prop->IMG_Surface->w;
+
+                init_framebuffer(img_data);
             }
         }
         else {

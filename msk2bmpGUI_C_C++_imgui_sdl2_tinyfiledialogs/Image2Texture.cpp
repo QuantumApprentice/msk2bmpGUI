@@ -24,6 +24,7 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
         }
 
         *window = true;
+
     }
     if (texture == NULL) {
         printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
@@ -36,8 +37,10 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
     // OpenGL conversion from surface to texture
     {
         if (!glIsTexture(*texture)) {
-            glGenTextures(1, texture);
+            glDeleteTextures(1, texture);
         }
+        glGenTextures(1, texture);
+
         glBindTexture(GL_TEXTURE_2D, *texture);
 
         // Setup filtering parameters for display
@@ -47,11 +50,10 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        printf("glError: %d\n", glGetError());
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Surface->w, Surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, Surface->pixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-
+        printf("glError: %d\n", glGetError());
     }
 }
 

@@ -6,8 +6,9 @@
 bool init_framebuffer(struct image_data* img_data)
 {
     glDeleteFramebuffers(1, &img_data->framebuffer);
-    //glDeleteTextures(1, &img_data->render_texture);
-    glGenTextures(1, &img_data->render_texture);
+    if (!glIsTexture(img_data->render_texture)) {
+        glGenTextures(1, &img_data->render_texture);
+    }
     glBindTexture(GL_TEXTURE_2D, img_data->render_texture);
     //set texture options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -233,7 +234,9 @@ bool Render_FRM0_OpenGL(image_data* img_data, int dir)
 {
 
     //load & gen texture
-    glGenTextures(1, &img_data->FRM_texture);
+    if (!glIsTexture(img_data->FRM_texture)) {
+        glGenTextures(1, &img_data->FRM_texture);
+    }
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
     //texture settings
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);

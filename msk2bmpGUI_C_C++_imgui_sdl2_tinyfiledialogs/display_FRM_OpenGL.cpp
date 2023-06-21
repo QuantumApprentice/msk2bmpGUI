@@ -36,8 +36,8 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
 {
     int frame_num = img_data->display_frame_num;
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
-    int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
-    orient = img_data->display_orient_num;
+    //int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
+    int orient = img_data->display_orient_num;
 
     int frm_width  = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Width;
     int frm_height = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Height;
@@ -84,8 +84,6 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int orient = img_data->display_orient_num; //(img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
     int frame_num = img_data->display_frame_num;
     int max_frm = img_data->ANM_dir[orient].num_frames;
-    int frm_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
-    int frm_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
 
     int x_offset = img_data->ANM_dir[frame_num].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = img_data->ANM_dir[frame_num].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
@@ -107,8 +105,8 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     float fps = 10 * playback_speeds[img_data->playback_speed];
 
     int orient = img_data->display_orient_num;
-    int width  = img_data->ANM_bounding_box[orient].x2 - img_data->ANM_bounding_box[orient].x1;
-    int height = img_data->ANM_bounding_box[orient].y2 - img_data->ANM_bounding_box[orient].y1;
+    //int width  = img_data->ANM_bounding_box[orient].x2 - img_data->ANM_bounding_box[orient].x1;
+    //int height = img_data->ANM_bounding_box[orient].y2 - img_data->ANM_bounding_box[orient].y1;
 
     int img_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
     int img_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
@@ -121,8 +119,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 
     static clock_t last_time = 0;
     static int last_frame;
-    //static clock_t accumulated_delta_time = current_time - last_time;
-    //last_time = current_time;
+    static int last_orient;
 
     if ((fps != 0) && ((float)(current_time - last_time) / CLOCKS_PER_SEC > 1 / fps)) {
         last_time = current_time;
@@ -133,8 +130,9 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         }
         render_OTHER_OpenGL(img_data, img_width, img_height);
     }
-    else if (last_frame != img_data->display_frame_num) {
-        last_frame = img_data->display_frame_num;
+    else if ((last_frame != img_data->display_frame_num) || (last_orient != img_data->display_orient_num)) {
+        last_frame  = img_data->display_frame_num;
+        last_orient = img_data->display_orient_num;
         render_OTHER_OpenGL(img_data, img_width, img_height);
     }
 
@@ -153,12 +151,12 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
-    int orient      = img_data->display_orient_num;
-    int width       = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
-    int height      = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
+    int orient  = img_data->display_orient_num;
+    int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
+    int height  = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
 
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
-    float fps = FRM_fps * playback_speeds[img_data->playback_speed];
+    float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 
     glViewport(0, 0, img_data->width, img_data->height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
