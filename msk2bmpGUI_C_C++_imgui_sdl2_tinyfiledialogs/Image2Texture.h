@@ -6,10 +6,10 @@
 
 
 struct variables {
-    ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ImVec4 tint_col   = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
-    ImVec2 uv_min = ImVec2(0.0f, 0.0f);                 // Top-left
-    ImVec2 uv_max = ImVec2(1.0f, 1.0f);                 // Bottom-right
+    ImVec2 uv_min     = ImVec2(0.0f, 0.0f);                 // Top-left
+    ImVec2 uv_max     = ImVec2(1.0f, 1.0f);                 // Bottom-right
 
     bool Palette_Update = false;
     char* program_directory = NULL;
@@ -31,7 +31,7 @@ struct variables {
     struct LF F_Prop[99]{};
 
     //if edit_image_open == true, then edit window is open, else false for preview window
-    bool edit_image_focused = false;
+    bool edit_image_focused  = false;
     bool tile_window_focused = false;
     bool render_wind_focused = false;
 

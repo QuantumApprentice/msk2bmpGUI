@@ -44,7 +44,6 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     ImVec4 tint   = My_Variables->tint_col;
     ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
 
-
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(

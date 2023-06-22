@@ -263,13 +263,13 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
 }
 
 
+
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current)
 {
     //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
     //LARGE_INTEGER Frequency;
     //QueryPerformanceFrequency(&Frequency);
     //QueryPerformanceCounter(&StartingTime);
-
 
     std::filesystem::path file_path(current);
     const std::filesystem::path& directory = file_path.parent_path();
@@ -301,35 +301,35 @@ void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* curren
 
                 //if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
                 if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                    iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
-                    NULL, NULL, NULL) - 2 < 0)) {
+                                                       iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
+                                                       NULL, NULL, NULL) - 2 < 0)) {
                     w_frst = file;
                 }
                 //if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
                 if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                    iter_file, -1, (w_last.c_str() + parent_path_size), -1,
-                    NULL, NULL, NULL) - 2 > 0)) {
+                                                       iter_file, -1, (w_last.c_str() + parent_path_size), -1,
+                                                       NULL, NULL, NULL) - 2 > 0)) {
                     w_last = file;
                 }
 
                 //int cmp = wcscmp(iter_file, w_current + parent_path_size);
                 int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                    iter_file, -1, (w_current + parent_path_size), -1,
-                    NULL, NULL, NULL) - 2;
+                                          iter_file, -1, (w_current + parent_path_size), -1,
+                                          NULL, NULL, NULL) - 2;
 
                 if (cmp < 0) {
                     //if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
                     if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                        iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
-                        NULL, NULL, NULL) - 2 > 0)) {
+                                                           iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
+                                                           NULL, NULL, NULL) - 2 > 0)) {
                         w_prev = file;
                     }
                 }
                 else if (cmp > 0) {
                     //if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
                     if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                        iter_file, -1, (w_next.c_str() + parent_path_size), -1,
-                        NULL, NULL, NULL) - 2 < 0)) {
+                                                           iter_file, -1, (w_next.c_str() + parent_path_size), -1,
+                                                           NULL, NULL, NULL) - 2 < 0)) {
                         w_next = file;
                     }
                 }
@@ -601,9 +601,13 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     }
     else if(!(strncmp (F_Prop->extension, "MSK", 4)))
     {
+
+
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
 
         F_Prop->img_data.type = MSK;
+
+        init_framebuffer(img_data);
 
         draw_MSK_to_framebuffer(shaders->palette,
                                 shaders->render_FRM_shader,
@@ -642,6 +646,7 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
             if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
                 F_Prop->img_data.width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
                 F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
+                F_Prop->img_data.ANM_dir->num_frames = 1;
 
                 F_Prop->img_data.type = OTHER;
 

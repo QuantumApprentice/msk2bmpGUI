@@ -182,27 +182,89 @@ void set_names(char** names_array, image_data* img_data)
     }
 }
 
-bool Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
-{
-    //ImVec2 size = {}
-    ImVec2 pos = ImGui::GetCursorPos();
-    if (ImGui::Button("prev")) {
-        prep_extension(F_Prop, NULL, F_Prop->Prev_File);
-        return File_Type_Check(F_Prop, shaders, img_data);
-    }
-    ImGui::SetCursorPosX(pos.x);
-    ImGui::SetCursorPosY(pos.y - 40);
 
-    if (ImGui::Button("next")) {
+void Clear_img_data(image_data* img_data)
+{
+    if (img_data->MSK_data) {
+        free(img_data->MSK_data);
+        img_data->MSK_data = NULL;
+    }
+    if (img_data->FRM_data) {
+        free(img_data->FRM_data);
+        img_data->FRM_data = NULL;
+        img_data->FRM_hdr  = NULL;
+        img_data->FRM_dir  = NULL;
+    }
+    if (img_data->ANM_dir) {
+        for (int i = 0; i < 6; i++)
+        {
+            if (img_data->ANM_dir[i].frame_data) {
+                //TODO: check if number of frames are set for individual images
+                for (int j = 0; j < img_data->ANM_dir[i].num_frames; j++)
+                {
+                    SDL_FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
+                    free(img_data->ANM_dir[i].frame_data);
+                    img_data->ANM_dir[i].frame_data = NULL;
+                }
+            }
+        }
+        free(img_data->ANM_dir);
+        img_data->ANM_dir = NULL;
+    }
+}
+
+void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
+{
+    ImVec2 origin = ImGui::GetCursorPos();
+    // position buttons based on bottom right edge of window
+    ImVec2 wind_pos = ImGui::GetWindowSize();
+    ImVec2 button_size = { 50, 70 };
+    ImVec2 button_pos;
+    ImVec2 scrl_pos;
+    scrl_pos.x = ImGui::GetScrollX();
+    scrl_pos.y = ImGui::GetScrollY();
+
+    button_pos.x = wind_pos.x + scrl_pos.x - button_size.x - 20;
+    button_pos.y = wind_pos.y + scrl_pos.y - button_size.y - 20;
+
+    ImGui::SetCursorPosX(button_pos.x);
+    ImGui::SetCursorPosY(button_pos.y);
+
+    bool file_check = false;
+    if (ImGui::Button("next", button_size) || ImGui::IsKeyPressed(ImGuiKey_Period)) {
+        Clear_img_data(img_data);
         prep_extension(F_Prop, NULL, F_Prop->Next_File);
-        return File_Type_Check(F_Prop, shaders, img_data);
+        file_check = true;
+    }
+
+    ImGui::SetCursorPosX(button_pos.x - button_size.x - 2);
+    ImGui::SetCursorPosY(button_pos.y);
+
+    if (ImGui::Button("prev", button_size) || ImGui::IsKeyPressed(ImGuiKey_Comma)) {
+        Clear_img_data(img_data);
+        prep_extension(F_Prop, NULL, F_Prop->Prev_File);
+        file_check = true;
+    }
+
+    ImGui::SetCursorPos(origin);
+
+    if (file_check) {
+        File_Type_Check(F_Prop, shaders, img_data);
     }
 }
 
 void Gui_Video_Controls(image_data* img_data, img_type type)
 {
+    ImVec2 origin = ImGui::GetCursorPos();
+    // position buttons based on bottom right edge of window
+    ImVec2 wind_pos = ImGui::GetWindowSize();
+    ImVec2 scrl_pos;
+    //TODO: might need scrl_pos.x in the future?
+    //scrl_pos.x = ImGui::GetScrollX();
+    scrl_pos.y = ImGui::GetScrollY();
+
     //gui video controls
-    ImGui::SetCursorPosY(ImGui::GetContentRegionMax().y - 80);
+    ImGui::SetCursorPosY(wind_pos.y + scrl_pos.y - 80);
     const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
     ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
 
@@ -223,18 +285,24 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
                 img_data->playback_speed = 0;
             }
         }
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            img_data->display_frame_num++;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+            img_data->display_frame_num--;
+        }
     }
 
     if (type == OTHER) {
         if (img_data->ANM_dir[img_data->display_orient_num].num_frames > 0) {
             max_frame = img_data->ANM_dir[img_data->display_orient_num].num_frames - 1;
+
         }
         else {
             img_data->display_frame_num = 0;
             max_frame = 0;
         }
-        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
-            max_frame, NULL);
+        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0, max_frame, NULL);
     }
     else if (type == FRM) {
         if (img_data->FRM_dir[img_data->display_orient_num].num_frames > 0) {
@@ -244,7 +312,14 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
             img_data->display_frame_num = 0;
             max_frame = 0;
         }
-        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0,
-            max_frame, NULL);
+        ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0, max_frame, NULL);
     }
+    if (img_data->display_frame_num > max_frame) {
+        img_data->display_frame_num = max_frame;
+    }
+    else if (img_data->display_frame_num < 0) {
+             img_data->display_frame_num = 0;
+    }
+
+    ImGui::SetCursorPos(origin);
 }

@@ -230,7 +230,7 @@ int BytesToInt(char *C, int numBytes)
 #define TILE_H      (300)
 #define TILE_SIZE   (350*300)
 //TODO: might want to move this entire function to Save_Files.cpp
-//and swap out ReadMskLines for something more generic
+//      and swap out ReadMskLines for something more generic
 bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
 {
     if (img_data->FRM_data == NULL) {
@@ -242,6 +242,7 @@ bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
         }
     }
     else {
+        //TODO: change this to load a new file type, different extension, include width/height in the header
         if (Load_MSK_File_OpenGL(FileName, img_data, img_data->width, img_data->height)) {
             return true;
         }

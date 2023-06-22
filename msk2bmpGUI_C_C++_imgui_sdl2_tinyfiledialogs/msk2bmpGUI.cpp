@@ -144,6 +144,7 @@ int main(int argc, char** argv)
 
 
 
+
     Load_Config(&usr_info, My_Variables.program_directory);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
@@ -162,6 +163,9 @@ int main(int argc, char** argv)
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
+
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "imgui.ini");
+    //io.IniFilename = vbuffer;
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -188,7 +192,7 @@ int main(int argc, char** argv)
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
 
-    snprintf(vbuffer, MAX_PATH, "%s%s", My_Variables.program_directory, "resources//fonts//OpenSans-Bold.ttf");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//fonts//OpenSans-Bold.ttf");
     io.Fonts->AddFontDefault();
     My_Variables.Font = io.Fonts->AddFontFromFileTTF(vbuffer, My_Variables.global_font_size);
 
@@ -459,16 +463,20 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     sprintf(b, "%02d", counter);
     std::string name = a + "###preview" + b;
 
-    bool wrong_size;
-
-    //TODO: need to fix this, F_Prop->IMG_Surface isn't being used anymore
     // Check image size to match tile size (350x300 pixels)
-    if (F_Prop->IMG_Surface == NULL) {
-        wrong_size = NULL;
-    }
-    else {
-        wrong_size = (F_Prop->IMG_Surface->w != 350) ||
-                     (F_Prop->IMG_Surface->h != 300);
+    bool wrong_size = false;
+    ANM_Dir* dir = NULL;
+    if (F_Prop->img_data.ANM_dir) {
+        dir = &F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num];
+        if (dir->num_frames < 2) {
+            if (dir->frame_data == false) {
+                wrong_size = false;
+            }
+            else {
+                wrong_size = (dir->frame_data->frame_start->w != 350) ||
+                    (dir->frame_data->frame_start->h != 300);
+            }
+        }
     }
 
     if (ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0)) {
@@ -484,7 +492,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         //warn if wrong size for map tile
         if (wrong_size) {
             ImGui::Text("This image is the wrong size to make a tile...");
-            ImGui::Text("Size is %dx%d", F_Prop->IMG_Surface->w, F_Prop->IMG_Surface->h);
+            ImGui::Text("Size is %dx%d", dir->frame_data->frame_start->w, dir->frame_data->frame_start->h);
             ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
             F_Prop->image_is_tileable = true;
         }
@@ -498,17 +506,19 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             //gui video controls
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
+        else if (F_Prop->img_data.type == MSK) {
+            Preview_MSK_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+        }
         else if (F_Prop->img_data.type == OTHER)
         {
             Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            //Draw red squares for possible overworld map tiling
+            draw_red_squares(&F_Prop->img_data, wrong_size);
+
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
 
-        ImGui::SameLine();
         Next_Prev_Buttons(F_Prop, &F_Prop->img_data, shaders);
-
-        draw_red_squares(F_Prop, wrong_size);
-
 
 
     }
@@ -828,6 +838,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (ImGui::Button("Cancel Editing...")) {
             F_Prop->edit_image_window = false;
             F_Prop->edit_MSK = false;
+            My_Variables->edit_image_focused = false;
         }
     }
     //Preview_Image buttons
@@ -838,43 +849,100 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         ImGui::SameLine();
         ImGui::Combo("##", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
 
-        if (ImGui::Button("Color Match and Edit")) {
-            Prep_Image(F_Prop,
-                pxlFMT_FO_Pal,
-                My_Variables->SDL_color,
-                &F_Prop->edit_image_window, alpha_off);
-        }
-        if (ImGui::Button("Color Match & Preview as Image")) {
-            Prep_Image(F_Prop,
-                pxlFMT_FO_Pal,
-                My_Variables->SDL_color,
-                &F_Prop->show_image_render, alpha_off);
-            F_Prop->preview_tiles_window = false;
-        }
-        //TODO: manage some sort of contextual menu for tileable images?
-        if (F_Prop->image_is_tileable) {
-            //Tileable image Buttons
-            if (ImGui::Button("Color Match & Preview Tiles")) {
+        if (F_Prop->img_data.type == OTHER) {
+            if (ImGui::Button("Color Match and Edit")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->SDL_color,
-                    &F_Prop->preview_tiles_window, alpha_off);
-                //TODO: if image already palettized, need to just feed the texture in
-                F_Prop->show_image_render = false;
+                    &F_Prop->edit_image_window, alpha_off);
+            }
+            if (ImGui::Button("Color Match & Preview as Image")) {
+                Prep_Image(F_Prop,
+                    pxlFMT_FO_Pal,
+                    My_Variables->SDL_color,
+                    &F_Prop->show_image_render, alpha_off);
+                F_Prop->preview_tiles_window = false;
+            }
+            //TODO: manage some sort of contextual menu for tileable images?
+            if (F_Prop->image_is_tileable) {
+                //Tileable image Buttons
+                if (ImGui::Button("Color Match & Preview Tiles")) {
+                    Prep_Image(F_Prop,
+                        pxlFMT_FO_Pal,
+                        My_Variables->SDL_color,
+                        &F_Prop->preview_tiles_window, alpha_off);
+                    //TODO: if image already palettized, need to just feed the texture in
+                    F_Prop->show_image_render = false;
+                }
+            }
+            if (ImGui::Button("Convert Regular Image to MSK")) {
+                Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
+                Prep_Image(F_Prop,
+                    NULL,
+                    My_Variables->SDL_color,
+                    &F_Prop->edit_image_window, alpha_off);
+                F_Prop->edit_MSK = true;
             }
         }
-        if (ImGui::Button("Convert Regular Image to MSK")) {
-            Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
-            Prep_Image(F_Prop,
-                NULL,
-                My_Variables->SDL_color,
-                &F_Prop->edit_image_window, alpha_off);
-            F_Prop->edit_MSK = true;
+        else if (F_Prop->img_data.type == FRM) {
+            if (ImGui::Button("Edit this FRM")) {
+                Prep_Image(F_Prop,
+                    pxlFMT_FO_Pal,
+                    My_Variables->SDL_color,
+                    &F_Prop->edit_image_window, alpha_off);
+            }
+            if (ImGui::Button("Preview FRM as full image")) {
+                Prep_Image(F_Prop,
+                    pxlFMT_FO_Pal,
+                    My_Variables->SDL_color,
+                    &F_Prop->show_image_render, alpha_off);
+                F_Prop->preview_tiles_window = false;
+            }
+            //TODO: manage some sort of contextual menu for tileable images?
+            if (F_Prop->image_is_tileable) {
+                //Tileable image Buttons
+                if (ImGui::Button("Convert FRM to Tiles")) {
+                    Prep_Image(F_Prop,
+                        pxlFMT_FO_Pal,
+                        My_Variables->SDL_color,
+                        &F_Prop->preview_tiles_window, alpha_off);
+                    //TODO: if image already palettized, need to just feed the texture in
+                    F_Prop->show_image_render = false;
+                }
+            }
+            if (ImGui::Button("Convert FRM Image to MSK")) {
+                Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
+                Prep_Image(F_Prop,
+                    NULL,
+                    My_Variables->SDL_color,
+                    &F_Prop->edit_image_window, alpha_off);
+                F_Prop->edit_MSK = true;
+            }
+        }
+        else if (F_Prop->img_data.type == MSK) {
+            if (ImGui::Button("Edit MSK file")) {
+                Prep_Image(F_Prop,
+                    pxlFMT_FO_Pal,
+                    My_Variables->SDL_color,
+                    &F_Prop->edit_image_window, alpha_off);
+            }
+            //TODO: manage some sort of contextual menu for tileable images?
+            if (F_Prop->image_is_tileable) {
+                //Tileable image Buttons
+                if (ImGui::Button("Color Match & Preview Tiles")) {
+                    Prep_Image(F_Prop,
+                        pxlFMT_FO_Pal,
+                        My_Variables->SDL_color,
+                        &F_Prop->preview_tiles_window, alpha_off);
+                    //TODO: if image already palettized, need to just feed the texture in
+                    F_Prop->show_image_render = false;
+                }
+            }
+            if (ImGui::Button("Convert MSK to BMP")) {
+            }
         }
 
         ImGui::Separator();
-
-
 
         if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Save as Animation...")) {

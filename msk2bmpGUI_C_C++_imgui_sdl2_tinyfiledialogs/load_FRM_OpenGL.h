@@ -44,19 +44,18 @@ struct FRM_Dir {
 };
 
 struct image_data {
-    FRM_Header* FRM_hdr;
-    FRM_Dir*    FRM_dir;
+    FRM_Header* FRM_hdr = NULL;
+    FRM_Dir*    FRM_dir = NULL;
     rectangle FRM_bounding_box[6];
 
-    ANM_Header* ANM_hdr;
-    ANM_Dir*    ANM_dir;
+    ANM_Header* ANM_hdr = NULL;
+    ANM_Dir*    ANM_dir = NULL;
     rectangle ANM_bounding_box[6];
 
     img_type type;
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
 
-    GLuint OTR_texture;
     GLuint FRM_texture;
     GLuint MSK_texture;
     GLuint PAL_texture;
