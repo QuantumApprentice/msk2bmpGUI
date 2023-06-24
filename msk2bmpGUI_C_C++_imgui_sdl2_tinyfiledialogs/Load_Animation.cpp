@@ -291,12 +291,25 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
         if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
             img_data->display_frame_num--;
         }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+            img_data->display_orient_num++;
+            if (img_data->display_orient_num > 5) {
+                //TODO: maybe make this wrap instead of halt?
+                img_data->display_orient_num = 5;
+            }
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+            img_data->display_orient_num--;
+            if (img_data->display_orient_num < 0) {
+                //TODO: maybe make this wrap instead of halt?
+                img_data->display_orient_num = 0;
+            }
+        }
     }
 
     if (type == OTHER) {
         if (img_data->ANM_dir[img_data->display_orient_num].num_frames > 0) {
             max_frame = img_data->ANM_dir[img_data->display_orient_num].num_frames - 1;
-
         }
         else {
             img_data->display_frame_num = 0;

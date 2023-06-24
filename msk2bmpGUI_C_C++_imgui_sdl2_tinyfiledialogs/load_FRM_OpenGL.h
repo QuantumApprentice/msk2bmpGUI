@@ -5,6 +5,7 @@
 
 #include "imgui-docking/imgui.h"
 #include "Load_Animation.h"
+#include "Load_Settings.h"
 
 struct mesh {
     GLuint VBO = 0;
@@ -52,7 +53,7 @@ struct image_data {
     ANM_Dir*    ANM_dir = NULL;
     rectangle ANM_bounding_box[6];
 
-    img_type type;
+    img_type type = UNK;
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
 

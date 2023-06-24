@@ -187,12 +187,12 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
         char buff[256];
 
         ImGui::PushFont(font);
-        snprintf(buff, 256, "framerate: %d",      img_data->FRM_hdr->FPS);
+        snprintf(buff, 256, "framerate: %d",       img_data->FRM_hdr->FPS);
         ImGui::Text(buff);
 
-        snprintf(buff, 256, "orient_shift_x: %d", img_data->FRM_hdr->Shift_Orient_x[dir]);
+        snprintf(buff, 256, "orient_shift_x: %d",  img_data->FRM_hdr->Shift_Orient_x[dir]);
         ImGui::Text(buff);
-        snprintf(buff, 256, "orient_shift_y: %d", img_data->FRM_hdr->Shift_Orient_y[dir]);
+        snprintf(buff, 256, "orient_shift_y: %d",  img_data->FRM_hdr->Shift_Orient_y[dir]);
         ImGui::Text(buff);
 
         snprintf(buff, 256, "bounding_x1: %d\t",   img_data->FRM_dir[dir].bounding_box[num].x1);

@@ -121,16 +121,37 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
             = FRM_Color_Convert(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 pxlFMT_FO_Pal,
                                 color_match);
-
+        F_Prop->edit_data.type = FRM;
         int width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
         int height = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-        int size = width * height;
+        int size   = width * height;
+        //TODO: need to allocate header? info etc?
+        //      need to assign FRM_dir[] pointers into FRM_data
+        F_Prop->edit_data.FRM_hdr = (FRM_Header*)malloc(sizeof(FRM_Header)*6);
+        new(F_Prop->edit_data.FRM_hdr) FRM_Header[6];
+        F_Prop->edit_data.FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
 
-        F_Prop->edit_data.scale = F_Prop->img_data.scale;
+        F_Prop->edit_data.FRM_dir                = (FRM_Dir*)malloc(sizeof(FRM_Dir));
+        F_Prop->edit_data.FRM_dir->frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
+        F_Prop->edit_data.FRM_dir->frame_data[0] = (FRM_Frame*)F_Prop->edit_data.FRM_data;
+
+        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Width    = width;
+        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Height   = height;
+        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Size     = size;
+        F_Prop->edit_data.FRM_dir->frame_data[0]->Shift_Offset_x = 0;
+        F_Prop->edit_data.FRM_dir->frame_data[0]->Shift_Offset_y = 0;
+
+        F_Prop->edit_data.FRM_dir->bounding_box = (rectangle*)malloc(sizeof(rectangle));
+        new(F_Prop->edit_data.FRM_dir->bounding_box) rectangle;
+        F_Prop->edit_data.FRM_dir->bounding_box->x2 = width;
+        F_Prop->edit_data.FRM_dir->bounding_box->y2 = height;
+        F_Prop->edit_data.FRM_bounding_box->x2      = width;
+        F_Prop->edit_data.FRM_bounding_box->y2      = height;
+
+        F_Prop->edit_data.FRM_dir->orientation = NE;
+
+        F_Prop->edit_data.scale  = F_Prop->img_data.scale;
         F_Prop->edit_data.offset = F_Prop->img_data.offset;
-
-        F_Prop->img_data.width  = width;
-        F_Prop->img_data.height = height;
 
         F_Prop->edit_data.width  = width;
         F_Prop->edit_data.height = height;
@@ -138,8 +159,8 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         if (alpha_off) {
             for (int i = 0; i < size; i++)
             {
-                if (F_Prop->edit_data.FRM_data[i] == 0) {
-                    F_Prop->edit_data.FRM_data[i] = 1;
+                if (F_Prop->edit_data.FRM_dir->frame_data[0]->frame_start[i] == 0) {
+                    F_Prop->edit_data.FRM_dir->frame_data[0]->frame_start[i] = 1;
                 }
             }
         }
@@ -226,7 +247,7 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
     }
     else if (type == FRM) {
         if (img_data->FRM_data) {
-
+            uint8_t* data = img_data->FRM_dir->frame_data[0]->frame_start;
             glGenTextures(1, &img_data->FRM_texture);
             glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
             //texture settings
@@ -238,7 +259,7 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
             //control alignment of the image (FRM data needs 1-byte) when converted to texture
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             //bind FRM_data to FRM_texture for "indirect" editing
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_data->width, img_data->height, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, img_data->width, img_data->height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
         }
         else {
             printf("FRM_texture didn't load?...\n");

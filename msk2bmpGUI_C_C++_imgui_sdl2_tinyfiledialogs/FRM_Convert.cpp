@@ -132,13 +132,14 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int co
     int height = Surface_8->h;
     int size   = width * height;
 
-    uint8_t* data = (uint8_t*)malloc(size);
+    uint8_t* data = (uint8_t*)malloc(size + sizeof(FRM_Frame));
+    FRM_Frame* data_ptr = (FRM_Frame*)data;
 
     int pixel_pointer = 0;
     for (int y = 0; y < height; y++)
     {
         //write out one row of pixels in each loop
-        memcpy(data + (width*y), ((uint8_t*)Surface_8->pixels + pixel_pointer), width);
+        memcpy(data_ptr->frame_start + (width*y), ((uint8_t*)Surface_8->pixels + pixel_pointer), width);
 
         pixel_pointer += Surface_8->pitch;
     }

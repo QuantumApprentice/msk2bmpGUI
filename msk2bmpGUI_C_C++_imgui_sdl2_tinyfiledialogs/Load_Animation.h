@@ -5,11 +5,11 @@
 #include <SDL.h>
 
 struct rectangle {
-    int x1;
-    int y1;
+    int x1 = 0;
+    int y1 = 0;
 
-    int x2;
-    int y2;
+    int x2 = 0;
+    int y2 = 0;
 };
 
 struct ANM_Header {
