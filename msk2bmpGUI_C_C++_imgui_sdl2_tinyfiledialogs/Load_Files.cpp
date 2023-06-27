@@ -602,7 +602,6 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     else if(!(strncmp (F_Prop->extension, "MSK", 4)))
     {
 
-
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
 
         F_Prop->img_data.type = MSK;

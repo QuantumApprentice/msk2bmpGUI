@@ -48,4 +48,4 @@ void SDL_to_OpenGl(SDL_Surface* Temp_Surface, GLuint *Optimized_Texture);
 void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window);
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off = false);
 bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_type type);
-bool alpha_handler(bool* alpha);
+bool checkbox_handler(char* text, bool* alpha);

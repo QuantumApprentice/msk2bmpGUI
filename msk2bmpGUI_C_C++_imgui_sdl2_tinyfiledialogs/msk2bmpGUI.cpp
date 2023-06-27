@@ -54,6 +54,7 @@ user_info usr_info;
 // Function declarations
 void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
 void Preview_Tiles_Window(variables *My_Variables, int counter);
+void Preview_Town_Tiles_Window(variables *My_Variables, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
 void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter);
 
@@ -473,8 +474,8 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
                 wrong_size = false;
             }
             else {
-                wrong_size = (dir->frame_data->frame_start->w != 350) ||
-                    (dir->frame_data->frame_start->h != 300);
+                wrong_size = ((dir->frame_data->frame_start->w != 350)
+                           || (dir->frame_data->frame_start->h != 300));
             }
         }
     }
@@ -513,7 +514,9 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
         {
             Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
             //Draw red squares for possible overworld map tiling
-            draw_red_squares(&F_Prop->img_data, wrong_size);
+            draw_red_squares(&F_Prop->img_data, F_Prop->show_squares);
+
+            draw_red_tiles(&F_Prop->img_data, F_Prop->show_tiles);
 
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
@@ -613,8 +616,12 @@ void Preview_Tiles_Window(variables* My_Variables, int counter)
             My_Variables->render_wind_focused = false;
         }
 
-        preview_tiles(My_Variables, &F_Prop->edit_data);
-
+        if (F_Prop->show_squares) {
+            Prev_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
+        }
+        else {
+            Prev_TMAP_Tiles(My_Variables, &F_Prop->edit_data);
+        }
     }
     ImGui::End();
 }
@@ -844,7 +851,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
-        bool alpha_off = alpha_handler(&F_Prop->alpha);
+        bool alpha_off = checkbox_handler("Alpha Enabled", &F_Prop->alpha);
         char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
         ImGui::SameLine();
         ImGui::Combo("##", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
@@ -874,6 +881,12 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
+                checkbox_handler("Show Map Tile boxes", &F_Prop->show_squares);
+                ImGui::SameLine();
+                checkbox_handler("Show Town Tiles", &F_Prop->show_tiles);
+
+
+
             }
             if (ImGui::Button("Convert Regular Image to MSK")) {
                 Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);

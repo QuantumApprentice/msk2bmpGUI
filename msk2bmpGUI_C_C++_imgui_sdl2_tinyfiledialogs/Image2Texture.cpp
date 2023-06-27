@@ -85,13 +85,15 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
 
     if (F_Prop->img_data.type == FRM) {
         //copy the FRM_data pointer for editing
-        //TODO: maybe copy by value instead?
+        //TODO: need to allocate and copy by entire FRM_data
+        //      need to allocate and assign FRM_dir and FRM_frame pointers
         F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
 
-        F_Prop->edit_data.width  = F_Prop->img_data.width;
-        F_Prop->edit_data.height = F_Prop->img_data.height;
-        F_Prop->edit_data.scale  = F_Prop->img_data.scale;
-        F_Prop->edit_data.offset = F_Prop->img_data.offset;
+        F_Prop->edit_data.width    = F_Prop->img_data.width;
+        F_Prop->edit_data.height   = F_Prop->img_data.height;
+        F_Prop->edit_data.scale    = F_Prop->img_data.scale;
+        F_Prop->edit_data.offset   = F_Prop->img_data.offset;
+
 
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);
@@ -101,13 +103,13 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
     }
     else if (F_Prop->img_data.type == MSK) {
         //copy the MSK_data pointer for editing
-        //TODO: maybe copy by value instead?
+        //TODO: need to copy by value instead
         F_Prop->edit_data.MSK_data = F_Prop->img_data.MSK_data;
 
-        F_Prop->edit_data.width  = F_Prop->img_data.width;
-        F_Prop->edit_data.height = F_Prop->img_data.height;
-        F_Prop->edit_data.scale  = F_Prop->img_data.scale;
-        F_Prop->edit_data.offset = F_Prop->img_data.offset;
+        F_Prop->edit_data.width    = F_Prop->img_data.width;
+        F_Prop->edit_data.height   = F_Prop->img_data.height;
+        F_Prop->edit_data.scale    = F_Prop->img_data.scale;
+        F_Prop->edit_data.offset   = F_Prop->img_data.offset;
 
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);
@@ -309,9 +311,9 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
 
 }
 
-bool alpha_handler(bool* alpha)
+bool checkbox_handler(char* text, bool* alpha)
 {
-    ImGui::Checkbox("Alpha Enabled", alpha);
+    ImGui::Checkbox(text, alpha);
     if (*alpha) {
         return false;
     }

@@ -1,4 +1,5 @@
 #pragma once
 #include "Image2Texture.h"
 
-void preview_tiles(variables* My_Variables, image_data* img_data);
+void Prev_WMAP_Tiles(variables* My_Variables, image_data* img_data);
+void Prev_TMAP_Tiles(variables* My_Variables, image_data* img_data);

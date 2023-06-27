@@ -150,33 +150,7 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
 
 }
 
-void draw_red_squares(image_data* img_data, bool wrong_size)
-{
-    // Draw red boxes to indicate where the tiles will be cut from
-    float scale = img_data->scale;
-    if (wrong_size) {
-        ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-        ImVec2 Origin;
-        Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
-        Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
 
-        ImVec2 Top_Left;
-        ImVec2 Bottom_Right = { 0, 0 };
-        int max_box_x = img_data->width  / 350;
-        int max_box_y = img_data->height / 300;
-
-        for (int i = 0; i < max_box_x; i++)
-        {
-            for (int j = 0; j < max_box_y; j++)
-            {
-                Top_Left.x = Origin.x + (i * 350)*scale;
-                Top_Left.y = Origin.y + (j * 300)*scale;
-                Bottom_Right = { (float)(Top_Left.x + 350 * scale), (float)(Top_Left.y + 300 * scale) };
-                Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-            }
-        }
-    }
-}
 
 void show_image_stats_FRM(image_data* img_data, ImFont* font)
 {
