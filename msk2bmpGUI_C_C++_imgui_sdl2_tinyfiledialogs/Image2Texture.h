@@ -22,6 +22,8 @@ struct variables {
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
     SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
+    GLuint tile_texture_prev;
+    GLuint tile_texture_rend;
 
     bool link_brush_sizes = true;
     ImVec2 brush_size{ 10, 10 };

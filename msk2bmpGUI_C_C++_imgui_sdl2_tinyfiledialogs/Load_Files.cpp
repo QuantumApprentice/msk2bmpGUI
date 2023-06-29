@@ -594,10 +594,8 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
 
         F_Prop->img_data.type = FRM;
 
-        draw_FRM_to_framebuffer(shaders->palette,
-                                shaders->render_FRM_shader,
-                               &shaders->giant_triangle,
-                                img_data);
+        draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
+                                img_data->framebuffer, img_data->FRM_texture);
     }
     else if(!(strncmp (F_Prop->extension, "MSK", 4)))
     {
@@ -676,6 +674,32 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data)
     // Set display window to open
     return true;
 }
+
+
+void load_tile_texture(GLuint* texture, char* file_name)
+{
+    SDL_Surface* surface = IMG_Load(file_name);
+
+    if (!glIsTexture(*texture)) {
+        glDeleteTextures(1, texture);
+    }
+    glGenTextures(1, texture);
+
+    glBindTexture(GL_TEXTURE_2D, *texture);
+
+    // Setup filtering parameters for display
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // This is required on WebGL for non power-of-two textures
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Same
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    printf("glError: %d\n", glGetError());
+}
+
 
 //void Load_Edit_MSK_SDL(LF* F_Prop, user_info* user_info)
 //{

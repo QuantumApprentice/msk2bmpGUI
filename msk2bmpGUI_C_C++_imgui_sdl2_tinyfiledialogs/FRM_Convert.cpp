@@ -459,4 +459,3 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
         return Output_Surface;
     }
 }
-

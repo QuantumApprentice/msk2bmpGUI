@@ -54,3 +54,4 @@ void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* sh
 void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
 SDL_Surface* Surface_32_Check(SDL_Surface* surface);
+void load_tile_texture(GLuint* texture, char* file_name);

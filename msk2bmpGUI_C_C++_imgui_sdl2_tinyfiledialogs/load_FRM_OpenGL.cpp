@@ -278,8 +278,6 @@ bool Render_FRM0_OpenGL(image_data* img_data, int dir)
 //returns true on success, else false
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data)
 {
-
-
     //read in FRM data including animation frames
     bool success = load_FRM_img_data(file_name, img_data);
 

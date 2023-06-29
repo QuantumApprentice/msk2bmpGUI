@@ -1,5 +1,6 @@
 #include "display_FRM_OpenGL.h"
 #include "B_Endian.h"
+#include "Load_Files.h"
 
 mesh load_giant_triangle()
 {
@@ -192,23 +193,26 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void draw_FRM_to_framebuffer(float* palette,
-                             Shader* shader, mesh* triangle,
-                             image_data* img_data)
+void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
+                             GLuint framebuffer, GLuint texture)
 {
-    glViewport(0, 0, img_data->width, img_data->height);
+    glViewport(0, 0, width, height);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
-    glBindVertexArray(triangle->VAO);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glBindVertexArray(shader_i->giant_triangle.VAO);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     //shader
-    shader->use();
-    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
-    shader->setInt("Indexed_FRM", 0);
+    //shader->use();
+    shader_i->render_FRM_shader->use();
 
-    glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
+    glUniform3fv(glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPalette"), 256, shader_i->palette);
+
+    //shader->setInt("Indexed_FRM", 0);
+    shader_i->render_FRM_shader->setInt("Indexed_FRM", 0);
+
+    glDrawArrays(GL_TRIANGLES, 0, shader_i->giant_triangle.vertexCount);
 
     //bind framebuffer back to default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

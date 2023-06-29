@@ -143,7 +143,10 @@ int main(int argc, char** argv)
     snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.frag");
     My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
 
-
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//grid-texture.png");
+    load_tile_texture(&My_Variables.tile_texture_prev, vbuffer);
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//blue_tile_mask.png");
+    load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
 
 
     Load_Config(&usr_info, My_Variables.program_directory);

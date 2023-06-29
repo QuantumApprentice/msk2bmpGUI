@@ -103,6 +103,10 @@ void Preview_MSK_Image(variables* My_Variables, struct image_data* img_data, boo
     }
 }
 
+#define tile_grid_w         (128.0)
+#define tile_grid_h         (96.0)
+
+
 void Preview_Image(variables* My_Variables, struct image_data* img_data, bool show_stats)
 {
     ImVec2 top_of_window = ImGui::GetCursorPos();
@@ -138,6 +142,25 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
+
+    ///////////////////////////////////////////////////////////////////////
+
+    ImVec2 tile_corner, tile_bottom;
+    tile_corner = ImGui::GetWindowPos();
+    tile_bottom.x = tile_corner.x + ImGui::GetWindowSize().x;
+    tile_bottom.y = tile_corner.y + ImGui::GetWindowSize().y;
+    float tile_w = (tile_bottom.x - tile_corner.x) / tile_grid_w / scale;
+    float tile_h = (tile_bottom.y - tile_corner.y) / tile_grid_h / scale;
+
+
+    ImVec2 tile_min = { 0,0 };
+    ImVec2 tile_max = { tile_w, tile_h };
+    //window->DrawList->AddImage(
+    //    (ImTextureID)My_Variables->tile_texture_prev,
+    //    tile_corner, tile_bottom, tile_min, tile_max);
+    ///////////////////////////////////////////////////////////////////////
+
+
 
     //TODO: need to figure out how I'm going to handle scrolling on large images
     ImGui::Dummy(size);

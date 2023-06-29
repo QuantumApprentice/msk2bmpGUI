@@ -80,6 +80,38 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 
 }
 
+void allocate_FRM(image_data* edit_data)
+{
+    int width  = edit_data->width;
+    int height = edit_data->height;
+    int size   = width * height;
+
+    edit_data->FRM_hdr = (FRM_Header*)malloc(sizeof(FRM_Header) * 6);
+    new(edit_data->FRM_hdr) FRM_Header[6];
+    edit_data->FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
+
+    edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir));
+    edit_data->FRM_dir->frame_data = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
+    edit_data->FRM_dir->frame_data[0] = (FRM_Frame*)edit_data->FRM_data;
+
+    edit_data->FRM_dir->frame_data[0]->Frame_Width    = width;
+    edit_data->FRM_dir->frame_data[0]->Frame_Height   = height;
+    edit_data->FRM_dir->frame_data[0]->Frame_Size     = size;
+    edit_data->FRM_dir->frame_data[0]->Shift_Offset_x = 0;
+    edit_data->FRM_dir->frame_data[0]->Shift_Offset_y = 0;
+
+    edit_data->FRM_dir->bounding_box = (rectangle*)malloc(sizeof(rectangle));
+    new(edit_data->FRM_dir->bounding_box) rectangle;
+    edit_data->FRM_dir->bounding_box->x2 = width;
+    edit_data->FRM_dir->bounding_box->y2 = height;
+    edit_data->FRM_bounding_box->x2      = width;
+    edit_data->FRM_bounding_box->y2      = height;
+
+    edit_data->FRM_dir->orientation = NE;
+
+
+}
+
 //Palettize to 8-bit FO pallet, and dither
 void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
 
@@ -125,38 +157,19 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
                                 color_match);
         F_Prop->edit_data.type = FRM;
         int width  = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-        int height = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
+        int height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
         int size   = width * height;
-        //TODO: need to allocate header? info etc?
-        //      need to assign FRM_dir[] pointers into FRM_data
-        F_Prop->edit_data.FRM_hdr = (FRM_Header*)malloc(sizeof(FRM_Header)*6);
-        new(F_Prop->edit_data.FRM_hdr) FRM_Header[6];
-        F_Prop->edit_data.FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
-
-        F_Prop->edit_data.FRM_dir                = (FRM_Dir*)malloc(sizeof(FRM_Dir));
-        F_Prop->edit_data.FRM_dir->frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
-        F_Prop->edit_data.FRM_dir->frame_data[0] = (FRM_Frame*)F_Prop->edit_data.FRM_data;
-
-        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Width    = width;
-        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Height   = height;
-        F_Prop->edit_data.FRM_dir->frame_data[0]->Frame_Size     = size;
-        F_Prop->edit_data.FRM_dir->frame_data[0]->Shift_Offset_x = 0;
-        F_Prop->edit_data.FRM_dir->frame_data[0]->Shift_Offset_y = 0;
-
-        F_Prop->edit_data.FRM_dir->bounding_box = (rectangle*)malloc(sizeof(rectangle));
-        new(F_Prop->edit_data.FRM_dir->bounding_box) rectangle;
-        F_Prop->edit_data.FRM_dir->bounding_box->x2 = width;
-        F_Prop->edit_data.FRM_dir->bounding_box->y2 = height;
-        F_Prop->edit_data.FRM_bounding_box->x2      = width;
-        F_Prop->edit_data.FRM_bounding_box->y2      = height;
-
-        F_Prop->edit_data.FRM_dir->orientation = NE;
 
         F_Prop->edit_data.scale  = F_Prop->img_data.scale;
         F_Prop->edit_data.offset = F_Prop->img_data.offset;
 
         F_Prop->edit_data.width  = width;
         F_Prop->edit_data.height = height;
+        //TODO: need to allocate header? info etc?
+        //      need to assign FRM_dir[] pointers into FRM_data
+        allocate_FRM(&F_Prop->edit_data);
+
+
 
         if (alpha_off) {
             for (int i = 0; i < size; i++)
@@ -239,8 +252,9 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            uint8_t* data = img_data->FRM_dir->frame_data[0]->frame_start;
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, img_data->FRM_data);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, surface->w, surface->h, 0, GL_RED, GL_UNSIGNED_BYTE, data);
         }
         else {
             printf("surface.pixels image didn't load...\n");
