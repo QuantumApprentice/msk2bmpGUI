@@ -697,6 +697,8 @@ void load_tile_texture(GLuint* texture, char* file_name)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
+    SDL_FreeSurface(surface);
+
     printf("glError: %d\n", glGetError());
 }
 

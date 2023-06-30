@@ -86,10 +86,17 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     header.version                            = B_Endian::write_u32(4);
     header.Frames_Per_Orient                  = B_Endian::write_u16(1);
 
+    //img_data->FRM_dir[0].frame_data[0]->Frame_Height = B_Endian::write_u16(height);
+    //img_data->FRM_dir[0].frame_data[0]->Frame_Width  = B_Endian::write_u16(width);
+    //img_data->FRM_dir[0].frame_data[0]->Frame_Size   = B_Endian::write_u32(size);
 
-    img_data->FRM_dir[0].frame_data[0]->Frame_Height = B_Endian::write_u16(height);
-    img_data->FRM_dir[0].frame_data[0]->Frame_Width  = B_Endian::write_u16(width);
-    img_data->FRM_dir[0].frame_data[0]->Frame_Size   = B_Endian::write_u32(size);
+    FRM_Frame frame;
+    frame.Frame_Height   = B_Endian::write_u16(height);
+    frame.Frame_Width    = B_Endian::write_u16(width);
+    frame.Frame_Size     = B_Endian::write_u32(size);
+    frame.Shift_Offset_x = 0;
+    frame.Shift_Offset_y = 0;
+
 
     FILE * File_ptr = NULL;
     char * Save_File_Name;
@@ -126,13 +133,14 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
         }
         else {
             fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+            fwrite(&frame,  sizeof(FRM_Frame),  1, File_ptr);
 
             //create buffer from texture and original FRM_data
             uint8_t* blend_buffer = blend_PAL_texture(img_data);
 
             //write to file
             fwrite(blend_buffer, size, 1, File_ptr);
-            //TODO: also want to add animation frames
+            //TODO: also want to add animation frames?
 
             fclose(File_ptr);
             free(blend_buffer);
@@ -645,7 +653,7 @@ uint8_t* blend_PAL_texture(image_data* img_data)
             blend_buffer[i] = texture_buffer[i];
         }
         else {
-            blend_buffer[i] = img_data->FRM_data[i];
+            blend_buffer[i] = img_data->FRM_dir->frame_data[0]->frame_start[i];// img_data->FRM_data[i];
         }
     }
     free(texture_buffer);
