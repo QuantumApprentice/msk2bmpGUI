@@ -150,11 +150,10 @@ Direction assign_direction_FRM(const char* direction)
 
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
-    int file_size   = 0;
     int buff_offset = 0;
     int frame_size  = sizeof(FRM_Frame);
     int hdr_size    = sizeof(FRM_Header);
-    uint8_t* buffer = load_entire_file(file_name, &file_size);
+    uint8_t* buffer = load_entire_file(file_name, &img_data->FRM_size);
 
     if (!buffer) {
         return false;

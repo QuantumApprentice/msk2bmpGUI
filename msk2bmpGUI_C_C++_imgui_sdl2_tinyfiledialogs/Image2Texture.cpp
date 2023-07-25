@@ -91,7 +91,7 @@ void allocate_FRM(image_data* edit_data)
     edit_data->FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
 
     edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir));
-    edit_data->FRM_dir->frame_data = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
+    edit_data->FRM_dir->frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
     edit_data->FRM_dir->frame_data[0] = (FRM_Frame*)edit_data->FRM_data;
 
     edit_data->FRM_dir->frame_data[0]->Frame_Width    = width;
@@ -102,12 +102,27 @@ void allocate_FRM(image_data* edit_data)
 
     edit_data->FRM_dir->bounding_box = (rectangle*)malloc(sizeof(rectangle));
     new(edit_data->FRM_dir->bounding_box) rectangle;
+
     edit_data->FRM_dir->bounding_box->x2 = width;
     edit_data->FRM_dir->bounding_box->y2 = height;
     edit_data->FRM_bounding_box->x2      = width;
     edit_data->FRM_bounding_box->y2      = height;
 
     edit_data->FRM_dir->orientation = NE;
+
+
+}
+
+void copy_it_all(image_data* img_data, image_data* edit_data)
+{
+    edit_data->FRM_data = (uint8_t*)malloc(img_data->FRM_size);
+
+    allocate_FRM(edit_data);
+
+    memcpy(edit_data->FRM_data, img_data->FRM_data, img_data->FRM_size);
+    memcpy(edit_data->FRM_dir, img_data->FRM_dir, sizeof(FRM_Dir));
+    memcpy(edit_data->FRM_hdr, img_data->FRM_hdr, sizeof(FRM_Header));
+    memcpy(edit_data->FRM_bounding_box, img_data->FRM_bounding_box, sizeof(rectangle[6]));
 
 
 }
@@ -119,13 +134,16 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         //copy the FRM_data pointer for editing
         //TODO: need to allocate and copy by entire FRM_data
         //      need to allocate and assign FRM_dir and FRM_frame pointers
-        F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
 
+        //F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
+
+        F_Prop->edit_data.FRM_size = F_Prop->img_data.FRM_size;
         F_Prop->edit_data.width    = F_Prop->img_data.width;
         F_Prop->edit_data.height   = F_Prop->img_data.height;
         F_Prop->edit_data.scale    = F_Prop->img_data.scale;
         F_Prop->edit_data.offset   = F_Prop->img_data.offset;
 
+        copy_it_all(&F_Prop->img_data, &F_Prop->edit_data);
 
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);

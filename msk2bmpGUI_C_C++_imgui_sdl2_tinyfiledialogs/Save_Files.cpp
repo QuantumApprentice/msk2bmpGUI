@@ -95,7 +95,7 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     frame.Frame_Width    = B_Endian::write_u16(width);
     frame.Frame_Size     = B_Endian::write_u32(size);
     frame.Shift_Offset_x = 0;
-    frame.Shift_Offset_y = 0;
+    frame.Shift_Offset_y = 0; 
 
 
     FILE * File_ptr = NULL;
