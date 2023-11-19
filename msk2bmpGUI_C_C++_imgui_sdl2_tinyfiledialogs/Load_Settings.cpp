@@ -33,11 +33,24 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
     FILE * config_file_ptr = NULL;
-    errno_t error =
-    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+
+#ifdef QFO2_WINDOWS
+    errno_t error = _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+#elif defined(QFO2_LINUX)
+    config_file_ptr = fopen(path_buffer, "rb");
+#endif
 
     if (!config_file_ptr) {
-        
+
+#ifdef QFO2_WINDOWS
+            printf("error, can't open file, error: %d", err);
+        if (err == 13) {
+            printf("file opened by another program?");
+        }
+#elif defined(QFO2_LINUX)
+        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+#endif
+
     //// C version of the code using <sys/stats.h>
         ////check if directory exists
         //struct stat stats;
@@ -270,11 +283,30 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
 void write_cfg_file(struct user_info* usr_info, char* exe_path)
 {
     char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
 
     FILE * config_file_ptr = NULL;
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
-    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"wb");
+
+#ifdef QFO2_WINDOWS
+    errno_t err = _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"wb");
+#elif defined(QFO2_LINUX)
+    config_file_ptr = fopen(path_buffer, "wb");
+#endif
+
+    if (config_file_ptr == NULL) {
+
+#ifdef QFO2_WINDOWS
+        printf("error, can't open file, error: %d", err);
+        if (err == 13) {
+            printf("file opened by another program?");
+        }
+#elif defined(QFO2_LINUX)
+        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+#endif
+
+        return;
+    }
 
     fwrite("Default_Save_Path=",     strlen("Default_Save_Path="  ), 1, config_file_ptr);
     fwrite(usr_info->default_save_path, strlen(usr_info->default_save_path), 1, config_file_ptr);

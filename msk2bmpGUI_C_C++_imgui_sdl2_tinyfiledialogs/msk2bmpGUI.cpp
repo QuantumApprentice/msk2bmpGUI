@@ -14,16 +14,20 @@
 #define SDL_MAIN_HANDLED
 
 // ImGui header files
-#include "imgui-docking/imgui.h"
-#include "imgui-docking/imgui_impl_sdl.h"
-#include "imgui-docking/imgui_impl_opengl3.h"
-#include "imgui-docking/imgui_internal.h"
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
 
 #include <stdio.h>
 #include <SDL.h>
 #include <SDL_blendmode.h>
-#include <Windows.h>
 #include <glad/glad.h>
+
+#if 0
+    #include <Windows.h>
+#endif
+
 
 #include <fstream>
 #include <sstream>
@@ -81,7 +85,12 @@ void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 int main(int argc, char** argv)
 {
     int my_argc;
+
+#ifdef QFO2_WINDOWS
     LPWSTR* my_argv = CommandLineToArgvW(GetCommandLineW(), &my_argc);
+#elif defined(QFO2_LINUX)
+    char** my_argv = argv;
+#endif
 
 
     // Setup SDL
@@ -212,10 +221,12 @@ int main(int argc, char** argv)
     static int counter = 0;
 
 
+
+#ifdef QFO2_WINDOWS
     if (my_argv == NULL) {
         MessageBox(NULL,
             "Something went wrong?",
-            "string",
+            "argv is NULL?",
             MB_ABORTRETRYIGNORE);
     }
     else {
@@ -233,6 +244,14 @@ int main(int argc, char** argv)
                 &My_Variables.shaders);
         }
     }
+#elif defined(QFO2_LINUX)
+    if (my_argc > 1) {
+        handle_file_drop(my_argv[1],
+            &My_Variables.F_Prop[counter],
+            &counter,
+            &My_Variables.shaders);
+    }
+#endif
 
 
     // Our state
@@ -440,6 +459,7 @@ int main(int argc, char** argv)
     }
 
     // Cleanup
+    //TODO: test if freeing manually vs freeing by hand is faster/same
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
@@ -449,7 +469,11 @@ int main(int argc, char** argv)
     SDL_Quit();
 
     write_cfg_file(&usr_info, My_Variables.program_directory);
-    LocalFree(my_argv);
+
+#ifdef QFO2_WINDOWS
+    // LocalFree(my_argv);
+#endif
+
     return 0;
 }
 //end of main////////////////////////////////////////////////////////////////////////
@@ -473,7 +497,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     if (F_Prop->img_data.ANM_dir) {
         dir = &F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num];
         if (dir->num_frames < 2) {
-            if (dir->frame_data == false) {
+            if (dir->frame_data == NULL) {
                 wrong_size = false;
             }
             else {

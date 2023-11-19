@@ -1,9 +1,8 @@
 #pragma once
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <stdlib.h>
 
-#include "imgui-docking/imgui.h"
+#include "imgui.h"
 #include "Load_Animation.h"
 #include "Load_Settings.h"
 

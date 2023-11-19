@@ -3,7 +3,12 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <filesystem>
-#include <Windows.h>
+
+#ifdef QFO2_WINDOWS
+    #include <Windows.h>
+#elif defined(QFO2_LINUX)
+
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -12,7 +17,7 @@
 
 #include "B_Endian.h"
 #include "tinyfiledialogs.h"
-#include "imgui-docking/imgui.h"
+#include "imgui.h"
 #include "Load_Settings.h"
 #include "MSK_Convert.h"
 
@@ -76,6 +81,8 @@ void write_cfg_file(user_info* user_info, char* exe_path);
 //    return Save_File_Name;
 //}
 
+
+
 char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 {
     int width  = img_data->width;
@@ -111,16 +118,21 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     if (Save_File_Name == NULL) {}
     else
     {
-        //parse Save_File_Name to isolate the directory and save in default_save_path
+
+#ifdef QFO2_WINDOWS
+        //parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
         wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
-
-        //std::filesystem::path p(Save_File_Name);
         std::filesystem::path p(w_save_name);
-
         strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
-        //fopen_s(&File_ptr, Save_File_Name, "wb");
         _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+        //parse Save_File_Name to isolate the directory and save in default_save_path for Linux
+        std::filesystem::path p(Save_File_Name);
+        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+
+        File_ptr = fopen(Save_File_Name, "wb");
+#endif
 
         if (!File_ptr) {
             tinyfd_messageBox(
@@ -220,8 +232,13 @@ bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int di
         return false;
     }
 
+#ifdef QFO2_WINDOWS
     w_save_name = tinyfd_utf8to16(Save_File_Name);
     _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(Save_File_Name, "wb");
+#endif
+
     if (!File_ptr) {
         tinyfd_messageBox(
             "Error",
@@ -332,9 +349,14 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
             FILE* File_ptr = nullptr;
             //If directions are split up then open new file for each direction
             Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
-            wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
 
+#ifdef QFO2_WINDOWS
+            wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+            File_ptr = fopen(Save_File_Name, "wb");
+#endif
+
             if (!File_ptr) {
                 tinyfd_messageBox(
                         "Error",
@@ -342,7 +364,7 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
                         "ok",
                         "error",
                         1);
-                return false;
+                return NULL;
             }
             //else {
             //    fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
@@ -389,16 +411,22 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
         if (num_patterns > 1) {
             Save_File_Name[strlen(Save_File_Name) - 1] = '0';
         }
-        //parse Save_File_Name to isolate the directory and save in default_save_path
-        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
-        std::filesystem::path p(w_save_name);
-        strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
         FRM_Header header = {};
         img_data->FRM_hdr->version = 4;
 
-        //fopen_s(&File_ptr, Save_File_Name, "wb");       //regular
+#ifdef QFO2_WINDOWS
+        //Windows w/wide character support
+        //parse Save_File_Name to isolate the directory and save in default_save_path
+        wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+        std::filesystem::path p(w_save_name);
         _wfopen_s(&File_ptr, w_save_name, L"wb");       //wide
+#elif defined(QFO2_LINUX)
+        std::filesystem::path p(Save_File_Name);
+        File_ptr = fopen(Save_File_Name, "wb");
+#endif
+
+        strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
         fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
 
         if (!File_ptr) {
@@ -427,9 +455,16 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
                 //If directions are split up then open new file for each direction
                 if (num_patterns > 1) {
                     Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
-                    w_save_name = tinyfd_utf8to16(Save_File_Name);
+
                     if (!File_ptr) {
+#ifdef QFO2_WINDOWS
+                        //Windows w/wide character support
+                        w_save_name = tinyfd_utf8to16(Save_File_Name);
                         _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+                        File_ptr = fopen(Save_File_Name, "wb");
+#endif
+
                         if (!File_ptr) {
                             tinyfd_messageBox(
                                 "Error",
@@ -442,6 +477,8 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
                         else {
                             fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
                         }
+
+
                     }
                 }
                 else {
@@ -522,11 +559,16 @@ char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
 char* check_cfg_file(char* folder_name, user_info* user_info, char* exe_path)
 {
     char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
 
     FILE * config_file_ptr = NULL;
-    //wide character stuff
+
+#ifdef QFO2_WINDOWS
+    //Windows w/wide character support
     _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+#elif defined(QFO2_LINUX)
+    config_file_ptr = fopen(path_buffer, "rb");
+#endif
 
     if (!config_file_ptr) {
         folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
@@ -711,14 +753,22 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
         for (int x = 0; x < num_tiles_x; x++)
         {
             char filename_buffer[MAX_PATH];
-            strncpy_s(filename_buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
 
+#ifdef QFO2_WINDOWS
+            strncpy_s(filename_buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
+#elif defined(QFO2_LINUX)
+            strncpy(filename_buffer, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
+#endif
             //check for existing file first
-            check_file(type, File_ptr, path, filename_buffer, tile_num, Save_File_Name);
+            check_file(type, path, filename_buffer, tile_num, Save_File_Name);
             if (filename_buffer == NULL) { return; }
 
+#ifdef QFO2_WINDOWS
             wchar_t* w_save_name = tinyfd_utf8to16(filename_buffer);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+            File_ptr = fopen(filename_buffer, "wb");
+#endif
 
             if (!File_ptr) {
                 tinyfd_messageBox(
@@ -876,16 +926,35 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
 //    }
 //}
 
-void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int tile_num, char* Save_File_Name)
+///////////////////////////////////////////////////////////////////////////
+//another way to check if directory exists?
+// #include <stdbool.h>  //bool type 
+bool file_exists(const char* filename) 
+{ 
+    struct stat buffer;
+    return (buffer.st_mode & S_IFDIR);
+
+    return (stat(filename, &buffer) == 0); 
+}
+///////////////////////////////////////////////////////////////////////////
+
+void check_file(img_type type, char* path, char* buffer, int tile_num, char* Save_File_Name)
 {
+    FILE* File_ptr = NULL;
     char * alt_path;
     char * lFilterPatterns[3] = { "*.FRM", "*.MSK", "" };
 
+#ifdef QFO2_WINDOWS
+    //Windows w/wide character support
     wchar_t* w_save_name = tinyfd_utf8to16(buffer);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
-
+    if (error == 0)
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(buffer, "rb");
+    if (File_ptr == NULL)
+#endif
+    {
     //handles the case where the file exists
-    if (error == 0) {
         fclose(File_ptr);
 
         int choice =
@@ -903,67 +972,83 @@ void check_file(img_type type, FILE* File_ptr, char* path, char* buffer, int til
         else if (choice == 2) {
             //TODO: check if this works
             alt_path = tinyfd_selectFolderDialog(NULL, path);
+
+#ifdef QFO2_WINDOWS
             strncpy_s(buffer, MAX_PATH, Create_File_Name(type, alt_path, tile_num, Save_File_Name), MAX_PATH);
+#elif defined(QFO2_LINUX)
+            strncpy(buffer, Create_File_Name(type, alt_path, tile_num, Save_File_Name), MAX_PATH);
+#endif
+
         }
     }
+
     //handles the case where the DIRECTORY doesn't exist
     else {
         char* ptr;
-        char temp[MAX_PATH];
+        char dir_path[MAX_PATH];
+
+#ifdef QFO2_WINDOWS
         strncpy_s(temp, MAX_PATH, buffer, MAX_PATH);
-        ptr = strrchr(temp, '\\');
+#elif defined(QFO2_LINUX)
+        strncpy(dir_path, buffer, MAX_PATH);
+#endif
+
+        ptr = strrchr(dir_path, '\\');
         *ptr = '\0';
 
-///////////////////////////////////////////////////////////////////////////
-//another way to check if directory exists?
-//#include <sys/stat.h> //stat 
-//#include <stdbool.h>  //bool type 
-        //bool file_exists(const char* filename) 
-        //{ 
-        //    struct stat buffer; 
-        //    return (stat(filename, &buffer) == 0); 
-        //}
-///////////////////////////////////////////////////////////////////////////
-
-
+#ifdef QFO2_WINDOWS
         struct __stat64 stat_info; 
-        error = _wstat64(tinyfd_utf8to16(temp), &stat_info);
+        error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
         if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0)
-        { 
+        {
             /* dir_path exists and is a directory */ 
             return;
         }
-        else {
-            int choice =
-                tinyfd_messageBox(
-                    "Warning",
-                    "Directory doesnt exist. And escaping the apostrophe doesnt work :(\n"
-                    "Choose a different location?",
-                    "okcancel",
-                    "warning",
-                    2);
-            if (choice == 0) {
-                //Cancel =  null out buffer and return
+#elif defined(QFO2_LINUX)
+        struct stat stat_info;
+        int error = stat(dir_path, &stat_info);
+        if (error == 0 && (stat_info.st_mode & S_IFDIR))
+        {
+            /* dir_path exists and is a directory */ 
+            return;
+        }
+#endif
+
+        //create the directory?
+        int choice =
+            tinyfd_messageBox(
+                "Warning",
+                "Directory doesnt exist. And escaping the apostrophe doesnt work :(\n"
+                "Choose a different location?",
+                "okcancel",
+                "warning",
+                2);
+        if (choice == 0) {
+            //Cancel =  null out buffer and return
+            buffer = { 0 };
+            return;
+        }
+        if (choice == 1) {
+            //No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
+            char* save_file = tinyfd_saveFileDialog(
+                "Warning",
+                buffer,
+                2,
+                lFilterPatterns,
+                nullptr);
+
+            if (save_file == NULL) {
                 buffer = { 0 };
                 return;
             }
-            if (choice == 1) {
-                //No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-                char* save_file = tinyfd_saveFileDialog(
-                    "Warning",
-                    buffer,
-                    2,
-                    lFilterPatterns,
-                    nullptr);
+            else {
+                //TODO: check if this works
 
-                if (save_file == NULL) {
-                    buffer = { 0 };
-                    return;
-                }
-                else {
-                    //TODO: check if this works
-                    strncpy_s(buffer, MAX_PATH, save_file, MAX_PATH);
-                }
+#ifdef QFO2_WINDOWS
+                strncpy_s(buffer, MAX_PATH, save_file, MAX_PATH);
+#elif defined(QFO2_LINUX)
+                strncpy(buffer, save_file, MAX_PATH);
+#endif
             }
         }
     }
@@ -1035,8 +1120,12 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
 
     if (Save_File_Name == NULL) { return; }
 
+#ifdef QFO2_WINDOWS
     wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
     _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(Save_File_Name, "wb");
+#endif
 
     if (!File_ptr) {
         tinyfd_messageBox(

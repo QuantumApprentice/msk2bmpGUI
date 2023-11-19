@@ -2,7 +2,11 @@
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
 #include "tinyfiledialogs.h"
-#include <Windows.h>
+#ifdef QFO2_WINDOWS
+    #include <Windows.h>
+#elif defined(QFO2_LINUX)
+    #include "Load_Settings.h"
+#endif
 
 //color cycling stuff
 // Palette color arrays      r,   g,   b
@@ -133,11 +137,21 @@ bool load_palette_to_array(float* palette, char* exe_path)
 
     //file management
     FILE *File_ptr;
+
+#ifdef QFO2_WINDOWS
     errno_t error = _wfopen_s(&File_ptr, tinyfd_utf8to16(path_buffer), L"rb");
     if (error != 0) {
         printf("error %d, can't open palette", error);
         return false;
     }
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(path_buffer, "rb");
+    if (File_ptr == NULL) {
+        printf("error %d, can't open palette\n%s", errno, strerror(errno));
+    }
+#endif
+
+
 
     uint8_t uint8_t_data[256 * 3];
 

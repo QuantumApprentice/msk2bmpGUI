@@ -1,3 +1,5 @@
+#include <limits.h>
+
 #include "Edit_Animation.h"
 #include "FRM_Convert.h"
 

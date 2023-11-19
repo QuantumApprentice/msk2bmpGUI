@@ -1,0 +1,3 @@
+[submodule "msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/SDL_image"]
+	path = msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/SDL_image
+	url = git@github.com:libsdl-org/SDL_image.git

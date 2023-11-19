@@ -1,7 +1,13 @@
 #pragma once
 #include <filesystem>
 
-#define MAX_PATH 1024
+#ifdef QFO2_WINDOWS
+    #define MAX_PATH 256
+    //TODO: add error messages if user goes over MAX_PATH
+#elif defined(QFO2_LINUX)
+    #define MAX_PATH 4096
+    #include <string.h>
+#endif
 #define MAX_KEY  32
 
 struct user_info {

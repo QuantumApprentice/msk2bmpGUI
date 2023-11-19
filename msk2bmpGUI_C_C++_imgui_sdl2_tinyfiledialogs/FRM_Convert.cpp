@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <SDL.h>
+#include <limits.h>
 
 
 union Pxl_info_32 {

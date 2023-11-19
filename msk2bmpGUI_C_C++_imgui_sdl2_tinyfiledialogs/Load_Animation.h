@@ -1,8 +1,11 @@
 #pragma once
-#include <filesystem>
+// #include <filesystem>
 #include <set>
+#include <vector>
 
 #include <SDL.h>
+
+#include "Load_Settings.h"
 
 struct rectangle {
     int x1 = 0;
@@ -51,7 +54,7 @@ struct ANM_Dir {
 
 struct LF;
 struct image_data;
-enum img_type;
+// enum img_type;
 struct shader_info;
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF* F_Prop);

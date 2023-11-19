@@ -2,12 +2,17 @@
 #include <string.h>
 //#include <stringapiset.h>
 #include <SDL_image.h>
-#include <Windows.h>
+
+#ifdef QFO2_WINDOWS
+    #include <Windows.h>
+#elif defined(QFO2_LINUX)
+    #include <unistd.h>
+#endif
 
 #include <filesystem>
 #include <cstdint>
 #include <system_error>
-#include <execution>
+// #include <execution>
 #include <string_view>
 
 #include "Load_Files.h"
@@ -24,15 +29,24 @@
 
 char* Program_Directory()
 {
-    wchar_t buff[MAX_PATH];
-    //char* utf8_buff = (char*)malloc(MAX_PATH*sizeof(char));
 
+#ifdef QFO2_WINDOWS
+    wchar_t buff[MAX_PATH] = {};
     GetModuleFileNameW(NULL, buff, MAX_PATH);
-
     char* utf8_buff = strdup(tinyfd_utf16to8(buff));
-    //memcpy(utf8_buff, tinyfd_utf16to8(buff), MAX_PATH);
+#elif defined(QFO2_LINUX)
+    char* utf8_buff = (char*)malloc(MAX_PATH*sizeof(char));
 
-    char* ptr = strrchr(utf8_buff, '/\\') + 1;
+    ssize_t read_size = readlink("/proc/self/exe", utf8_buff, MAX_PATH-1);
+    if (read_size >= MAX_PATH || read_size == -1) {
+        printf("Error reading .exe location, read_size: %d", read_size);
+        return NULL;
+    }
+    utf8_buff[read_size+1] = '\0';                  //append null to entire string
+
+#endif
+
+    char* ptr = strrchr(utf8_buff, PLATFORM_SLASH) + 1;      //replace filename w/null leaving only directory
     *ptr = '\0';
 
     //MessageBoxW(NULL,
@@ -56,19 +70,39 @@ bool open_multiple_files(std::vector <std::filesystem::path> path_vec,
                          LF* F_Prop, shader_info* shaders,
                          int* counter, int* window_number_focus)
 {
-    char buffer[MAX_PATH] = {};
-    snprintf(buffer, MAX_PATH, "%s\nIs this a group of sequential animation frames?", tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
+    char buffer[MAX_PATH + 50] = {};
+
+#ifdef QFO2_WINDOWS
+    snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
+             tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
+#elif defined(QFO2_LINUX)
+    snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
+            (*path_vec.begin()).parent_path().c_str());
+#endif
+
     //returns 1 for yes, 2 for no, 0 for cancel
     int type = tinyfd_messageBox("Animation? or Single Images?",
                                  buffer, "yesnocancel", "question", 2);
 
     if (type == 2) {
         for (const std::filesystem::path& path : path_vec) {
+
+#ifdef QFO2_WINDOWS
             F_Prop[*counter].file_open_window =
                 Drag_Drop_Load_Files(tinyfd_utf16to8(path.c_str()),
                                     &F_Prop[*counter],
                                     &F_Prop[*counter].img_data,
                                      shaders);
+#elif defined(QFO2_LINUX)
+            F_Prop[*counter].file_open_window =
+        //TODO: make sure this works? path.c_str() might be returning a const or wrong type
+        //      made Drag_Drop_Load_Files take a const, might break other stuff
+                Drag_Drop_Load_Files(path.c_str(),
+                                    &F_Prop[*counter],
+                                    &F_Prop[*counter].img_data,
+                                     shaders);
+#endif
+
             (*counter)++;
         }
         return true;
@@ -205,6 +239,7 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
     //          { const wchar_t* a_file = wcspbrk(a.c_str(), L"/\\");
     //            const wchar_t* b_file = wcspbrk(b.c_str(), L"/\\");
     //            return (wcscmp(a_file, b_file) < 0); });                                                // ~13ms
+#ifdef QFO2_WINDOWS
     size_t parent_path_size = directory.native().size();
     std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
                [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
@@ -213,6 +248,17 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
                   const wchar_t* b_file = b.c_str() + parent_path_size;
                   return (wcscmp(a_file, b_file) < 0);
                 });                                                                                     // ~1ms
+// #elif defined(QFO2_LINUX)
+    size_t parent_path_size = directory.native().size();
+    std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
+               [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
+                { 
+                  const char* a_file = a.c_str() + parent_path_size;
+                  const char* b_file = b.c_str() + parent_path_size;
+                  //TODO: make sure wcscmp and strcmp return the same compare
+                  return (strcmp(a_file, b_file) < 0);
+                });
+#endif
     //std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
     //           [](std::filesystem::path& a, std::filesystem::path& b)
     //            {
@@ -262,8 +308,7 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
     return animation_images;
 }
 
-
-
+#ifdef QFO2_WINDOWS
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current)
 {
     //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
@@ -371,6 +416,97 @@ void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* curren
 
     //printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
 }
+#elif defined(QFO2_LINUX)
+
+void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current)
+{
+    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    //LARGE_INTEGER Frequency;
+    //QueryPerformanceFrequency(&Frequency);
+    //QueryPerformanceCounter(&StartingTime);
+
+    std::filesystem::path file_path(current);
+    std::filesystem::path directory = file_path.parent_path();
+    size_t parent_path_size = directory.native().size();
+
+    std::filesystem::path l_next;
+    std::filesystem::path l_prev;
+    std::filesystem::path l_frst;
+    std::filesystem::path l_last;
+    const char* iter_file;
+    std::error_code error;
+    for (const std::filesystem::directory_entry& file : std::filesystem::directory_iterator(directory))
+    {
+        bool is_subdirectory = file.is_directory(error);
+        if (error) {
+            //TODO: convert to tinyfd_filedialog() popup warning
+            printf("error when checking if file_name is directory");
+        }
+        if (is_subdirectory) {
+            //TODO: handle different directions in subdirectories?
+            //handle_subdirectory(file.path());
+            continue;
+        }
+        else {
+            if (Supported_Format(file)) {
+
+                iter_file = (file.path().c_str() + parent_path_size);
+
+                if (l_frst.empty() || strcasecmp(iter_file, (l_frst.c_str() + parent_path_size)) < 0) {
+                    l_frst = file;
+                }
+
+                if (l_last.empty() || strcasecmp(iter_file, (l_last.c_str() + parent_path_size)) > 0) {
+                    l_last = file;
+                }
+
+                int cmp = strcasecmp(iter_file, (current + parent_path_size));
+
+                if (cmp < 0) {
+                    if (l_prev.empty() || strcasecmp(iter_file, (l_prev.c_str() + parent_path_size)) > 0) {
+                        l_prev = file;
+                    }
+                }
+                else if (cmp > 0) {
+                    if (l_next.empty() || strcasecmp(iter_file, (l_next.c_str() + parent_path_size)) < 0) {
+                        l_next = file;
+                    }
+                }
+            }
+        }
+    }
+
+    if (l_prev.empty()) {
+        l_prev = l_last;
+    }
+    if (l_next.empty()) {
+        l_next = l_frst;
+    }
+
+    int temp_size = strlen(l_prev.c_str());
+    memcpy(prev, l_prev.c_str(), temp_size);
+    prev[temp_size] = '\0';
+
+    temp_size = strlen(l_next.c_str());
+    memcpy(next, l_next.c_str(), temp_size);
+    next[temp_size] = '\0';
+
+    temp_size = strlen(l_frst.c_str());
+    memcpy(frst, l_frst.c_str(), temp_size);
+    frst[temp_size] = '\0';
+
+    temp_size = strlen(l_last.c_str());
+    memcpy(last, l_last.c_str(), temp_size);
+    last[temp_size] = '\0';
+
+    //QueryPerformanceCounter(&EndingTime);
+    //ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    //ElapsedMicroseconds.QuadPart *= 1000000;
+    //ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+
+    //printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
+}
+#endif
 
 //was testing out using a std::set instead of a std::vector, but because it was so slow
 //ended up just storing the filename, making this kind of broken
@@ -395,7 +531,7 @@ std::set <std::filesystem::path> handle_subdirectory_set(const std::filesystem::
             //char buffer[MAX_PATH] = {};
 
 
-            //char* temp_name = strrchr((char*)(file.path().u8string().c_str()), '/\\');
+            //char* temp_name = strrchr((char*)(file.path().u8string().c_str()), PLATFORM_SLASH);
             //snprintf(buffer, MAX_PATH, "%s", temp_name + 1);
             //std::filesystem::path temp_path(buffer);
             //animation_images.insert(temp_path);
@@ -421,7 +557,11 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
                                           shader_info* shaders)
 {
     char buffer[MAX_PATH];
+#ifdef QFO2_WINDOWS
     std::filesystem::path path(tinyfd_utf8to16(file_name));
+#elif defined(QFO2_LINUX)
+    std::filesystem::path path(file_name);
+#endif
     std::vector <std::filesystem::path> animation_images;
 
     std::error_code error;
@@ -475,10 +615,10 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
 }
 
 
-void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name)
+void prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name)
 {
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", file_name);
-    F_Prop->c_name = strrchr(F_Prop->Opened_File, '/\\') + 1;
+    F_Prop->c_name = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
     //TODO: clean up this function to work better for extensions
@@ -507,7 +647,7 @@ void prep_extension(LF* F_Prop, user_info* usr_info, char* file_name)
     printf("extension: %s\n", F_Prop->extension);
 }
 
-bool Drag_Drop_Load_Files(char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders)
+bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders)
 {
     prep_extension(F_Prop, NULL, file_name);
 

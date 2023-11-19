@@ -1,6 +1,8 @@
 #include "Image_Render.h"
 #include "Zoom_Pan.h"
-#include "imgui-docking/imgui_internal.h"
+#include "imgui_internal.h"
+
+//TODO: check if ImGui_SDL_Render.cpp/h is used anywhere?
 
 
 //render a full image after palettizing

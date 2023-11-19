@@ -1,5 +1,5 @@
-#include "imgui-docking/imgui.h"
-#include "imgui-docking/imgui_internal.h"
+#include "imgui.h"
+#include "imgui_internal.h"
 
 #include "Preview_Tiles.h"
 #include "display_FRM_OpenGL.h"

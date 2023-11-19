@@ -19,12 +19,12 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
 
-    F_Prop->c_name    = strrchr(F_Prop->Opened_File, '/\\') + 1;
+    F_Prop->c_name    = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.'  ) + 1;
 
-    //char* dir_ptr = strrchr(path_set, '/\\');
+    //char* dir_ptr = strrchr(path_set, PLATFORM_SLASH);
     //snprintf(buffer, (strlen(file_names[0]) - (strlen(dir_ptr)-1)), "%s", file_names[0]);
-    //dir_ptr = strrchr(buffer, '/\\');
+    //dir_ptr = strrchr(buffer, PLATFORM_SLASH);
     //snprintf(direction, strlen(dir_ptr), "%s", dir_ptr+1);
 
     //TODO: probably don't want to store folder name here?

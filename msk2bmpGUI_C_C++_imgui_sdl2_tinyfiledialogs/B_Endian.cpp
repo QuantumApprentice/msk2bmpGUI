@@ -1,4 +1,6 @@
 #include <iostream>
+#include <algorithm>
+
 #include "B_Endian.h"
 
 // Signed conversions

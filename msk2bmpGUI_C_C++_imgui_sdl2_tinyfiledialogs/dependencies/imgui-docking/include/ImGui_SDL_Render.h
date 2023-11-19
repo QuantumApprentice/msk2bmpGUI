@@ -1,5 +1,5 @@
 #pragma once
-#include "imgui-docking/imgui.h"      // IMGUI_IMPL_API
+#include "imgui.h"      // IMGUI_IMPL_API
 
 struct SDL_Renderer;
 

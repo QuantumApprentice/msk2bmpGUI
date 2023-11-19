@@ -11,7 +11,7 @@
 #include "tinyfiledialogs.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
-char bmpHeader[62] = {
+uint8_t bmpHeader[62] = {
     // Offset 0x00000000 to 0x00000061
     0x42, 0x4D,             // 'BM'
     0xCE, 0x33, 0x00, 0x00, //Size in bytes
@@ -42,12 +42,17 @@ FILE *infile;
 line_array_t inputLines;
 
 //TODO: allow drag and drop .MSK files to be passed into here
+//also TODO: re-write this entire thing to handle errors and wide character files
 int MSK_Convert(char* File_Name, const char ** argv)
 {
     bool bFlipVertical = true;
     const char* FileName = argv[1];
 
+#ifdef QFO2_WINDOWS
     fopen_s(&infile, File_Name, "rb");
+#elif defined(QFO2_LINUX)
+    infile = fopen(File_Name, "rb");
+#endif
 
     if (infile == NULL)
     {
@@ -263,7 +268,12 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     uint8_t* MSK_buffer = (uint8_t*)malloc(buffsize);
 
     //open the file & error checking
+#ifdef QFO2_WINDOWS
     fopen_s(&File_ptr, FileName, "rb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(FileName, "rb");
+#endif
+
     if (File_ptr == NULL)
     {
         fprintf(stderr, "[ERROR] Unable to open file.");
@@ -390,7 +400,12 @@ void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* im
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
 {
     //open the file & error checking
+#ifdef QFO2_WINDOWS
     fopen_s(&infile, FileName, "rb");
+#elif defined(QFO2_LINUX)
+    infile = fopen(FileName, "rb");
+#endif
+
     if (infile == NULL)
     {
         fprintf(stderr, "[ERROR] Unable to open file.");

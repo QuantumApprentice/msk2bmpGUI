@@ -50,14 +50,27 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 {
     FILE* File_ptr;
     int file_length = 0;
+
+#ifdef QFO2_WINDOWS
     errno_t err = _wfopen_s(&File_ptr, tinyfd_utf8to16(file_name), L"rb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(file_name, "rb");
+#endif
+
     if (!File_ptr) {
+
+#ifdef QFO2_WINDOWS
         printf("error, can't open file, error: %d", err);
         if (err == 13) {
             printf("file opened by another program?");
         }
+#elif defined(QFO2_LINUX)
+        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+#endif
+
         return NULL;
     }
+
     int error = fseek(File_ptr, 0, SEEK_END);
     if (!error) {
         file_length = ftell(File_ptr);

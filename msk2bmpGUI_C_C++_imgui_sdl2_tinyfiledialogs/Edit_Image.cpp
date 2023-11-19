@@ -5,7 +5,7 @@
 #include "display_FRM_OpenGL.h"
 #include "Load_Files.h"
 #include "Zoom_Pan.h"
-#include "imgui-docking/imgui_internal.h"
+#include "imgui_internal.h"
 
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick) {
     //TODO: maybe pass the dithering choice through?

@@ -1,4 +1,4 @@
-#include "imgui-docking/imgui_internal.h"
+#include "imgui_internal.h"
 #include "display_FRM_OpenGL.h"
 #include "Preview_Image.h"
 #include "Zoom_Pan.h"
