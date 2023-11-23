@@ -39,7 +39,7 @@ void Prev_WMAP_Tiles(variables* My_Variables, image_data* img_data)
                 shaders->render_FRM_shader,
                 shaders->giant_triangle,
                 img_data,
-                My_Variables->CurrentTime,
+                My_Variables->CurrentTime_ms,
                 My_Variables->Palette_Update);
         }
     }
@@ -388,7 +388,7 @@ void Prev_TMAP_Tiles(variables* My_Variables, image_data* img_data)
                 shaders->render_FRM_shader,
                 shaders->giant_triangle,
                 img_data,
-                My_Variables->CurrentTime,
+                My_Variables->CurrentTime_ms,
                 My_Variables->Palette_Update);
         }
     }

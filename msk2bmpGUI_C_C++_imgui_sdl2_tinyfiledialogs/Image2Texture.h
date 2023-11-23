@@ -14,7 +14,7 @@ struct variables {
     bool Palette_Update = false;
     char* program_directory = NULL;
 
-    clock_t CurrentTime = 0;
+    clock_t CurrentTime_ms = 0;
 
     ImVec2 mouse_delta;
     ImVec2 new_mouse_pos;

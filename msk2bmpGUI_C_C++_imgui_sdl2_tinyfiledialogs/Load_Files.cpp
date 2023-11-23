@@ -12,7 +12,7 @@
 #include <filesystem>
 #include <cstdint>
 #include <system_error>
-// #include <execution>
+#include <execution>
 #include <string_view>
 
 #include "Load_Files.h"
@@ -248,11 +248,11 @@ std::vector <std::filesystem::path> handle_subdirectory_vec(const std::filesyste
                   const wchar_t* b_file = b.c_str() + parent_path_size;
                   return (wcscmp(a_file, b_file) < 0);
                 });                                                                                     // ~1ms
-// #elif defined(QFO2_LINUX)
+#elif defined(QFO2_LINUX)
     size_t parent_path_size = directory.native().size();
     std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
                [&parent_path_size](std::filesystem::path& a, std::filesystem::path& b)
-                { 
+                {
                   const char* a_file = a.c_str() + parent_path_size;
                   const char* b_file = b.c_str() + parent_path_size;
                   //TODO: make sure wcscmp and strcmp return the same compare

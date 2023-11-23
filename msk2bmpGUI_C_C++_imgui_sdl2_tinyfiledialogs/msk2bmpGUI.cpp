@@ -312,7 +312,11 @@ int main(int argc, char** argv)
         }
 
         {// Store these variables at frame start for cycling palette colors and animations
-            My_Variables.CurrentTime = clock();
+            // My_Variables.CurrentTime = clock() / CLOCKS_PER_SEC;
+            struct timespec start;
+            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+            My_Variables.CurrentTime_ms = start.tv_sec * 1000 + (start.tv_nsec)/(long)1000000;
+
             My_Variables.Palette_Update = false;
         }
 
@@ -423,7 +427,7 @@ int main(int argc, char** argv)
             //update palette at regular intervals
             {
                 update_palette_array(My_Variables.shaders.palette,
-                                     My_Variables.CurrentTime,
+                                     My_Variables.CurrentTime_ms,
                                     &My_Variables.Palette_Update);
             }
 
@@ -596,7 +600,7 @@ void Show_Palette_Window(variables* My_Variables) {
 
             if ((index) >= 229) {
                 update_palette_array(shaders->palette,
-                                     My_Variables->CurrentTime,
+                                     My_Variables->CurrentTime_ms,
                                     &My_Variables->Palette_Update);
             }
         }
