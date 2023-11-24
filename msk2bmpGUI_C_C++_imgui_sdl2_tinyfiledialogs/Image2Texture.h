@@ -12,9 +12,9 @@ struct variables {
     ImVec2 uv_max     = ImVec2(1.0f, 1.0f);                 // Bottom-right
 
     bool Palette_Update = false;
-    char* program_directory = NULL;
+    char* exe_directory = NULL;
 
-    clock_t CurrentTime_ms = 0;
+    uint64_t CurrentTime_ms = 0;        //TODO: need to test on 32-bit apps
 
     ImVec2 mouse_delta;
     ImVec2 new_mouse_pos;

@@ -133,7 +133,7 @@ void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t 
 bool load_palette_to_array(float* palette, char* exe_path)
 {
     char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "palette/fo_color.pal");
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "/resources/palette/fo_color.pal");
 
     //file management
     FILE *File_ptr;

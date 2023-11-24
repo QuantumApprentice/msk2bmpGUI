@@ -35,6 +35,7 @@
 #include <optional>
 
 // My header files
+#include "platform_io.h"
 #include "Load_Files.h"
 #include "FRM_Convert.h"
 #include "Save_Files.h"
@@ -136,32 +137,32 @@ int main(int argc, char** argv)
 
     //State variables
     struct variables My_Variables = {};
-    My_Variables.program_directory = Program_Directory();
+    My_Variables.exe_directory = Program_Directory();
 
     char vbuffer[MAX_PATH];
     char fbuffer[MAX_PATH];
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//render_PAL.frag");
-    My_Variables.shaders.render_PAL_shader = new Shader( vbuffer, fbuffer );
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//render_PAL.frag");
+    My_Variables.shaders.render_PAL_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//render_FRM.frag");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//render_FRM.frag");
     My_Variables.shaders.render_FRM_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.program_directory, "resources//shaders//passthru_shader.frag");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.frag");
     My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//grid-texture.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//grid-texture.png");
     load_tile_texture(&My_Variables.tile_texture_prev, vbuffer);
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//blue_tile_mask.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//blue_tile_mask.png");
     load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
 
 
-    Load_Config(&usr_info, My_Variables.program_directory);
+    Load_Config(&usr_info, My_Variables.exe_directory);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
-    bool success = load_palette_to_array(My_Variables.shaders.palette, My_Variables.program_directory);
+    bool success = load_palette_to_array(My_Variables.shaders.palette, My_Variables.exe_directory);
     if (!success) { printf("failed to load palette to array\n"); }
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
@@ -177,7 +178,7 @@ int main(int argc, char** argv)
     //io.ConfigViewportsNoAutoMerge = true;
     //io.ConfigViewportsNoTaskBarIcon = true;
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "imgui.ini");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "imgui.ini");
     //io.IniFilename = vbuffer;
 
     // Setup Dear ImGui style
@@ -205,7 +206,7 @@ int main(int argc, char** argv)
     // - Read 'docs/FONTS.md' for more instructions and details.
     // - Remember that in C/C++ if you want to include a backslash \ in a string literal you need to write a double backslash \\ !
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.program_directory, "resources//fonts//OpenSans-Bold.ttf");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//fonts//OpenSans-Bold.ttf");
     io.Fonts->AddFontDefault();
     My_Variables.Font = io.Fonts->AddFontFromFileTTF(vbuffer, My_Variables.global_font_size);
 
@@ -312,11 +313,7 @@ int main(int argc, char** argv)
         }
 
         {// Store these variables at frame start for cycling palette colors and animations
-            // My_Variables.CurrentTime = clock() / CLOCKS_PER_SEC;
-            struct timespec start;
-            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-            My_Variables.CurrentTime_ms = start.tv_sec * 1000 + (start.tv_nsec)/(long)1000000;
-
+            My_Variables.CurrentTime_ms = nano_time() / 1'000'000;
             My_Variables.Palette_Update = false;
         }
 
@@ -472,7 +469,7 @@ int main(int argc, char** argv)
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    write_cfg_file(&usr_info, My_Variables.program_directory);
+    write_cfg_file(&usr_info, My_Variables.exe_directory);
 
 #ifdef QFO2_WINDOWS
     // LocalFree(my_argv);
@@ -718,11 +715,11 @@ void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFM
     // (limit is greater than 1600x1200 for menus at least - tested on MR)
     LF* F_Prop = &My_Variables->F_Prop[*counter];
 
-    if (My_Variables->pxlFMT_FO_Pal == NULL)
-    {
-        printf("Error: Palette not loaded...");
-        My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
-    }
+    // if (My_Variables->pxlFMT_FO_Pal == NULL)
+    // {
+    //     printf("Error: Palette not loaded...");
+    //     My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
+    // }
 
     F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
 
@@ -744,7 +741,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                 Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path")) {
-                Set_Default_Path(&usr_info, My_Variables->program_directory);
+                Set_Default_Path(&usr_info, My_Variables->exe_directory);
             }
             if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning")) {
                 if (usr_info.save_full_MSK_warning) {
@@ -817,7 +814,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Save as Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
-                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->program_directory);
+                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
             }
             if (ImGui::Button("Edit MSK Layer...")) {
                 F_Prop->edit_MSK = true;
@@ -860,7 +857,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             }
             if (ImGui::Button("Export Mask Tiles...")) {
                 //export mask tiles
-                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->program_directory);
+                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->exe_directory);
             }
             if (ImGui::Button("Load MSK to this slot...")) {
                 Load_Files(F_Prop, &F_Prop->edit_data, &usr_info, &My_Variables->shaders);
@@ -1007,7 +1004,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
                 }
                 else {
-                    Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->program_directory);
+                    Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
                 }
             }
         }

@@ -2,6 +2,7 @@
 #include <SDL_image.h>
 
 #include <cstdint>
+#include <algorithm>
 
 #include "Load_Files.h"
 #include "Load_Animation.h"
@@ -14,7 +15,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     char buffer[MAX_PATH];
     char direction[MAX_PATH];
     image_data* img_data = &F_Prop->img_data;
-    //std::sort(path_set.begin(), path_set.end());
+    std::sort(path_set.begin(), path_set.end());
 
     snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
@@ -142,7 +143,7 @@ Direction assign_direction(char* direction)
     return NE;
 }
 
-void set_names(char** names_array, image_data* img_data)
+void set_directions(char** names_array, image_data* img_data)
 {
     Direction* dir_ptr = NULL;
 
@@ -230,10 +231,12 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
     ImGui::SetCursorPosX(button_pos.x);
     ImGui::SetCursorPosY(button_pos.y);
 
+    char* current_file = NULL;
+
     bool file_check = false;
     if (ImGui::Button("next", button_size) || ImGui::IsKeyPressed(ImGuiKey_Period)) {
         Clear_img_data(img_data);
-        prep_extension(F_Prop, NULL, F_Prop->Next_File);
+        current_file = F_Prop->Next_File;
         file_check = true;
     }
 
@@ -242,14 +245,14 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
 
     if (ImGui::Button("prev", button_size) || ImGui::IsKeyPressed(ImGuiKey_Comma)) {
         Clear_img_data(img_data);
-        prep_extension(F_Prop, NULL, F_Prop->Prev_File);
+        current_file = F_Prop->Prev_File;
         file_check = true;
     }
 
     ImGui::SetCursorPos(origin);
 
     if (file_check) {
-        File_Type_Check(F_Prop, shaders, img_data);
+        File_Type_Check(F_Prop, shaders, img_data, current_file);
     }
 }
 
@@ -268,10 +271,10 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
     ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
 
-    //populate names[] only with existing directions
-    char* names[6];
-    set_names(names, img_data);
-    ImGui::Combo("Direction", &img_data->display_orient_num, names, IM_ARRAYSIZE(names));
+    //populate directions[] only with existing directions
+    char* directions[6];
+    set_directions(directions, img_data);
+    ImGui::Combo("Direction", &img_data->display_orient_num, directions, IM_ARRAYSIZE(directions));
     int max_frame = 0;
 
     if (ImGui::IsWindowFocused()) {

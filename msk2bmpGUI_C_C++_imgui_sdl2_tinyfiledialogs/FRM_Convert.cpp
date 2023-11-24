@@ -48,7 +48,7 @@ SDL_Color PaletteColors[PALETTE_NUMBER];
 //TODO: fix this to use float palette from My_Variables?
 SDL_PixelFormat* loadPalette(char * name)
 {
-    std::ifstream f("palette//color.pal", 
+    std::ifstream f("palette//color.pal",
         std::ios::in | std::ios::binary);
     if (!f.is_open()) {
         printf("Error opening color.pal\n");

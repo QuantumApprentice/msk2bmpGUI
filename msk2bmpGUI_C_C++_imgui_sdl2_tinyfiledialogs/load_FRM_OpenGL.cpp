@@ -60,12 +60,12 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     if (!File_ptr) {
 
 #ifdef QFO2_WINDOWS
-        printf("error, can't open file, error: %d", err);
+        printf("error, can't open FRM file, error: %d", err);
         if (err == 13) {
             printf("file opened by another program?");
         }
 #elif defined(QFO2_LINUX)
-        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+        printf("error, can't open FRM file, error: %d\n%s", errno, strerror(errno));
 #endif
 
         return NULL;

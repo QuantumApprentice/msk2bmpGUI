@@ -9,7 +9,6 @@ project(${PROJECT_NAME} VERSION 0.0.1
 set(EXECUTABLE_NAME "QFO2Tool")
 add_executable(${EXECUTABLE_NAME})
 
-
 # Windows compile stuff?
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
@@ -86,6 +85,8 @@ target_sources(
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/tinyfiledialogs.h
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.cpp
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.h
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.h
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.cpp
 )
 
 # There are a few way to get a dependecy, we will go though a few of them.
@@ -136,7 +137,24 @@ target_link_libraries(
   SDL2::SDL2
 )
 
+add_custom_command(
+  TARGET ${EXECUTABLE_NAME} PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/shaders
 
+  COMMAND ${CMAKE_COMMAND} -E make_directory
+  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/palette
+)
+
+add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${CMAKE_CURRENT_SOURCE_DIR}/msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/resources/shaders
+  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/shaders
+
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+  ${CMAKE_CURRENT_SOURCE_DIR}/msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/resources/palette
+  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/palette
+)
 
 # I won't go into install script because i don't know how to properly do it
 # and haven't had the need to know that yet.

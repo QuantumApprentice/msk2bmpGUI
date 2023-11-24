@@ -2,6 +2,9 @@
 #include "B_Endian.h"
 #include "Load_Files.h"
 
+
+#define ms_PER_sec                    (1000)
+
 mesh load_giant_triangle()
 {
     float vertices[] = {
@@ -99,7 +102,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
-void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, clock_t current_time)
+void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, uint64_t current_time)
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
@@ -118,11 +121,11 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
-    static clock_t last_time = 0;
+    static uint64_t last_time = 0;
     static int last_frame;
     static int last_orient;
 
-    if ((fps != 0) && ((float)(current_time - last_time) / CLOCKS_PER_SEC > 1 / fps)) {
+    if ((fps != 0) && ((float)(current_time - last_time) / ms_PER_sec > 1 / fps)) {
         last_time = current_time;
 
         img_data->display_frame_num += 1;
@@ -148,7 +151,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
-                              image_data* img_data, clock_t current_time, bool palette_update)
+                              image_data* img_data, uint64_t current_time, bool palette_update)
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
 
@@ -165,11 +168,12 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
 
-    static clock_t last_time = 0;
-    //static clock_t accumulated_delta_time = current_time - last_time;
+    static uint64_t last_time = 0;
+    //static uint64_t accumulated_delta_time = current_time - last_time;
     //last_time = current_time;
 
-    if ((fps != 0) && ((float)(current_time - last_time)/CLOCKS_PER_SEC > 1 / fps)) {
+
+    if ((fps != 0) && ((float)(current_time - last_time)/ms_PER_sec > 1 / fps)) {
         last_time = current_time;
 
         img_data->display_frame_num += 1;

@@ -28,7 +28,7 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
     char* file_data;
 
     char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config\\msk2bmpGUI.cfg");
+    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
 
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
@@ -43,12 +43,13 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
     if (!config_file_ptr) {
 
 #ifdef QFO2_WINDOWS
-            printf("error, can't open file, error: %d", err);
+            printf("error, can't open config file to read, error: %d", err);
         if (err == 13) {
             printf("file opened by another program?");
         }
 #elif defined(QFO2_LINUX)
-        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+        //TODO: change to warning, possibly remove since file is created anyway
+        printf("error, can't open config file to read, error: %d\n%s\n", errno, strerror(errno));
 #endif
 
     //// C version of the code using <sys/stats.h>
@@ -70,7 +71,7 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
   
         }
         else {
-            std::filesystem::create_directory("config\\");
+            std::filesystem::create_directory(std::filesystem::path(exe_path) / "config");
             write_cfg_file(usr_info, exe_path);
         }
     }
@@ -297,12 +298,12 @@ void write_cfg_file(struct user_info* usr_info, char* exe_path)
     if (config_file_ptr == NULL) {
 
 #ifdef QFO2_WINDOWS
-        printf("error, can't open file, error: %d", err);
+        printf("error, can't open config file to write, error: %d", err);
         if (err == 13) {
             printf("file opened by another program?");
         }
 #elif defined(QFO2_LINUX)
-        printf("error, can't open file, error: %d\n%s", errno, strerror(errno));
+        printf("error, can't open config file to write, error: %d\n%s", errno, strerror(errno));
 #endif
 
         return;

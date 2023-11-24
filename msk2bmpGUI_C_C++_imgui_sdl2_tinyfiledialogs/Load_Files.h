@@ -53,7 +53,7 @@ struct shader_info {
 
 char* Program_Directory();
 bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
-bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data);
+bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data, const char* file_name);
 bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
