@@ -20,7 +20,7 @@
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Load_Settings.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 #include "MSK_Convert.h"
@@ -100,8 +100,6 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
                                      shaders);
 #elif defined(QFO2_LINUX)
             F_Prop[*counter].file_open_window =
-                // TODO: make sure this works? path.c_str() might be returning a const or wrong type
-                //       made Drag_Drop_Load_Files take a const, might break other stuff
                 Drag_Drop_Load_Files(path.c_str(),
                                      &F_Prop[*counter],
                                      &F_Prop[*counter].img_data,
@@ -133,6 +131,8 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
     }
 }
 
+// Checks the file extension against known working extensions
+// Returns true if any extension matches, else return false
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
@@ -147,7 +147,7 @@ bool Supported_Format(const std::filesystem::path &file)
     int k = sizeof(supported) / (6 * sizeof(wchar_t));
     while (i < k)
     {
-        // does 5 character work? or do I need 4 instead?
+        //TODO: does 5 characters work? or do I need 4 instead?
         if (ext_compare(file.extension().c_str(), supported[i], 5) == 0)
         {
             return true;
@@ -208,7 +208,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         if (is_subdirectory)
         {
             // TODO: handle different directions in subdirectories?
-            // handle_subdirectory(file.path());
+            animation_images = handle_subdirectory_vec(file.path());
             continue;
         }
         else if (Supported_Format(file))
@@ -217,15 +217,17 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         }
     }
 
+#ifdef QFO2_WINDOWS
     // //timing code for WINDOWS ONLY
     // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
     // LARGE_INTEGER Frequency;
     // QueryPerformanceFrequency(&Frequency);
     // QueryPerformanceCounter(&StartingTime);
-
+#elif defined(QFO2_LINUX)
     // timing code for LINUX
     uint64_t StartingTime, EndingTime;
     StartingTime = nano_time();
+#endif
 
     // std::sort(animation_images.begin(), animation_images.end());                                        // ~50ms
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end());                   // ~50ms
@@ -305,17 +307,19 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     //                  return (a_v < b_v);
     //              });                                                                                    // ~3ms
 
+#ifdef QFO2_WINDOWS
     ////timing code WINDOWS ONLY
     // QueryPerformanceCounter(&EndingTime);
     // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
     // ElapsedMicroseconds.QuadPart *= 1000000;
     // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
     // printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
-
+#elif defined(QFO2_LINUX)
     // timing code LINUX
     EndingTime = nano_time();
     uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
     uint64_t microseconds_total = nanoseconds_total / 1000;
+#endif
 
     printf("Total time elapsed: %ldμs\n", microseconds_total);
 
@@ -323,6 +327,8 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
 }
 
 #ifdef QFO2_WINDOWS
+//Store directory files in memory for quick Next/Prev buttons
+//Filepaths for files are assigned to pointers passed in
 void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
 {
     // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
@@ -453,6 +459,8 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 }
 #elif defined(QFO2_LINUX)
 
+//Store directory files in memory for quick Next/Prev buttons
+//Filepaths for files are assigned to pointers passed in
 void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
 {
     // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
@@ -704,7 +712,7 @@ bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_dat
 bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
 {
     char load_path[MAX_PATH];
-    snprintf(load_path, MAX_PATH, "%s\\", usr_info->default_load_path);
+    snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
     const char *FilterPattern1[5] = {"*.bmp", "*.png", "*.frm", "*.msk", "*.jpg"};
 
     char *FileName = tinyfd_openFileDialog(

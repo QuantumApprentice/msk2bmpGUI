@@ -1,5 +1,5 @@
 #include "Load_Settings.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 #include <iostream>
 #include <string>

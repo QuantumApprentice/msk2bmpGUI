@@ -1,15 +1,23 @@
 #include "FRM_Convert.h"
 #include "FRM_Animate.h"
 #include "B_Endian.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #include "Load_Files.h"
 
 #include <cstdint>
-#include <iostream>
+// #include <iostream>      //old c++ way of doing this
 #include <vector>
+
 #include <SDL.h>
 #include <limits.h>
 
+#ifdef QFO2_WINDOWS
+
+#elif defined(QFO2_LINUX)
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#endif
 
 union Pxl_info_32 {
     struct {
@@ -46,13 +54,22 @@ uint8_t convert_colors(uint8_t bytes) {
 SDL_Color PaletteColors[PALETTE_NUMBER];
 
 //TODO: fix this to use float palette from My_Variables?
-SDL_PixelFormat* loadPalette(char * name)
+SDL_PixelFormat* loadPalette(const char * name)
 {
-    std::ifstream f("palette//color.pal",
-        std::ios::in | std::ios::binary);
-    if (!f.is_open()) {
-        printf("Error opening color.pal\n");
-        tinyfd_messageBox("Error:", 
+
+#ifdef QFO2_WINDOWS
+    // old c++ way of doing this
+    // std::ifstream f("resources//palette//color.pal", std::ios::in | std::ios::binary);
+    // if (!f.is_open()) {
+    FILE* file_ptr = fopen(name, "rb");
+    if (file_ptr == NULL) {
+#elif defined(QFO2_LINUX)
+    int file_ptr = open(name, O_RDONLY);
+    if (file_ptr < 0) {
+#endif
+        printf("Error opening color.pal \n%d: %s\n", errno, strerror(errno));
+        printf("Current Working Directory: %s\n", getcwd(NULL, 0));
+        tinyfd_messageBox("Error:",
                           "Missing color.pal, the default Fallout color palette.",
                           "ok", "error", 1);
         return NULL;
@@ -63,7 +80,13 @@ SDL_PixelFormat* loadPalette(char * name)
     {
         uint8_t bytes[4];
 
-        f.read((char*)bytes, 3);
+#ifdef QFO2_WINDOWS
+        // file_ptr.read((char*)bytes, 3);      //old c++ library way of doing this
+        fread(bytes, 3, 1, file_ptr);
+#elif defined(QFO2_LINUX)
+        read(file_ptr, bytes, 3);
+#endif
+
         r = convert_colors(bytes[0]);
         g = convert_colors(bytes[1]);
         b = convert_colors(bytes[2]);
@@ -77,6 +100,8 @@ SDL_PixelFormat* loadPalette(char * name)
     pxlFMT_FO_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
     SDL_SetPixelFormatPalette(pxlFMT_FO_Pal, FO_Palette);
 
+    //TODO: need to free pxlFMT_FO_Pal?
+
     return pxlFMT_FO_Pal;
 }
 
@@ -84,7 +109,7 @@ SDL_PixelFormat* loadPalette(char * name)
 // Converts the color space to Fallout's paletted format
 uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int color_match_type)
 {
-    pxlFMT = loadPalette(NULL);
+
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
     SDL_Surface* Surface_8;
     SDL_PixelFormat* pxlFMT_UnPal;

@@ -25,6 +25,7 @@ msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Release/
 *.obj
 *.tlog
 *.log
+#TODO: deal with this imgui.ini file in a better way
 imgui.ini
 
 # ignore the imgui.ini file

@@ -81,8 +81,8 @@ target_sources(
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Save_Files.h
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/shader_class.cpp
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/shader_class.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/tinyfiledialogs.c
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/tinyfiledialogs.h
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/tinyfiledialogs/tinyfiledialogs.c
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/tinyfiledialogs/tinyfiledialogs.h
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.cpp
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.h
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.h

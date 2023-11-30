@@ -27,9 +27,9 @@ struct offsets {
     int16_t y_offset = 0;
 };
 
-uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame)
+uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame, SDL_PixelFormat *pxlFMT_FO_Pal)
 {
-    int Frame_Width = pos_data->r_pxl  - pos_data->l_pxl;
+    int Frame_Width  = pos_data->r_pxl - pos_data->l_pxl;
     int Frame_Height = pos_data->b_pxl - pos_data->t_pxl;
 
     SDL_Rect src_rectangle;
@@ -48,14 +48,14 @@ uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame)
 
     SDL_BlitSurface(anm_frame->frame_start, &src_rectangle, out_surface, &dst_rectangle);
 
-    SDL_PixelFormat* pxl_trash = loadPalette(NULL);
+    // SDL_PixelFormat* pxlFMT_FO_Pal = loadPalette(NULL);
 
-    uint8_t* out_data = FRM_Color_Convert(out_surface, pxl_trash, 0);
+    uint8_t* out_data = FRM_Color_Convert(out_surface, pxlFMT_FO_Pal, 0);
 
     return out_data;
 }
 
-bool Crop_Animation(image_data* img_data, image_data* edit_data)
+bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat *pxlFMT_FO_Pal)
 {
     int FRM_frame_size = sizeof(FRM_Frame);
     int num_frames = 0;
@@ -193,7 +193,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data)
                 }
 
                 //convert each frame to 8-bit paletted, copy to FRM_frame_ptrs at correct position
-                uint8_t* data = Crop_Frame(&pos_data[j], &img_data->ANM_dir[i].frame_data[j]);
+                uint8_t* data = Crop_Frame(&pos_data[j], &img_data->ANM_dir[i].frame_data[j], pxlFMT_FO_Pal);
                 memcpy((uint8_t*)frame_data + FRM_frame_size, data, data_frame_size);
                 frm_frame_ptrs[j] = frame_data;
                 free(data);

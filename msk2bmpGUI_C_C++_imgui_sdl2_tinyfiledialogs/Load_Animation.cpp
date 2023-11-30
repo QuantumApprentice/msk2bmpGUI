@@ -7,7 +7,7 @@
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Edit_Animation.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF* F_Prop)
@@ -182,7 +182,6 @@ void set_directions(char** names_array, image_data* img_data)
         }
     }
 }
-
 
 void Clear_img_data(image_data* img_data)
 {

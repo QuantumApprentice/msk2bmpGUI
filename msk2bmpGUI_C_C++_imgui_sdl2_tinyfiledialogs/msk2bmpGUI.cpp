@@ -44,7 +44,7 @@
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
@@ -158,11 +158,15 @@ int main(int argc, char** argv)
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//blue_tile_mask.png");
     load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
 
+    //TODO: add user input for a user-specified palette
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/color.pal");
+    My_Variables.pxlFMT_FO_Pal = loadPalette(vbuffer);
+
 
     Load_Config(&usr_info, My_Variables.exe_directory);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
-    bool success = load_palette_to_array(My_Variables.shaders.palette, My_Variables.exe_directory);
+    bool success = load_palette_to_float_array(My_Variables.shaders.palette, My_Variables.exe_directory);
     if (!success) { printf("failed to load palette to array\n"); }
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
@@ -525,6 +529,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
             ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
             F_Prop->image_is_tileable = true;
         }
+        //TODO: show image name for each frame for new animations
         ImGui::Text(F_Prop->c_name);
 
         if (F_Prop->img_data.type == FRM) {
@@ -708,6 +713,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 }
 
 //TODO: Need to test wide character support
+//TODO: fix the pxlFMT_FO_Pal loading part
 void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
@@ -995,7 +1001,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Convert Animation to FRM for Editing")) {
                 //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
-                F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data);
+                F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->pxlFMT_FO_Pal);
             }
         }
         if (My_Variables->tile_window_focused) {

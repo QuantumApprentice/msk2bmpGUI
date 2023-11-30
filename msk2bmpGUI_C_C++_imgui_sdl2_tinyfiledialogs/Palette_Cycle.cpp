@@ -1,7 +1,7 @@
 //https://falloutmods.fandom.com/wiki/PAL_File_Format
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
-#include "tinyfiledialogs.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #ifdef QFO2_WINDOWS
     #include <Windows.h>
 #elif defined(QFO2_LINUX)
@@ -130,7 +130,9 @@ void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t 
         (*g_dwCurrent)++;
 }
 
-bool load_palette_to_array(float* palette, char* exe_path)
+//Load Fallout's default palette to a global float array
+//Palette values are converted to 0-1.0 floats before storing
+bool load_palette_to_float_array(float* palette, char* exe_path)
 {
     char path_buffer[MAX_PATH];
     snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "/resources/palette/fo_color.pal");
@@ -150,8 +152,6 @@ bool load_palette_to_array(float* palette, char* exe_path)
         printf("error %d, can't open palette\n%s", errno, strerror(errno));
     }
 #endif
-
-
 
     uint8_t uint8_t_data[256 * 3];
 
