@@ -153,6 +153,7 @@ bool load_palette_to_float_array(float* palette, char* exe_path)
     }
 #endif
 
+    //TODO: store uint8_t_data[] as SDL_PixelFormat() palette
     uint8_t uint8_t_data[256 * 3];
 
     //read in palette info

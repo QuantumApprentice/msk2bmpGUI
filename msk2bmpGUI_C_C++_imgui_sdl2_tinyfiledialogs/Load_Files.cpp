@@ -138,13 +138,14 @@ bool Supported_Format(const std::filesystem::path &file)
     // array of compatible filetype extensions
 #ifdef QFO2_WINDOWS
     constexpr const static wchar_t supported[5][6]{L".FRM", L".MSK", L".PNG", L".JPG", L".JPEG"};
+    int k = sizeof(supported) / (6 * sizeof(wchar_t));
 #elif defined(QFO2_LINUX)
     constexpr const static char supported[5][6]{".FRM", ".MSK", ".PNG", ".JPG", ".JPEG"};
+    int k = sizeof(supported) / (6 * sizeof(char));
 #endif
 
     // actual extension check
     int i = 0;
-    int k = sizeof(supported) / (6 * sizeof(wchar_t));
     while (i < k)
     {
         //TODO: does 5 characters work? or do I need 4 instead?
@@ -207,8 +208,8 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         }
         if (is_subdirectory)
         {
-            // TODO: handle different directions in subdirectories?
-            animation_images = handle_subdirectory_vec(file.path());
+            // TODO: handle different directions in subdirectories?         8==D
+            // animation_images = handle_subdirectory_vec(file.path());
             continue;
         }
         else if (Supported_Format(file))
@@ -319,9 +320,8 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     EndingTime = nano_time();
     uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
     uint64_t microseconds_total = nanoseconds_total / 1000;
-#endif
-
     printf("Total time elapsed: %ldμs\n", microseconds_total);
+#endif
 
     return animation_images;
 }
@@ -646,8 +646,10 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
             }
             if (is_subdirectory)
             {
+                //TODO: this might be where the subdirectory handling is failing    8==D
                 // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
                 std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
+
                 if (!images.empty())
                 {
                     open_multiple_files(images, F_Prop, shaders, counter, window_number_focus);

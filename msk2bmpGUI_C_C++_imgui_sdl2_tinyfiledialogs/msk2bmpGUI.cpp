@@ -160,14 +160,14 @@ int main(int argc, char** argv)
 
     //TODO: add user input for a user-specified palette
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/color.pal");
-    My_Variables.pxlFMT_FO_Pal = loadPalette(vbuffer);
+    My_Variables.pxlFMT_FO_Pal = load_palette_to_SDL_PixelFormat(vbuffer);
 
 
     Load_Config(&usr_info, My_Variables.exe_directory);
 
     //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     bool success = load_palette_to_float_array(My_Variables.shaders.palette, My_Variables.exe_directory);
-    if (!success) { printf("failed to load palette to array\n"); }
+    if (!success) { printf("failed to load palette to float array for OpenGL\n"); }
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
 
@@ -404,7 +404,7 @@ int main(int argc, char** argv)
                                                         &My_Variables.window_number_focus,
                                                         &counter,
                                                         &My_Variables.shaders);
-                    //TODO: maybe I should handle these as an enum instead of std::optional<>
+        //TODO: maybe I should handle these as an enum instead of std::optional<>
                     if (directory.has_value()) {
                         if (!directory.operator*()) {
                             handle_file_drop(path.data(),
@@ -923,6 +923,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
             }
             if (ImGui::Button("Convert Regular Image to MSK")) {
+            //TODO: IMG_Surface is not used anymore             8==D
                 Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
                 Prep_Image(F_Prop,
                     NULL,

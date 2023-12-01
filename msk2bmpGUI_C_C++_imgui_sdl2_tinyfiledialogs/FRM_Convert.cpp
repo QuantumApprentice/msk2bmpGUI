@@ -54,7 +54,7 @@ uint8_t convert_colors(uint8_t bytes) {
 SDL_Color PaletteColors[PALETTE_NUMBER];
 
 //TODO: fix this to use float palette from My_Variables?
-SDL_PixelFormat* loadPalette(const char * name)
+SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
 {
 
 #ifdef QFO2_WINDOWS
@@ -62,11 +62,13 @@ SDL_PixelFormat* loadPalette(const char * name)
     // std::ifstream f("resources//palette//color.pal", std::ios::in | std::ios::binary);
     // if (!f.is_open()) {
     FILE* file_ptr = fopen(name, "rb");
-    if (file_ptr == NULL) {
+    // if (file_ptr == NULL) {
 #elif defined(QFO2_LINUX)
     int file_ptr = open(name, O_RDONLY);
     if (file_ptr < 0) {
 #endif
+//TODO: replace color.pal w/name
+//      (possibly modify messagebox for user provided palette)
         printf("Error opening color.pal \n%d: %s\n", errno, strerror(errno));
         printf("Current Working Directory: %s\n", getcwd(NULL, 0));
         tinyfd_messageBox("Error:",
@@ -100,7 +102,7 @@ SDL_PixelFormat* loadPalette(const char * name)
     pxlFMT_FO_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
     SDL_SetPixelFormatPalette(pxlFMT_FO_Pal, FO_Palette);
 
-    //TODO: need to free pxlFMT_FO_Pal?
+    //TODO: need to free FO_Palette? (pxlFMT_FO_Pal might point to FO_Palette?)
 
     return pxlFMT_FO_Pal;
 }
