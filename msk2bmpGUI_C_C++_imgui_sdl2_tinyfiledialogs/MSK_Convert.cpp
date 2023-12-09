@@ -365,7 +365,7 @@ union Pxl_info_32 {
     uint8_t arr[4];
 };
 
-void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* img_data)
+void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data)
 {
     int width  = surface->w;
     int height = surface->h;
@@ -394,7 +394,7 @@ void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* im
         }
     }
     img_data->MSK_data = data;
-    F_Prop->img_data.type = MSK;
+    img_data->type = MSK;
 }
 
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName)

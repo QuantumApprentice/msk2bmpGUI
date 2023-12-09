@@ -558,39 +558,40 @@ char* Save_IMG_SDL(SDL_Surface *b_surface, user_info* user_info)
 
 char* check_cfg_file(char* folder_name, user_info* user_info, char* exe_path)
 {
-    char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
+    char cfg_path_buffer[MAX_PATH];
+    snprintf(cfg_path_buffer, sizeof(cfg_path_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
 
-    FILE * config_file_ptr = NULL;
+    FILE * cfg_file_ptr = NULL;
 
 #ifdef QFO2_WINDOWS
     //Windows w/wide character support
     _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
 #elif defined(QFO2_LINUX)
-    config_file_ptr = fopen(path_buffer, "rb");
+    cfg_file_ptr = fopen(cfg_path_buffer, "rb");
 #endif
 
-    if (!config_file_ptr) {
+    if (!cfg_file_ptr) {
+        tinyfd_messageBox("crap1","crapcrapcrapcrapcrap","ok","info",0);     //test box      8==D
         folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
-
         write_cfg_file(user_info, exe_path);
         return folder_name;
     }
-    else
+    //TODO: read from config_file_ptr? save to user_info?
+    //      why am I creating the config_file but not
+    //      reading from it if it already exists?
+    fclose(cfg_file_ptr);
+    if (strcmp(folder_name, ""))
     {
-        fclose(config_file_ptr);
-        if (strcmp(folder_name, ""))
-        {
-            folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
-            return folder_name;
-        }
-        else
-        {
-            folder_name = tinyfd_selectFolderDialog(NULL, NULL);
-            return folder_name;
-        }
+        tinyfd_messageBox("crap2","crapcrapcrapcrapcrap","ok","info",0);     //test box      8==D
+        folder_name = tinyfd_selectFolderDialog(NULL, folder_name);
+        return folder_name;
     }
+
+    tinyfd_messageBox("crap3","crapcrapcrapcrapcrap","ok","info",0);     //test box      8==D
+    folder_name = tinyfd_selectFolderDialog(NULL, NULL);
+    return folder_name;
 }
+
 
 void Set_Default_Path(user_info* user_info, char* exe_path)
 {
@@ -665,6 +666,7 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 //    tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
 //    Split_to_Tiles_SDL(MSK_surface, user_info, MSK, NULL);
 //}
+
 //wrapper to save MSK tiles
 void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, char* exe_path)
 {
@@ -702,7 +704,25 @@ uint8_t* blend_PAL_texture(image_data* img_data)
     return blend_buffer;
 }
 
-void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type type, FRM_Header* frm_header, char* exe_path)
+
+//Split the img_data into tiles
+//Save each tile with a formatted name
+//Name format -- CreateFileName()
+//User options: Split_to_Tiles_OpenGL()
+//      1) set /Fallout 2/ directory location
+//          and export all tiles to correct folder
+//          under that location automatically
+//      2) export directly to the folder the user
+//          points to, all tiles, automatically
+//      3) ask user if folders/directories need
+//          to be created
+//      4) give user ability to change default
+//          game path from menubar (also here?)
+//      5) game path or last used save path is
+//          stored in user_info & msk2bmpGUI.cfg file
+
+//save_type is the file type being saved to (not the img_type coming in from img_data)
+void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type save_type, FRM_Header* frm_header, char* exe_path)
 {
     int img_width  = img_data->width;
     int img_height = img_data->height;
@@ -711,35 +731,119 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     int num_tiles_x = img_width  / TILE_W;
     int num_tiles_y = img_height / TILE_H;
     int tile_num = 0;
-    char path[MAX_PATH];
-    char Save_File_Name[MAX_PATH];
+
+
+    char save_path[MAX_PATH];
+    char Full_Save_File_Path[MAX_PATH];
 
     //create basic frame information for saving
+    //every tile has the same width/height/size
     FRM_Frame frame_data;
     memset(&frame_data, 0, sizeof(FRM_Frame));
-
     frame_data.Frame_Height      = (TILE_H);
     frame_data.Frame_Width       = (TILE_W);
     frame_data.Frame_Size        = (TILE_SIZE);
-
     B_Endian::flip_frame_endian(&frame_data);
 
     FILE * File_ptr = NULL;
 
-    if (!strcmp(user_info->default_game_path, "")) {
-        Set_Default_Path(user_info, exe_path);
-        if (!strcmp(user_info->default_game_path, "")) { return; }
+    char dest[2][27] {
+        {"/data/art/intrface"},
+        {"/data/data"}
+    };
+
+//TODO: needs testing
+//TODO: add config setting to allow user to auto-export
+//      when default_game_path is already set
+    int auto_export = tinyfd_messageBox("Automatic? or Manual?",
+        "When exporting a series of map or mask tiles\n"
+        "there are only two places in the game files\n"
+        "where these are located.\n\n"
+        "For rapid testing in game, you can export tiles\n"
+        "automatically and bypass this screen\n"
+        "by selecting YES here and setting the modded\n"
+        "Fallout 2 directory in the next dialogue box.\n\n"
+        "You can change this setting in the config menu."
+        ,
+        "yesnocancel", "question", 2);
+    if (auto_export == 0) {                 //cancel
+        return;
     }
-    strncpy(path, user_info->default_game_path, MAX_PATH);
+    if (auto_export == 1) {                 //Auto
+        if (!strcmp(user_info->default_game_path, "")) {
+            int choice = tinyfd_messageBox("Set Default Game Path...",
+                            "Do you want to set your default Fallout 2 game path?\n"
+                            "(Automatically overwrites game files)",
+                            "yesnocancel", "question", 2);
+            if (choice == 0) {                  //cancel
+                return;
+            }
+            if (choice == 1) {                  //Set default FO2 directory
+                char* current_save_path;
+                current_save_path = tinyfd_selectFolderDialog( 
+                    "Select directory to save to...",
+                    user_info->default_save_path);
+                if (!current_save_path) {
+                    return;
+                }
+                // std::filesystem::path path(current_save_path);
+                // strncpy(user_info->default_game_path, path.string().c_str(), MAX_PATH);
+                strncpy(user_info->default_game_path, current_save_path, MAX_PATH);
+
+                Set_Default_Path(user_info, exe_path);
+
+                snprintf(save_path, MAX_PATH, "%s%s", current_save_path, dest[save_type]);
+
+            }
+            if (choice == 2) {                  //manual
+
+                char* current_save_path;
+                current_save_path = tinyfd_selectFolderDialog(
+                    "Select directory to save to...",
+                    user_info->default_save_path);
+                if (!current_save_path) {
+                    return;
+                }
+                strncpy(save_path, current_save_path, MAX_PATH);
+
+                //parse Save_File_Name to isolate the directory and store in default_save_path
+                std::filesystem::path path(current_save_path);
+                strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
+            }
+
+        }
+        else {
+            if (!strcmp(user_info->default_game_path, "")) { return; }
+
+            snprintf(save_path, MAX_PATH, "%s%s", user_info->default_game_path, dest[save_type]);
+            // strncpy(save_path, user_info->default_game_path, MAX_PATH);
+
+        }
+    }
+    if (auto_export == 2) {
+        char* current_save_path;
+        current_save_path = tinyfd_selectFolderDialog(
+            "Select directory to save to...",
+            user_info->default_save_path);
+        if (!current_save_path) {
+            return;
+        }
+        strncpy(save_path, current_save_path, MAX_PATH);
+
+        //parse Save_File_Name to isolate the directory and store in default_save_path
+        // std::filesystem::path path(current_save_path);
+        // strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
+        strncpy(user_info->default_save_path, current_save_path, MAX_PATH);
+    }
 
     //create buffers for use in tiling
     uint8_t* blend_buffer = NULL;
     uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
-    if (type == FRM) {
+    if (img_data->type == FRM) {
         //create buffer from texture and original FRM_data
         blend_buffer = blend_PAL_texture(img_data);
     }
-    else if (type == MSK) {
+    else if (img_data->type == MSK) {
         //copy edited texture to buffer, combine with original image
         glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
         //read pixels into buffer
@@ -752,29 +856,26 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
     {
         for (int x = 0; x < num_tiles_x; x++)
         {
-            char filename_buffer[MAX_PATH];
+            //create the filename for the current tile
+            //assigns final save path string to Full_Save_File_Path
+            Create_File_Name(Full_Save_File_Path, MAX_PATH, save_type, save_path, tile_num);
 
-#ifdef QFO2_WINDOWS
-            strncpy_s(filename_buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
-#elif defined(QFO2_LINUX)
-            strncpy(filename_buffer, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
-#endif
-            //check for existing file first
-            check_file(type, path, filename_buffer, tile_num, Save_File_Name);
-            if (filename_buffer == NULL) { return; }
+            // check for existing file first
+            check_file(save_type, save_path, Full_Save_File_Path, tile_num);
+            if (Full_Save_File_Path == NULL) { return; }//should this be a NULL check?          8==D
 
 #ifdef QFO2_WINDOWS
             wchar_t* w_save_name = tinyfd_utf8to16(filename_buffer);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
-            File_ptr = fopen(filename_buffer, "wb");
+            File_ptr = fopen(Full_Save_File_Path, "wb");
 #endif
 
             if (!File_ptr) {
                 tinyfd_messageBox(
                     "Error",
-                    "Can not open this file in write mode.\n"
-                    "Make sure the default game path is set.",
+                    "Can not open this file in write mode.\nMake sure the default game path is set."
+                    ,
                     "ok",
                     "error",
                     1);
@@ -782,7 +883,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
             }
             else {
                 // FRM = 1, MSK = 0
-                if (type == FRM) {
+                if (save_type == FRM) {
                     //Split buffer int 350x300 pixel tiles and write to file
                     //save header
                     fwrite(frm_header,  sizeof(FRM_Header), 1, File_ptr);
@@ -799,7 +900,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
                     }
                 }
                 ///////////////////////////////////////////////////////////////////////////
-                if (type == MSK)
+                if (save_type == MSK)
                 {
                     //Split the surface up into 350x300 pixel surfaces
                     //      and pass them to Save_MSK_Image_OpenGL()
@@ -938,20 +1039,22 @@ bool file_exists(const char* filename)
 }
 ///////////////////////////////////////////////////////////////////////////
 
-void check_file(img_type type, char* path, char* buffer, int tile_num, char* Save_File_Name)
+
+//checks if the file/folder? already exists before saving it
+void check_file(img_type type, char* save_path, char* Save_File_Name, int tile_num)
 {
     FILE* File_ptr = NULL;
     char * alt_path;
-    char * lFilterPatterns[3] = { "*.FRM", "*.MSK", "" };
+    const char * lFilterPatterns[3] = { "*.FRM", "*.MSK", "" };
 
 #ifdef QFO2_WINDOWS
     //Windows w/wide character support
-    wchar_t* w_save_name = tinyfd_utf8to16(buffer);
+    wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
     if (error == 0)
 #elif defined(QFO2_LINUX)
-    File_ptr = fopen(buffer, "rb");
-    if (File_ptr == NULL)
+    File_ptr = fopen(Save_File_Name, "rb");
+    if (File_ptr != NULL)
 #endif
     {
     //handles the case where the file exists
@@ -965,51 +1068,49 @@ void check_file(img_type type, char* path, char* buffer, int tile_num, char* Sav
                 "yesnocancel",
                 "warning",
                 2);
-        if      (choice == 0) { 
-                    buffer = { 0 };
+        if      (choice == 0) {         // cancel
+                    Save_File_Name = { 0 };
                     return; }
-        else if (choice == 1) {}
-        else if (choice == 2) {
+        else if (choice == 1) {}        // yes = overwrite
+        else if (choice == 2) {         // no  = choose new folder
             //TODO: check if this works
-            alt_path = tinyfd_selectFolderDialog(NULL, path);
+            alt_path = tinyfd_selectFolderDialog(NULL, save_path);
 
-#ifdef QFO2_WINDOWS
-            strncpy_s(buffer, MAX_PATH, Create_File_Name(type, alt_path, tile_num, Save_File_Name), MAX_PATH);
-#elif defined(QFO2_LINUX)
-            strncpy(buffer, Create_File_Name(type, alt_path, tile_num, Save_File_Name), MAX_PATH);
-#endif
-
+            Create_File_Name(Save_File_Name, MAX_PATH, type, alt_path, tile_num);
+            strncpy(save_path, alt_path, MAX_PATH);
         }
     }
 
-    //handles the case where the DIRECTORY doesn't exist
+//If saving to game folder, appropriate directories are
+//appended to the Save_File_Name string
+//handles the case where the DIRECTORY doesn't exist
     else {
         char* ptr;
         char dir_path[MAX_PATH];
 
 #ifdef QFO2_WINDOWS
-        strncpy_s(temp, MAX_PATH, buffer, MAX_PATH);
+        strncpy_s(dir_path, MAX_PATH, Save_File_Name, MAX_PATH);
 #elif defined(QFO2_LINUX)
-        strncpy(dir_path, buffer, MAX_PATH);
+        strncpy(dir_path, Save_File_Name, MAX_PATH);
 #endif
 
-        ptr = strrchr(dir_path, '\\');
+//get the directory path from the copy of filename_buffer, which is a copy of Save_File_Name
+//maybe swap for save_path? (same exact info)                   8==D
+        ptr = strrchr(dir_path, '/');
         *ptr = '\0';
 
 #ifdef QFO2_WINDOWS
-        struct __stat64 stat_info; 
+        struct __stat64 stat_info;
         error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
-        if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0)
-        {
-            /* dir_path exists and is a directory */ 
+        if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0) {
+            /* dir_path exists and is a directory */
             return;
         }
 #elif defined(QFO2_LINUX)
         struct stat stat_info;
         int error = stat(dir_path, &stat_info);
-        if (error == 0 && (stat_info.st_mode & S_IFDIR))
-        {
-            /* dir_path exists and is a directory */ 
+        if (error == 0 && (stat_info.st_mode & S_IFDIR)) {
+            /* dir_path exists and is a directory */
             return;
         }
 #endif
@@ -1018,61 +1119,68 @@ void check_file(img_type type, char* path, char* buffer, int tile_num, char* Sav
         int choice =
             tinyfd_messageBox(
                 "Warning",
-                "Directory doesnt exist. And escaping the apostrophe doesnt work :(\n"
-                "Choose a different location?",
-                "okcancel",
+                "Directory does not exist.\n"
+                "Choose a different location?\n"
+                "NO will create the missing directories.",
+                "yesnocancel",
                 "warning",
                 2);
         if (choice == 0) {
             //Cancel =  null out buffer and return
-            buffer = { 0 };
+            Save_File_Name = { 0 };
             return;
         }
         if (choice == 1) {
-            //No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-            char* save_file = tinyfd_saveFileDialog(
-                "Warning",
-                buffer,
-                2,
-                lFilterPatterns,
-                nullptr);
+            //(don't overwrite) open a new saveFileDialog() and pick a new savespot
+            //TODO: replace tinyfd_saveFileDialog() with tinyfd_saveFolderDialog()?
+            // char* temp_file_ptr = tinyfd_saveFileDialog(
+            //     "Warning",
+            //     Save_File_Name,
+            //     2,
+            //     lFilterPatterns,
+            //     nullptr);
 
-            if (save_file == NULL) {
-                buffer = { 0 };
+            char* temp_fldr_ptr = tinyfd_selectFolderDialog(
+                "Warning",
+                save_path
+            );
+
+            if (temp_fldr_ptr == NULL) {
+                Save_File_Name = { 0 };
                 return;
             }
             else {
-                //TODO: check if this works
 
 #ifdef QFO2_WINDOWS
-                strncpy_s(buffer, MAX_PATH, save_file, MAX_PATH);
+                //TODO: check if this works     8===D
+                strncpy_s(save_path, MAX_PATH, temp_fldr_ptr, MAX_PATH);
 #elif defined(QFO2_LINUX)
-                strncpy(buffer, save_file, MAX_PATH);
+                //TODO: check if this works     8===D
+                strncpy(save_path, temp_fldr_ptr, MAX_PATH);
 #endif
             }
+        }
+        if (choice == 2) {
+
+//TODO: FINISH THIS PART!!!                 8==D
+//Create the folders to write to?
+            return;
         }
     }
 }
 
 // Help create a filename based on the directory and export file type
-// bool type: FRM = 1, MSK = 0
-char* Create_File_Name(img_type type, char* path, int tile_num, char* Save_File_Name)
+// img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
+void Create_File_Name(char* return_buffer, int buff_size, img_type save_type, char* save_path, int tile_num)
 {
-    //-------save file
-    //TODO: move tile_num++ outside if check
-    if (type == FRM) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\art\\intrface\\wrldmp%02d.FRM", path, tile_num);
-    }
-    else
-    if (type == MSK) {
-        snprintf(Save_File_Name, MAX_PATH, "%s\\data\\data\\wrldmp%02d.MSK", path, tile_num);
-    }
+    char ext[2][4] = {
+        {"MSK"},
+        {"FRM"}
+    };
 
-    // Wide character stuff follows...
-    //TODO: is this necessary?
-     //return tinyfd_utf8to16(Save_File_Name);
-    //just return the filename?
-    return Save_File_Name;
+    //-------create file path string based on save_path, tile_num, save_type
+    snprintf(return_buffer, MAX_PATH, "%s/WRLDMP%02d.%s", save_path, tile_num, ext[save_type]);
+    // printf("%s\n%s\n", return_buffer, ext[save_type]);
 }
 
 void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
@@ -1108,7 +1216,7 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
     char * lFilterPatterns[2] = { "*.MSK", "" };
     char save_path[MAX_PATH];
 
-    snprintf(save_path, MAX_PATH, "%s\\temp001.MSK", usr_info->default_save_path);
+    snprintf(save_path, MAX_PATH, "%s/temp001.MSK", usr_info->default_save_path);
 
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",

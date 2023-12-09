@@ -18,8 +18,31 @@ struct config_data {
     //regular char buffers
     char key_buffer[MAX_KEY];
     char val_buffer[MAX_PATH];
+} config_data_struct;
 
-} config;
+//TODO: config file needs to be stored in a writeable directory
+//      depending on O/S the exe directory may not be writeable
+// hybrid approach - have it support a portable version and an installed version.
+// In the case of the portable version, you ship a configuration file with it
+// that enables portable mode, then when you start the app you read the config
+// file in the same directory as the exe
+
+// In the case of an installed version you don't have that configuration file,
+// so it uses system paths for storing the configuration files
+// Not necessarily same directory, just same file hierarchy somewhere,
+// it can be in a subdirectory
+
+// Or you can make it support loading configuration from multiple places
+// depending on which one it finds first
+
+// So when you load the program it tries to find the config file in a few places,
+// and marks the one where it found it as the configuration path,
+// and when you save it tries to write there
+
+// Then it uses the "user-level" directory if it finds none,
+// since in the "portable" version you'd have a configuration
+// file somewhere near the exe that it should find
+// environment variables on Linux as well. Like XDG_DESKTOP_SOMETHING
 
 void Load_Config(struct user_info *usr_info, char* exe_path)
 {
@@ -89,31 +112,34 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
 }
 
 //normal char version
+//Parse the msk2bmpGUI.cfg file
+//stores config settings into global user_info struct
 void parse_data(char * file_data, size_t size, struct user_info *usr_info)
 {
-    while (config.char_ptr < size)
+    //config_data_struct is global here (maybe instance here instead?)
+    while (config_data_struct.char_ptr < size)
     {
-        switch (file_data[config.char_ptr])
+        switch (file_data[config_data_struct.char_ptr])
         {
         case '\r': case '\n':
         {
-            config.char_ptr++;
-            parse_key(file_data, size, &config);
+            config_data_struct.char_ptr++;
+            parse_key(file_data, size, &config_data_struct);
             break;
         }
         case ';':
         {
-            parse_comment(file_data, size, &config);
+            parse_comment(file_data, size, &config_data_struct);
             break;
         }
         case '=':
         {
-            parse_value(file_data, size, &config, usr_info);
+            parse_value(file_data, size, &config_data_struct, usr_info);
             break;
         }
         default:
         {
-            parse_key(file_data, size, &config);
+            parse_key(file_data, size, &config_data_struct);
             break;
         }
         }

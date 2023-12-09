@@ -919,12 +919,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 ImGui::SameLine();
                 checkbox_handler("Show Town Tiles", &F_Prop->show_tiles);
 
-
-
             }
             if (ImGui::Button("Convert Regular Image to MSK")) {
-            //TODO: IMG_Surface is not used anymore             8==D
-                Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
+                Convert_SDL_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                          &F_Prop->img_data);
                 Prep_Image(F_Prop,
                     NULL,
                     My_Variables->SDL_color,
@@ -959,7 +957,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 }
             }
             if (ImGui::Button("Convert FRM Image to MSK")) {
-                Convert_SDL_Surface_to_MSK(F_Prop->IMG_Surface, F_Prop, &F_Prop->img_data);
+                Convert_SDL_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                          &F_Prop->img_data);
                 Prep_Image(F_Prop,
                     NULL,
                     My_Variables->SDL_color,
@@ -1008,7 +1007,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (My_Variables->tile_window_focused) {
             if (ImGui::Button("Save as Map Tiles...")) {
                 if (strcmp(F_Prop->extension, "FRM") == 0) {
-                    Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                &usr_info);
                 }
                 else {
                     Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
@@ -1032,7 +1032,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 open_window = true;
 
                 if (save_type == OTHER) {
-                    Save_IMG_SDL(F_Prop->IMG_Surface, &usr_info);
+                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                &usr_info);
                 }
                 if (save_type == FRM) {
                     Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);

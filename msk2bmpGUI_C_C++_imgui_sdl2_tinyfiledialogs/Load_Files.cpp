@@ -148,7 +148,7 @@ bool Supported_Format(const std::filesystem::path &file)
     int i = 0;
     while (i < k)
     {
-        //TODO: does 5 characters work? or do I need 4 instead?
+        //TODO: comparing 5 characters works, but maybe expand to more?
         if (ext_compare(file.extension().c_str(), supported[i], 5) == 0)
         {
             return true;
@@ -460,7 +460,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 #elif defined(QFO2_LINUX)
 
 //Store directory files in memory for quick Next/Prev buttons
-//Filepaths for files are assigned to pointers passed in
+//Filepaths for files are assigned to the pointers passed in
 void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
 {
     // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
@@ -773,10 +773,7 @@ SDL_Surface *Surface_32_Check(SDL_Surface *surface)
             return surface;
         }
     }
-    else
-    {
-        return nullptr;
-    }
+    return nullptr;
 }
 
 //TODO: maybe combine with Supported_Format()?      8==D
@@ -850,9 +847,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 F_Prop->img_data.type = OTHER;
 
                 // TODO: rewrite this function
-                Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
-                              &F_Prop->img_data.FRM_texture,
-                              &F_Prop->file_open_window);
+                F_Prop->file_open_window 
+                    = Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                   &F_Prop->img_data.FRM_texture);
 
                 init_framebuffer(img_data);
             }

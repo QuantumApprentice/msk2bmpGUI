@@ -48,8 +48,6 @@ uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame, SDL_PixelFor
 
     SDL_BlitSurface(anm_frame->frame_start, &src_rectangle, out_surface, &dst_rectangle);
 
-    // SDL_PixelFormat* pxlFMT_FO_Pal = loadPalette(NULL);
-
     uint8_t* out_data = FRM_Color_Convert(out_surface, pxlFMT_FO_Pal, 0);
 
     return out_data;

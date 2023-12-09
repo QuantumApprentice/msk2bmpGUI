@@ -21,4 +21,4 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
 
 SDL_Surface* Load_MSK_Tile_SDL(char* FileName);
 
-void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, LF* F_Prop, image_data* img_data);
+void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data);

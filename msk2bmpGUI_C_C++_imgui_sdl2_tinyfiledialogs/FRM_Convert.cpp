@@ -58,11 +58,8 @@ SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
 {
 
 #ifdef QFO2_WINDOWS
-    // old c++ way of doing this
-    // std::ifstream f("resources//palette//color.pal", std::ios::in | std::ios::binary);
-    // if (!f.is_open()) {
     FILE* file_ptr = fopen(name, "rb");
-    // if (file_ptr == NULL) {
+    // if (file_ptr == NULL) {              //uncomment when compiling for windows
 #elif defined(QFO2_LINUX)
     int file_ptr = open(name, O_RDONLY);
     if (file_ptr < 0) {
@@ -83,7 +80,6 @@ SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
         uint8_t bytes[4];
 
 #ifdef QFO2_WINDOWS
-        // file_ptr.read((char*)bytes, 3);      //old c++ library way of doing this
         fread(bytes, 3, 1, file_ptr);
 #elif defined(QFO2_LINUX)
         read(file_ptr, bytes, 3);

@@ -5,8 +5,8 @@
 #include "Image2Texture.h"
 
 
-//Used to convert generic images loaded with SDL
-void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
+//Used to convert generic SDL image surfaces to textures
+bool Image2Texture(SDL_Surface* surface, GLuint* texture)
 {
     //TODO: Need to clean up the memory leaks in this function and the next
     if (surface)
@@ -23,12 +23,12 @@ void Image2Texture(SDL_Surface* surface, GLuint* texture, bool* window)
             SDL_to_OpenGl(surface, texture);
         }
 
-        *window = true;
+        return true;
 
     }
     if (texture == NULL) {
         printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
-        *window = false;
+        return false;
     }
 }
 
