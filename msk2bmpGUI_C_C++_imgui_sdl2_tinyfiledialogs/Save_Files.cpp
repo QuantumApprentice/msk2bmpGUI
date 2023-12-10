@@ -755,85 +755,86 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
 //TODO: needs testing
 //TODO: add config setting to allow user to auto-export
 //      when default_game_path is already set
-    int auto_export = tinyfd_messageBox("Automatic? or Manual?",
-        "When exporting a series of map or mask tiles\n"
-        "there are only two places in the game files\n"
-        "where these are located.\n\n"
-        "For rapid testing in game, you can export tiles\n"
-        "automatically and bypass this screen\n"
-        "by selecting YES here and setting the modded\n"
-        "Fallout 2 directory in the next dialogue box.\n\n"
-        "You can change this setting in the config menu."
-        ,
-        "yesnocancel", "question", 2);
-    if (auto_export == 0) {                 //cancel
-        return;
-    }
-    if (auto_export == 1) {                 //Auto
-        if (!strcmp(user_info->default_game_path, "")) {
-            int choice = tinyfd_messageBox("Set Default Game Path...",
-                            "Do you want to set your default Fallout 2 game path?\n"
-                            "(Automatically overwrites game files)",
-                            "yesnocancel", "question", 2);
-            if (choice == 0) {                  //cancel
-                return;
-            }
-            if (choice == 1) {                  //Set default FO2 directory
-                char* current_save_path;
-                current_save_path = tinyfd_selectFolderDialog( 
-                    "Select directory to save to...",
-                    user_info->default_save_path);
-                if (!current_save_path) {
-                    return;
-                }
-                // std::filesystem::path path(current_save_path);
-                // strncpy(user_info->default_game_path, path.string().c_str(), MAX_PATH);
-                strncpy(user_info->default_game_path, current_save_path, MAX_PATH);
-
-                Set_Default_Path(user_info, exe_path);
-
-                snprintf(save_path, MAX_PATH, "%s%s", current_save_path, dest[save_type]);
-
-            }
-            if (choice == 2) {                  //manual
-
-                char* current_save_path;
-                current_save_path = tinyfd_selectFolderDialog(
-                    "Select directory to save to...",
-                    user_info->default_save_path);
-                if (!current_save_path) {
-                    return;
-                }
-                strncpy(save_path, current_save_path, MAX_PATH);
-
-                //parse Save_File_Name to isolate the directory and store in default_save_path
-                std::filesystem::path path(current_save_path);
-                strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
-            }
-
-        }
-        else {
-            if (!strcmp(user_info->default_game_path, "")) { return; }
-
-            snprintf(save_path, MAX_PATH, "%s%s", user_info->default_game_path, dest[save_type]);
-            // strncpy(save_path, user_info->default_game_path, MAX_PATH);
-
-        }
-    }
-    if (auto_export == 2) {
-        char* current_save_path;
-        current_save_path = tinyfd_selectFolderDialog(
-            "Select directory to save to...",
-            user_info->default_save_path);
-        if (!current_save_path) {
+    if (user_info->auto_export == false) {
+        int auto_export = tinyfd_messageBox("Automatic? or Manual?",
+            "When exporting a series of map or mask tiles\n"
+            "there are only two places in the game files\n"
+            "where these are located.\n\n"
+            "For rapid testing in game, you can export tiles\n"
+            "automatically and bypass this screen\n"
+            "by selecting YES here and setting the modded\n"
+            "Fallout 2 directory in the next dialogue box.\n\n"
+            "You can change this setting in the config menu."
+            ,
+            "yesnocancel", "question", 2);
+        if (auto_export == 0) {                 //cancel
             return;
         }
-        strncpy(save_path, current_save_path, MAX_PATH);
+        if (auto_export == 1) {                 //Auto
+            if (!strcmp(user_info->default_game_path, "")) {
+                int choice = tinyfd_messageBox("Set Default Game Path...",
+                                "Do you want to set your default Fallout 2 game path?\n"
+                                "(Automatically overwrites game files)",
+                                "yesnocancel", "question", 2);
+                if (choice == 0) {                  //cancel
+                    return;
+                }
+                if (choice == 1) {                  //Set default FO2 directory
+                    char* current_save_path;
+                    current_save_path = tinyfd_selectFolderDialog( 
+                        "Select directory to save to...",
+                        user_info->default_save_path);
+                    if (!current_save_path) {
+                        return;
+                    }
+                    // std::filesystem::path path(current_save_path);
+                    // strncpy(user_info->default_game_path, path.string().c_str(), MAX_PATH);
+                    strncpy(user_info->default_game_path, current_save_path, MAX_PATH);
 
-        //parse Save_File_Name to isolate the directory and store in default_save_path
-        // std::filesystem::path path(current_save_path);
-        // strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
-        strncpy(user_info->default_save_path, current_save_path, MAX_PATH);
+                    Set_Default_Path(user_info, exe_path);
+
+                    snprintf(save_path, MAX_PATH, "%s%s", current_save_path, dest[save_type]);
+
+                }
+                if (choice == 2) {                  //manual
+
+                    char* current_save_path;
+                    current_save_path = tinyfd_selectFolderDialog(
+                        "Select directory to save to...",
+                        user_info->default_save_path);
+                    if (!current_save_path) {
+                        return;
+                    }
+                    strncpy(save_path, current_save_path, MAX_PATH);
+
+                    //parse Save_File_Name to isolate the directory and store in default_save_path
+                    std::filesystem::path path(current_save_path);
+                    strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
+                }
+
+            }
+            else {
+                if (!strcmp(user_info->default_game_path, "")) { return; }
+
+                snprintf(save_path, MAX_PATH, "%s%s", user_info->default_game_path, dest[save_type]);
+                // strncpy(save_path, user_info->default_game_path, MAX_PATH);
+            }
+        }
+        if (auto_export == 2) {
+            char* current_save_path;
+            current_save_path = tinyfd_selectFolderDialog(
+                "Select directory to save to...",
+                user_info->default_save_path);
+            if (!current_save_path) {
+                return;
+            }
+            strncpy(save_path, current_save_path, MAX_PATH);
+
+            //parse Save_File_Name to isolate the directory and store in default_save_path
+            // std::filesystem::path path(current_save_path);
+            // strncpy(user_info->default_save_path, path.string().c_str(), MAX_PATH);
+            strncpy(user_info->default_save_path, current_save_path, MAX_PATH);
+        }
     }
 
     //create buffers for use in tiling

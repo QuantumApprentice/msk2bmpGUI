@@ -780,6 +780,17 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             if (ImGui::MenuItem("Paste", "CTRL+V")) {}
             ImGui::EndMenu();
         }
+        if (ImGui::BeginMenu("Config"))
+        {
+            if (ImGui::MenuItem("Toggle Auto Mode", "CTRL+SHIFT+A")) {
+                if (usr_info.auto_export == true) {
+                    usr_info.auto_export = false;
+                }
+                else {
+                    usr_info.auto_export = true;
+                }
+            }
+        }
         ImGui::EndMainMenuBar();
     }
 }
