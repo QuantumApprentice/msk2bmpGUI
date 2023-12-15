@@ -598,7 +598,7 @@ bool check_cfg_file(user_info *user_info, char *exe_path)
         else
         {
             // create the directory first, then make the file
-            if (make_dir(cfg_path_buffer))
+            if (io_make_dir(cfg_path_buffer))
             {
                 cfg_file_ptr = fopen(cfg_filepath_buffer, "wb");
                 // write_cfg_file(user_info, exe_path);
@@ -891,11 +891,11 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
 // save_type is the file type being saved to (not the img_type coming in from img_data)
 void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img_type save_type, FRM_Header *frm_header, char *exe_path)
 {
-    int img_width = img_data->width;
+    int img_width  = img_data->width;
     int img_height = img_data->height;
-    int img_size = img_width * img_height;
+    int img_size   = img_width * img_height;
 
-    int num_tiles_x = img_width / TILE_W;
+    int num_tiles_x = img_width  / TILE_W;
     int num_tiles_y = img_height / TILE_H;
     int tile_num = 0;
 
@@ -906,9 +906,9 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
     // every tile has the same width/height/size
     FRM_Frame frame_data;
     memset(&frame_data, 0, sizeof(FRM_Frame));
+    frame_data.Frame_Width  = (TILE_W);
     frame_data.Frame_Height = (TILE_H);
-    frame_data.Frame_Width = (TILE_W);
-    frame_data.Frame_Size = (TILE_SIZE);
+    frame_data.Frame_Size   = (TILE_SIZE);
     B_Endian::flip_frame_endian(&frame_data);
 
     FILE *File_ptr = NULL;
@@ -922,12 +922,12 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
     // create buffers for use in tiling
     uint8_t *blend_buffer = NULL;
     uint8_t *texture_buffer = (uint8_t *)malloc(img_size);
-    if (img_data->type == FRM)
+    if (save_type == FRM)
     {
         // create buffer from texture and original FRM_data
         blend_buffer = blend_PAL_texture(img_data);
     }
-    else if (img_data->type == MSK)
+    else if (save_type == MSK)
     {
         // copy edited texture to buffer, combine with original image
         glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
@@ -951,7 +951,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
             if (Full_Save_File_Path == NULL)
             {
                 return;
-            } // should this be a NULL check?          8==D
+            } // TODO: should this be a NULL check? i don't think this works with check_file anymore          8==D
 
 #ifdef QFO2_WINDOWS
             wchar_t *w_save_name = tinyfd_utf8to16(filename_buffer);
@@ -995,7 +995,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                     // Split the surface up into 350x300 pixel surfaces
                     //       and pass them to Save_MSK_Image_OpenGL()
 
-                    int img_size = img_data->width * img_data->height;
+                    // int img_size = img_data->width * img_data->height;
 
                     // create buffers
                     uint8_t *tile_buffer = (uint8_t *)malloc(TILE_SIZE);
@@ -1147,7 +1147,7 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
                 "warning",
                 2);
         if (choice == 0) {                  // cancel
-            Save_File_Name = NULL;
+            Save_File_Name = {0};
             return;
         }
         else if (choice == 1) {}            // yes = overwrite
@@ -1186,7 +1186,7 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
             return;
         }
         if (choice == 1) {          // Create the folders to write to
-            if (make_dir(save_path)) {
+            if (io_make_dir(save_path)) {
                 check_file(save_path, Save_File_Name, tile_num, type);
                 return;
             }

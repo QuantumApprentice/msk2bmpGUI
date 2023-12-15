@@ -101,7 +101,9 @@ bool io_file_exists(const char* filename)
 }
 
 //makes a directory from the path provided
-bool make_dir(char* dir_path)
+//recursively makes leading directories if they don't exist
+//returns true on success or directory exists, false on error
+bool io_make_dir(char* dir_path)
 {
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
@@ -112,9 +114,9 @@ bool make_dir(char* dir_path)
         if (errno == 2) {
         char* ptr = strrchr(dir_path, '/');
         *ptr = '\0';
-        if (make_dir(dir_path)) {
+        if (io_make_dir(dir_path)) {
             *ptr = '/';
-            return make_dir(dir_path);
+            return io_make_dir(dir_path);
             }
         }
         else {
