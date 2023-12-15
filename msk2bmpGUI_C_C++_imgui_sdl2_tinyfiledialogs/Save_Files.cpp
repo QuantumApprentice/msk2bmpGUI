@@ -947,7 +947,9 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
 
             // check for existing file first unless "Auto" selected
             ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
-            check_file(save_path, Full_Save_File_Path, tile_num, save_type);
+            if (x < 1 && y < 1) {
+                check_file(save_path, Full_Save_File_Path, tile_num, save_type);
+            }
             if (Full_Save_File_Path == NULL)
             {
                 return;
