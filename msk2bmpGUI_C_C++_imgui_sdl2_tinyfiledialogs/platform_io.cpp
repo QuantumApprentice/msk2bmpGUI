@@ -15,6 +15,7 @@ uint64_t nano_time()
     return (clock() / CLOCKS_PER_SEC);
 }
 
+//TODO: match this return to the linux version
 void io_isdir(char* dir_path)
 {
     struct __stat64 stat_info;
