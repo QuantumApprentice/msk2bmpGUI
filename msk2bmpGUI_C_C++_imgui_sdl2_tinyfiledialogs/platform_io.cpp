@@ -40,8 +40,10 @@ bool io_file_exists(const char* filename)
 }
 
 //makes a directory from the path provided
+//recursively makes leading directories if they don't exist
+//returns true on success or directory exists, false on error
 //TODO: this also needs a windows version
-bool make_dir(char* dir_path)
+bool io_make_dir(char* dir_path)
 {
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
@@ -49,9 +51,20 @@ bool make_dir(char* dir_path)
         return true;
     }
     else {
-        printf("failed to created directory, error: ", errno);
-        return false;
+        if (errno == 2) {
+        char* ptr = strrchr(dir_path, '/');
+        *ptr = '\0';
+        if (io_make_dir(dir_path)) {
+            *ptr = '/';
+            return io_make_dir(dir_path);
+            }
+        }
+        else {
+            printf("You may ask yourself, how did I get here?\n");
+        }
     }
+    printf("Error making directory, errno:\t%d:\t%s\n", errno, strerror(errno));
+    return false;
 }
 
 
@@ -120,10 +133,10 @@ bool io_make_dir(char* dir_path)
             }
         }
         else {
-            printf("You may ask yourself, how did I get here?");
+            printf("You may ask yourself, how did I get here?\n");
         }
     }
-    printf("Error making directory, errno: %d, %s", errno, strerror(errno));
+    printf("Error making directory, errno:\t%d:\t%s\n", errno, strerror(errno));
     return false;
 }
 

@@ -950,10 +950,9 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
             if (x < 1 && y < 1) {
                 check_file(save_path, Full_Save_File_Path, tile_num, save_type);
             }
-            if (Full_Save_File_Path == NULL)
-            {
+            if (Full_Save_File_Path[0] == '\0') {
                 return;
-            } // TODO: should this be a NULL check? i don't think this works with check_file anymore          8==D
+            }
 
 #ifdef QFO2_WINDOWS
             wchar_t *w_save_name = tinyfd_utf8to16(filename_buffer);
@@ -994,25 +993,22 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                 ///////////////////////////////////////////////////////////////////////////
                 if (save_type == MSK)
                 {
-                    // Split the surface up into 350x300 pixel surfaces
+                    // Split the surface up into 350x300 pixel buffer
                     //       and pass them to Save_MSK_Image_OpenGL()
-
-                    // int img_size = img_data->width * img_data->height;
 
                     // create buffers
                     uint8_t *tile_buffer = (uint8_t *)malloc(TILE_SIZE);
 
-                    int tile_pointer = (y * img_width * TILE_H) + (x * TILE_W);
-                    int img_row_pntr = 0;
+                    int tile_pointer  = (y * img_width * TILE_H) + (x * TILE_W);
+                    int img_row_pntr  = 0;
                     int tile_row_pntr = 0;
 
                     for (int i = 0; i < TILE_H; i++)
                     {
                         // copy out one row of pixels in each loop to the buffer
-                        // fwrite(blend_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
                         memcpy(tile_buffer + tile_row_pntr, texture_buffer + tile_pointer + img_row_pntr, TILE_W);
 
-                        img_row_pntr += img_width;
+                        img_row_pntr  += img_width;
                         tile_row_pntr += TILE_W;
                     }
 
@@ -1121,6 +1117,8 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
 //}
 
 // checks if the file/folder? already exists before saving it
+// sets Save_File_Name[0] = '\0'; if user clicks cancel
+// when prompted to overwrite a file
 void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type type)
 {
     FILE *File_ptr = NULL;
@@ -1149,13 +1147,15 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
                 "warning",
                 2);
         if (choice == 0) {                  // cancel
-            Save_File_Name = {0};
+            Save_File_Name[0] = '\0';
             return;
         }
         else if (choice == 1) {}            // yes = overwrite
         else if (choice == 2) {             // no  = choose new folder
             // TODO: check if this works
-            alt_path = tinyfd_selectFolderDialog(NULL, save_path);
+            alt_path = tinyfd_selectFolderDialog(
+                "Select directory to save to...",
+                save_path);
 
             Create_File_Name(Save_File_Name, MAX_PATH, type, alt_path, tile_num);
 
@@ -1184,7 +1184,7 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
                 "Create the missing directories?",
                 "yesnocancel", "warning", 2);
         if (choice == 0) {          // Cancel =  null out buffer and return
-            Save_File_Name = {0};
+            Save_File_Name[0] = '\0';
             return;
         }
         if (choice == 1) {          // Create the folders to write to
@@ -1195,10 +1195,10 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
         }
         if (choice == 2) {          //(don't overwrite) open a new saveFileDialog() and pick a new savespot
             alt_path = tinyfd_selectFolderDialog(
-                "Select new save path...",
+                "Select directory to save to...",
                 save_path);
             if (alt_path == NULL) {
-                Save_File_Name = {0};
+                Save_File_Name[0] = '\0';
                 return;
             }
 
@@ -1206,9 +1206,9 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
             // TODO: maybe change to strncpy because the _s version is dumb
             strncpy_s(save_path, MAX_PATH, alt_path, MAX_PATH);
 #elif defined(QFO2_LINUX)
-            // TODO: check if this works     8===D
             strncpy(save_path, alt_path, MAX_PATH);
 #endif
+            Create_File_Name(Save_File_Name, MAX_PATH, type, alt_path, tile_num);
             check_file(save_path, Save_File_Name, tile_num, type);
         }
     }
