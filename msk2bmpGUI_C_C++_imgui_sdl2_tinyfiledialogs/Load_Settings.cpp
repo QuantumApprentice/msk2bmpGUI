@@ -307,6 +307,7 @@ void store_config_info(struct config_data *config, struct user_info *usr_info)
 }
 
 //TODO: change to add all lines to a buffer then fwrite entire buffer
+//TODO: add new entries that are already in user_cfg
 void write_cfg_file(struct user_info* usr_info, char* exe_path)
 {
     char path_buffer[MAX_PATH];

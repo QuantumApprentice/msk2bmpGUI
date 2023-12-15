@@ -782,14 +782,25 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
         }
         if (ImGui::BeginMenu("Config"))
         {
-            if (ImGui::MenuItem("Toggle Auto Mode", "CTRL+SHIFT+A")) {
-                if (usr_info.auto_export == true) {
-                    usr_info.auto_export = false;
+            if (ImGui::MenuItem("Toggle Auto Mode")) {
+                if (usr_info.auto_export != 0) {
+                    usr_info.auto_export = 0;
+                    usr_info.default_game_path[0] = '\0';
                 }
                 else {
                     usr_info.auto_export = true;
                 }
             }
+            if (ImGui::MenuItem("Reset ImGui.ini (not yet implemented)")) {
+                char buff[MAX_PATH];
+                snprintf(buff, MAX_PATH, "%s%s", My_Variables->exe_directory, "/imgui.ini");
+                FILE* file_ptr = fopen(buff, "rb");
+                if (file_ptr) {
+                    fclose(file_ptr);
+                    //TODO: delete file? copy default settings as string?
+                }
+            }
+            ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
