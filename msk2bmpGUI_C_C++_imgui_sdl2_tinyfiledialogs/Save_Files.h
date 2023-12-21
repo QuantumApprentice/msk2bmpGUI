@@ -28,7 +28,8 @@ void Save_MSK_Image_OpenGL(uint8_t* texture_buffer, FILE* File_ptr, int width, i
 //void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* user_info, img_type type, FRM_Header* FRM_Header);
 void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, img_type save_type, FRM_Header* frm_header, char* exe_path);
 
+bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
 void check_file(char* path, char* Save_File_Name, int tile_num, img_type type);
 void Create_File_Name(char* buffer, int buff_size, img_type type, char* path, int tile_num);
 
-void Set_Default_Path(user_info* user_info, char* exe_path);
+void Set_Default_Game_Path(user_info* user_info, char* exe_path);

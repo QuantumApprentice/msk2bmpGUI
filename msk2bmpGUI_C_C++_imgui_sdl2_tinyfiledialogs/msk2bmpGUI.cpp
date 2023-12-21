@@ -747,7 +747,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                 Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path")) {
-                Set_Default_Path(&usr_info, My_Variables->exe_directory);
+                Set_Default_Game_Path(&usr_info, My_Variables->exe_directory);
             }
             if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning")) {
                 if (usr_info.save_full_MSK_warning) {

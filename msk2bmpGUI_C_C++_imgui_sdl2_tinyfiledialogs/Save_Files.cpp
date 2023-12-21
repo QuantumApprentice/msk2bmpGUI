@@ -249,12 +249,9 @@ bool Save_Single_FRx_Animation_OpenGL(image_data *img_data, char *c_name, int di
 
     if (!File_ptr)
     {
-        tinyfd_messageBox(
-            "Error",
-            "Unable to open this file in write mode",
-            "ok",
-            "error",
-            1);
+        tinyfd_messageBox("Error",
+                          "Unable to open this file in write mode",
+                          "ok", "error", 1);
         return false;
     }
 
@@ -263,9 +260,7 @@ bool Save_Single_FRx_Animation_OpenGL(image_data *img_data, char *c_name, int di
     {
         tinyfd_messageBox("Error",
                           "Problem saving file.",
-                          "ok",
-                          "error",
-                          1);
+                          "ok", "error", 1);
         return false;
     }
     else
@@ -570,7 +565,10 @@ char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
     return Save_File_Name;
 }
 
-bool check_cfg_file(user_info *user_info, char *exe_path)
+//checks if msk2bmpGUI.cfg exists,
+//if it doesn't, creates the file (including folder)
+//then it writes current settings to cfg file
+bool check_and_write_cfg_file(user_info *user_info, char *exe_path)
 {
     char cfg_filepath_buffer[MAX_PATH];
     char cfg_path_buffer[MAX_PATH];
@@ -601,57 +599,34 @@ bool check_cfg_file(user_info *user_info, char *exe_path)
             if (io_make_dir(cfg_path_buffer))
             {
                 cfg_file_ptr = fopen(cfg_filepath_buffer, "wb");
-                // write_cfg_file(user_info, exe_path);
+                if (!cfg_file_ptr) {
+                    printf("error opening cfg file: %s\n", strerror(errno));
+                    return false;
+                }
             }
             else
             {
+                printf("error opening cfg file: %s\n", strerror(errno));
                 return false;
             }
         }
     }
 
+    write_cfg_file(user_info, exe_path);
     fclose(cfg_file_ptr);
     return true;
 }
 
-void Set_Default_Path(user_info *user_info, char *exe_path)
+//Ask user where the default Fallout 2 path is,
+//then store path in both default_game_path and default_save_path if default_save_path is '\0'
+//then write user_info out to config file
+void Set_Default_Game_Path(user_info *usr_info, char *exe_path)
 {
-    char *ptr = user_info->default_game_path;
-    bool success;
-    if (ptr)
-    {
-        success = check_cfg_file(user_info, exe_path);
-        if (!success)
-        {
-            return;
-        }
-
-        strcpy(user_info->default_game_path, ptr);
-        if (!strcmp(user_info->default_save_path, "\0"))
-        {
-            strcpy(user_info->default_save_path, ptr);
-        }
+    //Set the default Fallout 2 game path
+    bool path_set = export_auto(usr_info, exe_path, NULL, UNK);
+    if (!path_set) {
+        return;
     }
-    else
-    {
-        ptr = user_info->default_save_path;
-
-        if (!success)
-        {
-            success = check_cfg_file(user_info, exe_path);
-            if (!success)
-            {
-                return;
-            }
-            strcpy(user_info->default_game_path, ptr);
-            strcpy(user_info->default_save_path, ptr);
-        }
-        else
-        {
-            strcpy(user_info->default_game_path, ptr);
-        }
-    }
-    write_cfg_file(user_info, exe_path);
 }
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
@@ -765,11 +740,11 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
                                    "(Automatically overwrites game files)",
                                    "yesnocancel", "question", 2);
     if (choice == 0)
-    { // cancel
+    {                   // cancel
         return false;
     }
     if (choice == 1)
-    { // Set default FO2 directory, auto_export = true
+    {                   // Set default FO2 directory, auto_export = true
         usr_info->auto_export = 1;
         char *current_save_path;
         current_save_path = tinyfd_selectFolderDialog(
@@ -780,15 +755,25 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
             return false;
         }
         // TODO: maybe check if fallout2.exe is in the default game path set here?
-        //  std::filesystem::path path(current_save_path);
-        //  strncpy(usr_info->default_game_path, path.string().c_str(), MAX_PATH);
+        if (save_path) {        //generate new save_path from current_save_path + dest[], return in buffer
+            snprintf(save_path, MAX_PATH, "%s%s", current_save_path, dest[save_type]);
+        }
         strncpy(usr_info->default_game_path, current_save_path, MAX_PATH);
-        Set_Default_Path(usr_info, exe_path);
-        snprintf(save_path, MAX_PATH, "%s%s", current_save_path, dest[save_type]);
+
+        //if default_save_path isn't set, set it using default_game_path
+        if (!strcmp(usr_info->default_save_path, "\0"))
+        {
+            strcpy(usr_info->default_save_path, usr_info->default_game_path);
+        }
+
+        bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
+        if (!file_exists)
+        {
+            printf("error opening cfg file: %s\n", strerror(errno));
+        }
     }
     if (choice == 2)
-    { // Manual - chosen instead of selecting default path from previous popup
-
+    {                   // Manual - chosen instead of selecting default path from previous popup
         char *current_save_path;
         current_save_path = tinyfd_selectFolderDialog(
             "Select directory to save to...",
@@ -797,17 +782,22 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
         {
             return false;
         }
-        strncpy(save_path, current_save_path, MAX_PATH);
-
-        // parse Save_File_Name to isolate the directory and store in default_save_path
-        //  std::filesystem::path path(current_save_path);
-        //  strncpy(usr_info->default_save_path, path.string().c_str(), MAX_PATH);
+        if (save_path) {        //generate new save_path from current_save_path and return in buffer
+            strncpy(save_path, current_save_path, MAX_PATH);
+        }
+        // store current_save_path in default_save_path for future use
         strncpy(usr_info->default_save_path, current_save_path, MAX_PATH);
+
+        bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
+        if (!file_exists)
+        {
+            printf("error opening cfg file: %s\n", strerror(errno));
+        }
     }
     return true;
 }
 
-bool export_manual(user_info *usr_info, char *save_path)
+bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
 {
     usr_info->auto_export = 2;
 
@@ -815,16 +805,21 @@ bool export_manual(user_info *usr_info, char *save_path)
     current_save_path = tinyfd_selectFolderDialog(
         "Select directory to save to...",
         usr_info->default_save_path);
-    if (!current_save_path)
-    {
+    if (!current_save_path) {
         return false;
     }
+    //generate new save_path from current_save_path and return in buffer
     strncpy(save_path, current_save_path, MAX_PATH);
 
-    // parse Save_File_Name to isolate the directory and store in default_save_path
-    //  std::filesystem::path path(current_save_path);
-    //  strncpy(usr_info->default_save_path, path.string().c_str(), MAX_PATH);
+    // store current_save_path in default_save_path for future use
     strncpy(usr_info->default_save_path, current_save_path, MAX_PATH);
+
+    bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
+    if (!file_exists)
+    {
+        printf("error opening cfg file: %s\n", strerror(errno));
+    }
+
     return true;
 }
 
@@ -833,27 +828,23 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
     char dest[2][27]{
         {"/data/art/intrface"},
         {"/data/data"}};
-    // TODO: needs testing
-    if (usr_info->auto_export == 0)
-    { // ask user if they want auto/manual
+    if (usr_info->auto_export == 0) {       // ask user if they want auto/manual
+        int auto_choice = tinyfd_messageBox(
+                    "Automatic? or Manual?",
+                    "When exporting a series of map or mask tiles\n"
+                    "there are only two places in the game files\n"
+                    "where these are located.\n\n"
+                    "For rapid testing in game, you can export tiles\n"
+                    "automatically and bypass this screen\n"
+                    "by selecting YES here and setting the modded\n"
+                    "Fallout 2 directory in the next dialogue box.\n\n"
+                    "You can change this setting in the config menu.",
+                    "yesnocancel", "question", 2);
 
-        int auto_choice = tinyfd_messageBox("Automatic? or Manual?",
-                                            "When exporting a series of map or mask tiles\n"
-                                            "there are only two places in the game files\n"
-                                            "where these are located.\n\n"
-                                            "For rapid testing in game, you can export tiles\n"
-                                            "automatically and bypass this screen\n"
-                                            "by selecting YES here and setting the modded\n"
-                                            "Fallout 2 directory in the next dialogue box.\n\n"
-                                            "You can change this setting in the config menu.",
-                                            "yesnocancel", "question", 2);
-
-        if (auto_choice == 0)
-        { // cancel
+        if (auto_choice == 0) {             // cancel
             return false;
         }
-        if (auto_choice == 1)
-        { // Auto - chosen from previous popup
+        if (auto_choice == 1) {             // Auto - chosen from previous popup
             if (!strcmp(usr_info->default_game_path, "") || (usr_info->auto_export == 0))
             {
                 return export_auto(usr_info, exe_path, save_path, save_type);
@@ -864,31 +855,26 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
                 return true;
             }
         }
-        if (auto_choice == 2)
-        { // Manual
-            return export_manual(usr_info, save_path);
+        if (auto_choice == 2) {             // Manual
+            return export_manual(usr_info, save_path, exe_path);
         }
     }
-    if (usr_info->auto_export == 1)
-    { // Auto   - set by user
-        // TODO: check if this strcmp() needs to also check auto_export == 0
-        if (!strcmp(usr_info->default_game_path, ""))
-        {
+    if (usr_info->auto_export == 1) {                   // Auto   - set by user
+        if (!strcmp(usr_info->default_game_path, "")) {
             return export_auto(usr_info, exe_path, save_path, save_type);
         }
-        else
-        {
+        else {
             snprintf(save_path, MAX_PATH, "%s%s", usr_info->default_game_path, dest[save_type]);
             return true;
         }
     }
-    if (usr_info->auto_export == 2)
-    { // Manual - set by user
-        return export_manual(usr_info, save_path);
+    if (usr_info->auto_export == 2) {                   // Manual - set by user
+        return export_manual(usr_info, save_path, exe_path);
     }
 }
 
 // save_type is the file type being saved to (not the img_type coming in from img_data)
+// img_type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
 void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img_type save_type, FRM_Header *frm_header, char *exe_path)
 {
     int img_width  = img_data->width;
@@ -914,21 +900,18 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
     FILE *File_ptr = NULL;
 
     bool success = auto_export_question(usr_info, exe_path, save_path, save_type);
-    if (!success)
-    {
+    if (!success) {
         return;
     }
 
     // create buffers for use in tiling
     uint8_t *blend_buffer = NULL;
     uint8_t *texture_buffer = (uint8_t *)malloc(img_size);
-    if (save_type == FRM)
-    {
+    if (save_type == FRM) {                                     //exporting as FRM
         // create buffer from texture and original FRM_data
         blend_buffer = blend_PAL_texture(img_data);
     }
-    else if (save_type == MSK)
-    {
+    else if (save_type == MSK) {                                //exporting as MSK
         // copy edited texture to buffer, combine with original image
         glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
         // read pixels into buffer
@@ -945,7 +928,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
             // assigns final save path string to Full_Save_File_Path
             Create_File_Name(Full_Save_File_Path, MAX_PATH, save_type, save_path, tile_num);
 
-            // check for existing file first unless "Auto" selected
+            // check for existing file first unless "Auto" selected?
             ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
             if (x < 1 && y < 1) {
                 check_file(save_path, Full_Save_File_Path, tile_num, save_type);
@@ -973,8 +956,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
             else
             {
                 // FRM = 1, MSK = 0
-                if (save_type == FRM)
-                {
+                if (save_type == FRM) {
                     // Split buffer int 350x300 pixel tiles and write to file
                     // save header
                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
@@ -983,16 +965,14 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                     int tile_pointer = (y * img_width * TILE_H) + (x * TILE_W);
                     int row_pointer = 0;
 
-                    for (int i = 0; i < TILE_H; i++)
-                    {
+                    for (int i = 0; i < TILE_H; i++) {
                         // write out one row of pixels in each loop
                         fwrite(blend_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
                         row_pointer += img_width;
                     }
                 }
                 ///////////////////////////////////////////////////////////////////////////
-                if (save_type == MSK)
-                {
+                if (save_type == MSK) {
                     // Split the surface up into 350x300 pixel buffer
                     //       and pass them to Save_MSK_Image_OpenGL()
 
@@ -1003,8 +983,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                     int img_row_pntr  = 0;
                     int tile_row_pntr = 0;
 
-                    for (int i = 0; i < TILE_H; i++)
-                    {
+                    for (int i = 0; i < TILE_H; i++) {
                         // copy out one row of pixels in each loop to the buffer
                         memcpy(tile_buffer + tile_row_pntr, texture_buffer + tile_pointer + img_row_pntr, TILE_W);
 
@@ -1152,7 +1131,6 @@ void check_file(char *save_path, char *Save_File_Name, int tile_num, img_type ty
         }
         else if (choice == 1) {}            // yes = overwrite
         else if (choice == 2) {             // no  = choose new folder
-            // TODO: check if this works
             alt_path = tinyfd_selectFolderDialog(
                 "Select directory to save to...",
                 save_path);
