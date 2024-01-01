@@ -70,63 +70,64 @@ void handle_file_drop(char *file_name, LF *F_Prop, int *counter, shader_info *sh
 }
 
 bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
-                         LF *F_Prop, shader_info *shaders,
+                         LF *F_Prop, shader_info *shaders, bool *multiple_files,
                          int *counter, int *window_number_focus)
 {
-    char buffer[MAX_PATH + 50] = {};
+    char question[MAX_PATH + 50] = {};
 
-#ifdef QFO2_WINDOWS
-    snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
-             tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
-#elif defined(QFO2_LINUX)
-    snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
-             (*path_vec.begin()).parent_path().c_str());
-#endif
+//TODO: get rid of this garbage if u8string() works for windows
+// #ifdef QFO2_WINDOWS
+//     snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
+//              tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
+// #elif defined(QFO2_LINUX)
+    snprintf(question, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
+             (*path_vec.begin()).parent_path().u8string().c_str());
+// #endif
+    int type;
+    if (!(*multiple_files)) {
+        // returns 1 for yes, 2 for no, 0 for cancel
+        type = tinyfd_messageBox("Animation? or Single Images?",
+                                 question, "yesnocancel", "question", 2);
+    }
+    else {
+        type = 1;               //yes, animation, open automatically?
+    }
 
-    // returns 1 for yes, 2 for no, 0 for cancel
-    int type = tinyfd_messageBox("Animation? or Single Images?",
-                                 buffer, "yesnocancel", "question", 2);
+    if (type == 2) {            //no, open each image individually
+        for (const std::filesystem::path &path : path_vec) {
 
-    if (type == 2)
-    {
-        for (const std::filesystem::path &path : path_vec)
-        {
-
-#ifdef QFO2_WINDOWS
+//TODO: remove this extra garbage if u8string() works for windows
+// #ifdef QFO2_WINDOWS
+//             F_Prop[*counter].file_open_window =
+//                 Drag_Drop_Load_Files(tinyfd_utf16to8(path.c_str()),
+//                                      &F_Prop[*counter],
+//                                      &F_Prop[*counter].img_data,
+//                                      shaders);
+// #elif defined(QFO2_LINUX)
             F_Prop[*counter].file_open_window =
-                Drag_Drop_Load_Files(tinyfd_utf16to8(path.c_str()),
+                Drag_Drop_Load_Files(path.u8string().c_str(),
                                      &F_Prop[*counter],
                                      &F_Prop[*counter].img_data,
                                      shaders);
-#elif defined(QFO2_LINUX)
-            F_Prop[*counter].file_open_window =
-                Drag_Drop_Load_Files(path.c_str(),
-                                     &F_Prop[*counter],
-                                     &F_Prop[*counter].img_data,
-                                     shaders);
-#endif
-
+// #endif
             (*counter)++;
         }
         return true;
     }
-    else if (type == 1)
-    {
+    else if (type == 1) {       //yes it is "a group of sequential animation frames"
+        *multiple_files = true;
         bool does_window_exist = (*window_number_focus > -1);
         int num = does_window_exist ? *window_number_focus : *counter;
 
         F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vec, &F_Prop[num]);
 
-        if (!does_window_exist)
-        {
+        if (!does_window_exist) {
             (*window_number_focus) = (*counter);
             (*counter)++;
         }
-
         return true;
     }
-    else if (type == 0)
-    {
+    else if (type == 0) {
         return false;
     }
 }
@@ -208,7 +209,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         }
         if (is_subdirectory)
         {
-            // TODO: handle different directions in subdirectories?         8==D
+            // TODO: handle different directions in subdirectories?
             // animation_images = handle_subdirectory_vec(file.path());
             continue;
         }
@@ -635,51 +636,45 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
     if (is_directory)
     {
         bool is_subdirectory = false;
+        bool multiple_files  = false;
         for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
         {
             is_subdirectory = file.is_directory(error);
-            if (error)
-            {
+            if (error) {
                 // TODO: convert to tinyfd_filedialog() popup warning
                 printf("error when checking if file_name is directory");
                 return std::nullopt;
             }
-            if (is_subdirectory)
-            {
+            if (is_subdirectory) {
                 //TODO: this might be where the subdirectory handling is failing    8==D
                 // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
                 std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
 
-                if (!images.empty())
-                {
-                    open_multiple_files(images, F_Prop, shaders, counter, window_number_focus);
+                if (!images.empty()) {
+                    //why is the next line commented out?
+                    // multiple_files = true;
+                    open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
                 }
 
                 continue;
             }
-            else
-            {
+            else {
                 animation_images.push_back(file);
             }
         }
-        if (is_subdirectory)
-        {
+        if (is_subdirectory) {
             return true;
         }
-        else
-        {
-            if (animation_images.empty())
-            {
+        else {
+            if (animation_images.empty()) {
                 return false;
             }
-            else
-            {
-                return open_multiple_files(animation_images, F_Prop, shaders, counter, window_number_focus);
+            else {
+                return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
             }
         }
     }
-    else
-    {
+    else {
         return false;
     }
 }
@@ -811,8 +806,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     {
         SDL_Surface *temp_surface = nullptr;
         temp_surface = IMG_Load(F_Prop->Opened_File);
-        if (temp_surface)
-        {
+        if (temp_surface) {
 
             temp_surface = Surface_32_Check(temp_surface);
 
@@ -822,7 +816,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
             }
             else
-            {
+            {   //initialize the allocated memory?
                 new (img_data->ANM_dir) ANM_Dir[6];
             }
 
@@ -852,6 +846,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                                    &F_Prop->img_data.FRM_texture);
 
                 init_framebuffer(img_data);
+                //assign display direction to same as image slot so we can see the image on load
+                img_data->display_orient_num = NE;
             }
         }
         else

@@ -205,7 +205,8 @@ char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
     }
 }
 
-// TODO: need to delete, no longer used (deprecated?)
+// TODO: need to delete, no longer used? (deprecated?)
+//used by Save_FRM_Animation_OpenGL(), why did I say it's not used?
 int Set_Save_Patterns(char ***filter, image_data *img_data)
 {
     int num_dirs = 0;

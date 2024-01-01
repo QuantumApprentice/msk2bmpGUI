@@ -18,18 +18,26 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     std::sort(path_set.begin(), path_set.end());
 
     snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
-    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
+    // snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
+    //TODO: test this!          8==D
+    snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).parent_path().parent_path().u8string().c_str());
+
+    // store filepaths in this directory for navigating through
+    Next_Prev_File(F_Prop->Next_File,
+                   F_Prop->Prev_File,
+                   F_Prop->Frst_File,
+                   F_Prop->Last_File,
+                   F_Prop->Opened_File);
+
+
 
     F_Prop->c_name    = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
-    F_Prop->extension = strrchr(F_Prop->Opened_File, '.'  ) + 1;
+    F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
     //char* dir_ptr = strrchr(path_set, PLATFORM_SLASH);
     //snprintf(buffer, (strlen(file_names[0]) - (strlen(dir_ptr)-1)), "%s", file_names[0]);
     //dir_ptr = strrchr(buffer, PLATFORM_SLASH);
     //snprintf(direction, strlen(dir_ptr), "%s", dir_ptr+1);
-
-    //TODO: probably don't want to store folder name here?
-    //snprintf(F_Prop->Opened_File, MAX_PATH, "%s", direction);
 
     Direction temp_orient = assign_direction(direction);
     int num_frames = path_set.size();
@@ -38,6 +46,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         new(img_data->ANM_dir) ANM_Dir[6];
         if (!img_data->ANM_dir) {
             //TODO: change to tinyfd_dialog() warning
+            //TODO: possibly log out to txt file instead?
             printf("Unable to allocate enough memory");
         }
     }
@@ -55,6 +64,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     if (!frame_data) {
         //TODO: change to tinyfd_dialog() warning
+        //TODO: possibly log out to txt file instead?
         printf("Unable to allocate enough memory");
         return false;
     }
@@ -62,6 +72,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         img_data->ANM_dir[temp_orient].frame_data = frame_data;
     }
 
+    //iterate over images in directory provided and assign to frame_data[]
     int i = 0;
     for (const std::filesystem::path& path : path_set) {
 
@@ -102,15 +113,16 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
         //free(blank);
 
-        bool success = false;
-        success = init_framebuffer(img_data);
+        bool success = init_framebuffer(img_data);
         if (!success) {
+            //TODO: log out to txt file
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
         return true;
     }
     else {
+        //TODO: log out to txt file
         printf("FRM image didn't load...\n");
         return false;
     }
@@ -196,16 +208,15 @@ void Clear_img_data(image_data* img_data)
         img_data->FRM_dir  = NULL;
     }
     if (img_data->ANM_dir) {
-        for (int i = 0; i < 6; i++)
-        {
+        for (int i = 0; i < 6; i++) {
             if (img_data->ANM_dir[i].frame_data) {
                 //TODO: check if number of frames are set for individual images
                 for (int j = 0; j < img_data->ANM_dir[i].num_frames; j++)
                 {
                     SDL_FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
-                    free(img_data->ANM_dir[i].frame_data);
-                    img_data->ANM_dir[i].frame_data = NULL;
                 }
+                free(img_data->ANM_dir[i].frame_data);
+                img_data->ANM_dir[i].frame_data = NULL;
             }
         }
         free(img_data->ANM_dir);
@@ -236,7 +247,7 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
     if (ImGui::Button("next", button_size) || ImGui::IsKeyPressed(ImGuiKey_Period)) {
         Clear_img_data(img_data);
         current_file = F_Prop->Next_File;
-        file_check = true;
+        file_check   = true;
     }
 
     ImGui::SetCursorPosX(button_pos.x - button_size.x - 2);
@@ -245,7 +256,7 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
     if (ImGui::Button("prev", button_size) || ImGui::IsKeyPressed(ImGuiKey_Comma)) {
         Clear_img_data(img_data);
         current_file = F_Prop->Prev_File;
-        file_check = true;
+        file_check   = true;
     }
 
     ImGui::SetCursorPos(origin);
