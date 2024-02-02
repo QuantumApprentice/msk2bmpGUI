@@ -304,8 +304,7 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
                 }
                 bitmask >>= 1;
 
-                if (bitmask == 0)
-                {
+                if (bitmask == 0) {
                     ++bin_ptr;
                     bitmask = 128;
                 }

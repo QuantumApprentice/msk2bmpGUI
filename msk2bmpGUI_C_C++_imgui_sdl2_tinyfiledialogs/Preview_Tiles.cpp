@@ -451,72 +451,188 @@ void draw_red_squares(image_data* img_data, bool show_squares)
     }
 }
 
+void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
+{
+    ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+    ImVec2 Left, Top, Bottom, Right, new_origin;
+    ImVec2 Bottom_Right = { 0, 0 };
+    ImVec2 L_Offset = { 00, 00 };
+    ImVec2 T_Offset = { 48,-12 };
+    ImVec2 R_Offset = { 80, 12 };
+    ImVec2 B_Offset = { 32, 24 };
+
+    // Bottom_Right = { (float)(Top_Left.x + TMAP_W * scale), (float)(Top_Left.y + TMAP_H * scale) };
+    //Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+
+    Left.x   = Top_Left.x + L_Offset.x * scale;
+    Left.y   = Top_Left.y + L_Offset.y * scale;
+
+    Top.x    = Top_Left.x + T_Offset.x * scale;
+    Top.y    = Top_Left.y + T_Offset.y * scale;
+
+    Right.x  = Top_Left.x + R_Offset.x * scale;
+    Right.y  = Top_Left.y + R_Offset.y * scale;
+
+    Bottom.x = Top_Left.x + B_Offset.x * scale;
+    Bottom.y = Top_Left.y + B_Offset.y * scale;
+
+    if (Bottom.y < (Image_Corner.y-1)) {
+        return;
+    }
+
+    //Bottom.y = Origin.y + (i*TMAP_W) - 36;
+    Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+}
 
 void draw_red_tiles(image_data* img_data, bool show_squares)
 {
     // Draw red boxes to indicate where the tiles will be cut from
     float scale = img_data->scale;
-    if (show_squares) {
-        ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-        ImVec2 Origin;
-        Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
-        Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
+    if (!show_squares) {
+        return;
+    }
 
-        ImVec2 Top_Left;
-        ImVec2 Bottom_Right = { 0, 0 };
-        int max_box_x = img_data->width / TMAP_W;
-        int max_box_y = img_data->height / TMAP_H;
+    ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+    ImVec2 Origin;
+    Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
+    Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
 
-        ImVec2 L_Offset = { 00, 00 };
-        ImVec2 T_Offset = { 48, -12 };
-        ImVec2 R_Offset = { 80, 12 };
-        ImVec2 B_Offset = { 32, 24 };
+    ImVec2 Top_Left;
+    ImVec2 Btm_Rght;
+    ImVec2 L_Offset = { 00*scale, 00*scale };
+    ImVec2 T_Offset = { 48*scale,-12*scale };
+    ImVec2 R_Offset = { 80*scale, 12*scale };
+    ImVec2 B_Offset = { 32*scale, 24*scale };
 
-        ImVec2 Left, Top, Bottom, Right, new_origin;
+    int max_box_x = img_data->width  / TMAP_W;
+    int max_box_y = img_data->height / TMAP_H;
 
-        static int offset1;
-        static int offset2;
-        static int offset3;
-        static int offset4;
-        ImGui::SliderInt("offset1", &offset1, -80, 80, NULL);
-        ImGui::SliderInt("offset2", &offset2, -80, 80, NULL);
-        ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
-        ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
+    ImVec2 Left, Top, Bottom, Right, new_origin;
 
-        Origin.x += offset3 * scale ;
+    static int offset1;
+    static int offset2;
+    static int offset3;
+    static int offset4;
+    ImGui::SliderInt("offset1", &offset1, -80, 80, NULL);
+    ImGui::SliderInt("offset2", &offset2, -80, 80, NULL);
+    ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
+    ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
 
-        for (int j = 0; j < max_box_y*3; j++)
+    Origin.x += offset3 * scale;
+    // offset1 = offset1*scale;
+    // offset2 = offset2*scale;
+
+    float h_offset =  48*scale + scale*offset1;
+    float v_offset = -12*scale + scale*offset2;
+    float row_h_offset = -16*scale;
+    float row_v_offset =  36*scale;
+
+
+    Top_Left.x = Origin.x-32*scale;
+    Top_Left.y = Origin.y;
+
+    // Left.x   = Top_Left.x + L_Offset.x;
+    // Left.y   = Top_Left.y + L_Offset.y;
+    // Top.x    = Top_Left.x + T_Offset.x;
+    // Top.y    = Top_Left.y + T_Offset.y;
+    // Right.x  = Top_Left.x + R_Offset.x;
+    // Right.y  = Top_Left.y + R_Offset.y;
+    // Bottom.x = Top_Left.x + B_Offset.x;
+    // Bottom.y = Top_Left.y + B_Offset.y;
+
+    ImVec2 Row_Left, Row_Top, Row_Right, Row_Bottom;
+    Row_Left.x      = Top_Left.x + L_Offset.x;
+    Row_Left.y      = Top_Left.y + L_Offset.y;
+    Row_Top.x       = Top_Left.x + T_Offset.x;
+    Row_Top.y       = Top_Left.y + T_Offset.y;
+    Row_Bottom.x    = Top_Left.x + R_Offset.x;
+    Row_Bottom.y    = Top_Left.y + R_Offset.y;
+    Row_Right.x     = Top_Left.x + B_Offset.x;
+    Row_Right.y     = Top_Left.y + B_Offset.y;
+
+    int img_right  = Origin.x + img_data->width;
+    int img_bottom = Origin.y + img_data->height;
+
+
+    for (int i = 0; i < 50; i++)
+    // int i = 0;
+    // int j = 0;
+    // while (Left.y <= (Origin.y + img_data->height))
+    {
+        // int x = -16*scale*i;// + (-16) + offset4*scale;
+        // int y =  36*scale*i     ;
+
+
+        Left.x   = Row_Left.x    ;
+        Left.y   = Row_Left.y    ;
+        Top.x    = Row_Top.x     ;
+        Top.y    = Row_Top.y     ;
+        Right.x  = Row_Bottom.x  ;
+        Right.y  = Row_Bottom.y  ;
+        Bottom.x = Row_Right.x   ;
+        Bottom.y = Row_Right.y   ;
+
+        for (int j = 0; j < 50; j++)
         {
-            Origin.x += offset4 * scale; 
-            new_origin.x = Origin.x + j*offset1 * scale;
-            new_origin.y = Origin.y + j*offset2 * scale;
+            // if (Top.y > img_bottom) {
+            //     break;
+            // }
+            // if (Right.x < Origin.x) {
+            //     break;
+            // }
 
-            for (int i = 0; i < max_box_x*3; i++)
-            {
+            // draw_quad(Origin, Top_Left, scale);
+            Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
 
+            Left.x   += h_offset;
+            Left.y   += v_offset;
+            Top.x    += h_offset;
+            Top.y    += v_offset;
+            Right.x  += h_offset;
+            Right.y  += v_offset;
+            Bottom.x += h_offset;
+            Bottom.y += v_offset;
 
-                Top_Left.x = new_origin.x + /*(i * TMAP_W)*scale +*/ (i* 48 + j*32) *scale;
-                Top_Left.y = new_origin.y + /*(j * TMAP_H)*scale +*/ (i*-12 + j*24) *scale;
-                Bottom_Right = { (float)(Top_Left.x + TMAP_W * scale), (float)(Top_Left.y + TMAP_H * scale) };
-                //Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-
-                Left.x   = Top_Left.x + L_Offset.x * scale;
-                Left.y   = Top_Left.y + L_Offset.y * scale;
-
-                Top.x    = Top_Left.x + T_Offset.x * scale;
-                Top.y    = Top_Left.y + T_Offset.y * scale;
-
-                Right.x  = Top_Left.x + R_Offset.x * scale;
-                Right.y  = Top_Left.y + R_Offset.y * scale;
-
-                Bottom.x = Top_Left.x + B_Offset.x * scale;
-                Bottom.y = Top_Left.y + B_Offset.y * scale;
-
-                //Bottom.y = Origin.y + (i*TMAP_W) - 36;
-                Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+            if (Bottom.y < (Origin.y)) {
+                break;
+            }
+            if (Left.x > (img_right)) {
+                break;
             }
         }
+
+        Row_Left.x   += row_h_offset;
+        Row_Left.y   += row_v_offset;
+        Row_Top.x    += row_h_offset;
+        Row_Top.y    += row_v_offset;
+        Row_Bottom.x += row_h_offset;
+        Row_Bottom.y += row_v_offset;
+        Row_Right.x  += row_h_offset;
+        Row_Right.y  += row_v_offset;
     }
+
+
+
+    // for (int j = 0; j < 5; j++)
+    // {
+    //     new_origin.x = Origin.x + j*offset1 * scale -32*scale;
+    //     new_origin.y = Origin.y + j*offset2 * scale;
+
+    //     Top_Left.x = new_origin.x + (j*32) *scale;
+    //     Top_Left.y = new_origin.y;// + (12)*scale + (-12 + 24) *scale;
+
+    //     draw_quad(Top_Left, scale);
+//-----------------------------------------------------------
+    //     for (int i = 0; i < max_box_x*3; i++)
+    //     {
+    //         Top_Left.x = new_origin.x - (j * 48)*scale + (i* 48 + j*32) *scale;
+    //         if (Top_Left.x < (Origin.x - TMAP_W)) {
+    //             new_origin.x = Origin.x;
+    //         }
+    //         Top_Left.y = new_origin.y + (j * 12)*scale + (i*-12 + j*24) *scale;
+    //         draw_quad(Top_Left, scale);
+    //     }
+    // }
 }
 
 void draw_tiles_OpenGL(image_data* img_data, shader_info* shader, GLuint* texture, bool draw_tiles)

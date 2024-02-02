@@ -84,7 +84,7 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
              (*path_vec.begin()).parent_path().u8string().c_str());
 // #endif
     int type;
-    if (!(*multiple_files)) {
+    if (!(*multiple_files)) {   //false=ask question, true=automatic
         // returns 1 for yes, 2 for no, 0 for cancel
         type = tinyfd_messageBox("Animation? or Single Images?",
                                  question, "yesnocancel", "question", 2);
@@ -160,7 +160,7 @@ bool Supported_Format(const std::filesystem::path &file)
     return false;
 }
 
-// tried to handle a subdirectory in C, but didn't actually finish making this
+// tried to handle a subdirectory in regular C, but didn't actually finish making this
 char **handle_subdirectory_char(const std::filesystem::path &directory)
 {
     char **array_of_paths = NULL;
@@ -616,7 +616,9 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
 {
     char buffer[MAX_PATH];
 #ifdef QFO2_WINDOWS
-    std::filesystem::path path(tinyfd_utf8to16(file_name));
+    // std::filesystem::path path(tinyfd_utf8to16(file_name));
+    std::filesystem::path path(file_name).u8string().c_str();
+
 #elif defined(QFO2_LINUX)
     std::filesystem::path path(file_name);
 #endif
@@ -646,13 +648,10 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
                 return std::nullopt;
             }
             if (is_subdirectory) {
-                //TODO: this might be where the subdirectory handling is failing    8==D
                 // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
                 std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
 
                 if (!images.empty()) {
-                    //why is the next line commented out?
-                    // multiple_files = true;
                     open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
                 }
 
@@ -731,7 +730,7 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 }
 
 //Check file extension to make sure it's one of the varieties of FRM
-//TODO: maybe combine with Supported_Format()?      8==D
+//TODO: maybe combine with Supported_Format()?
 bool FRx_check(char *ext)
 {
     if (
@@ -771,7 +770,7 @@ SDL_Surface *Surface_32_Check(SDL_Surface *surface)
     return nullptr;
 }
 
-//TODO: maybe combine with Supported_Format()?      8==D
+//TODO: maybe combine with Supported_Format()?
 bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, const char *file_name)
 {
     prep_extension(F_Prop, NULL, file_name);
