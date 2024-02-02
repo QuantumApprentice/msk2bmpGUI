@@ -484,6 +484,11 @@ void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
     Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
 }
 
+void add_offsets(ImVec2* top, ImVec2* left, ImVec2* right, ImVec2* bottom)
+{
+    
+}
+
 void draw_red_tiles(image_data* img_data, bool show_squares)
 {
     // Draw red boxes to indicate where the tiles will be cut from
@@ -557,7 +562,7 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
     for (int i = 0; i < 50; i++)
     // int i = 0;
     // int j = 0;
-    // while (Left.y <= (Origin.y + img_data->height))
+    // while (Left.y <= img_bottom)
     {
         // int x = -16*scale*i;// + (-16) + offset4*scale;
         // int y =  36*scale*i     ;
@@ -572,17 +577,23 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
         Bottom.x = Row_Right.x   ;
         Bottom.y = Row_Right.y   ;
 
+
+        //when you switch to the next row, after doing the current addition,
+        //you could "advance" the start of the row by refular tile offset 
+        //(h_offset and v_offset) until it's inside the image, 
+        //or past the end of it
+        bool drew_a_tile = true;
+        //to test it's working correctly, you could comment out the if
+        //condition wrapping the draw quad
+        //And you'd break if you couldn't "find" the start of the row 
+        //(i.e. the left point is past the right edge of the image)
+
         for (int j = 0; j < 50; j++)
         {
-            // if (Top.y > img_bottom) {
-            //     break;
-            // }
-            // if (Right.x < Origin.x) {
-            //     break;
-            // }
-
-            // draw_quad(Origin, Top_Left, scale);
-            Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+            if ((Top.y < img_bottom) &&
+                (Right.x > Origin.x)) {
+                Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+            }
 
             Left.x   += h_offset;
             Left.y   += v_offset;
@@ -593,10 +604,10 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
             Bottom.x += h_offset;
             Bottom.y += v_offset;
 
-            if (Bottom.y < (Origin.y)) {
+            if (Bottom.y < (Origin.y)) {    //crop top
                 break;
             }
-            if (Left.x > (img_right)) {
+            if (Left.x > (img_right)) {     //crop right
                 break;
             }
         }
