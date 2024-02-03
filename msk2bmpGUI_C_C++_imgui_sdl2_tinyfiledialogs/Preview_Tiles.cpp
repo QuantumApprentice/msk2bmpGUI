@@ -451,44 +451,56 @@ void draw_red_squares(image_data* img_data, bool show_squares)
     }
 }
 
-void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
+// //this function not used right now
+// void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
+// {
+//     ImDrawList *Draw_List = ImGui::GetWindowDrawList();
+//     ImVec2 Left, Top, Bottom, Right, new_origin;
+//     ImVec2 Bottom_Right = { 0, 0 };
+//     ImVec2 L_Offset = { 00, 00 };
+//     ImVec2 T_Offset = { 48,-12 };
+//     ImVec2 R_Offset = { 80, 12 };
+//     ImVec2 B_Offset = { 32, 24 };
+//     // Bottom_Right = { (float)(Top_Left.x + TMAP_W * scale), (float)(Top_Left.y + TMAP_H * scale) };
+//     //Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
+//     Left.x   = Top_Left.x + L_Offset.x * scale;
+//     Left.y   = Top_Left.y + L_Offset.y * scale;
+//     Top.x    = Top_Left.x + T_Offset.x * scale;
+//     Top.y    = Top_Left.y + T_Offset.y * scale;
+//     Right.x  = Top_Left.x + R_Offset.x * scale;
+//     Right.y  = Top_Left.y + R_Offset.y * scale;
+//     Bottom.x = Top_Left.x + B_Offset.x * scale;
+//     Bottom.y = Top_Left.y + B_Offset.y * scale;
+//     if (Bottom.y < (Image_Corner.y-1)) {
+//         return;
+//     }
+//     //Bottom.y = Origin.y + (i*TMAP_W) - 36;
+//     Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+// }
+
+//struct to hold the 4 points for the quadrilateral (tile shape or image shape)
+struct outline {
+    ImVec2  Top,
+            Rgt,
+            Btm,
+            Lft;
+};
+
+//add offset to each point of square
+void add_offset( ImVec2 offset, outline* square)
 {
-    ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-    ImVec2 Left, Top, Bottom, Right, new_origin;
-    ImVec2 Bottom_Right = { 0, 0 };
-    ImVec2 L_Offset = { 00, 00 };
-    ImVec2 T_Offset = { 48,-12 };
-    ImVec2 R_Offset = { 80, 12 };
-    ImVec2 B_Offset = { 32, 24 };
+    square->Top.x += offset.x;
+    square->Top.y += offset.y;
+    square->Rgt.x += offset.x;
+    square->Rgt.y += offset.y;
+    square->Btm.x += offset.x;
+    square->Btm.y += offset.y;
+    square->Lft.x += offset.x;
+    square->Lft.y += offset.y;
 
-    // Bottom_Right = { (float)(Top_Left.x + TMAP_W * scale), (float)(Top_Left.y + TMAP_H * scale) };
-    //Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-
-    Left.x   = Top_Left.x + L_Offset.x * scale;
-    Left.y   = Top_Left.y + L_Offset.y * scale;
-
-    Top.x    = Top_Left.x + T_Offset.x * scale;
-    Top.y    = Top_Left.y + T_Offset.y * scale;
-
-    Right.x  = Top_Left.x + R_Offset.x * scale;
-    Right.y  = Top_Left.y + R_Offset.y * scale;
-
-    Bottom.x = Top_Left.x + B_Offset.x * scale;
-    Bottom.y = Top_Left.y + B_Offset.y * scale;
-
-    if (Bottom.y < (Image_Corner.y-1)) {
-        return;
-    }
-
-    //Bottom.y = Origin.y + (i*TMAP_W) - 36;
-    Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
 }
 
-void add_offsets(ImVec2* top, ImVec2* left, ImVec2* right, ImVec2* bottom)
-{
-    
-}
-
+//draw tiles for the preview screen when checking the tiles box
 void draw_red_tiles(image_data* img_data, bool show_squares)
 {
     // Draw red boxes to indicate where the tiles will be cut from
@@ -503,16 +515,17 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
     Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
 
     ImVec2 Top_Left;
-    ImVec2 Btm_Rght;
-    ImVec2 L_Offset = { 00*scale, 00*scale };
-    ImVec2 T_Offset = { 48*scale,-12*scale };
-    ImVec2 R_Offset = { 80*scale, 12*scale };
-    ImVec2 B_Offset = { 32*scale, 24*scale };
+    outline tile_offsets;
+
+    tile_offsets.Top = { 48*scale,-12*scale };
+    tile_offsets.Rgt = { 80*scale, 12*scale };
+    tile_offsets.Btm = { 32*scale, 24*scale };
+    tile_offsets.Lft = { 00*scale, 00*scale };
 
     int max_box_x = img_data->width  / TMAP_W;
     int max_box_y = img_data->height / TMAP_H;
 
-    ImVec2 Left, Top, Bottom, Right, new_origin;
+    // ImVec2 new_origin;//, Left, Top, Bottom, Right;
 
     static int offset1;
     static int offset2;
@@ -524,104 +537,76 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
     ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
 
     Origin.x += offset3 * scale;
-    // offset1 = offset1*scale;
-    // offset2 = offset2*scale;
 
-    float h_offset =  48*scale + scale*offset1;
-    float v_offset = -12*scale + scale*offset2;
-    float row_h_offset = -16*scale;
-    float row_v_offset =  36*scale;
-
+    ImVec2 offset = { 48*scale + scale*offset1,
+                     -12*scale + scale*offset2 };
+    ImVec2 row_offset = {-16*scale + scale*offset4 ,
+                          36*scale + scale*offset4 };
 
     Top_Left.x = Origin.x-32*scale;
     Top_Left.y = Origin.y;
 
-    // Left.x   = Top_Left.x + L_Offset.x;
-    // Left.y   = Top_Left.y + L_Offset.y;
-    // Top.x    = Top_Left.x + T_Offset.x;
-    // Top.y    = Top_Left.y + T_Offset.y;
-    // Right.x  = Top_Left.x + R_Offset.x;
-    // Right.y  = Top_Left.y + R_Offset.y;
-    // Bottom.x = Top_Left.x + B_Offset.x;
-    // Bottom.y = Top_Left.y + B_Offset.y;
+    outline row_start;                     //used when incrementing rows
+    outline new_square;                    //stores tile position for each tile
+    new_square = tile_offsets;             //copy default dimensions
+    add_offset(Top_Left, &new_square);     //move first tile position to image corner
+    row_start = new_square;                //copy this position for re-use
 
-    ImVec2 Row_Left, Row_Top, Row_Right, Row_Bottom;
-    Row_Left.x      = Top_Left.x + L_Offset.x;
-    Row_Left.y      = Top_Left.y + L_Offset.y;
-    Row_Top.x       = Top_Left.x + T_Offset.x;
-    Row_Top.y       = Top_Left.y + T_Offset.y;
-    Row_Bottom.x    = Top_Left.x + R_Offset.x;
-    Row_Bottom.y    = Top_Left.y + R_Offset.y;
-    Row_Right.x     = Top_Left.x + B_Offset.x;
-    Row_Right.y     = Top_Left.y + B_Offset.y;
+    int img_right  = Origin.x + img_data->width  * scale;
+    int img_bottom = Origin.y + img_data->height * scale;
+    bool drew_row = true;
+    int count = 0;
 
-    int img_right  = Origin.x + img_data->width;
-    int img_bottom = Origin.y + img_data->height;
-
-
-    for (int i = 0; i < 50; i++)
+    // for (int i = 0; i < 50; i++)
     // int i = 0;
     // int j = 0;
-    // while (Left.y <= img_bottom)
+    while (true)
     {
         // int x = -16*scale*i;// + (-16) + offset4*scale;
         // int y =  36*scale*i     ;
 
-
-        Left.x   = Row_Left.x    ;
-        Left.y   = Row_Left.y    ;
-        Top.x    = Row_Top.x     ;
-        Top.y    = Row_Top.y     ;
-        Right.x  = Row_Bottom.x  ;
-        Right.y  = Row_Bottom.y  ;
-        Bottom.x = Row_Right.x   ;
-        Bottom.y = Row_Right.y   ;
-
+        new_square = row_start;
 
         //when you switch to the next row, after doing the current addition,
-        //you could "advance" the start of the row by refular tile offset 
+        //you could "advance" the start of the row by regular tile offset 
         //(h_offset and v_offset) until it's inside the image, 
         //or past the end of it
-        bool drew_a_tile = true;
         //to test it's working correctly, you could comment out the if
         //condition wrapping the draw quad
         //And you'd break if you couldn't "find" the start of the row 
         //(i.e. the left point is past the right edge of the image)
 
-        for (int j = 0; j < 50; j++)
+        if (!drew_row) {
+            printf("count: %d\n", count);
+            break;
+        }
+        drew_row = false;
+
+        // for (int j = 0; j < 50; j++)
+        while (true)
         {
-            if ((Top.y < img_bottom) &&
-                (Right.x > Origin.x)) {
-                Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
+            if ((new_square.Top.y < img_bottom) &&      //crop bottom
+                (new_square.Rgt.x > Origin.x)) {        //crop left
+                Draw_List->AddQuad(new_square.Lft,
+                                   new_square.Btm,
+                                   new_square.Rgt,
+                                   new_square.Top, 0xff0000ff, 1.0f);
+                drew_row = true;
+                count++;
             }
 
-            Left.x   += h_offset;
-            Left.y   += v_offset;
-            Top.x    += h_offset;
-            Top.y    += v_offset;
-            Right.x  += h_offset;
-            Right.y  += v_offset;
-            Bottom.x += h_offset;
-            Bottom.y += v_offset;
+            add_offset(offset, &new_square);
 
-            if (Bottom.y < (Origin.y)) {    //crop top
+            if (new_square.Btm.y < (Origin.y )) {   //crop top
                 break;
             }
-            if (Left.x > (img_right)) {     //crop right
+            if (new_square.Lft.x > (img_right)) {   //crop right
                 break;
             }
         }
 
-        Row_Left.x   += row_h_offset;
-        Row_Left.y   += row_v_offset;
-        Row_Top.x    += row_h_offset;
-        Row_Top.y    += row_v_offset;
-        Row_Bottom.x += row_h_offset;
-        Row_Bottom.y += row_v_offset;
-        Row_Right.x  += row_h_offset;
-        Row_Right.y  += row_v_offset;
+        add_offset(row_offset, &row_start);
     }
-
 
 
     // for (int j = 0; j < 5; j++)
