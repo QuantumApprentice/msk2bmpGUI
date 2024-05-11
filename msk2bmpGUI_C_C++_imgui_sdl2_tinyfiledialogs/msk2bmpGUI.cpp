@@ -844,6 +844,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
             }
+            if (ImGui::Button("Save image as Townmap Tiles...")) {
+                // save_TMAP_tiles();
+                // My_Variables.
+            }
             if (ImGui::Button("Edit MSK Layer...")) {
                 F_Prop->edit_MSK = true;
             }

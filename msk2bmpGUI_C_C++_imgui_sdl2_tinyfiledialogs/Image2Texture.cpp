@@ -92,7 +92,7 @@ void allocate_FRM(image_data* edit_data)
 
     edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir));
     edit_data->FRM_dir->frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
-    edit_data->FRM_dir->frame_data[0] = (FRM_Frame*)edit_data->FRM_data;
+    edit_data->FRM_dir->frame_data[0] = (FRM_Frame*)(edit_data->FRM_data + sizeof(FRM_Header));
 
     edit_data->FRM_dir->frame_data[0]->Frame_Width    = width;
     edit_data->FRM_dir->frame_data[0]->Frame_Height   = height;

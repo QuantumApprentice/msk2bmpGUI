@@ -345,7 +345,7 @@ char *Save_FRx_Animation_OpenGL(image_data *img_data, char *default_save_path, c
             {
                 continue;
             }
-            assert((dir > -1) && "Exporting this direction is invalid");
+            assert((dir > -1) && "Why is dir==-1 ?");
 
             FILE *File_ptr = nullptr;
             // If directions are split up then open new file for each direction
@@ -631,9 +631,9 @@ void Set_Default_Game_Path(user_info *usr_info, char *exe_path)
 }
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
-#define TILE_W (350)
-#define TILE_H (300)
-#define TILE_SIZE (350 * 300)
+#define MAP_TILE_W (350)
+#define MAP_TILE_H (300)
+#define MAP_TILE_SIZE (350 * 300)
 
 // void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
 //{
@@ -658,7 +658,7 @@ void Save_FRM_Tiles_OpenGL(LF *F_Prop, user_info *user_info, char *exe_path)
     FRM_Header.version = (4);
     FRM_Header.FPS = (1);
     FRM_Header.Frames_Per_Orient = (1);
-    FRM_Header.Frame_Area = (TILE_SIZE);
+    FRM_Header.Frame_Area = (MAP_TILE_SIZE);
 
     B_Endian::flip_header_endian(&FRM_Header);
 
@@ -876,14 +876,16 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
 
 // save_type is the file type being saved to (not the img_type coming in from img_data)
 // img_type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
-void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img_type save_type, FRM_Header *frm_header, char *exe_path)
+void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
+                           img_type save_type, FRM_Header *frm_header,
+                           char *exe_path)
 {
     int img_width  = img_data->width;
     int img_height = img_data->height;
     int img_size   = img_width * img_height;
 
-    int num_tiles_x = img_width  / TILE_W;
-    int num_tiles_y = img_height / TILE_H;
+    int num_tiles_x = img_width  / MAP_TILE_W;
+    int num_tiles_y = img_height / MAP_TILE_H;
     int tile_num = 0;
 
     char save_path[MAX_PATH];
@@ -893,9 +895,9 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
     // every tile has the same width/height/size
     FRM_Frame frame_data;
     memset(&frame_data, 0, sizeof(FRM_Frame));
-    frame_data.Frame_Width  = (TILE_W);
-    frame_data.Frame_Height = (TILE_H);
-    frame_data.Frame_Size   = (TILE_SIZE);
+    frame_data.Frame_Width  = (MAP_TILE_W);
+    frame_data.Frame_Height = (MAP_TILE_H);
+    frame_data.Frame_Size   = (MAP_TILE_SIZE);
     B_Endian::flip_frame_endian(&frame_data);
 
     FILE *File_ptr = NULL;
@@ -963,12 +965,12 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
                     fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
 
-                    int tile_pointer = (y * img_width * TILE_H) + (x * TILE_W);
+                    int tile_pointer = (y * img_width * MAP_TILE_H) + (x * MAP_TILE_W);
                     int row_pointer = 0;
 
-                    for (int i = 0; i < TILE_H; i++) {
+                    for (int i = 0; i < MAP_TILE_H; i++) {
                         // write out one row of pixels in each loop
-                        fwrite(blend_buffer + tile_pointer + row_pointer, TILE_W, 1, File_ptr);
+                        fwrite(blend_buffer + tile_pointer + row_pointer, MAP_TILE_W, 1, File_ptr);
                         row_pointer += img_width;
                     }
                 }
@@ -978,21 +980,21 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
                     //       and pass them to Save_MSK_Image_OpenGL()
 
                     // create buffers
-                    uint8_t *tile_buffer = (uint8_t *)malloc(TILE_SIZE);
+                    uint8_t *tile_buffer = (uint8_t *)malloc(MAP_TILE_SIZE);
 
-                    int tile_pointer  = (y * img_width * TILE_H) + (x * TILE_W);
+                    int tile_pointer  = (y * img_width * MAP_TILE_H) + (x * MAP_TILE_W);
                     int img_row_pntr  = 0;
                     int tile_row_pntr = 0;
 
-                    for (int i = 0; i < TILE_H; i++) {
+                    for (int i = 0; i < MAP_TILE_H; i++) {
                         // copy out one row of pixels in each loop to the buffer
-                        memcpy(tile_buffer + tile_row_pntr, texture_buffer + tile_pointer + img_row_pntr, TILE_W);
+                        memcpy(tile_buffer + tile_row_pntr, texture_buffer + tile_pointer + img_row_pntr, MAP_TILE_W);
 
                         img_row_pntr  += img_width;
-                        tile_row_pntr += TILE_W;
+                        tile_row_pntr += MAP_TILE_W;
                     }
 
-                    Save_MSK_Image_OpenGL(tile_buffer, File_ptr, TILE_W, TILE_H);
+                    Save_MSK_Image_OpenGL(tile_buffer, File_ptr, MAP_TILE_W, MAP_TILE_H);
                     free(tile_buffer);
                 }
                 fclose(File_ptr);
@@ -1007,6 +1009,85 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info, img
     if (texture_buffer)
     {
         free(texture_buffer);
+    }
+}
+
+
+#define TMAP_TILE_W     (80 + 48)
+#define TMAP_TILE_H     (36 + 36 + 24)
+#define TMAP_TILE_SIZE  (TMAP_TILE_W * TMAP_TILE_H)
+
+
+void save_TMAP_tiles(user_info* usr_info, char* exe_path,
+                     img_type save_type,
+                     int img_width, int img_height,
+                     int x, int y)
+{
+    char save_path[MAX_PATH];
+    char Full_Save_File_Path[MAX_PATH];
+    int tile_num = 0;
+    FILE *File_ptr = NULL;
+
+    FRM_Header frm_header = {};
+    frm_header.version = (4);
+    frm_header.FPS = (1);
+    frm_header.Frames_Per_Orient = (1);
+    frm_header.Frame_Area = (TMAP_TILE_SIZE);
+
+    B_Endian::flip_header_endian(&frm_header);
+
+    bool success = auto_export_question(usr_info, exe_path, save_path, save_type);
+    if (!success) {
+        return;
+    }
+
+    // create the filename for the current tile
+    // assigns final save path string to Full_Save_File_Path
+    Create_File_Name(Full_Save_File_Path, MAX_PATH, FRM, save_path, tile_num);
+
+    // check for existing file first unless "Auto" selected?
+    ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
+    if (x < 1 && y < 1) {
+        check_file(save_path, Full_Save_File_Path, tile_num, save_type);
+    }
+    if (Full_Save_File_Path[0] == '\0') {
+        return;
+    }
+
+#ifdef QFO2_WINDOWS
+    wchar_t *w_save_name = tinyfd_utf8to16(filename_buffer);
+    _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(Full_Save_File_Path, "wb");
+#endif
+
+    if (!File_ptr)
+    {
+        tinyfd_messageBox(
+            "Error",
+            "Can not open this file in write mode.\n"
+            "Make sure the default game path is set.",
+            "ok", "error", 1);
+        return;
+    }
+    else
+    {
+        // FRM = 1, MSK = 0
+        if (save_type == FRM) {
+            // Split buffer int 350x300 pixel tiles and write to file
+            // save header
+            // fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
+            // fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+
+            // int tile_pointer = (y * img_width * TMAP_TILE_H) + (x * TMAP_TILE_W);
+            // int row_pointer = 0;
+
+            // for (int i = 0; i < TMAP_TILE_H; i++) {
+            //     // write out one row of pixels in each loop
+            //     fwrite(blend_buffer + tile_pointer + row_pointer, TMAP_TILE_W, 1, File_ptr);
+            //     row_pointer += img_width;
+            // }
+        }
     }
 }
 

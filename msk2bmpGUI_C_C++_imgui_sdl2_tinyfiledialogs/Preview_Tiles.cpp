@@ -5,6 +5,9 @@
 #include "display_FRM_OpenGL.h"
 #include "Zoom_Pan.h"
 
+#include "load_FRM_OpenGL.h"
+#include "B_Endian.h"
+
 //Fallout map tile size hardcoded in engine to 350x300 pixels WxH
 #define MTILE_W      (350)
 #define MTILE_H      (300)
@@ -200,15 +203,129 @@ void masking(image_data* img_data, GLuint msk_texture, ImVec2 TLC, shader_info* 
 
     draw_FRM_to_framebuffer(shaders, 80, 36, framebuffer, tile_texture);
 
+}
+
+int tile_mask[] = {
+    43, 50,
+    39, 51,
+    35, 53,
+    31, 54,
+    27, 55,
+    22, 57,
+    18, 58,
+    14, 59,
+    11, 60,
+    7,  62,
+    3,  63,
+    0,  65,
+    1,  66,
+    3,  68,
+    4,  69,
+    6,  70,
+    7,  72,
+    8,  73,
+    9,  74,
+    11, 75,
+    12, 77,
+    13, 78,
+    14, 79,
+    16, 80,
+    17, 79,
+    19, 75,
+    20, 71,
+    21, 67,
+    23, 62,
+    24, 58,
+    25, 54,
+    26, 50,
+    28, 46,
+    29, 42,
+    30, 39,
+    32, 35
+};
+
+ImVec2 L_Corner = { 00, 00 };
+ImVec2 T_Corner = { 48,-12 };
+ImVec2 R_Corner = { 80, 12 };
+ImVec2 B_Corner = { 32, 24 };
 
 
+void save_TMAP_tiles(char* name, uint8_t* data)
+{
+    FRM_Header header = {};
+    header.version    = 4;  //not sure why 4? but vanilla game frm tiles have this
+    header.FPS        = 1;
+    header.Frames_Per_Orient = 1;
+    header.Frame_Area = 80*36 + sizeof(FRM_Frame);
 
-    ;
+    FRM_Frame frame = {};
+    frame.Frame_Height = 36;
+    frame.Frame_Width  = 80;
+    frame.Frame_Size   = 80*36;
+    B_Endian::flip_header_endian(&header);
+    B_Endian::flip_frame_endian(&frame);
+
+    FILE* file_ptr = fopen(name, "wb");
+    fwrite(&header, sizeof(FRM_Header), 1, file_ptr);
+    fwrite(&frame,  sizeof(FRM_Frame),  1, file_ptr);
+    fwrite(data,    80*36,              1, file_ptr);
+    fclose(file_ptr);
 
 }
 
-void tile_t(image_data* img_data, shader_info* shaders, GLuint tile_texture, int img_w, int img_h, int tile_w, int tile_h)
+bool runonce = true;
+void crop_TMAP_tiles(ImVec2 top_corner, image_data* img_data, int* t_mask)
 {
+    char file_name[32];
+    uint8_t tile_buff[80*36] = {0};
+    int img_w = img_data->width;
+    int img_h = img_data->height;
+
+    uint8_t* frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+
+    int total_tiles_w = img_w / 80 + (img_w%80 ? 1 : 0);
+    int total_tiles_h = img_h / 36 + (img_w%36 ? 1 : 0);
+    int total_tiles   = total_tiles_w*total_tiles_h;
+
+
+    // int col_w = (80 + 48);        //128
+    // int row_h = (36 + 36 + 24);   // 96
+    // int max_box_x;// = img_w / 32;// tile_w;
+    // int max_box_y;// = img_h / 24;// tile_h;
+    // int min_box_x;
+    // int min_box_y;
+    // max_box_x = +2 * ((img_w + (col_w - 1)  -offset_x) / col_w);
+    // min_box_x = -3 * ((img_h + (row_h - 1)  +offset_y) / row_h);
+    // max_box_y =  2 * ((img_w + (col_w - 1)  -offset_y) / col_w) + 3 * ((img_h + (row_h - 1) /*- offset_y*/) / row_h);
+    // min_box_y = -3 * offset_y/row_h - 2 *offset_x  / col_w;
+
+    if (runonce) {
+        int tile_num = 0;
+        for (; tile_num < total_tiles;)
+        {
+            snprintf(file_name, 32, "test_tile_%02d.frm", tile_num );
+            for (int row = 0; row < 36; row++)
+            {
+                for (int col = t_mask[row*2]; col < t_mask[row*2+1]; col++)
+                {
+                    tile_buff[row*80 + col] = frm_pxls[((row-12)*img_w + col) + (tile_num)*80*36 /*+ (tile_num*(tile_num%2))*(-12*img_w)*/];
+                }
+            }
+
+            printf("making tile #%02d\n", tile_num);
+            save_TMAP_tiles(file_name, tile_buff);
+            tile_num++;
+        }
+        runonce = false;
+    }
+}
+
+void tile_t(image_data* img_data, shader_info* shaders,
+            GLuint tile_texture,
+            int  img_w, int  img_h,
+            int tile_w, int tile_h)
+{
+
     float scale = img_data->scale;
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -241,10 +358,7 @@ void tile_t(image_data* img_data, shader_info* shaders, GLuint tile_texture, int
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, temp_buffer);
     //glReadPixels(TLC.x, TLC.y, 200, 200, GL_RGB, GL_UNSIGNED_BYTE, texture_buffer);
 
-    ImVec2 L_Corner = { 00, 00 };
-    ImVec2 T_Corner = { 48,-12 };
-    ImVec2 R_Corner = { 80, 12 };
-    ImVec2 B_Corner = { 32, 24 };
+
 
     ImVec2 Left, Top, Bottom, Right, new_origin;
 
@@ -257,17 +371,10 @@ void tile_t(image_data* img_data, shader_info* shaders, GLuint tile_texture, int
     ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
     ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
 
-    //Origin.x += offset3 * scale;
-
-
-
 
     int col_w = (80 + 48);        //128
     int row_h = (36 + 36 + 24);   // 96
 
-    //max_box_x = MAX((img_w+47) / 48, (img_h+11) / 12);
-    //max_box_y = MAX((img_w+31) / 32, (img_h+23) / 24);
-    //max_box_y = ((img_w + col_w));
 
     int max_box_x;// = img_w / 32;// tile_w;
     int max_box_y;// = img_h / 24;// tile_h;
@@ -282,8 +389,6 @@ void tile_t(image_data* img_data, shader_info* shaders, GLuint tile_texture, int
 
     for (int y = min_box_y; y < max_box_y; y++)
     {
-        //Origin.x += offset4 * scale;
-
         for (int x = min_box_x; x < max_box_x; x++)
         {
             new_origin.x = Origin.x + x * offset1 * scale;
@@ -334,6 +439,12 @@ void tile_t(image_data* img_data, shader_info* shaders, GLuint tile_texture, int
                     (ImTextureID)img_data->render_texture,
                     Left, Top, Right, Bottom,
                     uv_l, uv_t, uv_r, uv_b);
+
+                crop_TMAP_tiles(Left, img_data, tile_mask);
+                // ImGui::ShowMetricsWindow();
+                // printf("test: %s\n", (char*)(window->DrawList->_Data));
+
+                // printf("position: %d,%d\n", Left.x, Left.y);
             }
 
             //Top_Left.x = Origin.x + x * (pxl_border_x)*scale;
@@ -378,24 +489,21 @@ void Prev_TMAP_Tiles(variables* My_Variables, image_data* img_data)
 
     shader_info* shaders = &My_Variables->shaders;
 
-    if (img_data->FRM_dir) {
-        if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
-            ImGui::Text("No Image Data");
-            return;
-        }
-        else {
-            animate_FRM_to_framebuff(shaders->palette,
-                shaders->render_FRM_shader,
-                shaders->giant_triangle,
-                img_data,
-                My_Variables->CurrentTime_ms,
-                My_Variables->Palette_Update);
-        }
-    }
-    else {
+    if (!img_data->FRM_dir) {
         ImGui::Text("No Image Data");
         return;
     }
+    if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
+        ImGui::Text("No Image Data");
+        return;
+    }
+
+    animate_FRM_to_framebuff(shaders->palette,
+        shaders->render_FRM_shader,
+        shaders->giant_triangle,
+        img_data,
+        My_Variables->CurrentTime_ms,
+        My_Variables->Palette_Update);
 
     ImVec2 uv_min = { 0,0 };
     ImVec2 uv_max = { 1.0, 1.0 };
@@ -408,18 +516,19 @@ void Prev_TMAP_Tiles(variables* My_Variables, image_data* img_data)
     static bool image_toggle = true;
     checkbox_handler("toggle image", &image_toggle);
 
+
+
     if (image_toggle) {
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         window->DrawList->AddImage(
             (ImTextureID)img_data->render_texture,
             top_corner(img_data), bottom_corner(size, top_corner(img_data)),
             uv_min, uv_max,
-            ImGui::GetColorU32(My_Variables->tint_col));
+            ImGui::GetColorU32(My_Variables->tint_col)
+        );
     }
 
     tile_t(img_data, &My_Variables->shaders, My_Variables->tile_texture_rend, width, height, TMAP_W, TMAP_H);
-
-
 }
 
 
@@ -634,6 +743,9 @@ void draw_red_tiles(image_data* img_data, bool show_squares)
 void draw_tiles_OpenGL(image_data* img_data, shader_info* shader, GLuint* texture, bool draw_tiles)
 {
     float scale = img_data->scale;
+
+    printf("draw_tiles_OpenGL is being called...\n");
+
     if (draw_tiles) {
         ImVec2 Origin;
         Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;

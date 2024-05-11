@@ -98,8 +98,7 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
             write_cfg_file(usr_info, exe_path);
         }
     }
-    else
-    {
+    else {
         size_t file_size = std::filesystem::file_size(path_buffer);
 
         file_data = (char*)malloc(file_size + 1);
