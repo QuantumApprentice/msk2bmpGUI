@@ -209,16 +209,16 @@ int tile_mask[] = {
     18, 58,
     14, 59,
     11, 60,
-    7, 62,
-    3, 63,
-    0, 65,
-    1, 66,
-    3, 68,
-    4, 69,
-    6, 70,
-    7, 72,
-    8, 73,
-    9, 74,
+     7, 62,
+     3, 63,
+     0, 65,
+     1, 66,
+     3, 68,
+     4, 69,
+     6, 70,
+     7, 72,
+     8, 73,
+     9, 74,
     11, 75,
     12, 77,
     13, 78,
@@ -299,11 +299,32 @@ void crop_single_tile(int img_w, int img_h,
         int buf_pos = ((row)*80)   + lft;
         int pxl_pos = ((row)*img_w + lft)
                       + y*img_w + x;
-    //TODO: prevent pixels outside the image from copying over
     printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
+    //prevent RIGHT pixels outside the image from copying over
         if ((x + rgt) > img_w) {
             offset = img_w - (x + lft);
+            memset(tile_buff+buf_pos+offset, 0, 80-(offset));
+            if (offset < 0) {
+                memset(tile_buff+buf_pos, 0, 80-lft);
+                continue;
+            }
         }
+
+    //prevent LEFT pixels outside image from copying over
+        if ((x+lft) < 0) {
+            memset(tile_buff+buf_pos, 0, -(x+lft));
+            buf_pos += 0 - (x+lft);
+            pxl_pos += 0 - (x+lft);
+            offset = rgt + (x);
+            if (offset < 0) {
+                continue;
+            }
+        }
+
+    //prevent TOP pixels outside image from copying over
+
+    //prevent BOTTOM pixels outside image from copying over
+
     printf("offset: %d\n", offset);
         memcpy(tile_buff+buf_pos, frm_pxls+pxl_pos, offset);
     }
@@ -326,7 +347,9 @@ void crop_TMAP_tiles(ImVec2 top_corner, image_data *img_data)
         int row_cnt = 0;
         while (tile_num < 200)
         {
+            // memset(tile_buff, 0, 80*36);
             crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin);
+
 
             //increment one tile position
             origin.x +=  48;
@@ -355,6 +378,7 @@ void crop_TMAP_tiles(ImVec2 top_corner, image_data *img_data)
             printf("making tile #%03d\n", tile_num);
             save_TMAP_tiles(file_name, tile_buff);
             tile_num++;
+// break;
 
         }
     }
