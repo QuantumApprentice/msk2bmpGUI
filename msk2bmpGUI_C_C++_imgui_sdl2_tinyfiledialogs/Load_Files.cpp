@@ -28,6 +28,8 @@
 
 #include "display_FRM_OpenGL.h"
 
+#include "timer_functions.h"
+
 char *Program_Directory()
 {
 
@@ -219,17 +221,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         }
     }
 
-#ifdef QFO2_WINDOWS
-    // //timing code for WINDOWS ONLY
-    // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    // LARGE_INTEGER Frequency;
-    // QueryPerformanceFrequency(&Frequency);
-    // QueryPerformanceCounter(&StartingTime);
-#elif defined(QFO2_LINUX)
-    // timing code for LINUX
-    uint64_t StartingTime, EndingTime;
-    StartingTime = nano_time();
-#endif
+    uint64_t start_time = start_timer();
 
     // std::sort(animation_images.begin(), animation_images.end());                                        // ~50ms
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end());                   // ~50ms
@@ -309,20 +301,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     //                  return (a_v < b_v);
     //              });                                                                                    // ~3ms
 
-#ifdef QFO2_WINDOWS
-    ////timing code WINDOWS ONLY
-    // QueryPerformanceCounter(&EndingTime);
-    // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    // ElapsedMicroseconds.QuadPart *= 1000000;
-    // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-    // printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
-#elif defined(QFO2_LINUX)
-    // timing code LINUX
-    EndingTime = nano_time();
-    uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
-    uint64_t microseconds_total = nanoseconds_total / 1000;
-    printf("Total time elapsed: %ldμs\n", microseconds_total);
-#endif
+    print_timer(start_time);
 
     return animation_images;
 }

@@ -53,6 +53,8 @@
 #include "MSK_Convert.h"
 #include "Edit_Animation.h"
 
+#include "timer_functions.h"
+
 // Our state
 user_info usr_info;
 

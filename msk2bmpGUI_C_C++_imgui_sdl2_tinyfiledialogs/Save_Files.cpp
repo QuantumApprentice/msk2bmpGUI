@@ -306,7 +306,7 @@ bool Save_Single_Dir_Animation_OpenGL(image_data *img_data, FILE *File_ptr, int 
     return true;
 }
 
-char *Set_Save_File_Name(image_data *img_data, char *name)
+char* Set_Save_File_Name(image_data* img_data, char* name)
 {
     char *Save_File_Name;
     int num_patterns = 6;
