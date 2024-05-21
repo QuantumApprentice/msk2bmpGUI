@@ -18,7 +18,9 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
 
 //void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info, char* exe_path);
-void save_TMAP_tiles();
+void save_TMAP_tiles(user_info* usr_info, char* exe_path,
+                     image_data* img_data,
+                     int x, int y);
 
 //void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info);
 void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, char* exe_path);
@@ -31,7 +33,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
 
 bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
 bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
-void check_file(char* path, char* Save_File_Name, int tile_num, img_type type);
-void Create_File_Name(char* buffer, int buff_size, img_type type, char* path, int tile_num);
+void check_file(char* path, char* path_name, char* name, int tile_num, img_type type);
+void Create_File_Name(char* buffer, char* name, img_type type, char* path, int tile_num);
 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);

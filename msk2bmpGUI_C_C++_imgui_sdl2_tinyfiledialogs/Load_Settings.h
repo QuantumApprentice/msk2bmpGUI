@@ -14,6 +14,8 @@ struct user_info {
     char default_save_path[MAX_PATH];
     char default_game_path[MAX_PATH];
     char default_load_path[MAX_PATH];
+    char* exe_directory = NULL;
+
     int  auto_export = 0;           // 0=not set, 1=auto all the way, 2=manual
     bool save_full_MSK_warning;
     bool show_image_stats;

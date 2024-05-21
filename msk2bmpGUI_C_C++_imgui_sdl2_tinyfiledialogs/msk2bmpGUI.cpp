@@ -61,7 +61,7 @@ user_info usr_info;
 // Function declarations
 void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
 void Preview_Tiles_Window(variables *My_Variables, int counter);
-void Preview_Town_Tiles_Window(variables *My_Variables, int counter);
+// void Preview_Town_Tiles_Window(variables *My_Variables, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
 void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter);
 
@@ -140,6 +140,7 @@ int main(int argc, char** argv)
     //State variables
     struct variables My_Variables = {};
     My_Variables.exe_directory = Program_Directory();
+    usr_info.exe_directory     = My_Variables.exe_directory;
 
     char vbuffer[MAX_PATH];
     char fbuffer[MAX_PATH];
@@ -475,7 +476,7 @@ int main(int argc, char** argv)
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    write_cfg_file(&usr_info, My_Variables.exe_directory);
+    write_cfg_file(&usr_info, usr_info.exe_directory);
 
 #ifdef QFO2_WINDOWS
     // LocalFree(my_argv);
@@ -655,7 +656,7 @@ void Preview_Tiles_Window(variables* My_Variables, int counter)
             Prev_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
         }
         else {
-            Prev_TMAP_Tiles(My_Variables, &F_Prop->edit_data);
+            Prev_TMAP_Tiles(&usr_info, My_Variables, &F_Prop->edit_data);
         }
     }
     ImGui::End();
