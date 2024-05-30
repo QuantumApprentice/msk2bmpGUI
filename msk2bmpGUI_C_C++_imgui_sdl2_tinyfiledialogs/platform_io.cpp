@@ -1,5 +1,6 @@
 #include "platform_io.h"
 #include "Image2Texture.h"
+#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -78,17 +79,6 @@ int ext_compare(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char
     return strncasecmp(str1, str2, num_char);
 }
 
-// //TODO: move the timing stuff to it's own translation unit/header
-// uint64_t nano_time()
-// {
-//     struct timespec start;
-//     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-//     uint64_t nanotime = (uint64_t)start.tv_sec * 1'000'000'000ULL;
-//     nanotime += start.tv_nsec;
-//     return nanotime;
-//     // return (start.tv_sec * 1000 + (start.tv_nsec)/(long)1000000);
-// }
-
 //returns true if path exists and is a directory
 //false otherwise
 bool io_isdir(char* dir_path)
@@ -113,6 +103,16 @@ bool io_file_exists(const char* filename)
         return false;
     }
     return (stat_info.st_mode & S_IFREG);
+}
+
+int io_file_size(const char* filename)
+{
+    struct stat stat_info;
+    int error = stat(filename, &stat_info);
+    if (error) {
+        return 0;
+    }
+    return (stat_info.st_size);
 }
 
 //makes a directory from the path provided
@@ -144,5 +144,43 @@ bool io_make_dir(char* dir_path)
 
 
 #endif
+
+//check if path exists
+bool io_path_check(char* file_path)
+{
+    if (io_isdir(file_path) == false) {
+        int choice = tinyfd_messageBox(
+            "Warning",
+            "Directory does not exist.\n"
+            "Create directory?\n\n"
+            "--YES:    Create directory and new TILES.LST\n"
+            "--NO:     Select different folder to create TILES.LST\n"
+            "--CANCEL: Cancel...do I need to explain?\n",
+            "yesnocancel", "warning", 2);
+        if (choice == 0) {      //CANCEL: Cancel
+            return false;
+        }
+        if (choice == 1) {      //YES:    Create directory and new TILES.LST
+            bool dir_exists = io_make_dir(file_path);
+            if (dir_exists == false) {
+
+            //TODO: do I need to track this choice2?
+                int choice2 = tinyfd_messageBox(
+                    "Warning",
+                    "Unable to create the directory.\n"
+                    "probably a file system error?\n",
+                    "ok", "warning", 0);
+
+                return false;
+            }
+        }
+        if (choice == 2) {      //NO:     Select different folder to create TILES.LST
+            char* new_path = tinyfd_selectFolderDialog("Select save folder...", file_path);
+            strncpy(file_path, new_path, MAX_PATH);
+            return io_path_check(file_path);
+        }
+    }
+    return true;
+}
 
 

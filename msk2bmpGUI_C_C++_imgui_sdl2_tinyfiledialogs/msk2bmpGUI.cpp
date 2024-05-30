@@ -824,8 +824,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     if (My_Variables->edit_image_focused) {
         int width = F_Prop->edit_data.width;
         int height = F_Prop->edit_data.height;
-        ImGui::Text("Zoom: %%%.2f", My_Variables->F_Prop[window_number_focus].edit_data.scale * 100);
-
+        // ImGui::Text("Zoom: %%%.2f", My_Variables->F_Prop[window_number_focus].edit_data.scale * 100);
+        // ImGui::DragFloat("##zoom", &My_Variables->F_Prop[window_number_focus].edit_data.scale);
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
@@ -914,10 +914,14 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
+        
+        ImGui::PushItemWidth(100);
+        ImGui::DragFloat("##Zoom", &F_Prop->img_data.scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
+        ImGui::PopItemWidth();
         bool alpha_off = checkbox_handler("Alpha Enabled", &F_Prop->alpha);
         char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
         ImGui::SameLine();
-        ImGui::Combo("##", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
+        ImGui::Combo("##color_match", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
 
         if (F_Prop->img_data.type == OTHER) {
             if (ImGui::Button("Color Match and Edit")) {

@@ -207,73 +207,67 @@ ImVec2 L_Corner = {00, 00};
 ImVec2 T_Corner = {48,-12};
 ImVec2 R_Corner = {80, 12};
 ImVec2 B_Corner = {32, 24};
-void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data, shader_info *shaders,
-            GLuint tile_texture,
-            int img_w, int img_h,
-            int tile_w, int tile_h)
+void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
+                     shader_info *shaders, GLuint tile_texture)
 {
     float scale = img_data->scale;
     ImGuiWindow *window = ImGui::GetCurrentWindow();
-    ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    ImVec2 base_top_corner = top_corner(img_data);
+    // ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    // ImVec2 base_top_corner = top_corner(img_data);
+
+    int img_w = img_data->width;
+    int img_h = img_data->height;
+
+    ImVec2 Top_Left; // = Origin;
+    // ImVec2 Bottom_Right = {  0,   0};
+    // ImVec2 uv_min =       {  0,   0};
+    // ImVec2 uv_max =       {1.0, 1.0};
+    static int offset_x;
+    static int offset_y;
+
+    //Save tiles button
+    if (ImGui::Button("Export Tiles")) {
+        char* new_tiles = export_TMAP_tiles(usr_nfo, usr_nfo->exe_directory, img_data, offset_x, offset_y);
+    }
+
+    ImGui::SliderInt("Tile Offset X", &offset_x, -400, 400, NULL);
+    ImGui::SliderInt("Tile Offset Y", &offset_y, -400, 400, NULL);
+
+    // read pixels into buffer
+    uint8_t *temp_buffer = (uint8_t *)malloc(img_data->width * img_data->height);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, temp_buffer);
+
+    static int spacing_x;
+    static int spacing_y;
+    // static int offset3;
+    // static int offset4;
+    ImGui::SliderInt("Tile Spacing X", &spacing_x, 0, 80, NULL);
+    ImGui::SliderInt("Tile Spacing Y", &spacing_y, 0, 80, NULL);
+    // ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
+    // ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
 
     ImVec2 Origin;
     Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
     Origin.y = img_data->offset.y + ImGui::GetItemRectMin().y;
 
-    ImVec2 Top_Left; // = Origin;
-    ImVec2 Bottom_Right = {  0,   0};
-    ImVec2 uv_min =       {  0,   0};
-    ImVec2 uv_max =       {1.0, 1.0};
-    static int offset_x;
-    static int offset_y;
-
-    //Save tiles button
-    if (ImGui::Button("Save Tiles")) {
-        save_TMAP_tiles(usr_nfo, usr_nfo->exe_directory, img_data, offset_x, offset_y);
-    }
-
-    ImGui::SliderInt("offset_x", &offset_x, -200, 200, NULL);
-    ImGui::SliderInt("offset_y", &offset_y, -200, 200, NULL);
-
-    uint8_t *temp_buffer = (uint8_t *)malloc(img_data->width * img_data->height);
-    // read pixels into buffer
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, temp_buffer);
-
-    static int offset1;
-    static int offset2;
-    static int offset3;
-    static int offset4;
-    ImGui::SliderInt("offset1", &offset1, -80, 80, NULL);
-    ImGui::SliderInt("offset2", &offset2, -80, 80, NULL);
-    ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
-    ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
-
     int col_w = (80 + 48);      // 128
     int row_h = (36 + 36 + 24); // 96
+    int max_box_x = +2 * ((img_w + (col_w - 1) - offset_x) / col_w);
+    int min_box_x = -3 * ((img_h + (row_h - 1) + offset_y) / row_h);
+    int max_box_y = +2 * ((img_w + (col_w - 1) - offset_y) / col_w) + 3 * ((img_h + (row_h - 1) - offset_y) / row_h);
+    int min_box_y = -3 * offset_y / row_h - 2  * offset_x  / col_w;
 
-    int max_box_x; // = img_w / 32;// tile_w;
-    int max_box_y; // = img_h / 24;// tile_h;
-    int min_box_x;
-    int min_box_y;
-
-    max_box_x = +2 * ((img_w + (col_w - 1) - offset_x) / col_w);
-    min_box_x = -3 * ((img_h + (row_h - 1) + offset_y) / row_h);
-    max_box_y = +2 * ((img_w + (col_w - 1) - offset_y) / col_w) + 3 * ((img_h + (row_h - 1) - offset_y) / row_h);
-    min_box_y = -3 * offset_y / row_h - 2  * offset_x  / col_w;
-
-    int tile_num = 0;
     ImVec2 Left, Top, Bottom, Right, new_origin;
     for (int y = min_box_y; y < max_box_y; y++)
     {
         for (int x = min_box_x; x < max_box_x; x++)
         {
-            new_origin.x = Origin.x + x * offset1 * scale;
-            new_origin.y = Origin.y + y * offset2 * scale;
+            new_origin.x = Origin.x + x * spacing_x * scale;
+            new_origin.y = Origin.y + y * spacing_y * scale;
 
-            Top_Left.x = new_origin.x + (x * 48 + y * 32) * scale;
+            Top_Left.x = new_origin.x + (x *  48 + y * 32) * scale;
             Top_Left.y = new_origin.y + (x * -12 + y * 24) * scale;
 
             Left.x = Top_Left.x + L_Corner.x * scale;
@@ -302,8 +296,8 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data, shader_info *shad
             uv_b.y = (Bottom.y + offset_y - new_origin.y) / img_data->height / scale;
 
             glBindTexture(GL_TEXTURE_2D, img_data->render_texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -335,6 +329,9 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
     // handle zoom and panning for the image, plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
     shader_info *shaders = &My_Variables->shaders;
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("##Zoom", &img_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
+    ImGui::PopItemWidth();
 
     if (!img_data->FRM_dir)
     {
@@ -347,26 +344,25 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
         return;
     }
 
+
     animate_FRM_to_framebuff(shaders->palette,
-                             shaders->render_FRM_shader,
-                             shaders->giant_triangle,
-                             img_data,
-                             My_Variables->CurrentTime_ms,
-                             My_Variables->Palette_Update);
+                        shaders->render_FRM_shader,
+                        shaders->giant_triangle,
+                        img_data,
+                        My_Variables->CurrentTime_ms,
+                        My_Variables->Palette_Update);
 
-    ImVec2 uv_min = {0, 0};
-    ImVec2 uv_max = {1.0, 1.0};
-    int width = img_data->width;
-    int height = img_data->height;
-    float scale = img_data->scale;
-
-    ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
-
-    static bool image_toggle = true;
+    static bool image_toggle = false;
     checkbox_handler("toggle image", &image_toggle);
-
     if (image_toggle)
     {
+        ImVec2 uv_min = {0, 0};
+        ImVec2 uv_max = {1.0, 1.0};
+        int width   = img_data->width;
+        int height  = img_data->height;
+        float scale = img_data->scale;
+        ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         window->DrawList->AddImage(
             (ImTextureID)img_data->render_texture,
@@ -376,8 +372,7 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
     }
 
     draw_TMAP_tiles(usr_info, img_data, shaders,
-                    My_Variables->tile_texture_rend,
-                    width, height, TMAP_W, TMAP_H);
+                    My_Variables->tile_texture_rend);
 }
 
 void draw_red_squares(image_data *img_data, bool show_squares)
@@ -393,7 +388,7 @@ void draw_red_squares(image_data *img_data, bool show_squares)
 
         ImVec2 Top_Left;
         ImVec2 Bottom_Right = {0, 0};
-        int max_box_x = img_data->width / 350;
+        int max_box_x = img_data->width  / 350;
         int max_box_y = img_data->height / 300;
 
         for (int j = 0; j < max_box_y; j++)
@@ -477,9 +472,9 @@ void draw_red_tiles(image_data *img_data, bool show_squares)
     outline tile_offsets;
 
     tile_offsets.Top = {48 * scale, -12 * scale};
-    tile_offsets.Rgt = {80 * scale, 12 * scale};
-    tile_offsets.Btm = {32 * scale, 24 * scale};
-    tile_offsets.Lft = {00 * scale, 00 * scale};
+    tile_offsets.Rgt = {80 * scale,  12 * scale};
+    tile_offsets.Btm = {32 * scale,  24 * scale};
+    tile_offsets.Lft = {00 * scale,  00 * scale};
 
     int max_box_x = img_data->width / TMAP_W;
     int max_box_y = img_data->height / TMAP_H;
@@ -534,7 +529,6 @@ void draw_red_tiles(image_data *img_data, bool show_squares)
         }
         drew_row = false;
 
-        // for (int j = 0; j < 50; j++)
         while (true)
         {
             if ((new_square.Top.y < img_bottom) && // crop bottom
@@ -596,21 +590,17 @@ void draw_tiles_ImGui(image_data *img_data, ImVec2 Top_Corner, ImVec2 Bottom_Cor
     // float scale = img_data->scale;
     // int tile_w  = img_data->width/128;
     // int tile_h  = img_data->height/96;
-
     // for (int x = 0; x < tile_w; x++)
     //{
     //     for (int y = 0; y < tile_h; y++)
     //     {
-
     // Top_Left.x = new_origin.x + (x * 48 + y * 32) *scale;
     // Top_Left.y = new_origin.y + (x *-12 + y * 24) *scale;
-
     // window->DrawList->AddImage(
     //     (ImTextureID)texture,
     //     new_corner, new_bottom,
     //     Top_Left, Bottom_Right,
     //     )
-
     //    }
     //}
 }

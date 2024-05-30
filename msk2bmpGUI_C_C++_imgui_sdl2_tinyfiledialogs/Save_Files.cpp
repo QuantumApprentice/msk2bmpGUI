@@ -21,6 +21,7 @@
 #include "Load_Settings.h"
 #include "MSK_Convert.h"
 #include "platform_io.h"
+#include "Edit_TILES_LST.h"
 
 void write_cfg_file(user_info *user_info, char *exe_path);
 
@@ -699,15 +700,12 @@ uint8_t *blend_PAL_texture(image_data *img_data)
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
 
     // combine edit data w/original image
-    for (int i = 0; i < img_size; i++)
-    {
+    for (int i = 0; i < img_size; i++) {
         // TODO: add a switch for 255 to set blend_buffer[i] to 0
-        if (texture_buffer[i] != 0)
-        {
+        if (texture_buffer[i] != 0) {
             blend_buffer[i] = texture_buffer[i];
         }
-        else
-        {
+        else {
             blend_buffer[i] = img_data->FRM_dir->frame_data[0]->frame_start[i]; // img_data->FRM_data[i];
         }
     }
@@ -733,9 +731,11 @@ uint8_t *blend_PAL_texture(image_data *img_data)
 
 bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
 {
-    char dest[2][27]{
-        {"/data/art/intrface"},
-        {"/data/data"}};
+    char dest[3][27]{
+        {"/data/art/intrface"},     //WRLDMPxx.FRM
+        {"/data/data"},             //wrldmpXX.msk
+        {"/data/art/tiles"},        //town map tiles
+        };
     int choice = tinyfd_messageBox("Set Default Game Path...",
                                    "Do you want to set your default Fallout 2 game path?\n"
                                    "(Automatically overwrites game files)",
@@ -770,6 +770,7 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
         bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
         if (!file_exists)
         {
+        //TODO: replace printf()'s with popup windows
             printf("error opening cfg file: %s\n", strerror(errno));
         }
     }
@@ -792,6 +793,7 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
         bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
         if (!file_exists)
         {
+        //TODO: replace printf()'s with popup windows
             printf("error opening cfg file: %s\n", strerror(errno));
         }
     }
@@ -818,6 +820,7 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
     bool file_exists = check_and_write_cfg_file(usr_info, exe_path);
     if (!file_exists)
     {
+        //TODO: replace printf()'s with popup windows
         printf("error opening cfg file: %s\n", strerror(errno));
     }
 
@@ -826,27 +829,28 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
 
 bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
 {
-    char dest[2][27]{
-        {"/data/art/intrface"},
-        {"/data/data"}};
+    char dest[3][24]{
+        {"/data/art/intrface"},     //WRLDMPxx.FRM
+        {"/data/data"},             //wrldmpXX.msk
+        {"/data/art/tiles"},        //town map tiles
+        };
     if (usr_info->auto_export == 0) {       // ask user if they want auto/manual
         int auto_choice = tinyfd_messageBox(
             //TODO: simplify this text
                     "Automatic? or Manual?",
-                    "When exporting a series of map or mask tiles\n"
-                    "there are only two places in the game files\n"
-                    "where these are located.\n\n"
+                    "Tiles (map/town/msk) are only located\n"
+                    "in specific places in the game files.\n\n"
                     "For rapid testing in game, you can export tiles\n"
-                    "automatically and bypass this screen\n"
-                    "by selecting YES here and setting the modded\n"
-                    "Fallout 2 directory in the next dialogue box.\n\n"
+                    "automatically and bypass this screen.\n"
+                    "by setting the modded Fallout 2 directory.\n\n"
+                    "Yes --- Auto:   (set Fallout 2 directory)\n"
+                    "No  --- Manual: (select a folder)\n\n"
                     "You can change this setting in the config menu.",
                     "yesnocancel", "question", 2);
-
-        if (auto_choice == 0) {             // cancel
+        if (auto_choice == CANCEL) {            // cancel
             return false;
         }
-        if (auto_choice == 1) {             // Auto - chosen from previous popup
+        if (auto_choice == YES) {               // Auto - chosen from previous popup
             if (!strcmp(usr_info->default_game_path, "") || (usr_info->auto_export == 0))
             {
                 return export_auto(usr_info, exe_path, save_path, save_type);
@@ -857,7 +861,7 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
                 return true;
             }
         }
-        if (auto_choice == 2) {             // Manual
+        if (auto_choice == NO) {                // Manual
             return export_manual(usr_info, save_path, exe_path);
         }
     }
@@ -1325,7 +1329,7 @@ void crop_single_tile(int img_w, int img_h,
 //     }
 // }
 
-void crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
+char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
 {
     char full_file_path[MAX_PATH];
     uint8_t tile_buff[80 * 36] = {0};
@@ -1346,6 +1350,11 @@ void crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fil
     B_Endian::flip_frame_endian(&frame);
 
     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+
+
+    // char* new_tiles_list = (char*)malloc();      //do it this way when able to calculate total_tile_num beforehand
+
+
     int origin_x = -48 + offset_x;
     int origin_y =   0 + offset_y;
     int tile_num =   0;
@@ -1387,25 +1396,39 @@ void crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fil
         }
         // printf("row: %d, tile: %d, origin.x: %.0f, origin.y: %.0f\n", row_cnt, tile_num, origin.x, origin.y);
     }
+
+    int tile_name_len = strlen(name) + strlen("%03d.FRM\n");
+    int new_tile_list_size = (tile_num * tile_name_len);
+    char* new_tile_list = (char*)malloc(new_tile_list_size);
+    char* list_ptr = new_tile_list;
+
+    char buffer[tile_name_len+1] = {0};
+    for (int i = 0; i < tile_num; i++) {
+        snprintf(buffer, tile_name_len, "%s%03d.FRM\n", name, i);
+        strncpy(list_ptr, buffer, tile_name_len);
+        list_ptr += tile_name_len-1;
+    }
+    // printf("%s", new_tile_list);
+
+    return new_tile_list;
 }
-
-
 
 // #define TMAP_TILE_W     (80 + 48)
 // #define TMAP_TILE_H     (36 + 36 + 24)
 // #define TMAP_TILE_SIZE  (TMAP_TILE_W * TMAP_TILE_H)
-
-void save_TMAP_tiles(user_info* usr_info, char* exe_path,
-                     image_data* img_data,
-                     int x, int y)
+//Save town map tiles to gamedir/manual
+//TODO: add offset for tile cutting
+char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
+                       image_data* img_data,
+                       int x, int y)
 {
     char save_path[MAX_PATH];
     char Full_Save_File_Path[MAX_PATH];
     int tile_num = 0;
 
-    bool success = auto_export_question(usr_info, exe_path, save_path, FRM);
+    bool success = auto_export_question(usr_info, exe_path, save_path, TILE);
     if (!success) {
-        return;
+        return nullptr;
     }
 
     // create the filename for the current tile
@@ -1416,11 +1439,14 @@ void save_TMAP_tiles(user_info* usr_info, char* exe_path,
                 "exporting will append a tile number to this name.",
                 "new_tile_");
     if (name == nullptr) {
-        return;
+        return nullptr;
     }
+    //TODO: check if game engine will take more than 8 character names
+    //      if not, then limit this to 8 (name length + tile digits)
+    //      possibly give bypass?
     if (strlen(name) >= 32) {
         printf("name too long?");
-        return;
+        return nullptr;
     }
     snprintf(Full_Save_File_Path, MAX_PATH, "%s/%s%03d.%s", save_path, name, tile_num, "FRM");
 
@@ -1429,10 +1455,13 @@ void save_TMAP_tiles(user_info* usr_info, char* exe_path,
     ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
     check_file(save_path, Full_Save_File_Path, name, tile_num, FRM);
     if (Full_Save_File_Path[0] == '\0') {
-        return;
+        return nullptr;
     }
 
-    crop_TMAP_tiles(x, y, img_data, save_path, name);
+    char* new_TMAP_list = crop_TMAP_tiles(x, y, img_data, save_path, name);
+    add_TMAP_tiles_to_lst(usr_info, new_TMAP_list, save_path);
+
+    return new_TMAP_list;
 }
 
 // void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* usr_info, img_type type, FRM_Header* frm_header)
@@ -1521,7 +1550,7 @@ void save_TMAP_tiles(user_info* usr_info, char* exe_path,
 //    }
 //}
 
-// checks if the file/folder? already exists before saving it
+// checks if the file/folder? already exists before saving
 // sets Save_File_Name[0] = '\0'; if user clicks cancel
 // when prompted to overwrite a file
 void check_file(char *save_path, char* save_path_name, char* name, int tile_num, img_type type)
@@ -1547,7 +1576,8 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
             tinyfd_messageBox(
                 "Warning",
                 "File already exists,\n"
-                "Overwrite?",
+                "YES - Overwrite?"
+                "NO  - Select a different folder?",
                 "yesnocancel",
                 "warning",
                 2);
@@ -1571,7 +1601,6 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
     // If saving to game folder, appropriate directories are
     // appended to the Save_File_Name string
     // handles the case where the DIRECTORY doesn't exist
-
     else
     {
         if (io_isdir(save_path)) {
@@ -1591,13 +1620,13 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
             save_path_name[0] = '\0';
             return;
         }
-        if (choice == 1) {          // Create the folders to write to
+        if (choice == 1) {          // Yes = Create the folders to write to
             if (io_make_dir(save_path)) {
                 check_file(save_path, save_path_name, name, tile_num, type);
                 return;
             }
         }
-        if (choice == 2) {          //(don't overwrite) open a new saveFileDialog() and pick a new savespot
+        if (choice == 2) {          // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
             alt_path = tinyfd_selectFolderDialog(
                 "Select directory to save to...",
                 save_path);
@@ -1631,6 +1660,8 @@ void Create_File_Name(char *return_buffer, char* name, img_type save_type, char 
     if (strcmp(name, "WRLDMP") == 0){
         snprintf(return_buffer, MAX_PATH, "%s/%s%02d.%s", save_path, name, tile_num, ext[save_type]);
     } else {
+        //TODO: may need some way to expand or contract
+        //      the number of digits in the tile name
         snprintf(return_buffer, MAX_PATH, "%s/%s%03d.%s", save_path, name, tile_num, ext[save_type]);
     }
 

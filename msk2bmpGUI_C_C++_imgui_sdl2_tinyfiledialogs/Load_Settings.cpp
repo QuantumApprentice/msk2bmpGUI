@@ -55,6 +55,7 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
 
     //TODO: Need to be able to check if directory exists,
     //      and create it if it doesn't
+    //      (wait, did I already fix this?)
     FILE * config_file_ptr = NULL;
 
 #ifdef QFO2_WINDOWS

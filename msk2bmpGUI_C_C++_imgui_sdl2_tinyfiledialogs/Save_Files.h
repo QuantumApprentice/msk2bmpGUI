@@ -3,6 +3,12 @@
 #include "load_FRM_OpenGL.h"
 #include "Load_Files.h"
 
+enum {
+    CANCEL = 0,
+    YES    = 1,
+    NO     = 2,
+};
+
 uint8_t* blend_PAL_texture(image_data* img_data);
 
 //char* Save_FRM_SDL(SDL_Surface *f_surface, struct user_info* user_info);
@@ -18,7 +24,7 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
 
 //void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, struct user_info* user_info);
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info, char* exe_path);
-void save_TMAP_tiles(user_info* usr_info, char* exe_path,
+char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
                      image_data* img_data,
                      int x, int y);
 

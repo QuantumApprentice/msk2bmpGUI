@@ -89,6 +89,8 @@ target_sources(
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.cpp
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/timer_functions.h
   msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/timer_functions.cpp
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_TILES_LST.h
+  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_TILES_LST.cpp
 )
 
 # There are a few way to get a dependecy, we will go though a few of them.

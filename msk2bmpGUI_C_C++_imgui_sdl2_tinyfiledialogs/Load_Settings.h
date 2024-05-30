@@ -10,11 +10,18 @@
 #endif
 #define MAX_KEY  32
 
+struct fo2_files {
+    char* TILES_LST;
+    char* WORLDMAP_TXT;
+};
+
 struct user_info {
     char default_save_path[MAX_PATH];
     char default_game_path[MAX_PATH];
     char default_load_path[MAX_PATH];
     char* exe_directory = NULL;
+
+    fo2_files game_files;
 
     int  auto_export = 0;           // 0=not set, 1=auto all the way, 2=manual
     bool save_full_MSK_warning;
@@ -28,7 +35,8 @@ enum img_type {
     FRM   =  1,
     FR0   =  2,
     FRx   =  3,
-    OTHER =  4
+    TILE  =  3,
+    OTHER =  4,
 };
 
 void Load_Config    (struct user_info *user_info, char* exe_path);
