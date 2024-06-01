@@ -1397,17 +1397,7 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
         // printf("row: %d, tile: %d, origin.x: %.0f, origin.y: %.0f\n", row_cnt, tile_num, origin.x, origin.y);
     }
 
-    int tile_name_len = strlen(name) + strlen("%03d.FRM\n");
-    int new_tile_list_size = (tile_num * tile_name_len);
-    char* new_tile_list = (char*)malloc(new_tile_list_size);
-    char* list_ptr = new_tile_list;
-
-    char buffer[tile_name_len+1] = {0};
-    for (int i = 0; i < tile_num; i++) {
-        snprintf(buffer, tile_name_len, "%s%03d.FRM\n", name, i);
-        strncpy(list_ptr, buffer, tile_name_len);
-        list_ptr += tile_name_len-1;
-    }
+    char* new_tile_list = generate_new_tile_list(name, tile_num);
     // printf("%s", new_tile_list);
 
     return new_tile_list;
@@ -1431,13 +1421,13 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
         return nullptr;
     }
 
-    // create the filename for the current tile
+    // create the filename for the current list of tiles
     // assigns final save path string to Full_Save_File_Path
     char* name = tinyfd_inputBox(
                 "Tile Name...",
-                "Please type a default tile name for these, "
-                "exporting will append a tile number to this name.",
-                "new_tile_");
+                "Please type a default tile name for these,\n"
+                "exporting will append a tile number to this name.\n",
+                "newtile_");
     if (name == nullptr) {
         return nullptr;
     }
@@ -1459,7 +1449,7 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     }
 
     char* new_TMAP_list = crop_TMAP_tiles(x, y, img_data, save_path, name);
-    add_TMAP_tiles_to_lst(usr_info, new_TMAP_list, save_path);
+    add_TMAP_tiles_to_lst(usr_info, &new_TMAP_list, save_path);
 
     return new_TMAP_list;
 }
@@ -1576,8 +1566,8 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
             tinyfd_messageBox(
                 "Warning",
                 "File already exists,\n"
-                "YES - Overwrite?"
-                "NO  - Select a different folder?",
+                "YES - Overwrite?\n"
+                "NO  - Select a different folder?\n",
                 "yesnocancel",
                 "warning",
                 2);
