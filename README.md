@@ -170,7 +170,11 @@ if it does take a while to actually get them built :)
 ## *Build*
 These packages are used in the build process:
 GLAD
+
 GLFW
+
 SDL_image @ d3c6d59      ----  this is a git submodule, will have to "git submodule init", then "git submodule update"
+
 imgui-docking
+
 tinyfiledialogs
