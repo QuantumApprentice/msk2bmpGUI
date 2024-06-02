@@ -179,3 +179,7 @@ SDL_image @ d3c6d59      ----  this is a git submodule, will have to "git submod
 imgui-docking
 
 tinyfiledialogs
+
+###If on linux:
+
+Might have to uninstall libtbb-dev if building with cmake
