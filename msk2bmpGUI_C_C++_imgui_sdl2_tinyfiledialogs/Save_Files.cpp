@@ -1558,15 +1558,19 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
     if (File_ptr != NULL)
 #endif
     {
-        // handles the case where the file exists
         fclose(File_ptr);
+        // handles the case where the file exists
+        char* ptr = strrchr(save_path_name, '\\/');
+        char buff[MAX_PATH + 72];
+        snprintf(buff, MAX_PATH + 72, "%s%s",
+                ptr+1, " already exists,\n\n"
+                "YES - Overwrite?\n"
+                "NO  - Select a different folder?\n");
 
         int choice =
             tinyfd_messageBox(
                 "Warning",
-                "File already exists,\n"
-                "YES - Overwrite?\n"
-                "NO  - Select a different folder?\n",
+                buff,
                 "yesnocancel",
                 "warning",
                 2);

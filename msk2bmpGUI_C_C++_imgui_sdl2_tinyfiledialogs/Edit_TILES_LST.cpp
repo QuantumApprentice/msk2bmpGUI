@@ -382,10 +382,10 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
         while (node != nullptr) {
             for (int i = 0; i < tiles_lst_len; i++)
             {
-                if (tiles_lst[i] != '\n') {     // || tiles_lst[i] != '\r') {
-                    if (tiles_lst[i] != '\0') {
+                if (tiles_lst[i] != '\n' && tiles_lst[i] != '\0') {
+                    // if (tiles_lst[i] != '\0') {
                         continue;
-                    }
+                    // }
                 }
                 //check first char of strt == first char of node.name_ptr
                 if (strt[0] != node->name_ptr[0]) {
@@ -422,9 +422,16 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
                     }
                 }
                 if (append_new_only == true) {
-                    //remove node from list
+                    //remove node from list if match found
                     node = free_tile_name_node(node, prev, &linked_lst);
-                    strt = &tiles_lst[i+1];
+                    //TODO: i have the distinct impression
+                    //      there should be a better way
+                    //      to write this
+                    strt = tiles_lst;
+                    i = 0;
+                    if (node == nullptr) {
+                        break;
+                    }
                 }
             }
             strt = tiles_lst;
