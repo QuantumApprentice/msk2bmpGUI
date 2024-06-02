@@ -49,5 +49,25 @@ add_library(msk2bmp
 target_include_directories(msk2bmp PUBLIC
   ../../dependencies/GLAD/include
   ../../dependencies/imgui-docking/include
+  ../../dependencies/tinyfiledialogs
 )
+
+# Windows compile stuff?
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+
+target_compile_definitions(
+  msk2bmp
+  PUBLIC QFO2_WINDOWS
+)
+
+# Linux compile stuff?
+elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+
+target_compile_definitions(
+  msk2bmp
+  PUBLIC QFO2_LINUX
+)
+
+endif()
+
 

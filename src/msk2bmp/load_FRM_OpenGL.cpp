@@ -1,6 +1,7 @@
+#include <tinyfiledialogs.h>
+
 #include "load_FRM_OpenGL.h"
 #include "B_Endian.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 //returns true/false for success/failure
 bool init_framebuffer(struct image_data* img_data)

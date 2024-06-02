@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <filesystem>
+#include <tinyfiledialogs.h>
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -16,7 +17,6 @@
 #include "Save_Files.h"
 
 #include "B_Endian.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #include "imgui.h"
 #include "Load_Settings.h"
 #include "MSK_Convert.h"

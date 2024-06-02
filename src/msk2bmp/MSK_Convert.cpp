@@ -7,8 +7,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include <tinyfiledialogs.h>
+
 #include "MSK_Convert.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
 uint8_t bmpHeader[62] = {

@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 3.14)
  
 # --- Google Test -------------------------------------------------------------
-# GoogleTest requires at least C++14
-set(CMAKE_CXX_STANDARD 14)
+# GoogleTest requires at least C++14, but we need 17 for std::filesystem
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
@@ -19,6 +19,8 @@ project(msk2bmpGUI
   LANGUAGES CXX C
   VERSION 1.0.0
 )
+
+add_executable(msk2bmpGUI ./src/msk2bmpGUI.cpp)
 
 # ------------------------------------------------------------------------------
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
@@ -38,7 +40,6 @@ add_subdirectory(./dependencies/GLAD)
 add_subdirectory(./dependencies/imgui-docking)
 add_subdirectory(./dependencies/tinyfiledialogs)
 
-add_executable(msk2bmpGUI ./src/msk2bmpGUI.cpp)
 
 target_include_directories(msk2bmpGUI PUBLIC
   src/msk2bmp
@@ -50,7 +51,11 @@ target_include_directories(msk2bmpGUI PUBLIC
 
 target_link_libraries(msk2bmpGUI
   PUBLIC msk2bmp
+  PUBLIC glad
+  PUBLIC imgui_docking
+  PUBLIC tinyfiledialogs
   ${SDL2_LIBRARIES}
   ${SDL2_IMAGE_LIBRARIES}
+
 )
 

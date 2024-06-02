@@ -34,6 +34,8 @@
 #include <iostream>
 #include <optional>
 
+#include <tinyfiledialogs.h>
+
 // My header files
 #include "platform_io.h"
 #include "Load_Files.h"
@@ -44,7 +46,6 @@
 #include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"

@@ -4,10 +4,11 @@
 #include <cstdint>
 #include <algorithm>
 
+#include <tinyfiledialogs.h>
+
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Edit_Animation.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF* F_Prop)

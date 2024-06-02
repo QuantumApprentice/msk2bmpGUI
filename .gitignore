@@ -45,3 +45,5 @@ Makefile
 *.cmake
 CMakeCache.txt
 _deps
+
+msk2bmpGUI

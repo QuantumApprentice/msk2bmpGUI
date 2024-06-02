@@ -15,12 +15,13 @@
 #include <execution>
 #include <string_view>
 
+#include <tinyfiledialogs.h>
+
 #include "platform_io.h"
 
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Load_Settings.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 #include "MSK_Convert.h"

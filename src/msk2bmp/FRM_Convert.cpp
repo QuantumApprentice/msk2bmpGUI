@@ -1,7 +1,8 @@
+#include <tinyfiledialogs.h>
+
 #include "FRM_Convert.h"
 #include "FRM_Animate.h"
 #include "B_Endian.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 #include "Load_Files.h"
 
 #include <cstdint>

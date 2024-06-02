@@ -1,10 +1,11 @@
 #include <time.h>
 
+#include <tinyfiledialogs.h>
+
 #include "platform_io.h"
 #include "Load_Settings.h"
 #include "Save_Files.h"
 #include "Edit_TILES_LST.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
 //malloc char* and populate with generated tile-names
 //return ptr (need to free elsewhere)
