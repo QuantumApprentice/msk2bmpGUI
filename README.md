@@ -169,6 +169,7 @@ if it does take a while to actually get them built :)
 
 ## *Build*
 These packages are used in the build process:
+
 GLAD
 
 GLFW
