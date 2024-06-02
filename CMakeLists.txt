@@ -20,6 +20,17 @@ project(msk2bmpGUI
   VERSION 1.0.0
 )
 
+# ------------------------------------------------------------------------------
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
+
+include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
+
+# ------------------------------------------------------------------------------
+
 add_subdirectory(./specs)
 add_subdirectory(./src/msk2bmp)
 add_subdirectory(./dependencies/GLAD)
@@ -39,4 +50,7 @@ target_include_directories(msk2bmpGUI PUBLIC
 
 target_link_libraries(msk2bmpGUI
   PUBLIC msk2bmp
+  ${SDL2_LIBRARIES}
+  ${SDL2_IMAGE_LIBRARIES}
 )
+

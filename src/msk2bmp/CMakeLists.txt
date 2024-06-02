@@ -48,6 +48,6 @@ add_library(msk2bmp
 
 target_include_directories(msk2bmp PUBLIC
   ../../dependencies/GLAD/include
-  ../../dependencies/imgui-docking/include/imgui.h
+  ../../dependencies/imgui-docking/include
 )
 
