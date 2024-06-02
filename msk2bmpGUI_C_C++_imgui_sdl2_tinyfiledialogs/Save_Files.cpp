@@ -1329,6 +1329,8 @@ void crop_single_tile(int img_w, int img_h,
 //     }
 // }
 
+//crop town map tiles from a full image
+//TODO: need to add offsets to x & y
 char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
 {
     char full_file_path[MAX_PATH];
@@ -1403,9 +1405,6 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
     return new_tile_list;
 }
 
-// #define TMAP_TILE_W     (80 + 48)
-// #define TMAP_TILE_H     (36 + 36 + 24)
-// #define TMAP_TILE_SIZE  (TMAP_TILE_W * TMAP_TILE_H)
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
 char* export_TMAP_tiles(user_info* usr_info, char* exe_path,

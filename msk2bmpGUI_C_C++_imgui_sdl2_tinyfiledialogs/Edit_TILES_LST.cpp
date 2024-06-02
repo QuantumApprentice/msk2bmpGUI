@@ -1,4 +1,3 @@
-// #include <stdio.h>
 #include <time.h>
 
 #include "platform_io.h"
@@ -7,9 +6,8 @@
 #include "Edit_TILES_LST.h"
 #include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
 
-bool create_tiles_lst(char* file_path);
-
-//malloc new char* and populate with generated names
+//malloc char* and populate with generated tile-names
+//return ptr (need to free elsewhere)
 char* generate_new_tile_list(char* name, int tile_num)
 {
     int tile_name_len = strlen(name) + strlen("%03d.FRM\n");
@@ -26,7 +24,7 @@ char* generate_new_tile_list(char* name, int tile_num)
     return new_tile_list;
 }
 
-//read TILES.LST into memory using the game pat
+//read game TILES.LST into memory using the game pat
 char* load_tiles_lst_game(char* game_path)
 {
     //nothing to load if default_game_path not set
@@ -52,23 +50,21 @@ char* load_tiles_lst_game(char* game_path)
     return tiles_lst_buff;
 }
 
-//this one creates/overwrites TILES.LST
+//create/overwrite TILES.LST at provided path
 char* write_tiles_lst(char* tiles_lst_path, char* list_of_tiles)
 {
     if (tiles_lst_path == nullptr) {return nullptr;}
 
-    // char buffer[MAX_PATH];
-    // snprintf(buffer, MAX_PATH, "%s/%s", tiles_lst_path, "TILES.LST");
-    // FILE* tiles_lst = fopen(buffer, "wb");
     FILE* tiles_lst = fopen(tiles_lst_path, "wb");
     fwrite(list_of_tiles, strlen(list_of_tiles), 1, tiles_lst);
     fclose(tiles_lst);
     return list_of_tiles;
 }
 
+//TODO: delete this
 bool io_file_check(char* file_path)
 {
-        //check if file exists
+    //check if file exists
     //TODO: need to fclose(tiles_lst_ptr); and finish up this section
     // FILE* tiles_lst_ptr = nullptr;
     if (io_file_exists(file_path)) {
@@ -84,34 +80,16 @@ bool io_file_check(char* file_path)
             return false;
         }
         if (choice2 == YES) {           //YES:    Overwrite existing file
-            return true;// write_tiles_lst(full_path, nullptr);
+            return true;
         }
         if (choice2 == NO) {            //NO:     Select new folder to save to
             char* new_path = tinyfd_selectFolderDialog("Select save folder...", file_path);
             strncpy(file_path, new_path, MAX_PATH);
-            //TODO: this needs checking and maybe cleaning up
             if (io_path_check(file_path)) {
-                return create_tiles_lst(file_path);
+                // return create_tiles_lst(file_path);
             }
         }
     }
-    return true;
-}
-
-//TODO: this might need to return something more detailed
-//      or I need to change the general structure
-//TODO: delete
-bool create_tiles_lst(char* file_path)
-{
-    char full_path[MAX_PATH];
-    snprintf(full_path, MAX_PATH, "%s/%s", file_path, "TILES.LST");
-
-    bool success = io_path_check(file_path);
-    if (success == false) {return false;}
-    success = io_file_check(full_path);
-    if (success == false) {return false;}
-
-    write_tiles_lst(full_path, "");
     return true;
 }
 
@@ -134,7 +112,7 @@ char* get_new_name(char* old_name)
     //      possibly give bypass?
     if (strlen(name) >= 32) {
         printf("name too long?");
-        return nullptr;
+        // return nullptr;
     }
     return name;
 }
@@ -146,10 +124,12 @@ struct tile_name_arr {
     uint32_t next;           //points to array index of next viable name
 };
 
+//create a array of linked lists of tile names
+//from the char* tiles_list passed in
 tile_name_arr* make_name_list_arr(char* new_tiles_list)
 {
     tile_name_arr* large_list = (tile_name_arr*)malloc(sizeof(tile_name_arr) * 10000);
-    int node = 0;
+    int node         = 0;
     char* lst_ptr    = new_tiles_list;
     char* name_start = new_tiles_list;
     char* name_end   = nullptr;
@@ -174,6 +154,8 @@ tile_name_arr* make_name_list_arr(char* new_tiles_list)
     return large_list;
 }
 
+//same function as skip_or_rename()
+//but uses array of linked lists
 int skip_or_rename_arr(tile_name_arr* node)
 {
     char msg_buff[MAX_PATH] = {
@@ -182,8 +164,8 @@ int skip_or_rename_arr(tile_name_arr* node)
     };
     strncat(msg_buff, node->name_ptr, node->length);
     strncat(msg_buff, "\n"
-        "--YES:   Skip and append only new names?\n"
-        "--NO:    Rename the new tiles?\n", 74);
+        "YES:   Skip and append only new names?\n"
+        "NO:    Rename the new tiles?\n", 74);
 
     int choice = tinyfd_messageBox(
                 "Match found...",
@@ -191,7 +173,9 @@ int skip_or_rename_arr(tile_name_arr* node)
                 "yesnocancel", "warning", 2);
     return choice;
 }
-
+//since I can't delete the node like in a linked list
+//just skip it by pointing the previous node to the next
+//if it's the head, then move the head index to the next node
 int skip_this_node(tile_name_arr* node, int index, int head)
 {
     if (index == head) {
@@ -201,12 +185,11 @@ int skip_this_node(tile_name_arr* node, int index, int head)
     return head;
 }
 
-
-//check tile-names but convert new_tiles to linked list array first
+//compare names on tiles_lst to names on new_tiles
+//but convert new_tiles to linked list array first
 bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
 {
     bool append_new_only = false;
-    int tiles_lst_len = strlen(tiles_lst);
     tile_name_arr* linked_lst = make_name_list_arr(*new_tiles);  //need to free linked_lst at the end
     tile_name_arr* node = linked_lst;
     tile_name_arr* prev = nullptr;
@@ -216,7 +199,6 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
     int i = 0;
     int head_index = 0;
     while (node[i].next != 0) {
-        // for (int i = 0; i < tiles_lst_len; i++)
         while (*str_ptr != '\0')
         {
             if (*str_ptr != '\n') {
@@ -236,7 +218,6 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
             if (append_new_only != true) {
                 int choice = skip_or_rename_arr(&node[i]);
                 if (choice == CANCEL) {     //return and cancel out of the whole thing
-                    // free_tile_name_lst(linked_lst);
                     free(linked_lst);
                     return false;
                 }
@@ -254,14 +235,12 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
                     free(*new_tiles);
                     *new_tiles = generate_new_tile_list(new_name, num_tiles);
 
-                    // free_tile_name_lst(linked_lst);
                     free(linked_lst);
                     return check_tile_names_ll_arr(tiles_lst, new_tiles);
                 }
             }
             if (append_new_only == true) {
-                //remove node from list
-                // free_tile_name_node(node, prev);
+                //remove node from index list
                 head_index = skip_this_node(node, i, head_index);
             }
         }
@@ -276,14 +255,12 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
         while (node[index].next != 0) {
             num_tiles++;
             index = node[index].next;
-            // node = node->next;
         }
 
         index = head_index;
         char* cropped_list = (char*)malloc(node->length * num_tiles);
         while (node[index].next != 0) {
             strncat(cropped_list, node[index].name_ptr, node[index].length);
-            // node = node[index].next;
             index = node[index].next;
         }
         free(*new_tiles);
@@ -291,7 +268,6 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
         *new_tiles = cropped_list;
     }
 
-    // free_tile_name_lst(linked_lst);
     free(linked_lst);
     return true;
 }
@@ -311,7 +287,7 @@ tile_name* make_name_list(char* tiles_list)
 {
     char* strt = tiles_list;
     char* end  = tiles_list;
-    tile_name* strt_tile = nullptr; // = (tile_name*)malloc(sizeof(tile_name));
+    tile_name* strt_tile = nullptr;
     tile_name* prev_tile = nullptr;
     tile_name* newt_tile = nullptr;
     int tiles_list_len = strlen(tiles_list);
@@ -375,8 +351,8 @@ int skip_or_rename(tile_name* node)
     };
     strncat(msg_buff, node->name_ptr, node->length);
     strncat(msg_buff, "\n\n"
-        "--YES:   Skip and append only new names?\n"
-        "--NO:    Rename the new tiles?\n", 75);
+        "YES:   Skip and append only new names?\n"
+        "NO:    Rename the new tiles?\n", 75);
 
     int choice = tinyfd_messageBox(
                 "Match found...",
@@ -385,8 +361,8 @@ int skip_or_rename(tile_name* node)
     return choice;
 }
 
-
-//check tile-names but convert new_tiles to linked list first
+//compare names on tiles_lst to names on new_tiles
+//but convert new_tiles to linked list first
 bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
 {
     bool append_new_only = false;
@@ -394,13 +370,11 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
     tile_name* linked_lst = make_name_list(*new_tiles);  //need to free linked_lst at the end
     tile_name* node = linked_lst;
     tile_name* prev = nullptr;
-    // tile_name* next = nullptr;
     char* strt = tiles_lst;             //keeps track of first letter of name on TILES.LST
 
     // char buff_a[tiles_lst_len/2];
     // char buff_b[tiles_lst_len/2];
     // char*buff_ptr = buff_a;
-
     // strncpy(buff_a, tiles_lst, tiles_lst_len/2);
     // strncpy(buff_b, tiles_lst+(tiles_lst_len/2), tiles_lst_len/2);
 
@@ -420,7 +394,7 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
                     strt = &tiles_lst[i+1];
                     continue;
                 }
-                //match found, ask what to do
+                //first match found, ask what to do
                 if (append_new_only != true) {
                     int choice = skip_or_rename(node);
                     if (choice == CANCEL) {     //return and cancel out of the whole thing
@@ -451,6 +425,10 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
                     strt = &tiles_lst[i+1];
                 }
             }
+            strt = tiles_lst;
+            if (node == nullptr) {
+                break;
+            }
             prev = node;
             node = node->next;
         }
@@ -464,12 +442,24 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
     //generate new list from remaining nodes in linked_lst
     if (append_new_only == true) {
         node = linked_lst;
-        int num_tiles = 0;
+        // int num_tiles = 0;
         int total_size = 0;
         while (node != nullptr) {
-            num_tiles++;
+            // num_tiles++;
             total_size += node->length;
             node = node->next;
+        }
+
+        //if there are no nodes (or none with viable names)
+        if (total_size < 1) {
+            tinyfd_notifyPopup("TILES.LST not updated...",
+                            "All new tile-names were already\n"
+                            "found on TILES.LST.\n"
+                            "No new tile-names were added.\n",
+                            "info");
+            //TODO: test this free()
+            free_tile_name_lst(linked_lst);
+            return false;
         }
 
         char* cropped_list = (char*)malloc(total_size);
@@ -480,7 +470,6 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
             node = node->next;
         }
         free(*new_tiles);
-        //this might be wrong
         *new_tiles = cropped_list;
     }
 
@@ -490,7 +479,6 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
 
 //compare names on tiles_lst to names on new_tiles
 //increments by '\n' to check each name individually
-//TODO: change to linked list data type?
 //TODO: delete? not sure if I'm going to use this
 bool check_tile_names(char* tiles_lst, char* new_tiles)
 {
@@ -525,8 +513,8 @@ bool check_tile_names(char* tiles_lst, char* new_tiles)
                     if (match == 0) {
                         strncat(msg_buff, t_str_ptr, t_end_ptr - t_str_ptr+1);
                         strncat(msg_buff, 
-                            "--YES:   Skip and append only new names?\n"
-                            "--NO:    Rename the new tiles?", 72);
+                            "YES:   Skip and append only new names?\n"
+                            "NO:    Rename the new tiles?", 72);
                         int choice = tinyfd_messageBox(
                             "Match found...",
                             msg_buff,
@@ -554,13 +542,10 @@ bool check_tile_names(char* tiles_lst, char* new_tiles)
     return true;
 }
 
-//TODO: this one appends new tiles to the end of TILES.LST
+//append new tile-names to the end of TILES.LST
 char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list)
 {
-
     if (tiles_lst_path == nullptr) {return nullptr;}
-    // char full_path[MAX_PATH];
-    // snprintf(full_path, MAX_PATH, "%s/%s", tiles_lst_path, "TILES.LST");
 
     int tiles_lst_size = io_file_size(tiles_lst_path);
 
@@ -568,8 +553,9 @@ char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list)
     char* old_tiles_list = (char*)malloc(tiles_lst_size+1);
     FILE* tiles_lst = fopen(tiles_lst_path, "rb");
     int size = fread(old_tiles_list, tiles_lst_size, 1, tiles_lst);
-    if (size < tiles_lst_size) {
+    if (size != 1) {
         printf("\n\nUnable to read entire TILES.LST file?\n\n");
+        printf("fread     size: %d\n", size);
     }
     fclose(tiles_lst);
 
@@ -580,17 +566,7 @@ char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list)
         return nullptr;
     }
 
-    char time_buff[32];
-    char rename_buff[MAX_PATH];
-    time_t t = time(NULL);
-    tm* tp = localtime(&t);
-    strftime(time_buff, 32, "_%Y%m%d_%H%M%S", tp);
-    snprintf(rename_buff, MAX_PATH, "%s%s%s", tiles_lst_path, time_buff, ".LST");
-
-    int error = rename(tiles_lst_path, rename_buff);
-    // if (error != 0) {
-        perror("Error renaming TILES.LST: ");
-    // }
+    io_backup_file(tiles_lst_path);
 
     //append new list_of_tiles to the end of original list
     //in a new buffer large enough to fit both
@@ -615,6 +591,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
 {
     bool success = false;
     //if default_game_path not set
+    //ask user if they want to auto-export
     if (usr_nfo->default_game_path[0] == '\0') {
         success = auto_export_question(usr_nfo, usr_nfo->exe_directory, save_buff, TILE);
         if (success == false) {
@@ -630,7 +607,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
     if (tiles_lst == nullptr) {
         //TODO: notify user that can't find TILES.LST
         int choice = tinyfd_messageBox(
-                    "Cant find TILES.LST...",
+                    "Cannot find TILES.LST...",
                     "TILES.LST is used to identify the town map tiles\n"
                     "used in the game.\n"
 
@@ -652,8 +629,8 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
                     "/Fallout 2/data/art/tiles/TILES.LST\n"
                     "Then select -NO- and the program will re-check the file.\n\n"
 
-                    "--YES:    Create new TILES.LST in /Fallout 2/data/art/tiles/\n"
-                    "--NO:     Re-check game folder\n",
+                    "YES:    Create new TILES.LST in /Fallout 2/data/art/tiles/\n"
+                    "NO:     Re-check game folder\n",
                     "yesnocancel", "warning", 2);
 
         if (choice == CANCEL) {
@@ -704,7 +681,6 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
         return;
     }
 
-    // snprintf(save_buff, MAX_PATH, "%s/%s", save_buff, "TILES.LST");
     strncat(save_buff + strlen(save_buff), "/TILES.LST", 11);
     success = io_file_exists(save_buff);
 
@@ -712,8 +688,8 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
         //TILES.LST doesn't exist in selected folder
         int choice = tinyfd_messageBox(
             //TODO: this needs a re-write
-            //      maybe change choice to select game folder
-            "Cant find TILES.LST...",
+            //      maybe change choice to select game folder?
+            "Cannot find TILES.LST...",
             "Unable to find TILES.LST in the Fallout 2\n"
             "game directory -- Would you like to make a\n"
             "new one? This new TILES.LST will be blank\n"
@@ -725,8 +701,8 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             "game list. Only do this if you want to create\n"
             "the whole tile system from scratch,\n"
             "or to preview the results before manually merging.\n\n"
-            "--YES:    Create new TILES.LST\n"
-            "--NO:     Select new folder to save TILES.LST\n",
+            "YES:    Create new TILES.LST\n"
+            "NO:     Select new folder to save TILES.LST\n",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {       // Cancel =  null out buffer and return
             return;
@@ -738,8 +714,6 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             game_path = tinyfd_selectFolderDialog(
                 "Select directory to save to...", usr_nfo->default_save_path);
             strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
-            // snprintf(save_buff, MAX_PATH, "%s/%s", usr_nfo->default_save_path, "TILES.LST");
-            // tiles_lst = write_tiles_lst(save_buff, new_tile_list);
             return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
         }
     } else {
@@ -747,13 +721,14 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
         int choice = tinyfd_messageBox(
             "Warning",
             "Append new tiles to TILES.LST?\n"
+            "(A backup will be made.)\n"
             "--IMPORTANT--\n"
             "The Fallout game engine reads tiles in\n"
             "from TILES.LST based on the line number.\n"
             "Be careful not to change the order of\n"
             "tiles once they are on the list.\n\n"
-            "--YES:    Append new tiles to end of list\n"
-            "--NO:     Create new TILES.LST?\n",
+            "YES:    Append new tiles to end of list\n"
+            "NO:     Create new TILES.LST?\n",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {          // Cancel =  null out buffer and return
             return;
@@ -766,8 +741,6 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             game_path = tinyfd_selectFolderDialog(
                 "Select directory to save to...", usr_nfo->default_save_path);
             strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
-            // snprintf(save_buff, MAX_PATH, "%s/%s", usr_nfo->default_save_path, "TILES.LST");
-            // tiles_lst = write_tiles_lst(save_buff, new_tile_list);
             return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
         }
     }
@@ -776,20 +749,4 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
         free(usr_nfo->game_files.TILES_LST);
     }
     usr_nfo->game_files.TILES_LST = tiles_lst;
-///////////everything below here needs to change///////////////////////////////////
-    // } else {
-    //     //the file was found and already loaded into memory?
-    //     //append to existing list in /Fallout 2/data/art/tiles/TILES.LST
-    //     //this might not be the best way to do this
-    //     //do I need to have a whole popup branching system?
-    //     int len_lst = strlen(usr_nfo->game_files.TILES_LST);
-    //     int len_new = strlen(new_tile_list);
-
-    //     char tiles_lst[len_lst+len_new] = {0};
-    //     snprintf(save_buff, MAX_PATH, "%s/%s", usr_nfo->default_game_path, "TILES.LST");
-    //     strncpy(tiles_lst, usr_nfo->game_files.TILES_LST, len_lst);
-    //     strncpy(tiles_lst+len_lst, new_tile_list, len_new);
-    //     write_tiles_lst(save_buff, tiles_lst);
-    // }
-///////////everything above here needs to change///////////////////////////////////
 }

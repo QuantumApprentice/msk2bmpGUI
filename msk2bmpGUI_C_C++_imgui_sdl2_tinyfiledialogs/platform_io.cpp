@@ -183,4 +183,25 @@ bool io_path_check(char* file_path)
     return true;
 }
 
+//create a backup file from file_path
+//appends date&time in this format
+//      _yyyymmdd_hhmmss
+//appends same file extension as source
+bool io_backup_file(char* file_path)
+{
+    char* extension = strrchr(file_path, '\0');
+    char time_buff[32];
+    char rename_buff[MAX_PATH];
+    time_t t = time(NULL);
+    tm* tp = localtime(&t);
+    strftime(time_buff, 32, "_%Y%m%d_%H%M%S", tp);
+    snprintf(rename_buff, MAX_PATH, "%s%s%s", file_path, time_buff, extension-4);
+    // snprintf(rename_buff, MAX_PATH, "%s%s%s", file_path, time_buff, ".LST");
+
+    int error = rename(file_path, rename_buff);
+    if (error != 0) {
+        perror("Error renaming TILES.LST: ");
+    }
+}
+
 
