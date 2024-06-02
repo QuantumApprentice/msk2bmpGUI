@@ -10,14 +10,14 @@
 //return ptr (need to free elsewhere)
 char* generate_new_tile_list(char* name, int tile_num)
 {
-    int tile_name_len = strlen(name) + strlen("%03d.FRM\n");
+    int tile_name_len = strlen(name) + strlen("%03d.FRM\r\n");
     int new_tile_list_size = (tile_num * tile_name_len);
     char* new_tile_list = (char*)malloc(new_tile_list_size);
     char* list_ptr = new_tile_list;
 
     char buffer[tile_name_len+1] = {0};
     for (int i = 0; i < tile_num; i++) {
-        snprintf(buffer, tile_name_len, "%s%03d.FRM\n", name, i);
+        snprintf(buffer, tile_name_len, "%s%03d.FRM\r\n", name, i);
         strncpy(list_ptr, buffer, tile_name_len);
         list_ptr += tile_name_len-1;
     }
@@ -382,8 +382,10 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
         while (node != nullptr) {
             for (int i = 0; i < tiles_lst_len; i++)
             {
-                if (tiles_lst[i] != '\n' || tiles_lst[i] == '\0') {
-                    continue;
+                if (tiles_lst[i] != '\n') {     // || tiles_lst[i] != '\r') {
+                    if (tiles_lst[i] != '\0') {
+                        continue;
+                    }
                 }
                 //check first char of strt == first char of node.name_ptr
                 if (strt[0] != node->name_ptr[0]) {
@@ -446,7 +448,7 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
         int total_size = 0;
         while (node != nullptr) {
             // num_tiles++;
-            total_size += node->length;
+            total_size += node->length+1;
             node = node->next;
         }
 
@@ -458,17 +460,33 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
                             "No new tile-names were added.\n",
                             "info");
             //TODO: test this free()
-            free_tile_name_lst(linked_lst);
+            // free_tile_name_lst(linked_lst);
             return false;
         }
 
-        char* cropped_list = (char*)malloc(total_size);
-        cropped_list[0] = '\0';
+//test below for speed///////////////////////////////
+        // char* cropped_list = (char*)malloc(total_size+1);
+        // cropped_list[0] = '\0';
+        // node = linked_lst;
+        // while (node != nullptr) {
+        //     strncat(cropped_list, node->name_ptr, node->length+1);
+        //     // strncat(cropped_list, "\0", 1);
+        //     node = node->next;
+        // }
+
+        char* cropped_list = (char*)malloc(total_size+1);
         node = linked_lst;
-        while (node != nullptr) {
-            strncat(cropped_list, node->name_ptr, node->length+1);
+        char* c = cropped_list;
+        while (node != nullptr)
+        {
+            size_t amount_to_copy = node->length+1;
+            memcpy(c, node->name_ptr, amount_to_copy);
+            c += amount_to_copy;
             node = node->next;
         }
+        c[0] = '\0';
+//test above for speed///////////////////////////////
+
         free(*new_tiles);
         *new_tiles = cropped_list;
     }
@@ -728,7 +746,8 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             "Be careful not to change the order of\n"
             "tiles once they are on the list.\n\n"
             "YES:    Append new tiles to end of list\n"
-            "NO:     Create new TILES.LST?\n",
+            "NO:     Create new TILES.LST?\n"
+            "           (a backup will be made.)",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {          // Cancel =  null out buffer and return
             return;
@@ -738,10 +757,13 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             tiles_lst = append_tiles_lst(save_buff, new_tile_list);
         }
         if (choice == NO) {              // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-            game_path = tinyfd_selectFolderDialog(
-                "Select directory to save to...", usr_nfo->default_save_path);
-            strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
-            return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
+        //TODO: don't want to select new folder, want to over-write original file
+            // game_path = tinyfd_selectFolderDialog(
+            //     "Select directory to save to...", usr_nfo->default_save_path);
+            // strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
+            // return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
+            io_backup_file(save_buff);
+            tiles_lst = write_tiles_lst(save_buff, *new_tile_list);
         }
     }
 
