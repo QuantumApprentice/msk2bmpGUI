@@ -180,18 +180,18 @@ imgui-docking
 
 tinyfiledialogs
 
-###If on linux:
+### If on linux:
 
 Might have to uninstall libtbb-dev if building with cmake
 
 Build commands:
 
-###In the root folder:
+### In the root folder:
 
 cmake -S . -B build
 
 cd build
 
-###In the newly created /build/ folder:
+### In the newly created /build/ folder:
 
 make
