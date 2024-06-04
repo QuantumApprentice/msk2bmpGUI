@@ -1,7 +1,7 @@
 //https://falloutmods.fandom.com/wiki/PAL_File_Format
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 #ifdef QFO2_WINDOWS
     #include <Windows.h>
 #elif defined(QFO2_LINUX)

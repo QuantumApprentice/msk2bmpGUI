@@ -16,7 +16,7 @@
 #include "Save_Files.h"
 
 #include "B_Endian.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 #include "imgui.h"
 #include "Load_Settings.h"
 #include "MSK_Convert.h"

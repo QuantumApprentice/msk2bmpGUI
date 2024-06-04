@@ -8,7 +8,7 @@ temp/
 **/debug/
 
 # ignore this specific release folder
-msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Release/
+src/Release/
 
 # ignore that pesky .vs folder
 .vs/**
@@ -29,14 +29,13 @@ msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Release/
 imgui.ini
 
 # ignore the imgui.ini file
-msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/imgui.ini
-msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/images
+src/imgui.ini
+src/images
 
 Release/
 out/
 build/
 .vscode/
 CMakeUserPresets.json
-QFO2Tool
-msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/config\\msk2bmpGUI.cfg
+src/config\\msk2bmpGUI.cfg
 /UpgradeLog*.htm

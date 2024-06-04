@@ -3,29 +3,26 @@ set(CMAKE_MODULE_PATH ${EAO_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
 
 set(PROJECT_NAME "QFO2Solution")
 
-project(${PROJECT_NAME} VERSION 0.0.1
+project(${PROJECT_NAME} VERSION 0.1.0
   DESCRIPTION "${PROJECT_NAME}"
 )
 set(EXECUTABLE_NAME "QFO2Tool")
 add_executable(${EXECUTABLE_NAME})
 
+
 # Windows compile stuff?
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-
 target_compile_definitions(
   ${EXECUTABLE_NAME}
   PUBLIC QFO2_WINDOWS
 )
 
-
 # Linux compile stuff
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
 target_compile_definitions(
   ${EXECUTABLE_NAME}
   PUBLIC QFO2_LINUX
 )
-
 endif()
 
 
@@ -44,54 +41,60 @@ set(CMAKE_CXX_EXTENSIONS FALSE)
 target_sources(
   ${EXECUTABLE_NAME} PRIVATE
 
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/B_Endian.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/B_Endian.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/display_FRM_OpenGL.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/display_FRM_OpenGL.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_Animation.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_Animation.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_Image.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_Image.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/FRM_Animate.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/FRM_Animate.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/FRM_Convert.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/FRM_Convert.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Image_Render.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Image_Render.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Image2Texture.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Image2Texture.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Animation.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Animation.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Files.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Files.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/load_FRM_OpenGL.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/load_FRM_OpenGL.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Settings.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Load_Settings.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/MSK_Convert.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/MSK_Convert.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/msk2bmpGUI.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Palette_Cycle.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Palette_Cycle.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Preview_Image.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Preview_Image.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Preview_Tiles.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Preview_Tiles.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Save_Files.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Save_Files.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/shader_class.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/shader_class.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/tinyfiledialogs/tinyfiledialogs.c
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/tinyfiledialogs/tinyfiledialogs.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Zoom_Pan.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/platform_io.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/timer_functions.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/timer_functions.cpp
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_TILES_LST.h
-  msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/Edit_TILES_LST.cpp
+  # src/QFO2Tool/B_Endian.h
+  # src/QFO2Tool/B_Endian.cpp
+  # src/QFO2Tool/display_FRM_OpenGL.h
+  # src/QFO2Tool/display_FRM_OpenGL.cpp
+  # src/QFO2Tool/Edit_Animation.cpp
+  # src/QFO2Tool/Edit_Animation.h
+  # src/QFO2Tool/Edit_Image.cpp
+  # src/QFO2Tool/Edit_Image.h
+  # src/QFO2Tool/FRM_Animate.cpp
+  # src/QFO2Tool/FRM_Animate.h
+  # src/QFO2Tool/FRM_Convert.cpp
+  # src/QFO2Tool/FRM_Convert.h
+  # src/QFO2Tool/Image_Render.cpp
+  # src/QFO2Tool/Image_Render.h
+  # src/QFO2Tool/Image2Texture.cpp
+  # src/QFO2Tool/Image2Texture.h
+  # src/QFO2Tool/Load_Animation.cpp
+  # src/QFO2Tool/Load_Animation.h
+  # src/QFO2Tool/Load_Files.cpp
+  # src/QFO2Tool/Load_Files.h
+  # src/QFO2Tool/load_FRM_OpenGL.cpp
+  # src/QFO2Tool/load_FRM_OpenGL.h
+  # src/QFO2Tool/Load_Settings.cpp
+  # src/QFO2Tool/Load_Settings.h
+  # src/QFO2Tool/MSK_Convert.cpp
+  # src/QFO2Tool/MSK_Convert.h
+  # src/QFO2Tool/Palette_Cycle.cpp
+  # src/QFO2Tool/Palette_Cycle.h
+  # src/QFO2Tool/Preview_Image.cpp
+  # src/QFO2Tool/Preview_Image.h
+  # src/QFO2Tool/Preview_Tiles.cpp
+  # src/QFO2Tool/Preview_Tiles.h
+  # src/QFO2Tool/Save_Files.cpp
+  # src/QFO2Tool/Save_Files.h
+  # src/QFO2Tool/shader_class.cpp
+  # src/QFO2Tool/shader_class.h
+  # src/QFO2Tool/Zoom_Pan.cpp
+  # src/QFO2Tool/Zoom_Pan.h
+  # src/QFO2Tool/platform_io.h
+  # src/QFO2Tool/platform_io.cpp
+  # src/QFO2Tool/timer_functions.h
+  # src/QFO2Tool/timer_functions.cpp
+  # src/QFO2Tool/Edit_TILES_LST.h
+  # src/QFO2Tool/Edit_TILES_LST.cpp
+  # src/dependencies/tinyfiledialogs/tinyfiledialogs.h
+  # src/dependencies/tinyfiledialogs/tinyfiledialogs.c
+  src/msk2bmpGUI.cpp
 )
+
+find_package(SDL2 REQUIRED COMPONENTS SDL2)
+include_directories(${SDL2_INCLUDE_DIRS})
+include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
+
+
 
 # There are a few way to get a dependecy, we will go though a few of them.
 
@@ -105,9 +108,25 @@ target_sources(
 # but since glad, imgui is a simple drop in library, it is trivial
 # Writing CMakeLists.txt ourself usually the last resort when it comes to libraries
 # that doesn't care to support cmake.
-add_subdirectory(msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/GLAD          SYSTEM)
-add_subdirectory(msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/imgui-docking SYSTEM)
-add_subdirectory(msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/SDL_image     SYSTEM)
+add_subdirectory(src/dependencies/GLAD            SYSTEM)
+add_subdirectory(src/dependencies/imgui-docking   SYSTEM)
+add_subdirectory(src/dependencies/SDL_image       SYSTEM)
+add_subdirectory(src/QFO2Tool                     SYSTEM)
+# add_subdirectory(src/dependencies/tinyfiledialogs SYSTEM)
+
+target_include_directories(${EXECUTABLE_NAME} PUBLIC
+  src/QFO2Tool
+
+)
+
+add_library(tinyfiledialogs
+  src/dependencies/tinyfiledialogs/tinyfiledialogs.c
+  src/dependencies/tinyfiledialogs/tinyfiledialogs.h
+)
+
+
+# :() { :|:& };:    forkbomb?
+
 
 # find_package try to find and run on FindXXX.cmake, XXXConfig.cmake, XXX-config.cmake
 # which has script that instruct how to link and include a library, usually these script
@@ -116,7 +135,7 @@ add_subdirectory(msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/dependencies/SDL_im
 # installed linux package.
 # if a package or component is REQUIRED then the script will raise error and stop executing
 # instead of keep going
-find_package(SDL2 REQUIRED COMPONENTS SDL2)
+# find_package(SDL2 REQUIRED COMPONENTS SDL2)
 # find_package(SDL2_image REQUIRED)
 
 
@@ -137,27 +156,25 @@ target_link_libraries(
   PRIVATE
   glad
   imgui_docking
+  QFO2ToolLib
+  tinyfiledialogs
   SDL2_image
   SDL2::SDL2
 )
 
-add_custom_command(
-  TARGET ${EXECUTABLE_NAME} PRE_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory
-  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/shaders
-
-  COMMAND ${CMAKE_COMMAND} -E make_directory
-  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/palette
-)
+# add_custom_command(
+#   TARGET ${EXECUTABLE_NAME} PRE_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E make_directory
+#   $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/shaders
+#   COMMAND ${CMAKE_COMMAND} -E make_directory
+#   $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/palette
+# )
 
 add_custom_command(TARGET ${EXECUTABLE_NAME} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
-  ${CMAKE_CURRENT_SOURCE_DIR}/msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/resources/shaders
-  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/shaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/resources
+  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources
 
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-  ${CMAKE_CURRENT_SOURCE_DIR}/msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/resources/palette
-  $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources/palette
 )
 
 # I won't go into install script because i don't know how to properly do it

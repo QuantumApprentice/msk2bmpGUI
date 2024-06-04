@@ -1,6 +1,6 @@
 #include "platform_io.h"
 #include "Image2Texture.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>

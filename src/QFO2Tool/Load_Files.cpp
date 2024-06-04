@@ -20,7 +20,7 @@
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Load_Settings.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 #include "MSK_Convert.h"
