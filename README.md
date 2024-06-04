@@ -183,3 +183,5 @@ tinyfiledialogs
 ###If on linux:
 
 Might have to uninstall libtbb-dev if building with cmake
+
+Build commands:

@@ -39,3 +39,4 @@ build/
 CMakeUserPresets.json
 QFO2Tool
 msk2bmpGUI_C_C++_imgui_sdl2_tinyfiledialogs/config\\msk2bmpGUI.cfg
+/UpgradeLog*.htm

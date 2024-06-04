@@ -10,6 +10,12 @@
 #endif
 #define MAX_KEY  32
 
+enum export_auto {
+    not_set  = 0,
+    auto_all = 1,
+    manual   = 2,
+};
+
 struct fo2_files {
     char* TILES_LST;
     char* WORLDMAP_TXT;
@@ -23,7 +29,7 @@ struct user_info {
 
     fo2_files game_files;
 
-    int  auto_export = 0;           // 0=not set, 1=auto all the way, 2=manual
+    int  auto_export = not_set;           // 0=not set, 1=auto all the way, 2=manual
     bool save_full_MSK_warning;
     bool show_image_stats;
     size_t length;

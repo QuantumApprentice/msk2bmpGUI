@@ -363,9 +363,9 @@ int skip_or_rename(tile_name* node)
 
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to linked list first
-bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
+bool check_tile_names_ll(char* tiles_lst, char** new_tiles, bool set_auto)
 {
-    bool append_new_only = false;
+    bool append_new_only = set_auto;
     int tiles_lst_len = strlen(tiles_lst);
     tile_name* linked_lst = make_name_list(*new_tiles);  //need to free linked_lst at the end
     tile_name* node = linked_lst;
@@ -418,7 +418,7 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles)
                         *new_tiles = generate_new_tile_list(new_name, num_tiles);
 
                         free_tile_name_lst(linked_lst);
-                        return check_tile_names_ll(tiles_lst, new_tiles);
+                        return check_tile_names_ll(tiles_lst, new_tiles, set_auto);
                     }
                 }
                 if (append_new_only == true) {
@@ -568,7 +568,7 @@ bool check_tile_names(char* tiles_lst, char* new_tiles)
 }
 
 //append new tile-names to the end of TILES.LST
-char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list)
+char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list, bool set_auto)
 {
     if (tiles_lst_path == nullptr) {return nullptr;}
 
@@ -586,7 +586,7 @@ char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list)
 
     //search final_tiles_list (TILES.LST)
     //for matching names from new_tiles_list
-    bool success = check_tile_names_ll(old_tiles_list, new_tiles_list);
+    bool success = check_tile_names_ll(old_tiles_list, new_tiles_list, set_auto);
     if (success == false) {
         return nullptr;
     }
@@ -754,21 +754,16 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             "tiles once they are on the list.\n\n"
             "YES:    Append new tiles to end of list\n"
             "NO:     Create new TILES.LST?\n"
-            "           (a backup will be made.)",
+            "            (a backup will be made.)",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {          // Cancel =  null out buffer and return
             return;
         }
         if (choice == YES) {             // Yes = Append to TILES.LST
-            //TODO: this could be cleaned up to use usr_nfo.game_files.TILES_LST
-            tiles_lst = append_tiles_lst(save_buff, new_tile_list);
+            tiles_lst = append_tiles_lst(save_buff, new_tile_list, false);
         }
         if (choice == NO) {              // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-        //TODO: don't want to select new folder, want to over-write original file
-            // game_path = tinyfd_selectFolderDialog(
-            //     "Select directory to save to...", usr_nfo->default_save_path);
-            // strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
-            // return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
+        //over-write original file
             io_backup_file(save_buff);
             tiles_lst = write_tiles_lst(save_buff, *new_tile_list);
         }

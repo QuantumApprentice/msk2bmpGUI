@@ -829,12 +829,12 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
 
 bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
 {
-    char dest[3][24]{
+    char dest[3][24] {
         {"/data/art/intrface"},     //WRLDMPxx.FRM
         {"/data/data"},             //wrldmpXX.msk
         {"/data/art/tiles"},        //town map tiles
         };
-    if (usr_info->auto_export == 0) {       // ask user if they want auto/manual
+    if (usr_info->auto_export == not_set) {       // ask user if they want auto/manual
         int auto_choice = tinyfd_messageBox(
             //TODO: simplify this text
                     "Automatic? or Manual?",
@@ -851,7 +851,7 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
             return false;
         }
         if (auto_choice == YES) {               // Auto - chosen from previous popup
-            if (!strcmp(usr_info->default_game_path, "") || (usr_info->auto_export == 0))
+            if (!strcmp(usr_info->default_game_path, "") || (usr_info->auto_export == not_set))
             {
                 return export_auto(usr_info, exe_path, save_path, save_type);
             }
@@ -865,7 +865,7 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
             return export_manual(usr_info, save_path, exe_path);
         }
     }
-    if (usr_info->auto_export == 1) {                   // Auto   - set by user
+    if (usr_info->auto_export == auto_all) {                   // Auto   - set by user
         if (!strcmp(usr_info->default_game_path, "")) {
             return export_auto(usr_info, exe_path, save_path, save_type);
         }
@@ -874,7 +874,7 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
             return true;
         }
     }
-    if (usr_info->auto_export == 2) {                   // Manual - set by user
+    if (usr_info->auto_export == manual) {                   // Manual - set by user
         return export_manual(usr_info, save_path, exe_path);
     }
 }
@@ -1279,56 +1279,6 @@ void crop_single_tile(int img_w, int img_h,
     }
 }
 
-// //TODO: delete, not used
-// //crops 4 tiles in staggered order
-// void tile_quad_crop(image_data *img_data, int *t_mask)
-// {
-//     char file_name[32];
-//     uint8_t tile_buff[80 * 36] = {0};
-//     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
-//     int img_w = img_data->width;
-//     int img_h = img_data->height;
-//     int origin_x = 0;
-//     int origin_y = 0;
-//     int tile_num = 0;
-//     while (tile_num < 20) {
-//         if (origin_x > img_w) {
-//             origin_x = 0;
-//             origin_y += 96;
-//         }
-//         for (int tile_quad = 0; tile_quad < 4; tile_quad++)
-//         {
-//             ImVec2 origin = {0,0};
-//             switch (tile_quad)
-//             {
-//             case 0:
-//                 origin.x += 0;
-//                 origin.y += -12;
-//                 break;
-//             case 1:
-//                 origin.x += +48;
-//                 origin.y += -24;
-//                 break;
-//             case 2:
-//                 origin.x += +32;
-//                 origin.y += +12;
-//                 break;
-//             case 3:
-//                 origin.x += 80;
-//                 origin.y += 0;
-//                 break;
-//             }
-//             // frm_pxls
-//             snprintf(file_name, 32, "test_tile_%02d.frm", tile_num);
-//             tile_num++;
-//             crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin.x, origin.y);
-//             printf("making tile #%02d\n", tile_num);
-//             save_TMAP_tile(file_name, tile_buff);
-//         }
-//         origin_x += 160;
-//     }
-// }
-
 //crop town map tiles from a full image
 //TODO: need to add offsets to x & y
 char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
@@ -1352,10 +1302,6 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
     B_Endian::flip_frame_endian(&frame);
 
     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
-
-
-    // char* new_tiles_list = (char*)malloc();      //do it this way when able to calculate total_tile_num beforehand
-
 
     int origin_x = -48 + offset_x;
     int origin_y =   0 + offset_y;
@@ -1430,7 +1376,7 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     if (name == nullptr) {
         return nullptr;
     }
-    //TODO: check if game engine will take more than 8 character names
+    //TODO: check if game engine will take longer than 8-character names
     //      if not, then limit this to 8 (name length + tile digits)
     //      possibly give bypass?
     if (strlen(name) >= 32) {

@@ -18,7 +18,7 @@ target_compile_definitions(
 )
 
 
-# Linux compile stuff?
+# Linux compile stuff
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
 
 target_compile_definitions(
