@@ -58,4 +58,7 @@ c++ "${CPP_ARGS[@]}" -o "$build/QFO2Tool" "$src/build_linux.cpp" "$build/glfw1.o
 echo "Copying resources"
 cp -a "$src/resources" "$build"
 
+echo "Removing build artifacts"
+rm "$build"/*.o
+
 echo "Done"
