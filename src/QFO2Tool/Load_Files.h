@@ -1,5 +1,4 @@
 #pragma once
-#include <SDL.h>
 
 #include <filesystem>
 #include <optional>
@@ -26,7 +25,7 @@ struct LF {
     char * c_name;
     char * extension;
     //TODO: remove IMG_Surface, not used anymore
-    // SDL_Surface* IMG_Surface = nullptr;
+    // Surface* IMG_Surface = nullptr;
     bool alpha          = true;
     bool show_stats     = false;
     bool show_squares   = false;
@@ -59,5 +58,5 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 void prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
-SDL_Surface* Surface_32_Check(SDL_Surface* surface);
+Surface* Surface_32_Check(Surface* surface);
 void load_tile_texture(GLuint* texture, char* file_name);

@@ -69,14 +69,14 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
 
 }
 
-//SDL_Surface* Create_MSK_SDL(SDL_Surface* image, GLuint* texture, bool* window)
+//Surface* Create_MSK_SDL(Surface* image, GLuint* texture, bool* window)
 //{
 //    int width  = image->w;
 //    int height = image->h;
 //
 //    //if (Map_Mask)
 //    //    { SDL_FreeSurface(Map_Mask); }
-//    SDL_Surface* Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+//    Surface* Map_Mask = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 //
 //    if (Map_Mask) {
 //
@@ -152,7 +152,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    int width  = F_Prop->IMG_Surface->w;
 //    int height = F_Prop->IMG_Surface->h;
 //
-//    SDL_Surface* BB_Surface = F_Prop->Map_Mask;
+//    Surface* BB_Surface = F_Prop->Map_Mask;
 //    Uint32 white = SDL_MapRGB(F_Prop->Map_Mask->format,
 //                              255, 255, 255);
 //
@@ -161,7 +161,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    int y = (int)(MousePos.y - Origin.y);
 //    int pitch = BB_Surface->pitch;
 //
-//    SDL_Rect rect;
+//    Rect rect;
 //    rect.x = x;
 //    rect.y = y;
 //    rect.h = 10;
@@ -228,8 +228,8 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    }
 //}
 ////TODO: remove! same as above
-//void Update_Palette2(SDL_Surface* surface, GLuint* texture, SDL_PixelFormat* pxlFMT) {
-//    SDL_Surface* Temp_Surface;
+//void Update_Palette2(Surface* surface, GLuint* texture, Palette* pxlFMT) {
+//    Surface* Temp_Surface;
 //    //Force image to use the global palette instead of allowing SDL to use a copy
 //    SDL_SetPixelFormatPalette(surface->format, pxlFMT->palette);
 //    Temp_Surface = Unpalettize_Image(surface);
@@ -239,7 +239,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //}
 
 ////TODO: remove! same as above
-//void CPU_Blend_SDL(SDL_Surface* msk_surface, SDL_Surface* img_surface)
+//void CPU_Blend_SDL(Surface* msk_surface, Surface* img_surface)
 //{
 //    int width  = msk_surface->w;
 //    int height = msk_surface->h;

@@ -9,6 +9,7 @@
 
 #include "MSK_Convert.h"
 #include "tinyfiledialogs.h"
+#include "MiniSDL.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
 uint8_t bmpHeader[62] = {
@@ -354,38 +355,24 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
 //    return (b & (1 << bitNumber)) != 0;
 //}
 
-union Pxl_info_32 {
-    struct {
-        uint8_t a;
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
-    };
-    uint8_t arr[4];
-};
-
-void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data)
+void Convert_SDL_Surface_to_MSK(Surface* surface, image_data* img_data)
 {
     int width  = surface->w;
     int height = surface->h;
     int size   = width * height;
     uint8_t* data = (uint8_t*)calloc(1, size);
 
-    SDL_PixelFormat* pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
-    if (!Surface_32) {
-        printf("Error: %s\n", SDL_GetError());
-    }
+    Surface* Surface_32 = ConvertSurfaceToRGBA(surface);
 
-    Pxl_info_32 rgba;
+    Color rgba;
     int white = 1;
     int i;
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
-            i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
-            memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            i = (Surface_32->pitch * y) + x * (sizeof(Color));
+            memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Color));
 
             if (rgba.r > 0 || rgba.g > 0 || rgba.b > 0) {
                 data[y*width + x] = white;
@@ -396,7 +383,7 @@ void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data)
     img_data->type = MSK;
 }
 
-SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
+Surface* Load_MSK_Tile_SDL(char* FileName)
 {
     //open the file & error checking
 #ifdef QFO2_WINDOWS
@@ -416,17 +403,15 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
     ///*this section was used to convert the pixels using SDL_ConvertSurface...
     ///*works, but needs palette to get correct coloring
     ////Create the binary_bitmap surface
-    //SDL_Surface* binary_bitmap;
+    //Surface* binary_bitmap;
     //binary_bitmap = SDL_CreateRGBSurface(0, 350, 300, 1, 0, 0, 0, 0);
     ////copy inputLines to binary_bitmap surface
     //memcpy(binary_bitmap->pixels, inputLines, MAX_LINES * 44);
     ////convert to regular 32bit surface
-    //SDL_PixelFormat* pxlFMT_32 = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    //SDL_Surface*temp_surface = SDL_ConvertSurfaceFormat(binary_bitmap, SDL_PIXELFORMAT_RGBA8888, 0);
-    printf(SDL_GetError());
+    //Palette* pxlFMT_32 = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
+    //Surface*temp_surface = SDL_ConvertSurfaceFormat(binary_bitmap, SDL_PIXELFORMAT_RGBA8888, 0);
 
-    SDL_Surface* Mask_Surface = SDL_CreateRGBSurface(0, TILE_W, TILE_H, 32, 0, 0, 0, 0);
-    printf(SDL_GetError());
+    Surface* Mask_Surface = CreateRGBASurface(TILE_W, TILE_H);
     //TODO: refactor this and make sure the inputLines buffer
     //      matches the other buffer for exporting
     uint8_t *bin_ptr = (uint8_t*)inputLines;
@@ -434,7 +419,7 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
     uint8_t bitmask = 128;
     uint8_t buff = 0;
     bool mask_1_or_0;
-    SDL_Color white = { 255,255,255,128 };
+    Color white = { 255,255,255,128 };
 
     for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
     {
@@ -444,7 +429,7 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
 
             mask_1_or_0 = (buff & bitmask);
             if (mask_1_or_0) {
-                *((SDL_Color*)Mask_Surface->pixels + (pxl_y * Mask_Surface->pitch/4) + pxl_x) = white;
+                *((Color*)Mask_Surface->pixels + (pxl_y * Mask_Surface->pitch/4) + pxl_x) = white;
             }
 
             bitmask >>= 1;
@@ -459,8 +444,6 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
         ++bin_ptr;
         bitmask = 128;
     }
-
-    printf(SDL_GetError());
 
     return Mask_Surface;
 }

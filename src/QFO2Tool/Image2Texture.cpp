@@ -1,38 +1,34 @@
-#include <SDL.h>
 #include <stdio.h>
 #include <glad/glad.h>
 
 #include "Image2Texture.h"
+#include "MiniSDL.h"
 
 
 //Used to convert generic SDL image surfaces to textures
-bool Image2Texture(SDL_Surface* surface, GLuint* texture)
+bool Image2Texture(Surface* surface, GLuint* texture)
 {
     //TODO: Need to clean up the memory leaks in this function and the next
     if (surface)
     {
-        if (surface->format->BitsPerPixel < 32) {
-            SDL_Surface* Temp_Surface = NULL;
-            Temp_Surface = Unpalettize_Image(surface);
+        if (surface->channels < 4) {
+            Surface* Temp_Surface = NULL;
+            Temp_Surface = ConvertSurfaceToRGBA(surface);
 
-            SDL_to_OpenGl(Temp_Surface, texture);
+            Surface_to_OpenGl(Temp_Surface, texture);
 
-            SDL_FreeSurface(Temp_Surface);
+            FreeSurface(Temp_Surface);
         }
         else {
-            SDL_to_OpenGl(surface, texture);
+            Surface_to_OpenGl(surface, texture);
         }
 
         return true;
 
     }
-    if (texture == NULL) {
-        printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
-        return false;
-    }
 }
 
-void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
+void Surface_to_OpenGl(Surface *surface, GLuint *texture)
 {
     // OpenGL conversion from surface to texture
     {
@@ -50,34 +46,11 @@ void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Surface->w, Surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, Surface->pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         printf("glError: %d\n", glGetError());
     }
-}
-
-//TODO: remove when everything else has been moved to new opengl stuff
-void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
-{
-    if (!glIsTexture(*texture)) {
-        glGenTextures(1, texture);
-    }
-    glBindTexture(GL_TEXTURE_2D, *texture);
-
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        Surface->w,
-        Surface->h,
-        0, GL_RED, GL_UNSIGNED_BYTE,
-        Surface->pixels);
-    //printf("glError: %d\n", glGetError());
-
 }
 
 void allocate_FRM(image_data* edit_data)
@@ -128,7 +101,7 @@ void copy_it_all(image_data* img_data, image_data* edit_data)
 }
 
 //Palettize to 8-bit FO pallet, and dither
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
+void Prep_Image(LF* F_Prop, Palette* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
 
     if (F_Prop->img_data.type == FRM) {
         //copy the FRM_data pointer for editing
@@ -205,7 +178,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
 }
 
 // binds image information to PAL_texture (don't remember why right now, probably remove)
-//bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data)
+//bool bind_PAL_data(Surface* surface, struct image_data* img_data)
 //{
 //    //load & gen texture
 //    glGenTextures(1, &img_data->PAL_texture);
@@ -254,7 +227,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
 
 // binds the image information to FRM_texture
 // and sets up PAL_texture with a NULL texture of appropriate size for editing
-bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_type type)
+bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type type)
 {
     if (surface) {
         if (surface->pixels) {

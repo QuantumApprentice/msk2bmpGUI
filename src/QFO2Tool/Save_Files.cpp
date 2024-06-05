@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <cstdint>
-#include <SDL.h>
-#include <SDL_image.h>
 #include <filesystem>
 
 #ifdef QFO2_WINDOWS
@@ -25,7 +23,7 @@
 
 void write_cfg_file(user_info *user_info, char *exe_path);
 
-// char* Save_FRM_SDL(SDL_Surface *f_surface, user_info* user_info)
+// char* Save_FRM_SDL(Surface *f_surface, user_info* user_info)
 //{
 //     FRM_Header FRM_Header;
 //     FRM_Header.version                = B_Endian::write_u32(4);
@@ -536,7 +534,7 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
     return Save_File_Name;
 }
 
-char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
+char *Save_IMG_BMP(Surface *b_surface, user_info *user_info)
 {
     char *Save_File_Name;
     char *lFilterPatterns[2] = {"*.BMP", ""};
@@ -556,7 +554,7 @@ char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
     else
     {
         // TODO: check for existing file first
-        SDL_SaveBMP(b_surface, Save_File_Name);
+        SaveSurfaceAsBMP(b_surface, Save_File_Name);
         // TODO: add support for more file formats (GIF in particular)
         // IMG_SavePNG();
 
@@ -636,7 +634,7 @@ void Set_Default_Game_Path(user_info *usr_info, char *exe_path)
 #define MAP_TILE_H (300)
 #define MAP_TILE_SIZE (350 * 300)
 
-// void Save_FRM_tiles_SDL(SDL_Surface *PAL_surface, user_info* user_info)
+// void Save_FRM_tiles_SDL(Surface *PAL_surface, user_info* user_info)
 //{
 //     FRM_Header FRM_Header;
 //     FRM_Header.version                = B_Endian::write_u32(4);
@@ -670,7 +668,7 @@ void Save_FRM_Tiles_OpenGL(LF *F_Prop, user_info *user_info, char *exe_path)
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
 
-// void Save_MSK_Tiles_SDL(SDL_Surface* MSK_surface, struct user_info* user_info)
+// void Save_MSK_Tiles_SDL(Surface* MSK_surface, struct user_info* user_info)
 //{
 //     //TODO: export mask tiles using msk2bmp2020 code
 //     tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
@@ -1399,7 +1397,7 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     return new_TMAP_list;
 }
 
-// void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* usr_info, img_type type, FRM_Header* frm_header)
+// void Split_to_Tiles_SDL(Surface *surface, struct user_info* usr_info, img_type type, FRM_Header* frm_header)
 //{
 //     int num_tiles_x = surface->w / TILE_W;
 //     int num_tiles_y = surface->h / TILE_H;
@@ -1466,10 +1464,10 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
 /////////////////////////////////////////////////////////////////////////////
 //                ///*Blit combination not supported :(
 //                                    /// looks like SDL can't convert anything to binary bitmap
-//                //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
+//                //Rect tile = { surface->pitch*y * 300, x * 350,
 //                                    // 350, 300 };
-//                                    //SDL_Rect dst = { 0,0, 350, 300 };
-//                                    //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
+//                                    //Rect dst = { 0,0, 350, 300 };
+//                                    //Palette* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
 //                                    //binary_bitmap = SDL_ConvertSurface(surface, pxlfmt, 0);
 //                                    //binary_bitmap = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_INDEX1MSB, 0);
 //                                    //printf(SDL_GetError());
@@ -1676,7 +1674,7 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     fclose(File_ptr);
 }
 
-// void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
+// void Save_MSK_Image_SDL(Surface* surface, FILE* File_ptr, int x, int y)
 //{
 //     uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
 //     uint8_t *outp = out_buffer;

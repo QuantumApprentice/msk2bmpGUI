@@ -3,9 +3,9 @@
 #include <set>
 #include <vector>
 
-#include <SDL.h>
 
 #include "Load_Settings.h"
+#include "MiniSDL.h"
 
 struct rectangle {
     int x1 = 0;
@@ -31,7 +31,7 @@ struct ANM_Frame {
     uint32_t Frame_Size;
     int16_t  Shift_Offset_x;
     int16_t  Shift_Offset_y;
-    SDL_Surface* frame_start;
+    Surface* frame_start;
 };
 
 enum Direction

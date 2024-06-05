@@ -1,28 +1,12 @@
-//#define _CRTDBG_MAP_ALLOC
-////#define SDL_MAIN_HANDLED
-//
-//#define SET_CRT_DEBUG_FIELD(a) \
-//    _CrtSetDbgFlag((a) | _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
-//#define CLEAR_CRT_DEBUG_FIELD(a) \
-//    _CrtSetDbgFlag(~(a) & _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG))
-
-// Dear ImGui: standalone example application for SDL2 + OpenGL
-// (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
-// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
-// Read online: https://github.com/ocornut/imgui/tree/master/docs
-
-#define SDL_MAIN_HANDLED
-
 // ImGui header files
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
 #include <stdio.h>
-#include <SDL.h>
-#include <SDL_blendmode.h>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #if 0
     #include <Windows.h>
@@ -41,7 +25,6 @@
 #include "Save_Files.h"
 #include "Image2Texture.h"
 #include "Load_Settings.h"
-#include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
 #include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
@@ -59,7 +42,7 @@
 user_info usr_info;
 
 // Function declarations
-void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
+void Show_Preview_Window(variables *My_Variables, int counter);
 void Preview_Tiles_Window(variables *My_Variables, int counter);
 // void Preview_Town_Tiles_Window(variables *My_Variables, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
@@ -68,7 +51,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 void Show_Palette_Window(struct variables *My_Variables);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
@@ -84,6 +67,45 @@ void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 //    return main(0, NULL);
 //}
 
+struct dropped_files {
+    size_t count;
+    size_t total_size;
+    char* first_path; /* in memory we just have the null-terminated strings one after the other */
+};
+
+static struct dropped_files all_dropped_files = {0};
+
+static void drop_callback(GLFWwindow* window, int count, const char** paths)
+{
+    size_t size = 0;
+    for (int i = 0; i < count; i++)
+    {
+        size += strlen(paths[i]) + 1;
+    }
+    char* c;
+    if (all_dropped_files.count > 0) {
+        c = (char*)realloc(all_dropped_files.first_path, all_dropped_files.total_size + size);
+        all_dropped_files.first_path = c;
+        c += size;
+    } else {
+        c = (char*)malloc(size);
+        all_dropped_files.first_path = c;
+    }
+    all_dropped_files.count += count;
+    all_dropped_files.total_size += size;
+    for (int i = 0; i < count; i++)
+    {
+        size_t len = strlen(paths[i]) + 1;
+        memcpy(c, paths[i], len);
+        c += len;
+    }
+}
+
+static void glfw_error_callback(int error, const char* description)
+{
+    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
 // Main code
 int main(int argc, char** argv)
 {
@@ -95,36 +117,30 @@ int main(int argc, char** argv)
     char** my_argv = argv;
 #endif
 
-
-    // Setup SDL
-    // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
-    // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
+    // Setup GLFW
+    glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit()) {
+        return 1;
     }
-    SDL_GL_LoadLibrary(NULL);
 
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 330 core";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 
     // Create window with graphics context
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Q's Beta Fallout Image Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Q's Beta Fallout Image Editor", nullptr, nullptr);
+    if (window == nullptr)
+        return 1;
+    glfwSetDropCallback(window, drop_callback);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
 
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
-        printf("Glad Loader failed?..."); // %s", SDL_GetVideoDriver);
+        printf("Glad Loader failed?...");
         exit(-1);
     }
     else
@@ -134,8 +150,6 @@ int main(int argc, char** argv)
         printf("Version: %s\n",      glGetString(GL_VERSION));
         printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
-
-    SDL_GL_SetSwapInterval(1); // Enable vsync
 
     //State variables
     struct variables My_Variables = {};
@@ -163,7 +177,7 @@ int main(int argc, char** argv)
 
     //TODO: add user input for a user-specified palette
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/color.pal");
-    My_Variables.pxlFMT_FO_Pal = load_palette_to_SDL_PixelFormat(vbuffer);
+    My_Variables.pxlFMT_FO_Pal = load_palette_to_Palette(vbuffer);
 
 
     Load_Config(&usr_info, My_Variables.exe_directory);
@@ -201,7 +215,7 @@ int main(int argc, char** argv)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
 
@@ -266,44 +280,19 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // used to reset the default layout back to original
     bool firstframe = true;
-    std::vector<std::string> dropped_file_path;
 
     // Main loop
-    bool done = false;
-    while (!done)
+    while (!glfwWindowShouldClose(window))
     {
-        //handling dropped files in different windows
-        bool file_dropping_frame = false;
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
-                done = true;
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
-                done = true;
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        done = true;
-                        break;
-                }
-            }
-            //TODO: SDL_DROPFILE doesn't support wide characters :_(
-            if (event.type == SDL_DROPFILE) {
+        glfwPollEvents();
 
-                dropped_file_path.emplace_back(event.drop.file);
-                SDL_free(event.drop.file);
-
-                file_dropping_frame = true;
-
-            }
-        }
+        //handling dropped files in different windows
+        bool file_dropping_frame = all_dropped_files.count > 0;
 
         {// mouse position handling for panning
             //store previous mouse position before assigning current
@@ -328,7 +317,7 @@ int main(int argc, char** argv)
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
@@ -400,9 +389,11 @@ int main(int argc, char** argv)
 
             //handle opening dropped files
             if (file_dropping_frame) {
-                for (std::string& path : dropped_file_path)
+                char* path = all_dropped_files.first_path;
+                for (int i = 0; i < all_dropped_files.count; i++)
                 {
-                    std::optional<bool> directory = handle_directory_drop(path.data(),
+                    size_t len = strlen(path);
+                    std::optional<bool> directory = handle_directory_drop(path,
                                                         My_Variables.F_Prop,
                                                         &My_Variables.window_number_focus,
                                                         &counter,
@@ -410,14 +401,16 @@ int main(int argc, char** argv)
         //TODO: maybe I should handle these as an enum instead of std::optional<>
                     if (directory.has_value()) {
                         if (!directory.operator*()) {
-                            handle_file_drop(path.data(),
+                            handle_file_drop(path,
                                 &My_Variables.F_Prop[counter],
                                 &counter,
                                 &My_Variables.shaders);
                         }
                     }
+                    path += len + 1;
                 }
-                dropped_file_path.clear();
+                free(all_dropped_files.first_path);
+                memset(&all_dropped_files, 0, sizeof(struct dropped_files));
                 file_dropping_frame = false;
             }
 
@@ -439,7 +432,7 @@ int main(int argc, char** argv)
             {
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
-                    Show_Preview_Window(&My_Variables, i, &event);
+                    Show_Preview_Window(&My_Variables, i);
                 }
             }
         }
@@ -454,27 +447,24 @@ int main(int argc, char** argv)
 
         // Update and Render additional Platform Windows
         // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-        //  For this specific demo app we could also call SDL_GL_MakeCurrent(window, gl_context) directly)
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
-            SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+            GLFWwindow* backup_current_context = glfwGetCurrentContext(); 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
-            SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+            glfwMakeContextCurrent(backup_current_context); 
         }
-        SDL_GL_SwapWindow(window);
+        glfwSwapBuffers(window);
     }
 
     // Cleanup
     //TODO: test if freeing manually vs freeing by hand is faster/same
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     write_cfg_file(&usr_info, usr_info.exe_directory);
 
@@ -486,13 +476,13 @@ int main(int argc, char** argv)
 }
 //end of main////////////////////////////////////////////////////////////////////////
 
-void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
+void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
     shader_info* shaders = &My_Variables->shaders;
 
     //shortcuts...possibly replace variables* with just LF*
     LF* F_Prop = &My_Variables->F_Prop[counter];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
 
     std::string a = F_Prop->c_name;
     char b[3];
@@ -717,7 +707,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 
 //TODO: Need to test wide character support
 //TODO: fix the pxlFMT_FO_Pal loading part
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
@@ -813,7 +803,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 {
     //shortcuts, need to replace with direct calls?
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
     //TODO: save as animated image, needs more work
     static bool open_window     = false;
     static bool single_dir      = false;
@@ -1040,7 +1030,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (My_Variables->tile_window_focused) {
             if (ImGui::Button("Save as Map Tiles...")) {
                 if (strcmp(F_Prop->extension, "FRM") == 0) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_BMP(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 else {
@@ -1065,7 +1055,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 open_window = true;
 
                 if (save_type == OTHER) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_BMP(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 if (save_type == FRM) {
