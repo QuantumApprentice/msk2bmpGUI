@@ -21,6 +21,7 @@ INCLUDE_DIRS=(
   "$src/dependencies/glfw-3.4/include"
   "$src/dependencies/imgui-docking/include"
   "$src/dependencies/tinyfiledialogs"
+  "$src/dependencies/stb"
 )
 
 # To clean: rm -fr "$build"

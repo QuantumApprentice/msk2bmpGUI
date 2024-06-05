@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 // #include <stringapiset.h>
-#include <SDL_image.h>
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -729,26 +728,6 @@ bool FRx_check(char *ext)
     }
 }
 
-SDL_Surface *Surface_32_Check(SDL_Surface *surface)
-{
-    if (surface)
-    {
-        if (surface->format->BitsPerPixel < 32)
-        {
-            SDL_Surface *Temp_Surface = NULL;
-            Temp_Surface = Unpalettize_Image(surface);
-
-            SDL_FreeSurface(surface);
-            return Temp_Surface;
-        }
-        else
-        {
-            return surface;
-        }
-    }
-    return nullptr;
-}
-
 //TODO: maybe combine with Supported_Format()?
 bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, const char *file_name)
 {
@@ -782,11 +761,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     // TODO: add another type for other generic image types?
     else
     {
-        SDL_Surface *temp_surface = nullptr;
-        temp_surface = IMG_Load(F_Prop->Opened_File);
+        Surface *temp_surface = nullptr;
+        temp_surface = LoadFileAsRGBASurface(F_Prop->Opened_File);
         if (temp_surface) {
-
-            temp_surface = Surface_32_Check(temp_surface);
 
             F_Prop->img_data.ANM_dir = (ANM_Dir *)malloc(sizeof(ANM_Dir) * 6);
             if (!F_Prop->img_data.ANM_dir)
@@ -840,9 +817,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     {
         if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
         {
-            printf("Unable to open image file %s! SDL Error: %s\n",
-                   F_Prop->Opened_File,
-                   SDL_GetError());
+            printf("Unable to open image file %s!\n",
+                   F_Prop->Opened_File);
             return false;
         }
     }
@@ -852,12 +828,10 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
 
 void load_tile_texture(GLuint *texture, char *file_name)
 {
-    SDL_Surface *surface = IMG_Load(file_name);
+    Surface *surface = LoadFileAsRGBASurface(file_name);
 
-    if (!glIsTexture(*texture))
-    {
-        glDeleteTextures(1, texture);
-    }
+    // glDeleteTextures silently ignores 0's and names that do not correspond to existing textures
+    glDeleteTextures(1, texture);
     glGenTextures(1, texture);
 
     glBindTexture(GL_TEXTURE_2D, *texture);
@@ -872,7 +846,7 @@ void load_tile_texture(GLuint *texture, char *file_name)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    SDL_FreeSurface(surface);
+    FreeSurface(surface);
 
     printf("glError: %d\n", glGetError());
 }

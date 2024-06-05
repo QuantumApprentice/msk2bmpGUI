@@ -49,8 +49,6 @@ target_sources(
   # src/QFO2Tool/Edit_Animation.h
   # src/QFO2Tool/Edit_Image.cpp
   # src/QFO2Tool/Edit_Image.h
-  # src/QFO2Tool/FRM_Animate.cpp
-  # src/QFO2Tool/FRM_Animate.h
   # src/QFO2Tool/FRM_Convert.cpp
   # src/QFO2Tool/FRM_Convert.h
   # src/QFO2Tool/Image_Render.cpp

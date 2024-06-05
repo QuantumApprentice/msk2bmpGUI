@@ -25,7 +25,6 @@
 #include "Save_Files.h"
 #include "Image2Texture.h"
 #include "Load_Settings.h"
-#include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
 #include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
@@ -52,7 +51,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 void Show_Palette_Window(struct variables *My_Variables);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
@@ -178,7 +177,7 @@ int main(int argc, char** argv)
 
     //TODO: add user input for a user-specified palette
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/color.pal");
-    My_Variables.pxlFMT_FO_Pal = load_palette_to_SDL_PixelFormat(vbuffer);
+    My_Variables.pxlFMT_FO_Pal = load_palette_to_Palette(vbuffer);
 
 
     Load_Config(&usr_info, My_Variables.exe_directory);
@@ -411,7 +410,7 @@ int main(int argc, char** argv)
                     path += len + 1;
                 }
                 free(all_dropped_files.first_path);
-                memset(all_dropped_files, 0, sizeof(struct dropped_files));
+                memset(&all_dropped_files, 0, sizeof(struct dropped_files));
                 file_dropping_frame = false;
             }
 
@@ -483,7 +482,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 
     //shortcuts...possibly replace variables* with just LF*
     LF* F_Prop = &My_Variables->F_Prop[counter];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
 
     std::string a = F_Prop->c_name;
     char b[3];
@@ -708,7 +707,7 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 
 //TODO: Need to test wide character support
 //TODO: fix the pxlFMT_FO_Pal loading part
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
@@ -804,7 +803,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 {
     //shortcuts, need to replace with direct calls?
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
     //TODO: save as animated image, needs more work
     static bool open_window     = false;
     static bool single_dir      = false;
@@ -1031,7 +1030,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (My_Variables->tile_window_focused) {
             if (ImGui::Button("Save as Map Tiles...")) {
                 if (strcmp(F_Prop->extension, "FRM") == 0) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_BMP(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 else {
@@ -1056,7 +1055,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 open_window = true;
 
                 if (save_type == OTHER) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_BMP(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 if (save_type == FRM) {

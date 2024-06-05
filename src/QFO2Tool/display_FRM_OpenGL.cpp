@@ -92,7 +92,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int x_offset = img_data->ANM_dir[frame_num].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = img_data->ANM_dir[frame_num].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
+    Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte, SDL_Surfaces are typically 4-byte

@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <SDL_image.h>
 
 #include <cstdint>
 #include <algorithm>
@@ -76,9 +75,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     int i = 0;
     for (const std::filesystem::path& path : path_set) {
 
-        frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
-        //handle image bit depth less than 32bpp
-        frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
+        frame_data[i].frame_start  = LoadFileAsRGBASurface(path.u8string().c_str());
 
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
@@ -103,7 +100,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     if (img_data->ANM_dir[temp_orient].frame_data) {
-        SDL_Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
+        Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -213,7 +210,7 @@ void Clear_img_data(image_data* img_data)
                 //TODO: check if number of frames are set for individual images
                 for (int j = 0; j < img_data->ANM_dir[i].num_frames; j++)
                 {
-                    SDL_FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
+                    FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
                 }
                 free(img_data->ANM_dir[i].frame_data);
                 img_data->ANM_dir[i].frame_data = NULL;

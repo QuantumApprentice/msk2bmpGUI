@@ -1,14 +1,13 @@
 #include "FRM_Convert.h"
-#include "FRM_Animate.h"
 #include "B_Endian.h"
 #include "tinyfiledialogs.h"
 #include "Load_Files.h"
+#include "MiniSDL.h"
 
 #include <cstdint>
 // #include <iostream>      //old c++ way of doing this
 #include <vector>
 
-#include <SDL.h>
 #include <limits.h>
 
 #ifdef QFO2_WINDOWS
@@ -18,16 +17,6 @@
 #include <unistd.h>
 #include <errno.h>
 #endif
-
-union Pxl_info_32 {
-    struct {
-        uint8_t a;
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
-    };
-    uint8_t arr[4];
-};
 
 union Pxl_err {
     struct {
@@ -51,10 +40,10 @@ uint8_t convert_colors(uint8_t bytes) {
 
 #define PALETTE_NUMBER 256
 #define PALETTE_FLAT 228
-SDL_Color PaletteColors[PALETTE_NUMBER];
+Color PaletteColors[PALETTE_NUMBER];
 
 //TODO: fix this to use float palette from My_Variables?
-SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
+Palette* load_palette_to_Palette(const char * name)
 {
 
 #ifdef QFO2_WINDOWS
@@ -88,15 +77,11 @@ SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
         r = convert_colors(bytes[0]);
         g = convert_colors(bytes[1]);
         b = convert_colors(bytes[2]);
-        PaletteColors[i] = SDL_Color{ r, g, b };
+        PaletteColors[i] = Color{ r, g, b };
     }
 
-    SDL_Palette* FO_Palette;
-    SDL_PixelFormat* pxlFMT_FO_Pal;
-    FO_Palette = SDL_AllocPalette(PALETTE_NUMBER);
-    SDL_SetPaletteColors(FO_Palette, PaletteColors, 0, PALETTE_NUMBER);
-    pxlFMT_FO_Pal = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    SDL_SetPixelFormatPalette(pxlFMT_FO_Pal, FO_Palette);
+    Palette* pxlFMT_FO_Pal = (Palette*)malloc(sizeof(Palette));
+    memcpy(pxlFMT_FO_Pal, &PaletteColors, sizeof(PaletteColors));
 
     //TODO: need to free FO_Palette? (pxlFMT_FO_Pal might point to FO_Palette?)
 
@@ -105,51 +90,28 @@ SDL_PixelFormat* load_palette_to_SDL_PixelFormat(const char * name)
 
 
 // Converts the color space to Fallout's paletted format
-uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int color_match_type)
+uint8_t* FRM_Color_Convert(Surface *surface, Palette* pxlFMT, int color_match_type)
 {
     // Convert all surfaces to 32bit RGBA8888 format for easy conversion
-    SDL_Surface* Surface_8;
-    SDL_PixelFormat* pxlFMT_UnPal;
-    //TODO: swap SDL_PIXELFORMAT_RGBA8888 to SDL_PIXELFORMAT_ABGR8888
-    //      for more consistent color handling,
-    //      need to modify all the color matching stuff to match this change
-    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-
-    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
-    if (!Surface_32) {
-        printf("Error: %s\n", SDL_GetError());
-    }
+    Surface* Surface_8;
+    Surface* Surface_32 = ConvertSurfaceToRGBA(surface);
 
     // Setup for palettizing image
-    Surface_8 = SDL_ConvertSurface(surface, pxlFMT, 0);
+    Surface_8 = Create8BitSurface(surface->w, surface->h, pxlFMT);
     //Force Surface_8 to use the global palette instead of allowing SDL to use a copy
-    SDL_SetPixelFormatPalette(Surface_8->format, pxlFMT->palette);
 
-    //TODO: Here's where the paint problem is
-    //create new palette just for color matching (w/o the cycling colors)
-    SDL_Palette* Temp_Palette;
-    SDL_PixelFormat* pxlFMT_Temp;
-    Temp_Palette = SDL_AllocPalette(PALETTE_FLAT);
-    SDL_SetPaletteColors(Temp_Palette, pxlFMT->palette->colors, 0, PALETTE_FLAT);
-    pxlFMT_Temp = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX8);
-    SDL_SetPixelFormatPalette(pxlFMT_Temp, Temp_Palette);
-
-    if (!Surface_8) {
-        printf("Error: %s\n", SDL_GetError());
-    }
-
+    // TODO cleanup: no need to have different color match algorithms as SDL used euclidian distance matching internally anyway
+    // see https://github.com/libsdl-org/SDL/blob/e5101ebae68b62453930b94e19d62ae04e0df1f1/src/video/SDL_pixels.c#L1162
     //switch to change between euclidian and sdl color match algorithms
-    if (color_match_type == 0) {
-        SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
-    }
-    else if (color_match_type == 1)
-    {
+    // if (color_match_type == 0) {
+    //     Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
+    // }
+    // else if (color_match_type == 1)
+    // {
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
-    }
+    // }
 
-    SDL_FreeFormat(pxlFMT_Temp);
-    SDL_FreeFormat(pxlFMT_UnPal);
-    SDL_FreeSurface(Surface_32);
+    FreeSurface(Surface_32);
 
     int width  = Surface_8->w;
     int height = Surface_8->h;
@@ -166,66 +128,17 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int co
 
         pixel_pointer += Surface_8->pitch;
     }
-    SDL_FreeSurface(Surface_8);
+    FreeSurface(Surface_8);
 
     return data;
 }
 
-void SDL_Color_Match(SDL_Surface* Surface_32,
-                     SDL_PixelFormat* pxlFMT_Pal,
-                     SDL_Surface* Surface_8)
-{
-    uint8_t w_PaletteColor;
-    Pxl_info_32 abgr;
-    Pxl_err err;
-    int c = 100;
-    // Convert image color to indexed palette
-    for (int y = 0; y < Surface_32->h; y++)
-    {
-        for (int x = 0; x < Surface_32->w; x++)
-        {
-            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
-
-            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
-        // Convert any pixel with partial alpha to full alpha for FRM
-        //      FRM's use index 0 to indicate transparancy
-            if(abgr.a < 255) {
-                ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
-            }
-        // Palletize and dither non-alpha pixels
-            else {
-                w_PaletteColor = SDL_MapRGBA(pxlFMT_Pal, abgr.r, abgr.g, abgr.b, abgr.a);
-
-                err.a = abgr.a - PaletteColors[w_PaletteColor].a;
-                err.b = abgr.b - PaletteColors[w_PaletteColor].b;
-                err.g = abgr.g - PaletteColors[w_PaletteColor].g;
-                err.r = abgr.r - PaletteColors[w_PaletteColor].r;
-
-                int* pxl_index_arr[2];
-                pxl_index_arr[0] = &x;
-                pxl_index_arr[1] = &y;
-
-                limit_dither(Surface_32, &err, pxl_index_arr);
-
-                //TODO: need to clean this up
-                //      used to keep track of palettization
-                if (i == c) {
-                    printf("SDL color match loop #: %d\n", i);
-                    c *= 10;
-                }
-
-                ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = w_PaletteColor;
-            }
-        }
-    }
-}
-
 void Euclidian_Distance_Color_Match(
-                SDL_Surface* Surface_32,
-                SDL_Surface* Surface_8)
+                Surface* Surface_32,
+                Surface* Surface_8)
 {
     uint8_t w_PaletteColor;
-    Pxl_info_32 abgr;
+    Color abgr;
     Pxl_err err;
 
     int w_smallest;
@@ -243,9 +156,9 @@ void Euclidian_Distance_Color_Match(
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
+            int i = (Surface_32->pitch * y) + x * (sizeof(Color));
             w_smallest = INT_MAX;
-            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Color));
 
             if (abgr.a < 255) {
                 ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
@@ -262,12 +175,14 @@ void Euclidian_Distance_Color_Match(
                     t *= t;
                     u *= u;
                     v *= v;
+                    // TODO no need to sqrt here since we're just doing a comparison and not using w for anything else
                     w = sqrt(s + t + u + v);
 
                     if (w < w_smallest) {
                         w_smallest = w;
                         w_PaletteColor = j;
                     }
+                    // TODO if w == 0 here we've found an exact match and shouldn't bother searching the rest of the palette
 
                     if (j == PALETTE_FLAT - 1)
                     {
@@ -296,7 +211,7 @@ void Euclidian_Distance_Color_Match(
     }
 }
 
-void limit_dither(SDL_Surface* Surface_32,
+void limit_dither(Surface* Surface_32,
     union Pxl_err *err,
     int **pxl_index_arr)
 {
@@ -325,20 +240,20 @@ void limit_dither(SDL_Surface* Surface_32,
     }
 }
 
-void clamp_dither(SDL_Surface *Surface_32,
+void clamp_dither(Surface *Surface_32,
                     union Pxl_err *err,
                     int pixel_idx,
                     int factor)
 {
     // pointer arrays so I can run a loop through them dependably
     uint8_t* pxl_color [4];
-    union Pxl_info_32 abgr;
-    memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + pixel_idx, sizeof(Pxl_info_32));
+    Color abgr;
+    memcpy(&abgr, (Color*)Surface_32->pixels + pixel_idx, sizeof(Color));
 
-    pxl_color[0] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->a);
-    pxl_color[1] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->b);
-    pxl_color[2] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->g);
-    pxl_color[3] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->r);
+    pxl_color[0] = &(((Color*)Surface_32->pixels + (pixel_idx))->a);
+    pxl_color[1] = &(((Color*)Surface_32->pixels + (pixel_idx))->b);
+    pxl_color[2] = &(((Color*)Surface_32->pixels + (pixel_idx))->g);
+    pxl_color[3] = &(((Color*)Surface_32->pixels + (pixel_idx))->r);
 
     // take palettized error and clamp values to max/min, then add error to appropriate pixel
     for (int i = 0; i < 4; i++)
@@ -358,7 +273,7 @@ void clamp_dither(SDL_Surface *Surface_32,
 }
 
 // Convert FRM color to standard 32bit
-SDL_Surface* Load_FRM_Image_SDL(char *File_Name, SDL_PixelFormat* pxlFMT)
+Surface* Load_FRM_Image_SDL(char *File_Name, Palette* pxlFMT)
 {
     // File open stuff
     FILE *File_ptr = fopen(File_Name, "rb");
@@ -375,15 +290,7 @@ SDL_Surface* Load_FRM_Image_SDL(char *File_Name, SDL_PixelFormat* pxlFMT)
     frame_size = B_Endian::write_u32(frame_size);
 
     //8 bit palleted stuff here
-    //TODO: Can I make a new surface with a palette without using SDL_CreateRGBSurface AND SDL_ConvertSurface()?
-    SDL_Surface* Surface_8   = SDL_CreateRGBSurface(0, frame_width, frame_height, 8, 0,0,0,0);
-    SDL_Surface* Pal_Surface = SDL_ConvertSurface(Surface_8, pxlFMT, 0);
-    SDL_FreeSurface(Surface_8);
-    SDL_SetPixelFormatPalette(Pal_Surface->format, pxlFMT->palette);
-
-    if (!Pal_Surface) {
-        printf("Error: %s\n", SDL_GetError());
-    }
+    Surface* Pal_Surface = Create8BitSurface(frame_width, frame_height, pxlFMT);
 
     // Seek to starting pixel in file
     fseek(File_ptr, 0x4A, SEEK_SET);
@@ -464,21 +371,5 @@ void Load_FRM_Image2(char *File_Name, unsigned int* texture, int* texture_width,
     }
     else {
         std::cout << "Failure to communicate..." << std::endl;
-    }
-}
-
-SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
-{
-    SDL_PixelFormat* pxlFMT_UnPal;
-    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
-
-    SDL_Surface* Output_Surface;
-    Output_Surface = SDL_ConvertSurface(Surface, pxlFMT_UnPal, 0);
-
-    if (!Output_Surface) {
-        printf("\nError: %s", SDL_GetError());
-    }
-    else {
-        return Output_Surface;
     }
 }

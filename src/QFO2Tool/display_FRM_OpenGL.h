@@ -1,7 +1,6 @@
 #pragma once
 #include "shader_class.h"
 #include "load_FRM_OpenGL.h"
-#include <SDL.h>
 #include <time.h>
 
 //draw to framebuffer and main window functions

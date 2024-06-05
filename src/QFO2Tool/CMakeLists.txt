@@ -7,8 +7,6 @@ add_library(QFO2ToolLib
     Edit_Animation.h
     Edit_Image.cpp
     Edit_Image.h
-    FRM_Animate.cpp
-    FRM_Animate.h
     FRM_Convert.cpp
     FRM_Convert.h
     Image_Render.cpp
@@ -23,6 +21,8 @@ add_library(QFO2ToolLib
     load_FRM_OpenGL.h
     Load_Settings.cpp
     Load_Settings.h
+    MiniSDL.cpp
+    MiniSDL.h
     MSK_Convert.cpp
     MSK_Convert.h
     Palette_Cycle.cpp

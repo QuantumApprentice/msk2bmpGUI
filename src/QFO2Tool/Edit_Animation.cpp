@@ -27,44 +27,38 @@ struct offsets {
     int16_t y_offset = 0;
 };
 
-uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame, SDL_PixelFormat *pxlFMT_FO_Pal)
+uint8_t* Crop_Frame(pixel_position* pos_data, ANM_Frame* anm_frame, Palette *pxlFMT_FO_Pal)
 {
     int Frame_Width  = pos_data->r_pxl - pos_data->l_pxl;
     int Frame_Height = pos_data->b_pxl - pos_data->t_pxl;
 
-    SDL_Rect src_rectangle;
+    Rect src_rectangle;
     src_rectangle.w = Frame_Width;
     src_rectangle.h = Frame_Width;
     src_rectangle.x = pos_data->l_pxl;
     src_rectangle.y = pos_data->t_pxl;
 
-    SDL_Rect dst_rectangle;
+    Rect dst_rectangle;
     dst_rectangle.w = Frame_Width;
     dst_rectangle.h = Frame_Height;
     dst_rectangle.x = 0;
     dst_rectangle.y = 0;
 
-    SDL_Surface* out_surface = SDL_CreateRGBSurfaceWithFormat(0, Frame_Width, Frame_Height, 32, SDL_PIXELFORMAT_RGBA8888);
+    Surface* out_surface = CreateRGBASurface(Frame_Width, Frame_Height);
 
-    SDL_BlitSurface(anm_frame->frame_start, &src_rectangle, out_surface, &dst_rectangle);
+    BlitSurface(anm_frame->frame_start, src_rectangle, out_surface, dst_rectangle);
 
     uint8_t* out_data = FRM_Color_Convert(out_surface, pxlFMT_FO_Pal, 0);
 
     return out_data;
 }
 
-bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat *pxlFMT_FO_Pal)
+bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette *pxlFMT_FO_Pal)
 {
     int FRM_frame_size = sizeof(FRM_Frame);
     int num_frames = 0;
     Pxl_RGBA_32 rgba;
 
-    SDL_PixelFormat* pxlFMT_UnPal;
-    pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
-    if (!pxlFMT_UnPal) {
-        printf("Unable to allocate memory for pxlFMT_UnPal: %d\n", SDL_GetError);
-        return false;
-    }
     bool free_surface = false;
 
     FRM_Header* FRM_header = (FRM_Header*)malloc(sizeof(FRM_Header));
@@ -122,22 +116,19 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat
             // loop over all frames in one direction
             for (int j = 0; j < num_frames; j++)
             {
-                SDL_Surface* surface = img_data->ANM_dir[i].frame_data[j].frame_start;
+                Surface* surface = img_data->ANM_dir[i].frame_data[j].frame_start;
                 int width = surface->w;
                 int height = surface->h;
                 int pitch = surface->pitch;
 
-                SDL_Surface* Surface_32 = NULL;
+                Surface* Surface_32 = NULL;
 
-                if (surface->format->format != SDL_PIXELFORMAT_ABGR8888) {
-                    Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
+                if (surface-> channels != 4) {
+                    Surface_32 = ConvertSurfaceToRGBA(surface);
                     free_surface = true;
                 }
                 else {
                     Surface_32 = surface;
-                }
-                if (!Surface_32) {
-                    printf("Error: %s\n", SDL_GetError());
                 }
 
                 //check every pixel in a frame for edge of cropped image
@@ -199,7 +190,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat
                 calculate_bounding_box(&bounding_box, &FRM_bounding_box, frm_frame_ptrs[j], FRM_dir, i, j);
 
                 if (free_surface) {
-                    SDL_FreeSurface(Surface_32);
+                    FreeSurface(Surface_32);
                 }
             }
             //assign all the malloc'd stuff to appropriate positions in the img_data struct
@@ -223,8 +214,6 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat
     }
     edit_data->type = FRM;
     edit_data->FRM_hdr->version = 4;
-
-    SDL_FreeFormat(pxlFMT_UnPal);
 
     if (edit_data->FRM_dir[edit_data->display_orient_num].frame_data) {
         return Render_FRM0_OpenGL(edit_data, edit_data->display_orient_num);
