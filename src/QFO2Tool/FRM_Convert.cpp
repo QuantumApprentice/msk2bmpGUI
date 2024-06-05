@@ -20,10 +20,10 @@
 
 union Pxl_err {
     struct {
-        int a;
-        int b;
-        int g;
         int r;
+        int g;
+        int b;
+        int a;
     };
     int arr[4];
 };
@@ -77,8 +77,9 @@ Palette* load_palette_to_Palette(const char * name)
         r = convert_colors(bytes[0]);
         g = convert_colors(bytes[1]);
         b = convert_colors(bytes[2]);
-        PaletteColors[i] = Color{ r, g, b };
+        PaletteColors[i] = Color{ r, g, b, 255 };
     }
+    PaletteColors[0].a = 0;
 
     Palette* pxlFMT_FO_Pal = (Palette*)malloc(sizeof(Palette));
     memcpy(pxlFMT_FO_Pal, &PaletteColors, sizeof(PaletteColors));
@@ -138,7 +139,7 @@ void Euclidian_Distance_Color_Match(
                 Surface* Surface_8)
 {
     uint8_t w_PaletteColor;
-    Color abgr;
+    Color rgba;
     Pxl_err err;
 
     int w_smallest;
@@ -158,18 +159,18 @@ void Euclidian_Distance_Color_Match(
         {
             int i = (Surface_32->pitch * y) + x * (sizeof(Color));
             w_smallest = INT_MAX;
-            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Color));
+            memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Color));
 
-            if (abgr.a < 255) {
+            if (rgba.a < 255) {
                 ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
             }
             else {
-                for (int j = 0; j < PALETTE_FLAT; j++)
+                for (int j = 1; j < PALETTE_FLAT; j++)
                 {
-                    s = abgr.r - PaletteColors[j].r;
-                    t = abgr.g - PaletteColors[j].g;
-                    u = abgr.b - PaletteColors[j].b;
-                    v = abgr.a - PaletteColors[j].a;
+                    s = rgba.r - PaletteColors[j].r;
+                    t = rgba.g - PaletteColors[j].g;
+                    u = rgba.b - PaletteColors[j].b;
+                    v = rgba.a - PaletteColors[j].a;
 
                     s *= s;
                     t *= t;
@@ -186,16 +187,12 @@ void Euclidian_Distance_Color_Match(
 
                     if (j == PALETTE_FLAT - 1)
                     {
-                        err.r = abgr.r - PaletteColors[w_PaletteColor].r;
-                        err.g = abgr.g - PaletteColors[w_PaletteColor].g;
-                        err.b = abgr.b - PaletteColors[w_PaletteColor].b;
-                        err.a = abgr.a - PaletteColors[w_PaletteColor].a;
+                        err.r = rgba.r - PaletteColors[w_PaletteColor].r;
+                        err.g = rgba.g - PaletteColors[w_PaletteColor].g;
+                        err.b = rgba.b - PaletteColors[w_PaletteColor].b;
+                        err.a = rgba.a - PaletteColors[w_PaletteColor].a;
 
-                        int* pxl_index_arr[2];
-                        pxl_index_arr[0] = &x;
-                        pxl_index_arr[1] = &y;
-
-                        limit_dither(Surface_32, &err, pxl_index_arr);
+                        limit_dither(Surface_32, &err, x, y);
                     }
                 }
             }
@@ -213,18 +210,16 @@ void Euclidian_Distance_Color_Match(
 
 void limit_dither(Surface* Surface_32,
     union Pxl_err *err,
-    int **pxl_index_arr)
+    int x, int y)
 {
-    int x = *pxl_index_arr[0];
-    int y = *pxl_index_arr[1];
-
     int pixel_index[4];
     //if it crashes again on dithering, try removing the '=' sign from pixel_index[0] 
     //and pixel_index[2] and maybe pixel_index[1]?
-    pixel_index[0] = (y + 0 <  Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 0)) + (x + 1) : -1;
-    pixel_index[1] = (y + 1 <  Surface_32->h && x - 1 >= 0            ) ? (Surface_32->w * (y + 1)) + (x - 1) : -1;
-    pixel_index[2] = (y + 1 <  Surface_32->h && x + 0 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 0) : -1;
-    pixel_index[3] = (y + 1 <  Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 1) : -1;
+    // this should probably use pitch instead of width for the multiplication
+    pixel_index[0] = (y + 0 < Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 0)) + (x + 1) : -1;
+    pixel_index[1] = (y + 1 < Surface_32->h && x - 1 >= 0            ) ? (Surface_32->w * (y + 1)) + (x - 1) : -1;
+    pixel_index[2] = (y + 1 < Surface_32->h && x + 0 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 0) : -1;
+    pixel_index[3] = (y + 1 < Surface_32->h && x + 1 <  Surface_32->w) ? (Surface_32->w * (y + 1)) + (x + 1) : -1;
 
     int factor[4];
     factor[0] = 7;
@@ -247,19 +242,19 @@ void clamp_dither(Surface *Surface_32,
 {
     // pointer arrays so I can run a loop through them dependably
     uint8_t* pxl_color [4];
-    Color abgr;
-    memcpy(&abgr, (Color*)Surface_32->pixels + pixel_idx, sizeof(Color));
+    Color rgba;
+    memcpy(&rgba, (Color*)Surface_32->pixels + pixel_idx, sizeof(Color));
 
-    pxl_color[0] = &(((Color*)Surface_32->pixels + (pixel_idx))->a);
-    pxl_color[1] = &(((Color*)Surface_32->pixels + (pixel_idx))->b);
-    pxl_color[2] = &(((Color*)Surface_32->pixels + (pixel_idx))->g);
-    pxl_color[3] = &(((Color*)Surface_32->pixels + (pixel_idx))->r);
+    pxl_color[0] = &(((Color*)Surface_32->pixels + (pixel_idx))->r);
+    pxl_color[1] = &(((Color*)Surface_32->pixels + (pixel_idx))->g);
+    pxl_color[2] = &(((Color*)Surface_32->pixels + (pixel_idx))->b);
+    pxl_color[3] = &(((Color*)Surface_32->pixels + (pixel_idx))->a);
 
     // take palettized error and clamp values to max/min, then add error to appropriate pixel
     for (int i = 0; i < 4; i++)
     {
         // clamp 255 or 0
-        int total_error = (abgr.arr[i] + err->arr[i] * factor / 16);
+        int total_error = (rgba.arr[i] + err->arr[i] * factor / 16);
 
         if (total_error > 255)
         {	*pxl_color[i] = 255;	}

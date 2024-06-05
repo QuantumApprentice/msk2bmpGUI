@@ -9,6 +9,6 @@ Surface* Load_FRM_Image_SDL(char *File_Name, Palette* pxlFMT);
 // void SDL_Color_Match(SDL_Surface* Convert, Palette* pxlFMT_Pal, SDL_Surface* Temp_Surface);
 void Euclidian_Distance_Color_Match( Surface* Convert, Surface* Temp_Surface);
 void clamp_dither(Surface *Surface_32, union Pxl_err *err, int pixel_idx, int factor);
-void limit_dither(Surface *Surface_32, union Pxl_err *err, int **pxl_index_arr);
+void limit_dither(Surface *Surface_32, union Pxl_err *err, int x, int y);
 
 void Load_FRM_Image2(char *File_Name, unsigned int* texture, int* texture_width, int* texture_height);
