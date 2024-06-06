@@ -49,7 +49,7 @@ char *Save_FRM_Image_OpenGL(image_data *img_data, user_info *user_info)
 
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-    char *lFilterPatterns[2] = {"", "*.FRM"};
+    const char *lFilterPatterns[2] = {"", "*.FRM"};
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
         "temp001.FRM",
@@ -106,7 +106,7 @@ char *Save_FRM_Image_OpenGL(image_data *img_data, user_info *user_info)
     return Save_File_Name;
 }
 
-char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
+const char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
 {
     if (num_dirs > 1)
     {
@@ -150,7 +150,7 @@ char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
 }
 
 //used by Save_FRM_Animation_OpenGL()
-int Set_Save_Patterns(char ***filter, image_data *img_data)
+int Set_Save_Patterns(char*** filter, image_data *img_data)
 {
     int num_dirs = 0;
     for (int i = 0; i < 6; i++)
@@ -254,7 +254,7 @@ char* Set_Save_File_Name(image_data* img_data, char* name)
     char *Save_File_Name;
     int num_patterns = 6;
     static const char *const lFilterPatterns[6] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
-    char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
+    const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
     char *temp_name = (char *)malloc(sizeof(char) * buffsize);
     snprintf(temp_name, buffsize, "%s%s", name, ext);
@@ -333,9 +333,9 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
 {
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-    char **lFilterPatterns = NULL;
+    char * const* lFilterPatterns = NULL;
     int num_patterns = Set_Save_Patterns(&lFilterPatterns, img_data);
-    char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
+    const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
 
     char *temp_name = (char *)malloc(sizeof(char) * buffsize);
@@ -481,7 +481,7 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
 char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
 {
     char *Save_File_Name;
-    char *lFilterPatterns[2] = {"*.BMP", ""};
+    const char *lFilterPatterns[2] = {"*.BMP", ""};
     char buffer[MAX_PATH];
     snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
 
@@ -1252,7 +1252,7 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     add_TMAP_tiles_to_lst(usr_info, &new_TMAP_list, save_path);
 
     town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, name);
-    add_TMAP_tiles_to_lst_ll(usr_info, new_tiles, save_path);
+    add_TMAP_tiles_to_lst_tt(usr_info, new_tiles, save_path);
 
     return new_TMAP_list;
 }
@@ -1447,7 +1447,7 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
 // Create a filename based on the directory and export file type
 //TODO: clean up this function, buff_size is not used
 // img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
-void Create_File_Name(char *return_buffer, char* name, img_type save_type, char *save_path, int tile_num)
+void Create_File_Name(char *return_buffer, const char* name, img_type save_type, char *save_path, int tile_num)
 {
     char ext[2][4] = {
         {"MSK"},
@@ -1493,7 +1493,7 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     // get filename
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-    char *lFilterPatterns[2] = {"*.MSK", ""};
+    const char *lFilterPatterns[2] = {"*.MSK", ""};
     char save_path[MAX_PATH];
 
     snprintf(save_path, MAX_PATH, "%s/temp001.MSK", usr_info->default_save_path);
