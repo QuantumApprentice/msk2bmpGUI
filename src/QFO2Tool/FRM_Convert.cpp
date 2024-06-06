@@ -11,6 +11,7 @@
 #include <limits.h>
 
 #ifdef QFO2_WINDOWS
+#include <direct.h>
 
 #elif defined(QFO2_LINUX)
 #include <fcntl.h>
@@ -48,20 +49,29 @@ Palette* load_palette_to_Palette(const char * name)
 
 #ifdef QFO2_WINDOWS
     FILE* file_ptr = fopen(name, "rb");
-    // if (file_ptr == NULL) {              //uncomment when compiling for windows
-#elif defined(QFO2_LINUX)
-    int file_ptr = open(name, O_RDONLY);
-    if (file_ptr < 0) {
-#endif
+    if (file_ptr == NULL) {              //uncomment when compiling for windows
 //TODO: replace color.pal w/name
 //      (possibly modify messagebox for user provided palette)
         printf("Error opening color.pal \n%d: %s\n", errno, strerror(errno));
-        printf("Current Working Directory: %s\n", getcwd(NULL, 0));
+        printf("Current Working Directory: %s\n", _getcwd(NULL, 0));
         tinyfd_messageBox("Error:",
-                          "Missing color.pal, the default Fallout color palette.",
-                          "ok", "error", 1);
+            "Missing color.pal, the default Fallout color palette.",
+            "ok", "error", 1);
         return NULL;
     }
+#elif defined(QFO2_LINUX)
+    int file_ptr = open(name, O_RDONLY);
+    if (file_ptr < 0) {
+        //TODO: replace color.pal w/name
+        //      (possibly modify messagebox for user provided palette)
+        printf("Error opening color.pal \n%d: %s\n", errno, strerror(errno));
+        printf("Current Working Directory: %s\n", getcwd(NULL, 0));
+        tinyfd_messageBox("Error:",
+            "Missing color.pal, the default Fallout color palette.",
+            "ok", "error", 1);
+        return NULL;
+    }
+#endif
 
     uint8_t r, g, b;
     for (int i = 0; i < 256; i++)

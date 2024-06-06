@@ -2,29 +2,44 @@
 #include "Image2Texture.h"
 #include "tinyfiledialogs.h"
 
+int ext_compare_utf8_ascii_case_insensitive(char* str1, char* str2, int num_char)
+{
+    while (num_char > 0) {
+        char c1 = *str1;
+        char c2 = *str2;
+        if (c1 >= 'A' && c1 <= 'Z') c1 = 'a' + c1 - 'A';
+        if (c2 >= 'A' && c2 <= 'Z') c2 = 'a' + c2 - 'A';
+        if (c1 < c2) return -1;
+        if (c1 > c2) return 1;
+        if (c1 == '\0') return 0; // both strings terminate here
+        str1++;
+        str2++;
+        num_char--;
+    }
+    return 0;
+}
+
+
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
 #include <string.h>
+#include <direct.h>
 
 int ext_compare(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
     return _wcsnicmp(str1, str2, num_char);
 }
 
-uint64_t nano_time()
-{
-    return (clock() / CLOCKS_PER_SEC);
-}
-
 //TODO: match this return to the linux version
-void io_isdir(char* dir_path)
+bool io_isdir(char* dir_path)
 {
     struct __stat64 stat_info;
-    error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
+    int error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
     if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0) {
         /* dir_path exists and is a directory */
-        return;
+        return true;
     }
+    return false;
 }
 
 //another way to check if directory exists?
@@ -41,14 +56,26 @@ bool io_file_exists(const char* filename)
     return (stat_info.st_mode & S_IFREG);
 }
 
+
+int io_file_size(const char* filename)
+{
+    struct stat stat_info;
+    int error = stat(filename, &stat_info);
+    if (error) {
+        return 0;
+    }
+    return (stat_info.st_size);
+}
+
 //makes a directory from the path provided
 //recursively makes leading directories if they don't exist
 //returns true on success or directory exists, false on error
 //TODO: this also needs a windows version
+// TODO this should probably take a wchar
 bool io_make_dir(char* dir_path)
 {
     int error;
-    error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
+    error = _mkdir(dir_path);
     if (error == 0) {
         return true;
     }
@@ -201,7 +228,9 @@ bool io_backup_file(char* file_path)
     int error = rename(file_path, rename_buff);
     if (error != 0) {
         perror("Error renaming TILES.LST: ");
+        return false;
     }
+    return true;
 }
 
 

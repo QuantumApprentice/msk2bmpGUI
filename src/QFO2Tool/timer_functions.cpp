@@ -8,7 +8,12 @@
 
 uint64_t nano_time()
 {
-    return (clock() / CLOCKS_PER_SEC);
+    LARGE_INTEGER Time;
+    LARGE_INTEGER Frequency;
+    QueryPerformanceCounter(&Time);
+    QueryPerformanceFrequency(&Frequency);
+    // this will be janky if frequency is not evenly divisible into 1'000'000'000
+    return Time.QuadPart * (1'000'000'000 / Frequency.QuadPart);
 }
 
 #elif defined(QFO2_LINUX)
@@ -31,10 +36,9 @@ uint64_t start_timer()
 {
     #ifdef QFO2_WINDOWS
         // //timing code for WINDOWS ONLY
-        // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-        // LARGE_INTEGER Frequency;
-        // QueryPerformanceFrequency(&Frequency);
-        // QueryPerformanceCounter(&StartingTime);
+        LARGE_INTEGER Time;
+        QueryPerformanceCounter(&Time);
+        return Time.QuadPart;
     #elif defined(QFO2_LINUX)
         // timing code for LINUX
         uint64_t StartingTime;
@@ -48,11 +52,12 @@ void print_timer(uint64_t StartingTime)
 {
     #ifdef QFO2_WINDOWS
         ////timing code WINDOWS ONLY
-        // QueryPerformanceCounter(&EndingTime);
-        // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-        // ElapsedMicroseconds.QuadPart *= 1000000;
-        // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-        // printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
+        LARGE_INTEGER Time;
+        LARGE_INTEGER Frequency;
+        QueryPerformanceCounter(&Time);
+        QueryPerformanceFrequency(&Frequency);
+        uint64_t ElapsedMicroseconds = (Time.QuadPart - StartingTime) * 1000000 / Frequency.QuadPart;
+        printf("Total time elapsed: %ldμs\n", ElapsedMicroseconds);
     #elif defined(QFO2_LINUX)
         // timing code LINUX
         uint64_t EndingTime = nano_time();

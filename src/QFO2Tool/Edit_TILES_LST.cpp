@@ -15,7 +15,7 @@ char* generate_new_tile_list(char* name, int tile_num)
     char* new_tile_list = (char*)malloc(new_tile_list_size);
     char* list_ptr = new_tile_list;
 
-    char buffer[tile_name_len+1] = {0};
+    char buffer[1024] = {0};
     for (int i = 0; i < tile_num; i++) {
         snprintf(buffer, tile_name_len, "%s%03d.FRM\r\n", name, i);
         strncpy(list_ptr, buffer, tile_name_len);
@@ -225,7 +225,7 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
                     append_new_only = true;
                 }
                 if (choice == NO)     {     //pick a new name and re-make new_tiles then re-check
-                    char old_name[node[i].length+1];
+                    char old_name[1024];
                     strncpy(old_name, node[i].name_ptr, node[i].length);
                     old_name[node[i].length-7] = '\0';
 
@@ -407,7 +407,7 @@ bool check_tile_names_ll(char* tiles_lst, char** new_tiles, bool set_auto)
                         append_new_only = true;
                     }
                     if (choice == NO)     {     //pick a new name and re-make new_tiles then re-check
-                        char old_name[node->length+1];
+                        char old_name[1024];
                         strncpy(old_name, node->name_ptr, node->length);
                         old_name[node->length-7] = '\0';
 

@@ -595,7 +595,7 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
     char buffer[MAX_PATH];
 #ifdef QFO2_WINDOWS
     // std::filesystem::path path(tinyfd_utf8to16(file_name));
-    std::filesystem::path path(file_name).u8string().c_str();
+    std::filesystem::path path(file_name);
 
 #elif defined(QFO2_LINUX)
     std::filesystem::path path(file_name);
@@ -712,13 +712,13 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 bool FRx_check(char *ext)
 {
     if (
-        !(ext_compare(ext, "FRM", 4))
-     || !(ext_compare(ext, "FR0", 4))
-     || !(ext_compare(ext, "FR1", 4))
-     || !(ext_compare(ext, "FR2", 4))
-     || !(ext_compare(ext, "FR3", 4))
-     || !(ext_compare(ext, "FR4", 4))
-     || !(ext_compare(ext, "FR5", 4)))
+        !(ext_compare_utf8_ascii_case_insensitive(ext, "FRM", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR0", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR1", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR2", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR3", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR4", 4))
+     || !(ext_compare_utf8_ascii_case_insensitive(ext, "FR5", 4)))
     {
         return true;
     }
@@ -743,7 +743,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
                                 img_data->framebuffer, img_data->FRM_texture);
     }
-    else if (!(ext_compare(F_Prop->extension, "MSK", 4)))
+    else if (!(ext_compare_utf8_ascii_case_insensitive(F_Prop->extension, "MSK", 4)))
     {
 
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);

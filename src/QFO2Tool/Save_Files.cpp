@@ -579,7 +579,7 @@ bool check_and_write_cfg_file(user_info *user_info, char *exe_path)
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+    _wfopen_s(&cfg_file_ptr, tinyfd_utf8to16(cfg_filepath_buffer), L"rb");
 #elif defined(QFO2_LINUX)
     cfg_file_ptr = fopen(cfg_filepath_buffer, "rb");
 #endif
@@ -944,7 +944,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
             }
 
 #ifdef QFO2_WINDOWS
-            wchar_t *w_save_name = tinyfd_utf8to16(filename_buffer);
+            wchar_t *w_save_name = tinyfd_utf8to16(Full_Save_File_Path);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
             File_ptr = fopen(Full_Save_File_Path, "wb");
@@ -1161,7 +1161,7 @@ void crop_single_tileB(uint8_t *dst,
 //Bakerstaunch vector clearing version w/SSE2 instructions
 #include <emmintrin.h>
 int crop_single_tile_vector_clear(
-        __restrict__ uint8_t *dst, __restrict__ uint8_t *src,
+        uint8_t *dst, uint8_t *src,
         int src_width, int src_height,
         int src_tile_top, int src_tile_left)
 {
@@ -1293,7 +1293,7 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
     header.Frame_Area = 80 * 36 + sizeof(FRM_Frame);
     B_Endian::flip_header_endian(&header);
 
-    FRM_Frame frame = {};
+    FRM_Frame frame = {0};
     frame.Frame_Height = 36;
     frame.Frame_Width  = 80;
     frame.Frame_Size   = 80 * 36;
@@ -1494,7 +1494,7 @@ void check_file(char *save_path, char* save_path_name, char* name, int tile_num,
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    wchar_t *w_save_name = tinyfd_utf8to16(Save_File_Name);
+    wchar_t *w_save_name = tinyfd_utf8to16(save_path_name);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
     if (error == 0)
 #elif defined(QFO2_LINUX)

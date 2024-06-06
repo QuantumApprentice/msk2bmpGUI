@@ -8,7 +8,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#if 0
+#ifdef QFO2_WINDOWS
     #include <Windows.h>
 #endif
 
@@ -56,16 +56,6 @@ void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struc
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
 void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
-
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-//                   PSTR lpCmdLine, INT nCmdShow)
-//{
-//    //int size = GetCurrentDirectory(0, NULL);
-//    //char* buffer = (char*)malloc(size*(sizeof(char)));
-//    //GetCurrentDirectory(size, buffer);
-//
-//    return main(0, NULL);
-//}
 
 struct dropped_files {
     size_t count;
@@ -1141,3 +1131,15 @@ void popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
     }
     ImGui::End();
 }
+
+#ifdef QFO2_WINDOWS
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    PSTR lpCmdLine, INT nCmdShow)
+{
+    //int size = GetCurrentDirectory(0, NULL);
+    //char* buffer = (char*)malloc(size*(sizeof(char)));
+    //GetCurrentDirectory(size, buffer);
+
+    return main(0, NULL);
+}
+#endif

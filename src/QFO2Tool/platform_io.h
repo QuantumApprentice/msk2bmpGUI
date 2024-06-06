@@ -2,11 +2,12 @@
 #include <cstdint>
 
 #ifdef QFO2_WINDOWS
-    #define NATIVE_STRING_TYPE          const wchart_t
+    #define NATIVE_STRING_TYPE          const wchar_t
 #elif defined(QFO2_LINUX)
     #define NATIVE_STRING_TYPE          const char
 #endif
 
+int ext_compare_utf8_ascii_case_insensitive(char* str1, char* str2, int num_char);
 int ext_compare(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
 // uint64_t nano_time();
 bool io_isdir(char* dir_path);

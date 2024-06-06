@@ -1,0 +1,234 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{76BD9E2F-EC3B-4A0E-8050-A3D996365187}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)\src\dependencies\tinyfiledialogs;$(ProjectDir)\src\dependencies\stb;$(ProjectDir)\src\dependencies\imgui-docking\include;$(ProjectDir)\src\dependencies\glfw-3.4\include;$(ProjectDir)\src\dependencies\GLAD\include;$(ProjectDir)\src\QFO2Tool;$(IncludePath)</IncludePath>
+    <CustomBuildAfterTargets />
+    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)-intermediates\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir)\src\dependencies\tinyfiledialogs;$(ProjectDir)\src\dependencies\stb;$(ProjectDir)\src\dependencies\imgui-docking\include;$(ProjectDir)\src\dependencies\glfw-3.4\include;$(ProjectDir)\src\dependencies\GLAD\include;$(ProjectDir)\src\QFO2Tool;$(IncludePath)</IncludePath>
+    <CustomBuildAfterTargets />
+    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)-intermediates\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;QFO2WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;QFO2_WINDOWS;_GLFW_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)\src\resources" "$(TargetDir)\resources\" /E /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;QFO2WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;QFO2_WINDOWS;_GLFW_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PostBuildEvent>
+      <Command>XCOPY "$(ProjectDir)\src\resources" "$(TargetDir)\resources\" /E /Y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\dependencies\GLAD\src\glad.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\cocoa_time.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\context.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\egl_context.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\glx_context.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\init.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\input.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\linux_joystick.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\monitor.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\null_init.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\null_joystick.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\null_monitor.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\null_window.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\osmesa_context.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\platform.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\posix_module.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\posix_poll.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\posix_thread.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\posix_time.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\vulkan.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\wgl_context.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_init.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_joystick.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_module.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_monitor.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_thread.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_time.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\win32_window.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\window.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\wl_init.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\wl_monitor.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\wl_window.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\x11_init.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\x11_monitor.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\x11_window.c" />
+    <ClCompile Include="src\dependencies\glfw-3.4\src\xkb_unicode.c" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_demo.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_draw.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_tables.cpp" />
+    <ClCompile Include="src\dependencies\imgui-docking\src\imgui_widgets.cpp" />
+    <ClCompile Include="src\dependencies\tinyfiledialogs\tinyfiledialogs.c" />
+    <ClCompile Include="src\msk2bmpGUI.cpp" />
+    <ClCompile Include="src\QFO2Tool\B_Endian.cpp" />
+    <ClCompile Include="src\QFO2Tool\display_FRM_OpenGL.cpp" />
+    <ClCompile Include="src\QFO2Tool\Edit_Animation.cpp" />
+    <ClCompile Include="src\QFO2Tool\Edit_Image.cpp" />
+    <ClCompile Include="src\QFO2Tool\Edit_TILES_LST.cpp" />
+    <ClCompile Include="src\QFO2Tool\FRM_Convert.cpp" />
+    <ClCompile Include="src\QFO2Tool\Image2Texture.cpp" />
+    <ClCompile Include="src\QFO2Tool\Image_Render.cpp" />
+    <ClCompile Include="src\QFO2Tool\Load_Animation.cpp" />
+    <ClCompile Include="src\QFO2Tool\Load_Files.cpp" />
+    <ClCompile Include="src\QFO2Tool\load_FRM_OpenGL.cpp" />
+    <ClCompile Include="src\QFO2Tool\Load_Settings.cpp" />
+    <ClCompile Include="src\QFO2Tool\MiniSDL.cpp" />
+    <ClCompile Include="src\QFO2Tool\MSK_Convert.cpp" />
+    <ClCompile Include="src\QFO2Tool\Palette_Cycle.cpp" />
+    <ClCompile Include="src\QFO2Tool\platform_io.cpp" />
+    <ClCompile Include="src\QFO2Tool\Preview_Image.cpp" />
+    <ClCompile Include="src\QFO2Tool\Preview_Tiles.cpp" />
+    <ClCompile Include="src\QFO2Tool\Save_Files.cpp" />
+    <ClCompile Include="src\QFO2Tool\shader_class.cpp" />
+    <ClCompile Include="src\QFO2Tool\timer_functions.cpp" />
+    <ClCompile Include="src\QFO2Tool\Zoom_Pan.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\QFO2Tool\B_Endian.h" />
+    <ClInclude Include="src\QFO2Tool\display_FRM_OpenGL.h" />
+    <ClInclude Include="src\QFO2Tool\Edit_Animation.h" />
+    <ClInclude Include="src\QFO2Tool\Edit_Image.h" />
+    <ClInclude Include="src\QFO2Tool\Edit_TILES_LST.h" />
+    <ClInclude Include="src\QFO2Tool\FRM_Convert.h" />
+    <ClInclude Include="src\QFO2Tool\Image2Texture.h" />
+    <ClInclude Include="src\QFO2Tool\Image_Render.h" />
+    <ClInclude Include="src\QFO2Tool\Load_Animation.h" />
+    <ClInclude Include="src\QFO2Tool\Load_Files.h" />
+    <ClInclude Include="src\QFO2Tool\load_FRM_OpenGL.h" />
+    <ClInclude Include="src\QFO2Tool\Load_Settings.h" />
+    <ClInclude Include="src\QFO2Tool\MiniSDL.h" />
+    <ClInclude Include="src\QFO2Tool\MSK_Convert.h" />
+    <ClInclude Include="src\QFO2Tool\Palette_Cycle.h" />
+    <ClInclude Include="src\QFO2Tool\platform_io.h" />
+    <ClInclude Include="src\QFO2Tool\Preview_Image.h" />
+    <ClInclude Include="src\QFO2Tool\Preview_Tiles.h" />
+    <ClInclude Include="src\QFO2Tool\Save_Files.h" />
+    <ClInclude Include="src\QFO2Tool\shader_class.h" />
+    <ClInclude Include="src\QFO2Tool\timer_functions.h" />
+    <ClInclude Include="src\QFO2Tool\Zoom_Pan.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
