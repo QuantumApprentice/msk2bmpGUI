@@ -184,9 +184,7 @@ tinyfiledialogs
 
 Might have to uninstall libtbb-dev if building with cmake
 
-Build commands:
-
-### In the root folder:
+### Build commands - In the root folder:
 
 cmake -S . -B build
 

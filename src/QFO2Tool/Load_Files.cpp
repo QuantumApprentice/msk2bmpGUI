@@ -12,7 +12,7 @@
 #include <filesystem>
 #include <cstdint>
 #include <system_error>
-#include <execution>
+#include <algorithm>
 #include <string_view>
 
 #include "platform_io.h"
@@ -255,14 +255,14 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     //              });                                                                                     // ~1ms
 
     size_t parent_path_size = directory.native().size();
-    std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
-              [&parent_path_size](std::filesystem::path &a, std::filesystem::path &b)
-              {
-                  int a_size = a.native().size();
-                  int b_size = b.native().size();
-                  int larger_size = (a_size < b_size) ? a_size : b_size;
-                  return ext_compare((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
-              }); //
+    std::sort(animation_images.begin(), animation_images.end(),
+            [&parent_path_size](std::filesystem::path &a, std::filesystem::path &b)
+            {
+                int a_size = a.native().size();
+                int b_size = b.native().size();
+                int larger_size = (a_size < b_size) ? a_size : b_size;
+                return ext_compare((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+            });
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
     //            [](std::filesystem::path& a, std::filesystem::path& b)

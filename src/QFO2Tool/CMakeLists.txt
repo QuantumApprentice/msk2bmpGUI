@@ -1,4 +1,6 @@
 add_library(QFO2ToolLib
+    town_map_tiles.h
+    town_map_tiles.cpp
     B_Endian.h
     B_Endian.cpp
     display_FRM_OpenGL.h
@@ -7,8 +9,6 @@ add_library(QFO2ToolLib
     Edit_Animation.h
     Edit_Image.cpp
     Edit_Image.h
-    FRM_Animate.cpp
-    FRM_Animate.h
     FRM_Convert.cpp
     FRM_Convert.h
     Image_Render.cpp
@@ -45,27 +45,26 @@ add_library(QFO2ToolLib
     Edit_TILES_LST.cpp
 )
 
-# Windows compile stuff?
+#these need to be located after add_library()
+#why?
+# Windows compile stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-
 target_compile_definitions(
   QFO2ToolLib
   PUBLIC QFO2_WINDOWS
 )
 
-
 # Linux compile stuff
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-
 target_compile_definitions(
   QFO2ToolLib
   PUBLIC QFO2_LINUX
 )
-
 endif()
 
 
-target_include_directories(QFO2ToolLib PUBLIC
+target_include_directories(
+    QFO2ToolLib PUBLIC
     ../dependencies/GLAD/include
     ../dependencies/imgui-docking/include
     ../dependencies/tinyfiledialogs

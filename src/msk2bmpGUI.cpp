@@ -41,7 +41,6 @@
 #include "Save_Files.h"
 #include "Image2Texture.h"
 #include "Load_Settings.h"
-#include "FRM_Animate.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
 #include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
