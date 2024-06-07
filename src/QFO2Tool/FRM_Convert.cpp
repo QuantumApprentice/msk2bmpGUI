@@ -18,7 +18,7 @@
 #include <errno.h>
 #endif
 
-union Pxl_info_32 {
+union Pxl_info_32_ {
     struct {
         uint8_t a;
         uint8_t b;
@@ -175,7 +175,7 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
                      SDL_Surface* Surface_8)
 {
     uint8_t w_PaletteColor;
-    Pxl_info_32 abgr;
+    Pxl_info_32_ abgr;
     Pxl_err err;
     int c = 100;
     // Convert image color to indexed palette
@@ -183,9 +183,9 @@ void SDL_Color_Match(SDL_Surface* Surface_32,
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
+            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32_));
 
-            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32_));
         // Convert any pixel with partial alpha to full alpha for FRM
         //      FRM's use index 0 to indicate transparancy
             if(abgr.a < 255) {
@@ -224,7 +224,7 @@ void Euclidian_Distance_Color_Match(
                 SDL_Surface* Surface_8)
 {
     uint8_t w_PaletteColor;
-    Pxl_info_32 abgr;
+    Pxl_info_32_ abgr;
     Pxl_err err;
 
     int w_smallest;
@@ -242,9 +242,9 @@ void Euclidian_Distance_Color_Match(
     {
         for (int x = 0; x < Surface_32->w; x++)
         {
-            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
+            int i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32_));
             w_smallest = INT_MAX;
-            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            memcpy(&abgr, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32_));
 
             if (abgr.a < 255) {
                 ((uint8_t*)Surface_8->pixels)[(Surface_8->pitch*y) + x] = 0;
@@ -331,13 +331,13 @@ void clamp_dither(SDL_Surface *Surface_32,
 {
     // pointer arrays so I can run a loop through them dependably
     uint8_t* pxl_color [4];
-    union Pxl_info_32 abgr;
-    memcpy(&abgr, (Pxl_info_32*)Surface_32->pixels + pixel_idx, sizeof(Pxl_info_32));
+    union Pxl_info_32_ abgr;
+    memcpy(&abgr, (Pxl_info_32_*)Surface_32->pixels + pixel_idx, sizeof(Pxl_info_32_));
 
-    pxl_color[0] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->a);
-    pxl_color[1] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->b);
-    pxl_color[2] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->g);
-    pxl_color[3] = &(((Pxl_info_32*)Surface_32->pixels + (pixel_idx))->r);
+    pxl_color[0] = &(((Pxl_info_32_*)Surface_32->pixels + (pixel_idx))->a);
+    pxl_color[1] = &(((Pxl_info_32_*)Surface_32->pixels + (pixel_idx))->b);
+    pxl_color[2] = &(((Pxl_info_32_*)Surface_32->pixels + (pixel_idx))->g);
+    pxl_color[3] = &(((Pxl_info_32_*)Surface_32->pixels + (pixel_idx))->r);
 
     // take palettized error and clamp values to max/min, then add error to appropriate pixel
     for (int i = 0; i < 4; i++)

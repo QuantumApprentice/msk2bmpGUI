@@ -15,7 +15,7 @@
 
 // ImGui header files
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
@@ -24,6 +24,7 @@
 #include <SDL_blendmode.h>
 #include <glad/glad.h>
 
+//TODO: fix this so it compiles for windows
 #if 0
     #include <Windows.h>
 #endif
@@ -336,7 +337,7 @@ int main(int argc, char** argv)
             ImGui::ShowDemoWindow(&show_demo_window);
 
         //ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+        ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
         ImGuiID dock_id_right = 0;
         ShowMainMenuBar(&counter, &My_Variables);
 

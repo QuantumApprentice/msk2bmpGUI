@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.25)
 # set(PROJECT_NAME "QFO2Solution")
 
 #sets PROJECT_NAME, then other settings
+#PROJECT_NAME is auto set when name is passed as 1st arg
 #https://cmake.org/cmake/help/latest/command/project.html#project
 project(
   QFO2Solution VERSION 0.1.0
@@ -58,28 +59,54 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 # because as library users we tent not to modify other people library.
 # g++ notice -isystem instead of -I
 
-# We write CMakeLists.txt ourself, usually this is not recommended because
-# it's is not the library users responsiblity to mantain build scripts.
-# but since glad, imgui is a simple drop in library, it is trivial
-# Writing CMakeLists.txt ourself usually the last resort when it comes to libraries
-# that doesn't care to support cmake.
+#these are directories that have CMakeLists.txt files
+#are these used to determine how includes work?
 add_subdirectory(src/dependencies/GLAD            SYSTEM)
-add_subdirectory(src/dependencies/imgui-docking   SYSTEM)
+# add_subdirectory(src/dependencies/imgui-docking   SYSTEM)
 add_subdirectory(src/dependencies/SDL_image       SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
 
 #is this what allows <> around local #includes?
 target_include_directories(
-  ${EXECUTABLE_NAME} PUBLIC
-  src/QFO2Tool
+  ${EXECUTABLE_NAME}
+  PUBLIC src/QFO2Tool
 )
 
+
+
 #this creates a new "library" for the linker (.dll/.so)
-#(you don't have to add a CMakeLists.txt file tinyfiledialogs folder)
+#(don't have to add a CMakeLists.txt file tinyfiledialogs folder)
 #library still needs to be added to target_link_libraries()
 add_library(tinyfiledialogs
   src/dependencies/tinyfiledialogs/tinyfiledialogs.c
   src/dependencies/tinyfiledialogs/tinyfiledialogs.h
+)
+
+add_library(imgui_docking
+  src/dependencies/imgui-1.90.8-docking/imgui.h
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.h
+
+
+  #TODO: get rid of SDL dependencies
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.cpp
+  # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.cpp
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.h
+  # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.h
+
+
+
+  src/dependencies/imgui-1.90.8-docking/imgui.cpp
+  src/dependencies/imgui-1.90.8-docking/imgui_demo.cpp
+  src/dependencies/imgui-1.90.8-docking/imgui_draw.cpp
+  src/dependencies/imgui-1.90.8-docking/imgui_tables.cpp
+  src/dependencies/imgui-1.90.8-docking/imgui_widgets.cpp
+
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.cpp
+)
+target_include_directories(
+  imgui_docking PUBLIC
+  src/dependencies/imgui-1.90.8-docking
+  src/dependencies/imgui-1.90.8-docking/backends
 )
 
 # if a package or component is REQUIRED then the script will raise error and stop executing

@@ -39,3 +39,4 @@ build/
 CMakeUserPresets.json
 src/config\\msk2bmpGUI.cfg
 /UpgradeLog*.htm
+*.zip

@@ -333,7 +333,7 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
 {
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-    char * const* lFilterPatterns = NULL;
+    char ** lFilterPatterns = NULL;
     int num_patterns = Set_Save_Patterns(&lFilterPatterns, img_data);
     const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
