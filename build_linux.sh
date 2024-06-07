@@ -8,57 +8,44 @@ set -e              # fail if any command run fails
 
 cd "${0%/*}" # change into the directory containing this script in case it's run from elsewhere
 
-project_dir=`pwd`
-src="$project_dir/src"
-build="$project_dir/build"
-
-CC_ARGS=(-g)
-CPP_ARGS=(-g)
-
-INCLUDE_DIRS=(
-  "$src/QFO2Tool"
-  "$src/dependencies/GLAD/include"
-  "$src/dependencies/glfw-3.4/include"
-  "$src/dependencies/imgui-docking/include"
-  "$src/dependencies/tinyfiledialogs"
-  "$src/dependencies/stb"
+INCLUDE_ARGS=(
+  -I "src/QFO2Tool"
+  -I "src/dependencies/GLAD/include"
+  -I "src/dependencies/glfw-3.4/include"
+  -I "src/dependencies/imgui-docking/include"
+  -I "src/dependencies/tinyfiledialogs"
+  -I "src/dependencies/stb"
 )
 
-# To clean: rm -fr "$build"
-mkdir -p "$build"
+CC_ARGS=(-g "${INCLUDE_ARGS[@]}")
+CPP_ARGS=(-g "${INCLUDE_ARGS[@]}")
 
-# 
-# Initialize git submodules and update to the correct versions
-#echo "Updating Submodules"
-#git submodule init    >  "$build/git-submodule-update.log" 2>&1
-#git submodule sync    >> "$build/git-submodule-update.log" 2>&1
-#git submodule update  >> "$build/git-submodule-update.log" 2>&1
+if [[ "${1:-}" == "clean" ]]; then
+  rm -fr build
+  shift
+fi
 
-INCLUDE_ARGS=()
-for dir in "${INCLUDE_DIRS[@]}"; do INCLUDE_ARGS+=(-I "$dir"); done
+if [[ "${1:-}" == "release" ]]; then
+  CC_ARGS+=(-O3)
+  CPP_ARGS+=(-O3)
+  shift
+fi
 
-CC_ARGS+=("${INCLUDE_ARGS[@]}")
-CPP_ARGS+=("${INCLUDE_ARGS[@]}")
+mkdir -p build
 
-
-echo "Building GLFW"
-# unfortunately GLFW doesn't support a unity build so we need to build a couple different libs for it to link
-cc "${CC_ARGS[@]}" -c -o "$build/glfw1.o" "$src/build_linux_glfw1.c"
-cc "${CC_ARGS[@]}" -c -o "$build/glfw2.o" "$src/build_linux_glfw2.c"
-
-echo "Building other C libraries (GLAD, tinyfiledialogs)"
-cc "${CC_ARGS[@]}" -c -o "$build/c_libs.o" "$src/build_linux_c_libs.c"
+echo "Building C libraries (GLFW, GLAD, tinyfiledialogs)"
+cc "${CC_ARGS[@]}" -c -o build/c_libs.o src/build_linux_c_libs.c
 
 echo "Building C++ libs (Dear ImGUI)"
-c++ "${CPP_ARGS[@]}" -c -o "$build/cpp_libs.o" "$src/build_linux_cpp_libs.cpp"
+c++ "${CPP_ARGS[@]}" -c -o build/cpp_libs.o src/build_linux_cpp_libs.cpp
 
 echo "Building main project"
-c++ "${CPP_ARGS[@]}" -o "$build/QFO2Tool" "$src/build_linux.cpp" "$build/glfw1.o" "$build/glfw2.o" "$build/c_libs.o" "$build/cpp_libs.o"
+c++ "${CPP_ARGS[@]}" -o build/QFO2Tool src/build_linux.cpp build/c_libs.o build/cpp_libs.o
 
 echo "Copying resources"
-cp -a "$src/resources" "$build"
+cp -a src/resources build
 
 echo "Removing build artifacts"
-rm "$build"/*.o
+rm build/*.o
 
 echo "Done"
