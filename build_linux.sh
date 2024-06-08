@@ -45,6 +45,13 @@ c++ "${CPP_ARGS[@]}" -o build/QFO2Tool src/build_linux.cpp build/c_libs.o build/
 echo "Copying resources"
 cp -a src/resources build
 
+if [[ "${1:-}" == "test" ]]; then
+  shift
+  c++ "${CPP_ARGS[@]}" -o build/QFO2Tool_test test/test_tile_export.cpp build/c_libs.o build/cpp_libs.o
+  echo "Running tests"
+  (cd build && ./QFO2Tool_test) || echo 'Tests failed'
+fi
+
 echo "Removing build artifacts"
 rm build/*.o
 
