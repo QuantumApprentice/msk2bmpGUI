@@ -476,6 +476,7 @@ SDL_Surface* Unpalettize_Image(SDL_Surface* Surface)
 
     if (!Output_Surface) {
         printf("\nError: %s", SDL_GetError());
+        return nullptr;
     }
     else {
         return Output_Surface;

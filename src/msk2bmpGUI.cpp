@@ -623,11 +623,11 @@ void Show_MSK_Palette_Window(variables* My_Variables)
     brush_size_handler(My_Variables);
 
     ImGui::Text("Erase Mask                    Draw Mask");
-    if (ImGui::ColorButton("Erase Mask", ImVec4(0, 0, 0, 1.0f), NULL, ImVec2(200.0f, 200.0f))) {
+    if (ImGui::ColorButton("Erase Mask", ImVec4(0, 0, 0, 1.0f), 0, ImVec2(200.0f, 200.0f))) {
         My_Variables->Color_Pick = (0);
     }
     ImGui::SameLine();
-    if (ImGui::ColorButton("Mark Mask", ImVec4(1.0f, 1.0f, 1.0f, 1.0f), NULL, ImVec2(200.0f, 200.0f))) {
+    if (ImGui::ColorButton("Mark Mask", ImVec4(1.0f, 1.0f, 1.0f, 1.0f), 0, ImVec2(200.0f, 200.0f))) {
         My_Variables->Color_Pick = (1);
     }
 
@@ -919,7 +919,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         ImGui::DragFloat("##Zoom", &F_Prop->img_data.scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
         ImGui::PopItemWidth();
         bool alpha_off = checkbox_handler("Alpha Enabled", &F_Prop->alpha);
-        char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
+        const char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
         ImGui::SameLine();
         ImGui::Combo("##color_match", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
 

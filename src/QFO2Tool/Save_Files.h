@@ -39,7 +39,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, im
 
 bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
 bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
-void check_file(char* path, char* path_name, char* name, int tile_num, img_type type);
+void check_file(char* path, char* path_name, const char* name, int tile_num, img_type type);
 void Create_File_Name(char* buffer, const char* name, img_type type, char* path, int tile_num);
 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);

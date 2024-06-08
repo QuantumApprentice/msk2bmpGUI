@@ -111,9 +111,7 @@ const char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
     if (num_dirs > 1)
     {
         Direction *dir_ptr = NULL;
-
         dir_ptr = &img_data->FRM_dir[current_dir].orientation;
-
         assert(dir_ptr != NULL && "Not FRM or OTHER?");
         if (*dir_ptr > -1)
         {
@@ -121,36 +119,24 @@ const char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
             {
             case (NE):
                 return ".FR0";
-                break;
             case (E):
                 return ".FR1";
-                break;
             case (SE):
                 return ".FR2";
-                break;
             case (SW):
                 return ".FR3";
-                break;
             case (W):
                 return ".FR4";
-                break;
             case (NW):
                 return ".FR5";
-                break;
-            default:
-                return ".FRM";
-                break;
             }
         }
     }
-    else
-    {
-        return ".FRM";
-    }
+    return ".FRM";
 }
 
 //used by Save_FRM_Animation_OpenGL()
-int Set_Save_Patterns(char*** filter, image_data *img_data)
+int Set_Save_Patterns(const char*** filter, image_data *img_data)
 {
     int num_dirs = 0;
     for (int i = 0; i < 6; i++)
@@ -162,13 +148,13 @@ int Set_Save_Patterns(char*** filter, image_data *img_data)
     }
     if (num_dirs < 6)
     {
-        static char *temp[7] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
+        static const char *temp[7] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
         *filter = temp;
         return 6;
     }
     else
     {
-        static char *temp[1] = {"*.FRM"};
+        static const char *temp[1] = {"*.FRM"};
         *filter = temp;
         return 1;
     }
@@ -333,7 +319,7 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
 {
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-    char ** lFilterPatterns = NULL;
+    const char ** lFilterPatterns = NULL;
     int num_patterns = Set_Save_Patterns(&lFilterPatterns, img_data);
     const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
@@ -795,6 +781,7 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
     if (usr_info->auto_export == manual) {                   // Manual - set by user
         return export_manual(usr_info, save_path, exe_path);
     }
+    return false; // again, shouldn't be able to reach this line
 }
 
 // save_type is the file type being saved to (not the img_type coming in from img_data)
@@ -1346,7 +1333,7 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
 // checks if the file/folder? already exists before saving
 // sets Save_File_Name[0] = '\0'; if user clicks cancel
 // when prompted to overwrite a file
-void check_file(char *save_path, char* save_path_name, char* name, int tile_num, img_type type)
+void check_file(char *save_path, char* save_path_name, const char* name, int tile_num, img_type type)
 {
     FILE *File_ptr = NULL;
     char *alt_path;

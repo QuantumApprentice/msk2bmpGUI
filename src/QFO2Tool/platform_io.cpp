@@ -201,7 +201,9 @@ bool io_backup_file(char* file_path)
     int error = rename(file_path, rename_buff);
     if (error != 0) {
         perror("Error renaming TILES.LST: ");
+        return false;
     }
+    return true;
 }
 
 

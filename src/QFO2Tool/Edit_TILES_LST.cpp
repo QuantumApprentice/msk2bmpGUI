@@ -1009,9 +1009,8 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
             usr_nfo->game_files.TILES_LST = tiles_lst;
             return false;
         }
-    } else {
-        return true;
     }
+        return true;
 }
 
 //append names of new tiles to end of TILES.LST

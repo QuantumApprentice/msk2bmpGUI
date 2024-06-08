@@ -41,94 +41,86 @@ int i = 0;
 FILE *infile;
 line_array_t inputLines;
 
-//TODO: allow drag and drop .MSK files to be passed into here
-//also TODO: re-write this entire thing to handle errors and wide character files
-int MSK_Convert(char* File_Name, const char ** argv)
-{
-    bool bFlipVertical = true;
-    const char* FileName = argv[1];
-
-#ifdef QFO2_WINDOWS
-    fopen_s(&infile, File_Name, "rb");
-#elif defined(QFO2_LINUX)
-    infile = fopen(File_Name, "rb");
-#endif
-
-    if (infile == NULL)
-    {
-        fprintf(stderr, "[ERROR] Unable to open file.");
-        return 1;
-    }
-
-    // Extension for output file.
-    char *TargetExtension = { "" };
-
-    // Load Input File
-    //TODO: modify IsBMPFile() check to switch between
-    //      files dropped on here and surfaces passed
-    //      in from the converter
-    bool bBMP2MSK = false;
-
-    if (bBMP2MSK)
-    {
-        if (!ReadBmpLines(infile, inputLines))
-        {
-            printf("[ERROR] Unable to read BMP file");
-            fclose(infile);
-            return 1;
-        }
-        TargetExtension = "MSK";
-    }
-    else {
-        Read_MSK_Tile(infile, inputLines);
-        TargetExtension = "BMP";
-    }
-    fclose(infile);
-
-    // Change format if needed
-    // MSK files are top-left origin. 
-    // BMP files are bottom-left origin.
-    // (Some BMP files are top-left origin. 
-    // These ones will end up flipping the 
-    // image until they are addressed in ReadBmpLines)
-
-    //TODO: is flipping necessary for binary SDL surface?
-    if (bFlipVertical)
-    {
-        for (int i = 0; i < MAX_LINES / 2; i++)
-        {
-            char buffer[44];
-            memcpy(buffer, inputLines[i], 44);
-            memcpy(inputLines[i], inputLines[MAX_LINES - 1 - i], 44);
-            memcpy(inputLines[MAX_LINES - 1 - i], buffer, 44);
-        }
-    }
-
-    // Open Output File
-    char *sOutputFileName;
-    int y = strlen(argv[1]) + 1;
-    sOutputFileName = (char *)calloc(y, sizeof(char));
-    memcpy(sOutputFileName, FileName, y);
-
-    strncpy(&sOutputFileName[y - 4], TargetExtension, 3);
-
-    // Write Output File
-    //TODO: this needs a little cleanup
-    //      and probably refactor into a helper function
-    FILE *fb;
-    fb = fopen(sOutputFileName, "wb");
-    FILE *outfile = fb;
-    if (bBMP2MSK)
-    {
-        writelines(outfile, inputLines);
-    }
-    else
-    {
-        fwrite(bmpHeader, 1, 62, outfile);
-        writelines(outfile, inputLines);
-    }
-    fclose(fb);
-}
+// //TODO: allow drag and drop .MSK files to be passed into here
+// //also TODO: re-write this entire thing to handle errors and wide character files
+// //TODO TODO TODO: delete? don't think I'm using this
+// int MSK_Convert(char* File_Name, const char ** argv)
+// {
+//     bool bFlipVertical = true;
+//     const char* FileName = argv[1];
+// #ifdef QFO2_WINDOWS
+//     fopen_s(&infile, File_Name, "rb");
+// #elif defined(QFO2_LINUX)
+//     infile = fopen(File_Name, "rb");
+// #endif
+//     if (infile == NULL)
+//     {
+//         fprintf(stderr, "[ERROR] Unable to open file.");
+//         return 1;
+//     }
+//     // Extension for output file.
+//     const char *TargetExtension = { "" };
+//     // Load Input File
+//     //TODO: modify IsBMPFile() check to switch between
+//     //      files dropped on here and surfaces passed
+//     //      in from the converter
+//     bool bBMP2MSK = false;
+//     if (bBMP2MSK)
+//     {
+//         if (!ReadBmpLines(infile, inputLines))
+//         {
+//             printf("[ERROR] Unable to read BMP file");
+//             fclose(infile);
+//             return 1;
+//         }
+//         TargetExtension = "MSK";
+//     }
+//     else {
+//         Read_MSK_Tile(infile, inputLines);
+//         TargetExtension = "BMP";
+//     }
+//     fclose(infile);
+//     // Change format if needed
+//     // MSK files are top-left origin. 
+//     // BMP files are bottom-left origin.
+//     // (Some BMP files are top-left origin. 
+//     // These ones will end up flipping the 
+//     // image until they are addressed in ReadBmpLines)
+//     //TODO: is flipping necessary for binary SDL surface?
+//     if (bFlipVertical)
+//     {
+//         for (int i = 0; i < MAX_LINES / 2; i++)
+//         {
+//             char buffer[44];
+//             memcpy(buffer, inputLines[i], 44);
+//             memcpy(inputLines[i], inputLines[MAX_LINES - 1 - i], 44);
+//             memcpy(inputLines[MAX_LINES - 1 - i], buffer, 44);
+//         }
+//     }
+//     // Open Output File
+//     char *sOutputFileName;
+//     int y = strlen(argv[1]) + 1;
+//     sOutputFileName = (char *)calloc(y, sizeof(char));
+//     memcpy(sOutputFileName, FileName, y);
+//     strncpy(&sOutputFileName[y - 4], TargetExtension, 3);
+//     // Write Output File
+//     //TODO: this needs a little cleanup
+//     //      and probably refactor into a helper function
+//     FILE *fb;
+//     fb = fopen(sOutputFileName, "wb");
+//     FILE *outfile = fb;
+//     if (bBMP2MSK)
+//     {
+//         writelines(outfile, inputLines);
+//     }
+//     else
+//     {
+//         fwrite(bmpHeader, 1, 62, outfile);
+//         writelines(outfile, inputLines);
+//     }
+//     fclose(fb);
+//     free(sOutputFileName);
+// }
 
 void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44])
 {

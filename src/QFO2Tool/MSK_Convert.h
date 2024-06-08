@@ -8,7 +8,7 @@
 
 typedef uint8_t line_array_t[MAX_LINES][44];
 
-int MSK_Convert(char* File_Name, const char ** argv);
+// int MSK_Convert(char* File_Name, const char ** argv);
 bool IsBMPFile(FILE *infile);
 bool ReadBmpLines(FILE *file, line_array_t vOutput);            // same as below
 void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44]);

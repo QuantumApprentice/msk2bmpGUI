@@ -46,7 +46,8 @@ add_library(QFO2ToolLib
 )
 
 #these need to be located after add_library()
-#why?
+#target (QFO2ToolLib) needs to be declared
+#_BEFORE_ being added to compile defs
 # Windows compile stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 target_compile_definitions(

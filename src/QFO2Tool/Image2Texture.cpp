@@ -30,6 +30,7 @@ bool Image2Texture(SDL_Surface* surface, GLuint* texture)
         printf("Unable to optimize image! SDL Error: %s\n", SDL_GetError());
         return false;
     }
+    return false;
 }
 
 void SDL_to_OpenGl(SDL_Surface *Surface, GLuint *texture)
@@ -343,7 +344,7 @@ bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_ty
 
 }
 
-bool checkbox_handler(char* text, bool* alpha)
+bool checkbox_handler(const char* text, bool* alpha)
 {
     ImGui::Checkbox(text, alpha);
     if (*alpha) {

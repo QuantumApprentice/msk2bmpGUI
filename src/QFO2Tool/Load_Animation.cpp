@@ -155,7 +155,7 @@ Direction assign_direction(char* direction)
     return NE;
 }
 
-void set_directions(char** names_array, image_data* img_data)
+void set_directions(const char** names_array, image_data* img_data)
 {
     Direction* dir_ptr = NULL;
 
@@ -282,7 +282,7 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
 
     //populate directions[] only with existing directions
-    char* directions[6];
+    const char* directions[6];
     set_directions(directions, img_data);
     ImGui::Combo("Direction", &img_data->display_orient_num, directions, IM_ARRAYSIZE(directions));
     int max_frame = 0;

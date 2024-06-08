@@ -90,7 +90,7 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
         // returns 1 for yes, 2 for no, 0 for cancel
         type = tinyfd_messageBox("Animation? or Single Images?",
                                  question, "yesnocancel", "question", 2);
-    }
+    }   //TODO: wtf is going on here? where's cancel button?
     else {
         type = 1;               //yes, animation, open automatically?
     }
@@ -132,6 +132,7 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
     else if (type == 0) {
         return false;
     }
+    return false;   //shouldn't have to do this, shouldn't be able to reach this line
 }
 
 // Checks the file extension against known working extensions

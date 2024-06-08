@@ -72,8 +72,6 @@ target_include_directories(
   PUBLIC src/QFO2Tool
 )
 
-
-
 #this creates a new "library" for the linker (.dll/.so)
 #(don't have to add a CMakeLists.txt file tinyfiledialogs folder)
 #library still needs to be added to target_link_libraries()
@@ -86,14 +84,11 @@ add_library(imgui_docking
   src/dependencies/imgui-1.90.8-docking/imgui.h
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.h
 
-
   #TODO: get rid of SDL dependencies
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.cpp
   # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.cpp
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.h
   # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.h
-
-
 
   src/dependencies/imgui-1.90.8-docking/imgui.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_demo.cpp
@@ -103,6 +98,8 @@ add_library(imgui_docking
 
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.cpp
 )
+#must include target directories
+#_AFTER_ the target is declared w/add_library()
 target_include_directories(
   imgui_docking PUBLIC
   src/dependencies/imgui-1.90.8-docking
