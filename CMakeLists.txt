@@ -15,6 +15,15 @@ project(
 set(EXECUTABLE_NAME "QFO2Tool")
 add_executable(${EXECUTABLE_NAME})
 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 
 # Windows compile stuff
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -62,6 +71,7 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 #these are directories that have CMakeLists.txt files
 #are these used to determine how includes work?
 add_subdirectory(src/dependencies/GLAD            SYSTEM)
+add_subdirectory(specs)
 # add_subdirectory(src/dependencies/imgui-docking   SYSTEM)
 add_subdirectory(src/dependencies/SDL_image       SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
