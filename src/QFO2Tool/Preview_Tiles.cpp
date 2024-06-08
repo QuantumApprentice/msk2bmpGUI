@@ -99,13 +99,13 @@ void tile_me(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data
 
             // image I'm trying to pan and zoom with
             window->DrawList->AddImage(
-                (ImTextureID)img_data->render_texture,
+                (ImTextureID)(uintptr_t)img_data->render_texture,
                 new_corner, new_bottom,
                 uv_min, uv_max,
                 ImGui::GetColorU32(tint_col));
 
             // window->DrawList->AddImage(
-            //     (ImTextureID)img_data->render_texture,
+            //     (ImTextureID)(uintptr_t)img_data->render_texture,
             //     new_corner, bottom_corner(size, new_corner),
             //     Top_Left, Bottom_Right,
             //     ImGui::GetColorU32(tint_col));
@@ -305,7 +305,7 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
             {
 
                 window->DrawList->AddImageQuad(
-                    (ImTextureID)img_data->render_texture,
+                    (ImTextureID)(uintptr_t)img_data->render_texture,
                     Left, Top, Right, Bottom,
                     uv_l, uv_t, uv_r, uv_b);
 
@@ -365,7 +365,7 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
 
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         window->DrawList->AddImage(
-            (ImTextureID)img_data->render_texture,
+            (ImTextureID)(uintptr_t)img_data->render_texture,
             top_corner(img_data), bottom_corner(size, top_corner(img_data)),
             uv_min, uv_max,
             ImGui::GetColorU32(My_Variables->tint_col));
