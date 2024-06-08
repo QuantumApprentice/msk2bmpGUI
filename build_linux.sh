@@ -47,6 +47,7 @@ cp -a src/resources build
 
 if [[ "${1:-}" == "test" ]]; then
   shift
+  cp -a test/test_resources build
   c++ "${CPP_ARGS[@]}" -o build/QFO2Tool_test test/test_tile_export.cpp build/c_libs.o build/cpp_libs.o
   echo "Running tests"
   (cd build && ./QFO2Tool_test) || echo 'Tests failed'

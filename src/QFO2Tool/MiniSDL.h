@@ -34,5 +34,6 @@ void FreeSurface(Surface* surface);
 Surface* ConvertSurfaceToRGBA(Surface* src);
 Surface* LoadFileAsRGBASurface(const char* filename);
 bool SaveSurfaceAsBMP(Surface* surface, const char* filename);
+bool SaveSurfaceAsPNG(Surface* surface, const char* filename);
 
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect);

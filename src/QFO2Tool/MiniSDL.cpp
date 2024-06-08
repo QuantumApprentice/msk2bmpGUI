@@ -100,6 +100,12 @@ bool SaveSurfaceAsBMP(Surface* surface, const char* filename)
   return result != 0;
 }
 
+bool SaveSurfaceAsPNG(Surface* surface, const char* filename)
+{
+  int result = stbi_write_png(filename, surface->w, surface->h, surface->channels, surface->pixels, surface->pitch);
+  return result != 0;
+}
+
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect)
 {
   assert(src_rect.w == dst_rect.w);
