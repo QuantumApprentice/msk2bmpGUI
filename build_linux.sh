@@ -52,6 +52,11 @@ if [[ "${1:-}" == "coverage" ]]; then
   cov=1
 fi
 
+if [[ "${1:-}" == "profile" ]]; then
+  shift
+  CPP_ARGS+=(-DREPETITIONS=1000000)
+fi
+
 if [[ "${1:-}" == "test" ]]; then
   shift
   cp -a test/test_resources build

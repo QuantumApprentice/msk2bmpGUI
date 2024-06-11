@@ -1242,13 +1242,13 @@ void crop_single_tile(int img_w, int img_h,
             //set offset amount of row to 0
             //this is outside the right of the image
             offset = img_w - (x + lft);
-            memset(tile_buff+buf_pos+offset, 0, 80-(offset));
             if (offset < 0) {
                 //if the starting position is also outside the image
                 //set the whole row to 0
                 memset(tile_buff+buf_pos, 0, 80-lft);
                 continue;
             }
+            memset(tile_buff+buf_pos+offset, 0, 80-(offset));
         }
 
     //prevent LEFT pixels outside image from copying over

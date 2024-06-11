@@ -15,6 +15,10 @@
 #define TILE_W 80
 #define TILE_H 36
 
+#ifndef REPETITIONS
+#define REPETITIONS 1
+#endif
+
 int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3], uint8_t frm_pxls[200 * 100], int frm_offset_x, int frm_offset_y)
 {
   memset(tile_buff_full, 0xCD, TILE_W*TILE_H);
@@ -23,7 +27,12 @@ int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3]
   uint8_t* tile_buff = tile_buff_full + TILE_W*TILE_H;
   memset(tile_buff, 0, TILE_W*TILE_H);
   memset(tile_buff + TILE_W*TILE_H, 0xCD, TILE_W*TILE_H);
-  crop_single_tile(200, 100, tile_buff, frm_pxls, frm_offset_x, frm_offset_y);
+  uint64_t timer = start_timer();
+  for (int i = 0; i < REPETITIONS; i++) {
+    //crop_single_tile(200, 100, tile_buff, frm_pxls, frm_offset_x, frm_offset_y);
+    crop_single_tile_vector_clear(tile_buff, frm_pxls, 200, 100, frm_offset_y, frm_offset_x);
+  }
+  if (REPETITIONS != 1) print_timer(timer);
   for (int x = 0; x < TILE_W; x++)
   {
     for (int y = 0; y < TILE_H; y++)
