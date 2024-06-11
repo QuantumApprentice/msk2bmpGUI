@@ -55,9 +55,9 @@ fi
 if [[ "${1:-}" == "test" ]]; then
   shift
   cp -a test/test_resources build
-  c++ "${CPP_ARGS[@]}" -o build/QFO2Tool_test test/test_tile_export.cpp build/c_libs.o build/cpp_libs.o
+  c++ "${CPP_ARGS[@]}" -o build/test test/test_tile_export.cpp build/c_libs.o build/cpp_libs.o
   echo "Running tests"
-  (cd build && ./QFO2Tool_test) || echo 'Tests failed'
+  (cd build && ./test) || echo 'Tests failed'
   [[ "$cov" == 1 ]] && (mkdir -p build/coverage && gcov build/QFO2Tool_test-test_tile_export && mv -- *.gcov build/coverage) >/dev/null && echo "Coverage files generated from tests in build/coverage"
 fi
 
