@@ -15,15 +15,15 @@
 #define TILE_W 80
 #define TILE_H 36
 
-int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3], uint8_t frm_pxls[100 * 100], int frm_offset_x, int frm_offset_y)
+int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3], uint8_t frm_pxls[200 * 100], int frm_offset_x, int frm_offset_y)
 {
   memset(tile_buff_full, 0xCD, TILE_W*TILE_H);
-  memset(frm_pxls, 133, 100*100); // 133 = bright red
+  memset(frm_pxls, 133, 200*100); // 133 = bright red
   // this gives a full tile in every direction around the central tile
   uint8_t* tile_buff = tile_buff_full + TILE_W*TILE_H;
   memset(tile_buff, 0, TILE_W*TILE_H);
   memset(tile_buff + TILE_W*TILE_H, 0xCD, TILE_W*TILE_H);
-  crop_single_tile(100, 100, tile_buff, frm_pxls, frm_offset_x, frm_offset_y);
+  crop_single_tile(200, 100, tile_buff, frm_pxls, frm_offset_x, frm_offset_y);
   for (int x = 0; x < TILE_W; x++)
   {
     for (int y = 0; y < TILE_H; y++)
@@ -37,7 +37,7 @@ int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3]
 
       // if the pixel is "to the left or right" of the image,
       // it should be transparent in the tile
-      if (x + frm_offset_x < 0 || x + frm_offset_x >= 100) expected_value = 0;
+      if (x + frm_offset_x < 0 || x + frm_offset_x >= 200) expected_value = 0;
 
       // if the pixel is "above or below" the image,
       // it should be transparent in the tile
@@ -82,7 +82,7 @@ int test()
   }
   int result = PASS;
   uint8_t tile_buff_full[TILE_W*TILE_H*3]; // 3x as large so we can test for writing out of bounds
-  uint8_t frm_pxls[100 * 100];
+  uint8_t frm_pxls[200 * 100];
   if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 10, 10)) {
     printf("Full crop test failed\n");
     result = FAIL;
@@ -91,7 +91,7 @@ int test()
     printf("Top-left crop test failed\n");
     result = FAIL;
   }
-  if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 60, -10)) {
+  if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 176, -24)) {
     printf("Top-right crop test failed\n");
     result = FAIL;
   }
@@ -99,7 +99,7 @@ int test()
     printf("Bottom-left crop test failed\n");
     result = FAIL;
   }
-  if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 60, 80)) {
+  if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 176, 80)) {
     printf("Bottom-right crop test failed\n");
     result = FAIL;
   }
