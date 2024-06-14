@@ -44,7 +44,7 @@
 #include "Load_Settings.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
-#include "dependencies/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
@@ -516,13 +516,11 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
     }
 
     if (ImGui::Begin(name.c_str(), (&F_Prop->file_open_window), 0)) {
-
         //set contextual menu for preview window
         if (ImGui::IsWindowFocused()) {
             My_Variables->window_number_focus = counter;
             My_Variables->edit_image_focused = false;
         }
-
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
         //warn if wrong size for map tile
@@ -556,12 +554,10 @@ void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event*
 
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
-
         Next_Prev_Buttons(F_Prop, &F_Prop->img_data, shaders);
-
-
     }
     ImGui::End();
+
     // Preview tiles from red boxes
     if (F_Prop->preview_tiles_window) {
         Preview_Tiles_Window(My_Variables, counter);
@@ -636,13 +632,13 @@ void Show_MSK_Palette_Window(variables* My_Variables)
 
 void Preview_Tiles_Window(variables* My_Variables, int counter)
 {
-    std::string a = My_Variables->F_Prop[counter].c_name;
-    char b[3];
-    sprintf(b, "%02d", counter);
-    std::string name = a + " Preview...###render" + b;
+    LF* F_Prop = &My_Variables->F_Prop[counter];
+    std::string image_name = F_Prop->c_name;
+    char window_id[3];
+    sprintf(window_id, "%02d", counter);
+    std::string name = image_name + " Preview...###render" + window_id;
 
     //shortcuts
-    LF* F_Prop = &My_Variables->F_Prop[counter];
 
     if (ImGui::Begin(name.c_str(), &F_Prop->preview_tiles_window, 0)) {
 
@@ -664,12 +660,12 @@ void Preview_Tiles_Window(variables* My_Variables, int counter)
 
 void Show_Image_Render(variables* My_Variables, struct user_info* usr_info, int counter)
 {
+    LF* F_Prop = &My_Variables->F_Prop[counter];
     char b[3];
     sprintf(b, "%02d", counter);
-    std::string a = My_Variables->F_Prop[counter].c_name;
+    std::string a = F_Prop->c_name;
     std::string name = a + "Render Window...###render" + b;
 
-    LF* F_Prop = &My_Variables->F_Prop[counter];
 
     if (ImGui::Begin(name.c_str(), &F_Prop->show_image_render, 0)) {
 

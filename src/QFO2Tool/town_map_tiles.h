@@ -5,6 +5,7 @@ struct town_tile {
     char*    name_ptr;
     uint8_t* frm_data;
     uint32_t length;
+    uint32_t row;
     // uint32_t next;           //points to array index of next viable name
     town_tile* next;
 };
@@ -50,5 +51,5 @@ static int tile_mask[] = {
 };
 
 town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, char* name);
-void crop_single_tile(int img_w, int img_h, uint8_t* tile_buff, uint8_t* frm_pxls, int x, int y);
+void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls, int img_w, int img_h, int x, int y);
 char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name);

@@ -154,12 +154,14 @@ uint8_t* FRM_Color_Convert(SDL_Surface *surface, SDL_PixelFormat* pxlFMT, int co
     int height = Surface_8->h;
     int size   = width * height;
 
-    uint8_t* data = (uint8_t*)malloc(size + sizeof(FRM_Frame) + sizeof(FRM_Header));
+    uint8_t* data = (uint8_t*)malloc(size + sizeof(FRM_Header) + sizeof(FRM_Frame));
     FRM_Frame* data_ptr = (FRM_Frame*)(data + sizeof(FRM_Header));
 
     int pixel_pointer = 0;
     for (int y = 0; y < height; y++)
     {
+        //TODO: do I need to add FRM_Frame information
+        //      here? (WxH) this appears to be missing
         //write out one row of pixels in each loop
         memcpy(data_ptr->frame_start + (width*y), ((uint8_t*)Surface_8->pixels + pixel_pointer), width);
 
@@ -261,6 +263,7 @@ void Euclidian_Distance_Color_Match(
                     t *= t;
                     u *= u;
                     v *= v;
+                    //TODO: get rid of this sqrt() and make it faster
                     w = sqrt(s + t + u + v);
 
                     if (w < w_smallest) {

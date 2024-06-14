@@ -62,7 +62,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, SDL_PixelFormat
     SDL_PixelFormat* pxlFMT_UnPal;
     pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_ABGR8888);
     if (!pxlFMT_UnPal) {
-        printf("Unable to allocate memory for pxlFMT_UnPal: %d\n", SDL_GetError);
+        printf("Unable to allocate memory for pxlFMT_UnPal: %s\n", SDL_GetError);
         return false;
     }
     bool free_surface = false;

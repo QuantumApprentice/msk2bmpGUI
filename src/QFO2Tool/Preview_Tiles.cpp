@@ -14,7 +14,7 @@
 #define MTILE_H (300)
 #define MTILE_SIZE (350 * 300)
 
-void tile_me(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data);
+void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data);
 void draw_red_squares(image_data *img_data, bool show_squares);
 void draw_red_tiles(image_data *img_data, bool show_squares);
 
@@ -60,10 +60,10 @@ void Prev_WMAP_Tiles(variables *My_Variables, image_data *img_data)
     int img_width = img_data->width;
     int img_height = img_data->height;
 
-    tile_me(MTILE_W, MTILE_H, img_width, img_height, scale, img_data);
+    crop_WMAP_tile(MTILE_W, MTILE_H, img_width, img_height, scale, img_data);
 }
 
-void tile_me(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data)
+void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data)
 {
 
     // ImVec2 size = ImVec2((float)(img_w * scale), (float)(img_h * scale));
@@ -99,7 +99,7 @@ void tile_me(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data
 
             // image I'm trying to pan and zoom with
             window->DrawList->AddImage(
-                (ImTextureID)img_data->render_texture,
+                (ImTextureID)(uintptr_t)img_data->render_texture,
                 new_corner, new_bottom,
                 uv_min, uv_max,
                 ImGui::GetColorU32(tint_col));
@@ -305,7 +305,7 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
             {
 
                 window->DrawList->AddImageQuad(
-                    (ImTextureID)img_data->render_texture,
+                    (ImTextureID)(uintptr_t)img_data->render_texture,
                     Left, Top, Right, Bottom,
                     uv_l, uv_t, uv_r, uv_b);
 
@@ -365,7 +365,7 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
 
         ImGuiWindow *window = ImGui::GetCurrentWindow();
         window->DrawList->AddImage(
-            (ImTextureID)img_data->render_texture,
+            (ImTextureID)(uintptr_t)img_data->render_texture,
             top_corner(img_data), bottom_corner(size, top_corner(img_data)),
             uv_min, uv_max,
             ImGui::GetColorU32(My_Variables->tint_col));

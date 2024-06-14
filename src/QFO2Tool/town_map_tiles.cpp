@@ -1,63 +1,73 @@
+//This will make your computer reboot
+//into text mode after you reboot:
+//  sudo systemctl set-default multi-user.target
+//Then you can run this to make it reboot
+//into graphical mode:
+//  sudo systemctl set-default graphical.target
+//Don't forget to chmod +x the .run file it downloads
 #include "Edit_TILES_LST.h"
 #include "town_map_tiles.h"
 
-#include "tinyfiledialogs.h"
 #include "B_Endian.h"
 
 #include <string.h>
+#include "tinyfiledialogs.h"
 
 //crop town map tiles into linked list structs
 
 //TODO: fix so pxl_offs is 2 ints and not ImVec2
 //single tile crop using memcpy
-void crop_single_tile(int img_w, int img_h,
-                    uint8_t* tile_buff,
+void crop_single_tile(uint8_t* tile_buff,
                     uint8_t* frm_pxls,
+                    int frm_w, int frm_h,
                     int x, int y)
 {
     for (int row = 0; row < 36; row++)
     {
-        int lft = tile_mask[row * 2];
-        int rgt = tile_mask[row * 2 + 1];
-        int offset = rgt-lft;
+        int lft     = tile_mask[row * 2];
+        int rgt     = tile_mask[row * 2 + 1];
+        int offset  = rgt-lft;
         int buf_pos = ((row)*80)   + lft;
-        int pxl_pos = ((row)*img_w + lft)
-                      + y*img_w + x;
+        int pxl_pos = ((row)*frm_w + lft)
+                      + y*frm_w + x;
     // printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
+    // printf("&lft: %p\n", &lft);
+    // printf("&lft: 0x%lx\n", &lft);
+    // printf("int size: %d\n\n", sizeof(int));
+
+    //prevent TOP & BOTTOM pixels outside image from copying over
+        if (row+y < 0 || row+y >= frm_h) {
+            //just set the buffer lines to 0 and move on
+            memset(tile_buff+buf_pos, 107, rgt-lft);
+            continue;
+        }
 
     //prevent RIGHT pixels outside the image from copying over
-        if ((x + rgt) > img_w) {
+        if ((x + rgt) > frm_w) {
             //set offset amount of row to 0
             //this is outside the right of the image
-            offset = img_w - (x + lft);
-            memset(tile_buff+buf_pos+offset, 0, 80-(offset));
+            offset = frm_w - (x + lft);
             if (offset < 0) {
                 //if the starting position is also outside the image
                 //set the whole row to 0
-                memset(tile_buff+buf_pos, 0, 80-lft);
+                memset(tile_buff+buf_pos, 0, rgt-lft);
                 continue;
             }
+            memset(tile_buff+buf_pos+offset, 51, rgt-(offset)-lft);
         }
-
     //prevent LEFT pixels outside image from copying over
         if ((x+lft) < 0) {
             //set the part of the row not being copied to 0
-            memset(tile_buff+buf_pos, 0, -(x+lft));
+            memset(tile_buff+buf_pos, 49, rgt-lft);
+            // printf("x: %d lft: %d\n", x, lft);
             //move pointers to account for part being skipped
             buf_pos += 0 - (x+lft);
             pxl_pos += 0 - (x+lft);
             offset = rgt + (x);
             if (offset < 0) {
-                //skip if ending position offset is outside image
+                //skip if ending position offset is outside left side of image
                 continue;
             }
-        }
-
-    //prevent TOP & BOTTOM pixels outside image from copying over
-        if (row+y < 0 || row+y >= img_h) {
-            //just set the buffer lines to 0 and move on
-            memset(tile_buff+buf_pos, 0, rgt-lft);
-            continue;
         }
 
         // printf("offset: %d\n", offset);
@@ -158,7 +168,7 @@ void crop_single_tileB(uint8_t *dst,
 int crop_single_tile_vector_clear(
         __restrict__ uint8_t *dst, __restrict__ uint8_t *src,
         int src_width, int src_height,
-        int src_tile_top, int src_tile_left)
+        int src_tile_left, int src_tile_top)
 {
     __m128i ZERO = _mm_setzero_si128();
     int copied_pixels = 0;
@@ -223,9 +233,10 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
     int img_h = img_data->height;
 
     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
-    int name_length = sizeof(name) + 7;
+    int name_length = strlen(name) + 7;
     town_tile* head = nullptr;
     town_tile* prev = nullptr;
+    town_tile* tile = nullptr;
 
     int origin_x = -48 + offset_x;
     int origin_y =   0 + offset_y;
@@ -237,7 +248,7 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         //TODO: clean this up, was used for testing different methods
         // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
-        crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin_x, origin_y);
+        crop_single_tile(tile_buff, frm_pxls, img_w, img_h, origin_x, origin_y);
         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
 
@@ -245,13 +256,16 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         // printf("making tile #%03d\n", tile_num);
 
         //turn each cropped tile into a linked list
-        town_tile* tile = (town_tile*)malloc(sizeof(town_tile));
-        tile->name_ptr = (char*)malloc(sizeof(name)+8);
+        tile = (town_tile*)malloc(sizeof(town_tile));
+        tile->name_ptr = (char*)malloc(name_length+1);
         snprintf(tile->name_ptr, name_length + 1, "%s%03d.FRM", name, tile_num);
         tile->frm_data  = (uint8_t*)malloc(80*36);
         memcpy(tile->frm_data, tile_buff, 80*36);
         tile->length = name_length;
-        tile->next = nullptr;
+        tile->row    = row_cnt;
+        tile->next   = nullptr;
+
+
         if (head == nullptr) {
             head = tile;
         }
@@ -346,7 +360,7 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
         //TODO: clean this up, was used for testing different methods
         // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
-        crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin_x, origin_y);
+        crop_single_tile(tile_buff, frm_pxls, img_w, img_h, origin_x, origin_y);
         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
 

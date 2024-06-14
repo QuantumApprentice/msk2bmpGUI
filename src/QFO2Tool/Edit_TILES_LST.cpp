@@ -970,7 +970,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
         //TODO: notify user that can't find TILES.LST
         int choice = tinyfd_messageBox(
                     "Cannot find TILES.LST...",
-                    "TILES.LST is used to identify the town map tiles\n"
+                    "TILES.LST is used to identify town map tiles\n"
                     "used in the game.\n"
 
                     "Unable to find TILES.LST in the Fallout 2\n"

@@ -81,7 +81,7 @@ void SDL_to_OpenGL_PAL(SDL_Surface *Surface, GLuint *texture)
 
 }
 
-void allocate_FRM(image_data* edit_data)
+void init_FRM(image_data* edit_data)
 {
     int width  = edit_data->width;
     int height = edit_data->height;
@@ -118,7 +118,7 @@ void copy_it_all(image_data* img_data, image_data* edit_data)
 {
     edit_data->FRM_data = (uint8_t*)malloc(img_data->FRM_size);
 
-    allocate_FRM(edit_data);
+    init_FRM(edit_data);
 
     memcpy(edit_data->FRM_data, img_data->FRM_data, img_data->FRM_size);
     memcpy(edit_data->FRM_dir, img_data->FRM_dir, sizeof(FRM_Dir));
@@ -186,7 +186,7 @@ void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, boo
         F_Prop->edit_data.height = height;
         //TODO: need to allocate header? info etc?
         //      need to assign FRM_dir[] pointers into FRM_data
-        allocate_FRM(&F_Prop->edit_data);
+        init_FRM(&F_Prop->edit_data);
 
 
 

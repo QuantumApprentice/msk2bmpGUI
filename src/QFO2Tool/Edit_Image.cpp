@@ -47,7 +47,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
-        (ImTextureID)edit_data->render_texture,
+        (ImTextureID)(uintptr_t)edit_data->render_texture,
         top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
         uv_min, uv_max, ImGui::GetColorU32(tint));
 

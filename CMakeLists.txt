@@ -1,8 +1,4 @@
 cmake_minimum_required(VERSION 3.25)
-#CMAKE_MODULE_PATH is used for adding cmake plugins
-#not using plugins right now, so commented out
-# set(CMAKE_MODULE_PATH ${EAO_CMAKE_MODULE_PATH} ${CMAKE_MODULE_PATH})
-# set(PROJECT_NAME "QFO2Solution")
 
 #sets PROJECT_NAME, then other settings
 #PROJECT_NAME is auto set when name is passed as 1st arg
@@ -33,7 +29,7 @@ endif()
 
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS FALSE)
 
 #target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17) # requires minimum C++17
@@ -62,7 +58,6 @@ include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 #these are directories that have CMakeLists.txt files
 #are these used to determine how includes work?
 add_subdirectory(src/dependencies/GLAD            SYSTEM)
-# add_subdirectory(src/dependencies/imgui-docking   SYSTEM)
 add_subdirectory(src/dependencies/SDL_image       SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
 
@@ -132,5 +127,4 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_CURRENT_SOURCE_DIR}/src/resources
   $<TARGET_FILE_DIR:${EXECUTABLE_NAME}>/resources
-
 )

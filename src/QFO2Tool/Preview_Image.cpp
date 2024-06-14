@@ -48,7 +48,7 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, boo
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
     window->DrawList->AddImage(
-        (ImTextureID)img_data->render_texture,
+        (ImTextureID)(uintptr_t)img_data->render_texture,
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
@@ -88,7 +88,7 @@ void Preview_MSK_Image(variables* My_Variables, struct image_data* img_data, boo
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
     window->DrawList->AddImage(
-        (ImTextureID)img_data->render_texture,
+        (ImTextureID)(uintptr_t)img_data->render_texture,
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
@@ -138,7 +138,7 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
     window->DrawList->AddImage(
-        (ImTextureID)img_data->render_texture,
+        (ImTextureID)(uintptr_t)img_data->render_texture,
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));

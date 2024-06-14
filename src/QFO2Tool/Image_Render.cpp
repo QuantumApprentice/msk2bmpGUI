@@ -21,7 +21,7 @@ void image_render(variables* My_Variables, image_data* img_data)
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan with
     window->DrawList->AddImage(
-        (ImTextureID)img_data->render_texture,
+        (ImTextureID)(uintptr_t)img_data->render_texture,
         top_corner(img_data), bottom_corner(size, top_corner(img_data)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));

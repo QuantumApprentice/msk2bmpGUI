@@ -5,7 +5,7 @@
 set -o pipefail
 shopt -s failglob
 set -u
-set -e
+set -e    #halts script if compile fails
 
 #run this script from it's containing directory
 #(in case it's called from outside)
@@ -47,6 +47,7 @@ INCLUDE_ARGS=(
   -I "$src/dependencies/GLAD/include"
   -I "$src/dependencies/glfw-3.4/include"
   -I "$src/dependencies/imgui-1.90.8-docking"
+  -I "$src/dependencies/imgui-1.90.8-docking/backends"
   -I "$src/dependencies/tinyfiledialogs"
   -I "$src/dependencies/stb"
   -I "/usr/include/SDL2"
@@ -56,12 +57,23 @@ INCLUDE_ARGS=(
 #"-g" compiler-generate debug info
 #applies to compile step
 #debug info works with GDB
-CC_ARGS=(-g)
-CPP_ARGS=(-g)
+CC_ARGS=(-g "${INCLUDE_ARGS[@]}")
+CPP_ARGS=(-g "${INCLUDE_ARGS[@]}")
 
-#append array of args to (-g)
-CC_ARGS+=("${INCLUDE_ARGS[@]}")
-CPP_ARGS+=("${INCLUDE_ARGS[@]}")
+if [[ "${1:-}" == "clean" ]];
+  then
+  shift
+  rm -fr build
+fi
+
+if [[ "${1:-}" == "release" ]];
+  then
+  shift
+  CC_ARGS+=(-O3)
+  CPP_ARGS+=(-O3)
+fi
+
+mkdir -p build
 
 #"-c" option = compile only to object file (.o), no executable
 #"-c" = Compile and assemble, but do not link
@@ -71,8 +83,8 @@ cc "${CC_ARGS[@]}" -c -o "$build/glfw_null.o" "build_linux_glfw_null.c"
 cc "${CC_ARGS[@]}" -c -o "$build/glfw.o"      "build_linux_glfw.c"
 echo "GLFW Built"
 
-#options first (-Dmacro -g -I)
-#include folders next (.h files)
+#options first (-Dmacro -g)
+#include folders next (-I /dir/*.h files) (need -I per directory)
 #compile method next (-c -o) (cc/c++ --help)
 #object/executable destination/filename next
 #source file.c at the end
@@ -102,4 +114,46 @@ echo "Copying resources"
 cp -a "$src/resources" "$build"
 echo $'Copying finished'
 
-echo "Effing finally! DONE!"
+echo $'Build Finished!\n\n'
+
+
+###############################################
+echo $'Test starting...\n'
+
+coverage=0
+#${0} == zero indexed, always _this_ script name
+#        parameters (${1}...etc) are passed here
+#${1} == index 1, first argument after script name
+if [[ "${1:-}" == "coverage" ]];
+      #:- == defaults to empty string if no arg provided
+  then
+  shift   #shifts ${2...etc} down one index
+          # so ${2} becomes ${1} etc,
+          # but ${0} is not touched
+  CPP_ARGS+=(--coverage)
+  cov=1
+fi  #apparently this is how you close an if check
+
+if [[ "${1:-}" == "profile" ]];
+  then
+  shift
+  CPP_ARGS+=(-DREPETITIONS=1000000) #one million repititions
+fi
+
+if [[ "${1:-}" == "test" ]];
+  then
+  shift
+  echo "Compiling tests..."
+  # cp -a test/test_resources build
+  c++ -DQFO2_LINUX "${CPP_ARGS[@]}" -o build/test test/test_crop_single_tile.cpp "$build"/*.o -lSDL2 -lSDL2_image
+
+  echo "Running tests..."
+  #() == parenthises create a subshell to run commands in
+  #   this changes dir to build and runs ./test
+  #   the return from test is checked by || operator
+  (cd build && ./test) || echo "Tests failed :_("
+
+fi
+
+echo "Donesers..."
+
