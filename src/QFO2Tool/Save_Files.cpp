@@ -1163,7 +1163,7 @@ void crop_single_tileB(uint8_t *dst,
 int crop_single_tile_vector_clear(
         uint8_t *dst, uint8_t *src,
         int src_width, int src_height,
-        int src_tile_top, int src_tile_left)
+        int src_offset_x, int src_offset_y)
 {
     __m128i ZERO = _mm_setzero_si128();
     int copied_pixels = 0;
@@ -1181,7 +1181,7 @@ int crop_single_tile_vector_clear(
         _mm_storeu_si128(dst_row_vec_ptr+3, ZERO);
         _mm_storeu_si128(dst_row_vec_ptr+4, ZERO);
 
-        int src_row = src_tile_top + row;
+        int src_row = src_offset_y + row;
         if (src_row < 0 || src_row >= src_height) {
             // above top or bottom of the src image
             // and we've already cleared the row so
@@ -1189,7 +1189,7 @@ int crop_single_tile_vector_clear(
             continue;
         }
 
-        int src_row_left  = src_tile_left + row_left;
+        int src_row_left  = src_offset_x + row_left;
         // if we're off the left side of the image, increase
         // row_left by the amount we're off the left side
         if (src_row_left < 0) {
@@ -1198,7 +1198,7 @@ int crop_single_tile_vector_clear(
             row_left -= src_row_left;
         }
 
-        int src_row_right = src_tile_left + row_right;
+        int src_row_right = src_offset_x + row_right;
         // if we're off the right side of the image, decrease
         // row_right by the amount we're off the right side
         if (src_row_right > src_width) {
@@ -1210,7 +1210,7 @@ int crop_single_tile_vector_clear(
         // sizes which could be the result of the row's pixels
         // entirely being in a trimmed area
         if (amount_to_copy > 0) {
-            int src_offset = src_row * src_width + src_tile_left;
+            int src_offset = src_row * src_width + src_offset_x;
             memcpy(dst_row_ptr + row_left,
                 src + src_offset + row_left,
                 amount_to_copy);
@@ -1219,6 +1219,318 @@ int crop_single_tile_vector_clear(
     }
     return copied_pixels;
 }
+
+
+// Tables for full vector tile copy
+const __m128i tile_row_masks[36] = {
+    _mm_set_epi64x(0x2020202020000000, 0x0000000000001010),
+    _mm_set_epi64x(0x2020202020202020, 0x2000000000101010),
+    _mm_set_epi64x(0x2020202020202020, 0x2020203030101010),
+    _mm_set_epi64x(0x6020202020202020, 0x2020303030303030),
+    _mm_set_epi64x(0x6060606060202020, 0x2030303030303030),
+    _mm_set_epi64x(0x6060606060606070, 0x7070303030303030),
+    _mm_set_epi64x(0x6060606060607070, 0x7070707070703030),
+    _mm_set_epi64x(0xe0e0606060707070, 0x7070707070707070),
+    _mm_set_epi64x(0xe0e0e0e0f0707070, 0x7070707070707070),
+    _mm_set_epi64x(0xe0e0f0f0f0f0f0f0, 0xf070707070707070),
+    _mm_set_epi64x(0xe0f0f0f0f0f0f0f0, 0xf0f0f0f0f0707070),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f8787878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f878787878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0787878787878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf878787878787878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f8, 0x7878787878787878),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f878, 0x7878787878787878),
+    _mm_set_epi64x(0xf0f0f0f0f0787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf0f0f0f878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf0f0f87878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf0f8787878787878, 0x7878787878787878),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787878787878),
+    _mm_set_epi64x(0x7078787878787878, 0x7878787878787838),
+    _mm_set_epi64x(0x7070707070787878, 0x7878787878383838),
+    _mm_set_epi64x(0x7070707070707070, 0x7078787838383838),
+    _mm_set_epi64x(0x7070707070707070, 0x7070703030383838),
+    _mm_set_epi64x(0x6060707070707070, 0x7030303030303030),
+    _mm_set_epi64x(0x6060606060607070, 0x3030303030303030),
+    _mm_set_epi64x(0x6060606060606020, 0x2020303030303030),
+    _mm_set_epi64x(0x6060606060602020, 0x2020202020203030),
+    _mm_set_epi64x(0x4040606020202020, 0x2020202020202020),
+    _mm_set_epi64x(0x4040400000002020, 0x2020202020202020),
+    _mm_set_epi64x(0x4040000000000000, 0x0020202020202020),
+    _mm_set_epi64x(0x0000000000000000, 0x0000000000202020),
+};
+
+const __m128i tile_left_masks[79] = {
+    _mm_set_epi64x(0x0800000000000000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808000000000000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080000000000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080800000000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080808000000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080808080000, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080808080800, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0000000000000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0800000000000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808000000000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080000000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080800000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080808000000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080808080000),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080808080800),
+    _mm_set_epi64x(0x0808080808080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1808080808080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818080808080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818180808080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181808080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181818080808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181818180808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181818181808, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x0808080808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1808080808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818080808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818180808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818181808080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818181818080808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818181818180808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818181818181808),
+    _mm_set_epi64x(0x1818181818181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3818181818181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838181818181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838381818181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383818181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383838181818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383838381818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383838383818, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x1818181818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3818181818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838181818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838381818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838383818181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838383838181818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838383838381818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838383838383818),
+    _mm_set_epi64x(0x3838383838383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7838383838383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878383838383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878783838383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787838383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787878383838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787878783838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787878787838, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x3838383838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7838383838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878383838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878783838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787838383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787878383838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787878783838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787878787838),
+    _mm_set_epi64x(0x7878787878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf878787878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8787878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f87878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f878787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8787878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f87878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f878, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0x7878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf878787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8787878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8f87878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8f8f878787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8f8f8f8787878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8f8f8f8f87878),
+    _mm_set_epi64x(0xf8f8f8f8f8f8f8f8, 0xf8f8f8f8f8f8f878),
+};
+
+const __m128i tile_right_masks[79] = {
+    _mm_set_epi64x(0x0000000000000000, 0x0000000000000080),
+    _mm_set_epi64x(0x0000000000000000, 0x0000000000008080),
+    _mm_set_epi64x(0x0000000000000000, 0x0000000000808080),
+    _mm_set_epi64x(0x0000000000000000, 0x0000000080808080),
+    _mm_set_epi64x(0x0000000000000000, 0x0000008080808080),
+    _mm_set_epi64x(0x0000000000000000, 0x0000808080808080),
+    _mm_set_epi64x(0x0000000000000000, 0x0080808080808080),
+    _mm_set_epi64x(0x0000000000000000, 0x8080808080808080),
+    _mm_set_epi64x(0x0000000000000080, 0x8080808080808080),
+    _mm_set_epi64x(0x0000000000008080, 0x8080808080808080),
+    _mm_set_epi64x(0x0000000000808080, 0x8080808080808080),
+    _mm_set_epi64x(0x0000000080808080, 0x8080808080808080),
+    _mm_set_epi64x(0x0000008080808080, 0x8080808080808080),
+    _mm_set_epi64x(0x0000808080808080, 0x8080808080808080),
+    _mm_set_epi64x(0x0080808080808080, 0x8080808080808080),
+    _mm_set_epi64x(0x8080808080808080, 0x8080808080808080),
+    _mm_set_epi64x(0x8080808080808080, 0x80808080808080c0),
+    _mm_set_epi64x(0x8080808080808080, 0x808080808080c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0x8080808080c0c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0x80808080c0c0c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0x808080c0c0c0c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0x8080c0c0c0c0c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0x80c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x8080808080808080, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x80808080808080c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x808080808080c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x8080808080c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x80808080c0c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x808080c0c0c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x8080c0c0c0c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0x80c0c0c0c0c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0c0c0c0c0c0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0c0c0c0c0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0c0c0c0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0c0c0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0c0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0c0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0c0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xc0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0c0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0c0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0c0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0c0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0c0e0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0c0e0e0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0c0e0e0e0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xc0e0e0e0e0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0e0e0e0e0e0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0e0e0e0e0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0e0e0e0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0e0e0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0e0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0e0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0e0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xe0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0e0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0e0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0e0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0e0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0e0f0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0e0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0e0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xe0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f0),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f0f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f0f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f0f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f0f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f0f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f0f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf0f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f0, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f0f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f0f8f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f0f8f8f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f0f8f8f8f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f0f8f8f8f8f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f0f8f8f8f8f8f8, 0xf8f8f8f8f8f8f8f8),
+    _mm_set_epi64x(0xf0f8f8f8f8f8f8f8, 0xf8f8f8f8f8f8f8f8),
+};
+
+#include <x86intrin.h>
+void crop_single_tile_vector(
+        uint8_t *dst, uint8_t *src,
+        int src_width, int src_height,
+        int src_offset_x, int src_offset_y)
+{
+    assert(src_offset_x > -80);
+    assert(src_offset_x < src_width);
+
+    // This function requires the src to have 80 bytes
+    // before and after the buffer to read to avoid a
+    // segmentation fault when running the blend function
+    // it doesn't matter what the content of those bytes
+    // is as they will be masked out, but a segmentation
+    // fault does happen if we don't have access to the
+    // memory
+
+    // The idea behind how this function works is to do 5
+    // 128-bit blends per row of pixels (80 bytes) where
+    // the mask per blend will copy 0s for anything not
+    // in the tile and will copy from the source for the
+    // masked bits
+
+    // To generate the masks, I wasn't sure the best way
+    // to handle it as the masks require adjacent bits to
+    // effectively be 8 bits apart so I wrote a program to
+    // generate the tables for the general tile mask and
+    // also masks for when we're copying off the edge of
+    // the image. We then AND these edge ones with the
+    // tile mask and after each blend we shift the mask
+    // so it's ready for the next 16-byte blend
+
+    // The main AVX instructions we use are these:
+    // _mm_set_epi64x
+    //       create a 128-bit value from two 64-bit values
+    // _mm_slli_epi16 - VPSLLW / PSLLW
+    //       shift left, the fact that this shifts separate
+    //       16-bits values in the register doesn't matter
+    //       as the required bits will never cross a
+    //       boundary until after they've been used
+    // _mm_blendv_epi8 - VPBLENDVB / PBLENDVB
+    //       copy bits from 1 of 2 128-bit values depending
+    //       on a mask
+
+    __m128i ZERO = _mm_setzero_si128();
+
+    __m128i left_mask  = _mm_set_epi64x(-1, -1);
+    if (src_offset_x < 0) {
+        left_mask = tile_left_masks[79 + src_offset_x];
+    }
+    __m128i right_mask = _mm_set_epi64x(-1, -1);
+    if (src_width - src_offset_x < 80) {
+        right_mask = tile_right_masks[src_width - src_offset_x - 1];
+    }
+    __m128i side_mask = _mm_and_si128(left_mask, right_mask);
+
+    for (int row = 0; row < 36; ++row) {
+        uint8_t *dst_row_ptr = dst + row * 80;
+        __m128i *dst_row_vec_ptr = (__m128i *)dst_row_ptr;
+
+        int src_row = src_offset_y + row;
+        if (src_row < 0 || src_row >= src_height) {
+            // above top or bottom of the src image
+            // so we just clear the row and continue
+            _mm_storeu_si128(dst_row_vec_ptr+0, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+1, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+2, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+3, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+4, ZERO);
+            continue;
+        }
+
+        uint8_t *src_row_ptr = src + src_width * src_row + src_offset_x;
+        __m128i *src_row_vec_ptr = (__m128i *)src_row_ptr;
+
+        __m128i mask = tile_row_masks[row];
+        mask = _mm_and_si128(mask, side_mask);
+        __m128i data;
+
+        data = _mm_loadu_si128(src_row_vec_ptr+0);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+0, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+1);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+1, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+2);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+2, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+3);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+3, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+4);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+4, data);
+
+    }
+}
+
 
 //TODO: fix so pxl_offs is 2 ints and not ImVec2
 //single tile crop using memcpy
