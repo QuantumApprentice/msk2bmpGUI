@@ -1469,6 +1469,12 @@ void crop_single_tile_vector(
     //       copy bits from 1 of 2 128-bit values depending
     //       on a mask
 
+    // A safe version of this that didn't try to read outside
+    // of the source image could either use AVX512 instructions
+    // with a masked read for invalid bits or do the first and
+    // last rows using the memset version and all the middle
+    // rows using the SIMD instructions
+
     __m128i ZERO = _mm_setzero_si128();
 
     __m128i left_mask  = _mm_set_epi64x(-1, -1);
@@ -1531,57 +1537,450 @@ void crop_single_tile_vector(
     }
 }
 
+inline void crop_single_tile_vector_safe_memset_row(
+        uint8_t *dst, uint8_t *src,
+        int src_width, int src_height,
+        int x, int y,
+        int row) {
+    // this is just a copy of the inner loop from
+    // crop_single_tile with comments removed and
+    // variables changed to match the function that
+    // it's used in
+    int lft     = tile_mask[row * 2];
+    int rgt     = tile_mask[row * 2 + 1];
+    int offset  = rgt-lft;
+    int buf_pos = ((row)*80)   + lft;
+    int pxl_pos = ((row)*src_width + lft)
+                  + y*src_width + x;
 
-//TODO: fix so pxl_offs is 2 ints and not ImVec2
-//single tile crop using memcpy
-void crop_single_tile(int img_w, int img_h,
+    if (row+y < 0 || row+y >= src_height) {
+        memset(dst+buf_pos, 0, rgt-lft);
+        return;
+    }
+
+    if ((x + rgt) > src_width) {
+        offset = src_width - (x + lft);
+        if (offset < 0) {
+            memset(dst+buf_pos, 0, rgt-lft);
+            return;
+        }
+        memset(dst+buf_pos+offset, 0, rgt-(offset)-lft);
+    }
+    if ((x+lft) < 0) {
+        memset(dst+buf_pos, 0, rgt-lft);
+        buf_pos += 0 - (x+lft);
+        pxl_pos += 0 - (x+lft);
+        offset = rgt + (x);
+        if (offset < 0) {
+            return;
+        }
+    }
+    memcpy(dst+buf_pos, src+pxl_pos, offset);
+}
+
+void crop_single_tile_vector_safe(
+        uint8_t *dst, uint8_t *src,
+        int src_width, int src_height,
+        int src_offset_x, int src_offset_y)
+{
+    assert(src_offset_x > -80);
+    assert(src_offset_x < src_width);
+
+    // safe version of the above, as it will not read
+    // outside of the src buffer
+
+    __m128i ZERO = _mm_setzero_si128();
+
+    __m128i left_mask  = _mm_set_epi64x(-1, -1);
+    if (src_offset_x < 0) {
+        left_mask = tile_left_masks[79 + src_offset_x];
+    }
+    __m128i right_mask = _mm_set_epi64x(-1, -1);
+    if (src_width - src_offset_x < 80) {
+        right_mask = tile_right_masks[src_width - src_offset_x - 1];
+    }
+    __m128i side_mask = _mm_and_si128(left_mask, right_mask);
+
+    crop_single_tile_vector_safe_memset_row(dst, src, src_width, src_height, src_offset_x, src_offset_y, 0);
+
+    for (int row = 1; row < 35; ++row) {
+        uint8_t *dst_row_ptr = dst + row * 80;
+        __m128i *dst_row_vec_ptr = (__m128i *)dst_row_ptr;
+
+        int src_row = src_offset_y + row;
+        if (src_row < 0 || src_row >= src_height) {
+            // above top or bottom of the src image
+            // so we just clear the row and continue
+            _mm_storeu_si128(dst_row_vec_ptr+0, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+1, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+2, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+3, ZERO);
+            _mm_storeu_si128(dst_row_vec_ptr+4, ZERO);
+            continue;
+        }
+
+        uint8_t *src_row_ptr = src + src_width * src_row + src_offset_x;
+        __m128i *src_row_vec_ptr = (__m128i *)src_row_ptr;
+
+        __m128i mask = tile_row_masks[row];
+        mask = _mm_and_si128(mask, side_mask);
+        __m128i data;
+
+        data = _mm_loadu_si128(src_row_vec_ptr+0);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+0, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+1);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+1, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+2);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+2, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+3);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+3, data);
+
+        mask = _mm_slli_epi16(mask, 1);
+        data = _mm_loadu_si128(src_row_vec_ptr+4);
+        data = _mm_blendv_epi8(ZERO, data, mask);
+        _mm_storeu_si128(dst_row_vec_ptr+4, data);
+    }
+
+    crop_single_tile_vector_safe_memset_row(dst, src, src_width, src_height, src_offset_x, src_offset_y, 35);
+}
+
+#ifdef __AVX512BW__
+
+#include <immintrin.h>
+
+typedef struct {
+    __mmask32 hi;
+    __mmask32 md;
+    __mmask16 lo;
+} crop_single_tile_avx512_row_mask_256bit;
+
+crop_single_tile_avx512_row_mask_256bit crop_single_tile_avx512_row_mask_256bits[36] = {
+    {0x00000000, 0x0003f800, 0x0000},
+    {0x00000000, 0x0007ff80, 0x0000},
+    {0x00000000, 0x001ffff8, 0x0000},
+    {0x80000000, 0x003fffff, 0x0000},
+    {0xf8000000, 0x007fffff, 0x0000},
+    {0xffc00000, 0x01ffffff, 0x0000},
+    {0xfffc0000, 0x03ffffff, 0x0000},
+    {0xffffc000, 0x07ffffff, 0x0000},
+    {0xfffff800, 0x0fffffff, 0x0000},
+    {0xffffff80, 0x3fffffff, 0x0000},
+    {0xfffffff8, 0x7fffffff, 0x0000},
+    {0xffffffff, 0xffffffff, 0x0001},
+    {0xfffffffe, 0xffffffff, 0x0003},
+    {0xfffffff8, 0xffffffff, 0x000f},
+    {0xfffffff0, 0xffffffff, 0x001f},
+    {0xffffffc0, 0xffffffff, 0x003f},
+    {0xffffff80, 0xffffffff, 0x00ff},
+    {0xffffff00, 0xffffffff, 0x01ff},
+    {0xfffffe00, 0xffffffff, 0x03ff},
+    {0xfffff800, 0xffffffff, 0x07ff},
+    {0xfffff000, 0xffffffff, 0x1fff},
+    {0xffffe000, 0xffffffff, 0x3fff},
+    {0xffffc000, 0xffffffff, 0x7fff},
+    {0xffff0000, 0xffffffff, 0xffff},
+    {0xfffe0000, 0xffffffff, 0x7fff},
+    {0xfff80000, 0xffffffff, 0x07ff},
+    {0xfff00000, 0xffffffff, 0x007f},
+    {0xffe00000, 0xffffffff, 0x0007},
+    {0xff800000, 0x3fffffff, 0x0000},
+    {0xff000000, 0x03ffffff, 0x0000},
+    {0xfe000000, 0x003fffff, 0x0000},
+    {0xfc000000, 0x0003ffff, 0x0000},
+    {0xf0000000, 0x00003fff, 0x0000},
+    {0xe0000000, 0x000003ff, 0x0000},
+    {0xc0000000, 0x0000007f, 0x0000},
+    {0x00000000, 0x00000007, 0x0000},
+};
+
+void crop_single_tile_avx512_256bit(
+        uint8_t *dst, uint8_t *src,
+        int src_width, int src_height,
+        int src_offset_x, int src_offset_y)
+{
+    assert(src_offset_x > -80);
+    assert(src_offset_x < src_width);
+
+    __m128i ZERO128 = _mm_setzero_si128();
+    __m256i ZERO256 = _mm256_setzero_si256();
+
+    __mmask32 left_mask_hi = 0xffffffff;
+    __mmask32 left_mask_md = 0xffffffff;
+    __mmask16 left_mask_lo = 0xffff;
+    if (src_offset_x <= -64) {
+        left_mask_hi = 0;
+        left_mask_md = 0;
+        left_mask_lo <<= -src_offset_x - 64;
+    } else if (src_offset_x <= -32) {
+        left_mask_hi = 0;
+        left_mask_md <<= -src_offset_x - 32;
+    } else if (src_offset_x < 0) {
+        left_mask_hi <<= -src_offset_x;
+    }
+
+    int right = src_width - src_offset_x;
+    __mmask32 right_mask_hi = 0xffffffff;
+    __mmask32 right_mask_md = 0xffffffff;
+    __mmask16 right_mask_lo = 0xffff;
+    if (right < 32) {
+        right_mask_hi >>= (32 - right);
+        right_mask_md = 0;
+        right_mask_lo = 0;
+    } else if (right < 64) {
+        right_mask_md >>= (64 - right);
+        right_mask_lo = 0;
+    } else if (right < 80) {
+        right_mask_lo >>= (80 - right);
+    }
+
+    __mmask32 side_mask_hi = left_mask_hi & right_mask_hi;
+    __mmask32 side_mask_md = left_mask_md & right_mask_md;
+    __mmask16 side_mask_lo = left_mask_lo & right_mask_lo;        
+
+    // printf("left  mask hi=%.8x md=%.8x lo=%.4x\n", left_mask_hi,  left_mask_md,  left_mask_lo);
+    // printf("right mask hi=%.8x md=%.8x lo=%.4x\n", right_mask_hi, right_mask_md, right_mask_lo);
+    // printf("side  mask hi=%.8x md=%.8x lo=%.4x\n", side_mask_hi,  side_mask_md,  side_mask_lo);
+
+    for (int row = 0; row < 36; ++row) {
+        uint8_t *dst_row_ptr = dst + row * 80;
+
+        int src_row = src_offset_y + row;
+        if (src_row < 0 || src_row >= src_height) {
+            // above top or bottom of the src image
+            // so we just clear the row and continue
+            _mm256_storeu_epi8(dst_row_ptr+0,  ZERO256);
+            _mm256_storeu_epi8(dst_row_ptr+32, ZERO256);
+            _mm_storeu_epi8   (dst_row_ptr+64, ZERO128);
+            continue;
+        }
+
+        crop_single_tile_avx512_row_mask_256bit row_mask = crop_single_tile_avx512_row_mask_256bits[row];
+
+        // if (row == 24) printf("row   mask hi=%.8x md=%.8x lo=%.4x\n", row_mask.hi, row_mask.md, row_mask.lo);
+
+        uint8_t *src_row_ptr = src + src_width * src_row + src_offset_x;
+        _mm256_storeu_epi8(dst_row_ptr+0,  _mm256_maskz_loadu_epi8(row_mask.hi & side_mask_hi, src_row_ptr+0));
+        _mm256_storeu_epi8(dst_row_ptr+32, _mm256_maskz_loadu_epi8(row_mask.md & side_mask_md, src_row_ptr+32));
+        _mm_storeu_epi8   (dst_row_ptr+64, _mm_maskz_loadu_epi8   (row_mask.lo & side_mask_lo, src_row_ptr+64));
+    }
+}
+
+typedef struct {
+    __mmask64 hi;
+    __mmask16 lo;
+} crop_single_tile_avx512_row_mask_512bit;
+
+crop_single_tile_avx512_row_mask_512bit crop_single_tile_avx512_row_mask_512bits[36] = {
+    {0x0003f80000000000, 0x0000},
+    {0x0007ff8000000000, 0x0000},
+    {0x001ffff800000000, 0x0000},
+    {0x003fffff80000000, 0x0000},
+    {0x007ffffff8000000, 0x0000},
+    {0x01ffffffffc00000, 0x0000},
+    {0x03fffffffffc0000, 0x0000},
+    {0x07ffffffffffc000, 0x0000},
+    {0x0ffffffffffff800, 0x0000},
+    {0x3fffffffffffff80, 0x0000},
+    {0x7ffffffffffffff8, 0x0000},
+    {0xffffffffffffffff, 0x0001},
+    {0xfffffffffffffffe, 0x0003},
+    {0xfffffffffffffff8, 0x000f},
+    {0xfffffffffffffff0, 0x001f},
+    {0xffffffffffffffc0, 0x003f},
+    {0xffffffffffffff80, 0x00ff},
+    {0xffffffffffffff00, 0x01ff},
+    {0xfffffffffffffe00, 0x03ff},
+    {0xfffffffffffff800, 0x07ff},
+    {0xfffffffffffff000, 0x1fff},
+    {0xffffffffffffe000, 0x3fff},
+    {0xffffffffffffc000, 0x7fff},
+    {0xffffffffffff0000, 0xffff},
+    {0xfffffffffffe0000, 0x7fff},
+    {0xfffffffffff80000, 0x07ff},
+    {0xfffffffffff00000, 0x007f},
+    {0xffffffffffe00000, 0x0007},
+    {0x3fffffffff800000, 0x0000},
+    {0x03ffffffff000000, 0x0000},
+    {0x003ffffffe000000, 0x0000},
+    {0x0003fffffc000000, 0x0000},
+    {0x00003ffff0000000, 0x0000},
+    {0x000003ffe0000000, 0x0000},
+    {0x0000007fc0000000, 0x0000},
+    {0x0000000700000000, 0x0000},
+};
+
+void crop_single_tile_avx512_512bit(
+        uint8_t *dst, uint8_t *src,
+        int src_width, int src_height,
+        int src_offset_x, int src_offset_y)
+{
+    assert(src_offset_x > -80);
+    assert(src_offset_x < src_width);
+
+    __m128i ZERO128 = _mm_setzero_si128();
+    __m512i ZERO512 = _mm512_setzero_si512();
+
+    __mmask64 left_mask_hi = 0xffffffffffffffff;
+    __mmask16 left_mask_lo = 0xffff;
+    if (src_offset_x <= -64) {
+        left_mask_hi = 0;
+        left_mask_lo <<= -src_offset_x - 64;
+    } else if (src_offset_x < 0) {
+        left_mask_hi <<= -src_offset_x;
+    }
+
+    int right = src_width - src_offset_x;
+    __mmask64 right_mask_hi = 0xffffffffffffffff;
+    __mmask16 right_mask_lo = 0xffff;
+    if (right < 64) {
+        right_mask_hi >>= (64 - right);
+        right_mask_lo = 0;
+    } else if (right < 80) {
+        right_mask_lo >>= (80 - right);
+    }
+
+    __mmask64 side_mask_hi = left_mask_hi & right_mask_hi;
+    __mmask16 side_mask_lo = left_mask_lo & right_mask_lo;        
+
+    for (int row = 0; row < 36; ++row) {
+        uint8_t *dst_row_ptr = dst + row * 80;
+
+        int src_row = src_offset_y + row;
+        if (src_row < 0 || src_row >= src_height) {
+            // above top or bottom of the src image
+            // so we just clear the row and continue
+            _mm512_storeu_epi8(dst_row_ptr+0,  ZERO512);
+            _mm_storeu_epi8   (dst_row_ptr+64, ZERO128);
+            continue;
+        }
+
+        crop_single_tile_avx512_row_mask_512bit row_mask = crop_single_tile_avx512_row_mask_512bits[row];
+
+        uint8_t *src_row_ptr = src + src_width * src_row + src_offset_x;
+        _mm512_storeu_epi8(dst_row_ptr+0,  _mm512_maskz_loadu_epi8(row_mask.hi & side_mask_hi, src_row_ptr+0));
+        _mm_storeu_epi8   (dst_row_ptr+64, _mm_maskz_loadu_epi8   (row_mask.lo & side_mask_lo, src_row_ptr+64));
+    }
+}
+#endif
+
+// //TODO: fix so pxl_offs is 2 ints and not ImVec2
+// //single tile crop using memcpy
+// void crop_single_tile(int img_w, int img_h,
+//                     uint8_t* tile_buff,
+//                     uint8_t* frm_pxls,
+//                     int x, int y)
+// {
+//     for (int row = 0; row < 36; row++)
+//     {
+//         int lft = tile_mask[row * 2];
+//         int rgt = tile_mask[row * 2 + 1];
+//         int offset = rgt-lft;
+//         int buf_pos = ((row)*80)   + lft;
+//         int pxl_pos = ((row)*img_w + lft)
+//                       + y*img_w + x;
+//     // printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
+
+//     //prevent RIGHT pixels outside the image from copying over
+//         if ((x + rgt) > img_w) {
+//             //set offset amount of row to 0
+//             //this is outside the right of the image
+//             offset = img_w - (x + lft);
+//             if (offset < 0) {
+//                 //if the starting position is also outside the image
+//                 //set the whole row to 0
+//                 memset(tile_buff+buf_pos, 0, 80-lft);
+//                 continue;
+//             }
+//             memset(tile_buff+buf_pos+offset, 0, 80-(offset));
+//         }
+
+//     //prevent LEFT pixels outside image from copying over
+//         if ((x+lft) < 0) {
+//             //set the part of the row not being copied to 0
+//             memset(tile_buff+buf_pos, 0, -(x+lft));
+//             //move pointers to account for part being skipped
+//             buf_pos += 0 - (x+lft);
+//             pxl_pos += 0 - (x+lft);
+//             offset = rgt + (x);
+//             if (offset < 0) {
+//                 //skip if ending position offset is outside image
+//                 continue;
+//             }
+//         }
+
+//     //prevent TOP & BOTTOM pixels outside image from copying over
+//         if (row+y < 0 || row+y >= img_h) {
+//             //just set the buffer lines to 0 and move on
+//             memset(tile_buff+buf_pos, 0, rgt-lft);
+//             continue;
+//         }
+
+//         // printf("offset: %d\n", offset);
+//         memcpy(tile_buff+buf_pos, frm_pxls+pxl_pos, offset);
+//     }
+// }
+
+void crop_single_tile(int frm_w, int frm_h,
                     uint8_t* tile_buff,
                     uint8_t* frm_pxls,
                     int x, int y)
 {
     for (int row = 0; row < 36; row++)
     {
-        int lft = tile_mask[row * 2];
-        int rgt = tile_mask[row * 2 + 1];
-        int offset = rgt-lft;
+        int lft     = tile_mask[row * 2];
+        int rgt     = tile_mask[row * 2 + 1];
+        int offset  = rgt-lft;
         int buf_pos = ((row)*80)   + lft;
-        int pxl_pos = ((row)*img_w + lft)
-                      + y*img_w + x;
+        int pxl_pos = ((row)*frm_w + lft)
+                      + y*frm_w + x;
     // printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
+    // printf("&lft: %p\n", &lft);
+    // printf("&lft: 0x%lx\n", &lft);
+    // printf("int size: %d\n\n", sizeof(int));
+
+    //prevent TOP & BOTTOM pixels outside image from copying over
+        if (row+y < 0 || row+y >= frm_h) {
+            //just set the buffer lines to 0 and move on
+            memset(tile_buff+buf_pos, 0, rgt-lft);
+            continue;
+        }
 
     //prevent RIGHT pixels outside the image from copying over
-        if ((x + rgt) > img_w) {
+        if ((x + rgt) > frm_w) {
             //set offset amount of row to 0
             //this is outside the right of the image
-            offset = img_w - (x + lft);
+            offset = frm_w - (x + lft);
             if (offset < 0) {
                 //if the starting position is also outside the image
                 //set the whole row to 0
-                memset(tile_buff+buf_pos, 0, 80-lft);
+                memset(tile_buff+buf_pos, 0, rgt-lft);
                 continue;
             }
-            memset(tile_buff+buf_pos+offset, 0, 80-(offset));
+            memset(tile_buff+buf_pos+offset, 0, rgt-(offset)-lft);
         }
-
     //prevent LEFT pixels outside image from copying over
         if ((x+lft) < 0) {
             //set the part of the row not being copied to 0
-            memset(tile_buff+buf_pos, 0, -(x+lft));
+            memset(tile_buff+buf_pos, 0, rgt-lft);
+            // printf("x: %d lft: %d\n", x, lft);
             //move pointers to account for part being skipped
             buf_pos += 0 - (x+lft);
             pxl_pos += 0 - (x+lft);
             offset = rgt + (x);
             if (offset < 0) {
-                //skip if ending position offset is outside image
+                //skip if ending position offset is outside left side of image
                 continue;
             }
-        }
-
-    //prevent TOP & BOTTOM pixels outside image from copying over
-        if (row+y < 0 || row+y >= img_h) {
-            //just set the buffer lines to 0 and move on
-            memset(tile_buff+buf_pos, 0, rgt-lft);
-            continue;
         }
 
         // printf("offset: %d\n", offset);
@@ -1623,9 +2022,11 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
         //TODO: clean this up, was used for testing different methods
         // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
-        crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin_x, origin_y);
+        // crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin_x, origin_y);
         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
-        //         origin.y, origin.x);
+        //         origin.x, origin.y);
+        crop_single_tile_vector(tile_buff, frm_pxls, img_w, img_h,
+                origin_x, origin_y);
 
         snprintf(full_file_path, MAX_PATH, "%s/%s%03d.FRM", file_path, name, tile_num);
         // printf("making tile #%03d\n", tile_num);

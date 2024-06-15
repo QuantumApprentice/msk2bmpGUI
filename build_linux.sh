@@ -17,8 +17,8 @@ INCLUDE_ARGS=(
   -I "src/dependencies/stb"
 )
 
-CC_ARGS=(-g -mavx "${INCLUDE_ARGS[@]}")
-CPP_ARGS=(-g -mavx "${INCLUDE_ARGS[@]}")
+CC_ARGS=(-g -mavx -mavx512vl -mavx512bw "${INCLUDE_ARGS[@]}")
+CPP_ARGS=(-g -mavx -mavx512vl -mavx512bw "${INCLUDE_ARGS[@]}")
 
 if [[ "${1:-}" == "clean" ]]; then
   shift

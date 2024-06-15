@@ -19,10 +19,14 @@
 #define REPETITIONS 1
 #endif
 
-int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3], uint8_t frm_pxls[200 * 100 + 160], int frm_offset_x, int frm_offset_y)
+// set to 80 to add a safety buffer around the src image pixels
+#define SAFETY_BUFFER 0
+
+int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3], uint8_t frm_pxls[200 * 100 + (2*SAFETY_BUFFER)], int frm_offset_x, int frm_offset_y)
 {
-  uint8_t* src = frm_pxls + 80;
+  uint8_t* src = frm_pxls + SAFETY_BUFFER;
   memset(tile_buff_full, 0xCD, TILE_W*TILE_H);
+  memset(src, 133, 200*100); // 133 = bright red
   // for (int y = 0; y < 100; y += 1) {
   //   for (int x = 0; x < 200; x += 1) {
   //     int val = x + y;
@@ -31,16 +35,18 @@ int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3]
   //     src[y*200+x] = (uint8_t)val;
   //   }
   // }
-  memset(src, 133, 200*100); // 133 = bright red
   // this gives a full tile in every direction around the central tile
   uint8_t* tile_buff = tile_buff_full + TILE_W*TILE_H;
   memset(tile_buff, 0, TILE_W*TILE_H);
   memset(tile_buff + TILE_W*TILE_H, 0xCD, TILE_W*TILE_H);
   uint64_t timer = start_timer();
   for (int i = 0; i < REPETITIONS; i++) {
-    //crop_single_tile(200, 100, tile_buff, src, frm_offset_x, frm_offset_y);
-    //crop_single_tile_vector_clear(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
-    crop_single_tile_vector(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
+    // crop_single_tile(200, 100, tile_buff, src, frm_offset_x, frm_offset_y);
+    // crop_single_tile_vector_clear(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
+    // crop_single_tile_vector(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
+    // crop_single_tile_vector_safe(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
+    crop_single_tile_avx512_256bit(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
+    // crop_single_tile_avx512_512bit(tile_buff, src, 200, 100, frm_offset_x, frm_offset_y);
   }
   if (REPETITIONS != 1) print_timer(timer);
   for (int y = 0; y < TILE_H; y++)
@@ -69,7 +75,8 @@ int test_single_tile_crop(Surface* mask, uint8_t tile_buff_full[TILE_W*TILE_H*3]
         Surface* exported = Create8BitSurface(TILE_W, TILE_H, palette);
         memcpy(exported->pixels, tile_buff, TILE_W*TILE_H);
         exported = ConvertSurfaceToRGBA(exported);
-        const char* filename = "test_resources/failed_tile_export.png";
+        char filename[64];
+        sprintf(filename, "test_resources/failed_tile_export_%d_%d.png", frm_offset_x, frm_offset_y);
         SaveSurfaceAsPNG(exported, filename);
         printf("Expected value %d at x:%d,y:%d, but we got %d. Wrote output to %s\n",
           expected_value, x, y, actual_value, filename);
@@ -101,7 +108,7 @@ int test()
   }
   int result = PASS;
   uint8_t tile_buff_full[TILE_W*TILE_H*3]; // 3x as large so we can test for writing out of bounds
-  uint8_t frm_pxls[200 * 100 + 160];
+  uint8_t frm_pxls[200 * 100 + (2*SAFETY_BUFFER)];
   if (!test_single_tile_crop(mask, tile_buff_full, frm_pxls, 10, 10)) {
     printf("Full crop test failed\n");
     result = FAIL;
