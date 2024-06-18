@@ -1,0 +1,16 @@
+Tile calculations:
+
+Each (80+80-36) pixels in the x dimension is one "tile row" and two "tile columns" (the 36 is overlap)
+Each (36+36+36-12) pixels in the y dimensions is three "tile rows" and two "tile columns" (the 12 is overlap)
+
+Also see tow_tile_row_col_calculations.png
+
+So to calculate total number of columns from the top left of the image, it's ceil(image width / (80+80-36) * 2) columns "to the right" and ceil(image height / (36+36+36-12) * 2) columns "to the left", summed to get a total number of columns.
+
+For rows from the top left of the image, it's ceil(image width / (80+80-36) * 1 + image height / (36+36+36-12) * 3) rows "below" the top left of the image, which is the total number of rows since the top left is the first row
+
+To calculate from a reference point (x,y) that's the corner of a town tile within the image (x >= 0, y >= 0, x < width, y < height), the calculations are:
+* Columns "to the left"  of the reference point: ceil(x / (80+80-36) * 2 + (height - y) / (36+36+36-12) * 2)
+* Columns "to the right" of the reference point: ceil((width - x) / (80+80-36) * 2 + y / (36+36+36-12) * 2)
+* Rows "above" the reference point: ceil(x / (80+80-36) * 1 + y / (36+36+36-12) * 3)
+* Rows "below" the reference point: ceil((width - x) / (80+80-36) * 1 + (height - y) / (36+36+36-12) * 3)
