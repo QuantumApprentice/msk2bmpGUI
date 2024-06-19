@@ -1,13 +1,30 @@
 #pragma once
 #include "load_FRM_OpenGL.h"
 
+
+// BakerStaunch
+// So your grid structure might become:
+//
+// total row count,
+// total col count,
+// first non-transparent row,
+// first non-transparent column,
+// last non-transparent row,
+// last non-transparent column
+//
+// Then your loops can just change to be
+// for (int row = first non-transparent-row;
+//           i <= last non-transparent-row;
+//           row++)
+
 struct town_tile {
-    char*    name_ptr;
-    uint8_t* frm_data;
-    uint32_t length;
-    uint32_t row;
+    char*    name_ptr = nullptr;
+    uint8_t* frm_data = nullptr;
+    uint32_t length  = 0;
+    uint32_t row     = 0;
+    uint32_t tile_id = 0;       //line number where it appears in TILES.LST
     // uint32_t next;           //points to array index of next viable name
-    town_tile* next;
+    town_tile* next  = nullptr;
 };
 
 //marking this static makes a local copy for each translation unit?

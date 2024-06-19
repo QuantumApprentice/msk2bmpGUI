@@ -23,6 +23,7 @@
 #include "MSK_Convert.h"
 #include "platform_io.h"
 #include "Edit_TILES_LST.h"
+#include "tiles_pattern.h"
 
 void write_cfg_file(user_info *user_info, char *exe_path);
 
@@ -1240,6 +1241,8 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
 
     town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, name);
     add_TMAP_tiles_to_lst_tt(usr_info, new_tiles, save_path);
+
+    TMAP_tiles_make_row(new_tiles, usr_info);
 
     return new_TMAP_list;
 }

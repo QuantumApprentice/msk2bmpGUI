@@ -43,6 +43,8 @@ add_library(QFO2ToolLib
   timer_functions.cpp
   Edit_TILES_LST.h
   Edit_TILES_LST.cpp
+  tiles_pattern.h
+  tiles_pattern.cpp
 )
 
 #these need to be located after add_library()

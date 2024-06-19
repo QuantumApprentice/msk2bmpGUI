@@ -38,7 +38,7 @@ void crop_single_tile(uint8_t* tile_buff,
     //prevent TOP & BOTTOM pixels outside image from copying over
         if (row+y < 0 || row+y >= frm_h) {
             //just set the buffer lines to 0 and move on
-            memset(tile_buff+buf_pos, 107, rgt-lft);
+            memset(tile_buff+buf_pos, 0, rgt-lft);
             continue;
         }
 
@@ -53,12 +53,12 @@ void crop_single_tile(uint8_t* tile_buff,
                 memset(tile_buff+buf_pos, 0, rgt-lft);
                 continue;
             }
-            memset(tile_buff+buf_pos+offset, 51, rgt-(offset)-lft);
+            memset(tile_buff+buf_pos+offset, 0, rgt-(offset)-lft);
         }
     //prevent LEFT pixels outside image from copying over
         if ((x+lft) < 0) {
             //set the part of the row not being copied to 0
-            memset(tile_buff+buf_pos, 49, rgt-lft);
+            memset(tile_buff+buf_pos, 0, rgt-lft);
             // printf("x: %d lft: %d\n", x, lft);
             //move pointers to account for part being skipped
             buf_pos += 0 - (x+lft);
@@ -241,7 +241,7 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
     int origin_x = -48 + offset_x;
     int origin_y =   0 + offset_y;
     int tile_num =   0;
-    int row_cnt  =   0;
+    int row_cnt  =   1;
     bool running = true;
     while (running)
     {
@@ -258,12 +258,14 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         //turn each cropped tile into a linked list
         tile = (town_tile*)malloc(sizeof(town_tile));
         tile->name_ptr = (char*)malloc(name_length+1);
-        snprintf(tile->name_ptr, name_length + 1, "%s%03d.FRM", name, tile_num);
         tile->frm_data  = (uint8_t*)malloc(80*36);
+
+        snprintf(tile->name_ptr, name_length + 1, "%s%03d.FRM", name, tile_num);
         memcpy(tile->frm_data, tile_buff, 80*36);
-        tile->length = name_length;
-        tile->row    = row_cnt;
-        tile->next   = nullptr;
+        tile->length  = name_length;
+        tile->row     = row_cnt;
+        tile->tile_id = 0;
+        tile->next    = nullptr;
 
 
         if (head == nullptr) {

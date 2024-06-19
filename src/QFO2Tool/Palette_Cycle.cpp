@@ -161,6 +161,7 @@ bool load_palette_to_float_array(float* palette, char* exe_path)
     if (read_size < 768) {
         printf("\nread_size: %I64u", read_size);
     }
+
     fclose(File_ptr);
     if (uint8_t_data) {
         for (int i = 0; i < 765; i++)

@@ -16,8 +16,15 @@ enum export_auto {
     manual   = 2,
 };
 
+enum {
+    CANCEL = 0,
+    YES    = 1,
+    NO     = 2,
+};
+
+
 struct fo2_files {
-    char* TILES_LST;
+    char* FRM_TILES_LST;
     char* WORLDMAP_TXT;
 };
 

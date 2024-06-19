@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
 
+#compile option (-mavx) for is_tile_blank() in tiles_patterns.cpp
+#applies to current directory & below?
+add_compile_options(
+  -mavx             #support for AVX instructions
+)
+
 #sets PROJECT_NAME, then other settings
 #PROJECT_NAME is auto set when name is passed as 1st arg
 #https://cmake.org/cmake/help/latest/command/project.html#project
@@ -100,11 +106,6 @@ target_include_directories(
   src/dependencies/imgui-1.90.8-docking
   src/dependencies/imgui-1.90.8-docking/backends
 )
-
-# if a package or component is REQUIRED then the script will raise error and stop executing
-# instead of keep going
-# find_package(SDL2 REQUIRED COMPONENTS SDL2)
-# find_package(SDL2_image REQUIRED)
 
 
 # finally we link these libraries to our executable

@@ -55,6 +55,9 @@
 
 #include "timer_functions.h"
 
+//remove
+#include "B_Endian.h"
+
 // Our state
 user_info usr_info;
 
@@ -135,7 +138,7 @@ int main(int argc, char** argv)
         printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 
-    SDL_GL_SetSwapInterval(1); // Enable vsync
+    SDL_GL_SetSwapInterval(0); // Enable vsync
 
     //State variables
     struct variables My_Variables = {};
@@ -378,6 +381,46 @@ int main(int argc, char** argv)
                 //load files
                 if (ImGui::Button("Load Files...")) {
                     Open_Files(&usr_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
+                }
+                if (ImGui::Button("Save palette animation...")) {
+                    char path_buffer[MAX_PATH];
+                    snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/fo_color.pal");
+
+                    //file management
+                    uint8_t* palette_animation = (uint8_t*)malloc(1024*32);
+                    FILE *File_ptr = fopen(path_buffer, "rb");
+                    fseek(File_ptr, 768, SEEK_SET);
+                    fread(palette_animation, 1024*32, 1, File_ptr);
+                    fclose(File_ptr);
+
+                    FRM_Header header;
+                    header.version = 4;
+                    header.FPS = 10;
+                    header.Frames_Per_Orient = 32;
+                    header.Frame_Area = 32*32 + sizeof(FRM_Frame);
+                    B_Endian::flip_header_endian(&header);
+
+                    FRM_Frame frame;
+                    frame.Frame_Height = 32;
+                    frame.Frame_Width  = 32;
+                    frame.Frame_Size   = 32*32;
+                    B_Endian::flip_frame_endian(&frame);
+
+                    uint8_t* ptr = palette_animation;
+                    snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/palette_animation.FRM");
+                    FILE* file = fopen(path_buffer, "wb");
+
+                    fwrite(&header, sizeof(FRM_Header), 1, file);
+
+                    for (int i = 0; i < 32; i++)
+                    {
+                        fwrite(&frame, sizeof(FRM_Frame), 1, file);
+                        fwrite(ptr, 1024, 1, file);
+                        ptr += 1024;
+                    }
+
+                    fclose(file);
+                    free(palette_animation);
                 }
 
                 ImGui::SameLine();

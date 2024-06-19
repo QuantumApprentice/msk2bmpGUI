@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include <string.h>
 
-int ext_compare(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
     return _wcsnicmp(str1, str2, num_char);
 }
@@ -74,7 +74,8 @@ bool io_make_dir(char* dir_path)
 #include <strings.h>
 #include <sys/stat.h>
 
-int ext_compare(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+// return 0 == match, <0 == less than match, >0 == greater than match
+int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
     return strncasecmp(str1, str2, num_char);
 }

@@ -57,8 +57,8 @@ INCLUDE_ARGS=(
 #"-g" compiler-generate debug info
 #applies to compile step
 #debug info works with GDB
-CC_ARGS=(-g "${INCLUDE_ARGS[@]}")
-CPP_ARGS=(-g "${INCLUDE_ARGS[@]}")
+CC_ARGS=( -g -mavx "${INCLUDE_ARGS[@]}")
+CPP_ARGS=(-g -mavx "${INCLUDE_ARGS[@]}")
 
 if [[ "${1:-}" == "clean" ]];
   then
@@ -145,7 +145,11 @@ if [[ "${1:-}" == "test" ]];
   shift
   echo "Compiling tests..."
   # cp -a test/test_resources build
-  c++ -DQFO2_LINUX "${CPP_ARGS[@]}" -o build/test test/test_crop_single_tile.cpp "$build"/*.o -lSDL2 -lSDL2_image
+  c++ -DQFO2_LINUX "${CPP_ARGS[@]}"     \
+      -o build/test                     \
+      test/test_crop_single_tile.cpp    \
+      test/test_assign_tile_id.cpp      \
+      "$build"/*.o -lSDL2 -lSDL2_image
 
   echo "Running tests..."
   #() == parenthises create a subshell to run commands in

@@ -152,8 +152,8 @@ bool Supported_Format(const std::filesystem::path &file)
     int i = 0;
     while (i < k)
     {
-        //TODO: comparing 5 characters works, but maybe expand to more?
-        if (ext_compare(file.extension().c_str(), supported[i], 5) == 0)
+        //compare extension to determine if file is viewable
+        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
         {
             return true;
         }
@@ -262,7 +262,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
                 int a_size = a.native().size();
                 int b_size = b.native().size();
                 int larger_size = (a_size < b_size) ? a_size : b_size;
-                return ext_compare((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+                return io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
             });
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
@@ -714,13 +714,13 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 bool FRx_check(char *ext)
 {
     if (
-        !(ext_compare(ext, "FRM", 4))
-     || !(ext_compare(ext, "FR0", 4))
-     || !(ext_compare(ext, "FR1", 4))
-     || !(ext_compare(ext, "FR2", 4))
-     || !(ext_compare(ext, "FR3", 4))
-     || !(ext_compare(ext, "FR4", 4))
-     || !(ext_compare(ext, "FR5", 4)))
+        !(io_strncmp(ext, "FRM", 4))
+     || !(io_strncmp(ext, "FR0", 4))
+     || !(io_strncmp(ext, "FR1", 4))
+     || !(io_strncmp(ext, "FR2", 4))
+     || !(io_strncmp(ext, "FR3", 4))
+     || !(io_strncmp(ext, "FR4", 4))
+     || !(io_strncmp(ext, "FR5", 4)))
     {
         return true;
     }
@@ -765,7 +765,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
                                 img_data->framebuffer, img_data->FRM_texture);
     }
-    else if (!(ext_compare(F_Prop->extension, "MSK", 4)))
+    else if (!(io_strncmp(F_Prop->extension, "MSK", 4)))
     {
 
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);

@@ -7,14 +7,6 @@
 #include "tinyfiledialogs.h"
 
 
-
-
-
-
-
-
-
-
 //malloc town_tile* linked list and populate with generated tile-names
 //return ptr (need to free elsewhere)
 town_tile* generate_new_tile_list_tt(char* name, town_tile* tile_head)
@@ -55,7 +47,7 @@ char* generate_new_tile_list(char* name, int tile_num)
     return new_tile_list;
 }
 
-//read game TILES.LST into memory using the game pat
+//read game TILES.LST into memory using the game path
 char* load_tiles_lst_game(char* game_path)
 {
     //nothing to load if default_game_path not set
@@ -65,6 +57,32 @@ char* load_tiles_lst_game(char* game_path)
     //check if file exists
     char full_path[MAX_PATH] = {0};
     snprintf(full_path, MAX_PATH, "%s%s", game_path, "/data/art/tiles/TILES.LST");
+    if (io_file_exists(full_path) == false) {
+        return nullptr;
+    }
+
+    //read the entire file into memory and return ptr
+    int file_size = io_file_size(full_path);
+    char* tiles_lst_buff = (char*)malloc(file_size);
+
+    FILE* tiles_lst = fopen(full_path, "rb");
+    fread(tiles_lst_buff, file_size, 1, tiles_lst);
+    tiles_lst_buff[file_size] = '\0';
+    fclose(tiles_lst);
+
+    return tiles_lst_buff;
+}
+
+//read TILES.LST into memory directly from provided path
+char* load_tiles_lst(char* path)
+{
+    //nothing to load if default_game_path not set
+    if (path == nullptr) {
+        return nullptr;
+    }
+    //check if file exists
+    char full_path[MAX_PATH] = {0};
+    snprintf(full_path, MAX_PATH, "%s%s", path, "/TILES.LST");
     if (io_file_exists(full_path) == false) {
         return nullptr;
     }
@@ -149,11 +167,6 @@ char* get_new_name(char* old_name)
 }
 
 //testing array list version/////////////////////////////////////////////////////start
-struct tile_name_arr {
-    char*    name_ptr;
-    uint32_t length;
-    uint32_t next;           //points to array index of next viable name
-};
 
 //create a array of linked lists of tile names
 //from the char* tiles_list passed in
@@ -306,11 +319,6 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
 //testing array list version/////////////////////////////////////////////////////end
 
 //testing this linked list struct version////////////////////////////////////////start
-struct tile_name {
-    char* name_ptr;
-    int length;
-    tile_name* next;
-};
 
 //create a linked list of tile names
 //from the char* tiles_list passed in
@@ -529,7 +537,7 @@ char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_aut
                     continue;
                 }
                 //check first char of strt == first char of node.name_ptr
-                if (strt[0] != node->name_ptr[0]) {
+                if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
                     strt = &tiles_lst[char_ctr+1];
                     continue;
                 }
@@ -882,7 +890,7 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
     //for matching names from new_tiles_list
     char* cropped_list = check_tile_names_ll_tt(old_tiles_list, new_tiles_list, set_auto);
     if (cropped_list == nullptr) {
-        return nullptr;
+        return old_tiles_list;
     }
 
     //append new list_of_tiles to the end of original list
@@ -925,7 +933,7 @@ char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list, bool set_aut
     //for matching names from new_tiles_list
     bool success = check_tile_names_ll(old_tiles_list, new_tiles_list, set_auto);
     if (success == false) {
-        return nullptr;
+        return old_tiles_list;
     }
 
     io_backup_file(tiles_lst_path);
@@ -1006,7 +1014,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
         if (choice == YES) {        //create TILES.LST
             snprintf(save_buff, MAX_PATH, "%s/%s", usr_nfo->default_game_path, "TILES.LST");
             tiles_lst = write_tiles_lst(save_buff, new_tile_list);
-            usr_nfo->game_files.TILES_LST = tiles_lst;
+            usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
             return false;
         }
     }
@@ -1018,7 +1026,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
 void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* save_buff)
 {
     //TODO: load TILES.LST directly instead of from memory
-    char* tiles_lst = usr_nfo->game_files.TILES_LST;
+    char* tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
     char* game_path = nullptr;
     bool success = false;
 
@@ -1030,11 +1038,11 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
     //     }
     // }
 
-    char popup_string[MAX_PATH + 24];
-    snprintf(popup_string, MAX_PATH+24, "Unable to find %s\n", save_buff);
     success = io_isdir(save_buff);
     if (success == false) {
     //TODO: figure out the behavior of this function
+        char popup_string[MAX_PATH + 24];
+        snprintf(popup_string, MAX_PATH+24, "Unable to find %s\n", save_buff);
         tinyfd_notifyPopup(
             "Warning...folder does not exist.",
             popup_string,
@@ -1043,7 +1051,7 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
         return;
     }
 
-    strncat(save_buff + strlen(save_buff), "/TILES.LST", 11);
+    strncat(save_buff, "/TILES.LST", 11);
     success = io_file_exists(save_buff);
 
     if (success == false) {
@@ -1125,16 +1133,17 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
         }
     }
 
-    if (usr_nfo->game_files.TILES_LST != nullptr) {
-        free(usr_nfo->game_files.TILES_LST);
+    if (usr_nfo->game_files.FRM_TILES_LST != nullptr) {
+        free(usr_nfo->game_files.FRM_TILES_LST);
     }
-    usr_nfo->game_files.TILES_LST = tiles_lst;
+    // strcpy(usr_nfo->game_files.FRM_TILES_LST, tiles_lst);
+    usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
 }
 //append names of new tiles to end of TILES.LST
 //or create new TILES.LST with only these new tiles
 void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_buff)
 {
-    char* tiles_lst = usr_nfo->game_files.TILES_LST;
+    char* tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
     char* game_path = nullptr;
     bool success = false;
 
@@ -1159,7 +1168,7 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
         return;
     }
 
-    strncat(save_buff + strlen(save_buff), "/TILES.LST", 11);
+    strncat(save_buff, "/TILES.LST", 11);
     success = io_file_exists(save_buff);
 
     if (success == false) {
@@ -1183,6 +1192,7 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             "NO:     Select new folder to save TILES.LST\n",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {       // Cancel =  null out buffer and return
+            *strrchr(save_buff, '/') = '\0';
             return;
         }
         if (choice == YES) {          // Yes = Create new TILES.LST in this folder
@@ -1192,6 +1202,7 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             game_path = tinyfd_selectFolderDialog(
                 "Select directory to save to...", usr_nfo->default_save_path);
             strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
+            *strrchr(save_buff, '/') = '\0';
             return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
         }
     } else {
@@ -1210,6 +1221,7 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             "            (a backup will be made.)",
             "yesnocancel", "warning", 2);
         if (choice == CANCEL) {          // Cancel =  null out buffer and return
+            *strrchr(save_buff, '/') = '\0';
             return;
         }
         if (choice == YES) {             // Yes = Append to TILES.LST
@@ -1221,9 +1233,11 @@ void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_
             tiles_lst = write_tiles_lst(save_buff, *new_tile_list);
         }
     }
+    *strrchr(save_buff, '/') = '\0';
 
-    if (usr_nfo->game_files.TILES_LST != nullptr) {
-        free(usr_nfo->game_files.TILES_LST);
+
+    if (usr_nfo->game_files.FRM_TILES_LST != nullptr) {
+        free(usr_nfo->game_files.FRM_TILES_LST);
     }
-    usr_nfo->game_files.TILES_LST = tiles_lst;
+    usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
 }

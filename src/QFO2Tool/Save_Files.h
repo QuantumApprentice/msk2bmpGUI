@@ -3,12 +3,6 @@
 #include "load_FRM_OpenGL.h"
 #include "Load_Files.h"
 
-enum {
-    CANCEL = 0,
-    YES    = 1,
-    NO     = 2,
-};
-
 uint8_t* blend_PAL_texture(image_data* img_data);
 
 //char* Save_FRM_SDL(SDL_Surface *f_surface, struct user_info* user_info);

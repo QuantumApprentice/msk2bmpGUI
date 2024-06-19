@@ -1,20 +1,5 @@
-#define main app_man
-#include "../build_linux.cpp"
-#undef main
+#include "test/test_header.h"
 
-#include <stdio.h>
-#include <assert.h>
-
-#define FAIL 0
-#define PASS 1
-
-#define TILE_W 80
-#define TILE_H 36
-
-struct data_ll {
-    data_ll* next;
-    uint8_t pxls[];
-};
 
 void save_tile_buff_frm(uint8_t* tile_buff, const char* path)
 {
