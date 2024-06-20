@@ -87,9 +87,7 @@ add_library(imgui_docking
 
   #TODO: get rid of SDL dependencies
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.cpp
-  # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.cpp
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.h
-  # src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdlrenderer2.h
 
   src/dependencies/imgui-1.90.8-docking/imgui.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_demo.cpp

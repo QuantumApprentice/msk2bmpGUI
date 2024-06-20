@@ -335,7 +335,7 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        bool show_demo_window = false;
+        bool show_demo_window = true;
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
@@ -382,46 +382,40 @@ int main(int argc, char** argv)
                 if (ImGui::Button("Load Files...")) {
                     Open_Files(&usr_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
                 }
-                if (ImGui::Button("Save palette animation...")) {
-                    char path_buffer[MAX_PATH];
-                    snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/fo_color.pal");
-
-                    //file management
-                    uint8_t* palette_animation = (uint8_t*)malloc(1024*32);
-                    FILE *File_ptr = fopen(path_buffer, "rb");
-                    fseek(File_ptr, 768, SEEK_SET);
-                    fread(palette_animation, 1024*32, 1, File_ptr);
-                    fclose(File_ptr);
-
-                    FRM_Header header;
-                    header.version = 4;
-                    header.FPS = 10;
-                    header.Frames_Per_Orient = 32;
-                    header.Frame_Area = 32*32 + sizeof(FRM_Frame);
-                    B_Endian::flip_header_endian(&header);
-
-                    FRM_Frame frame;
-                    frame.Frame_Height = 32;
-                    frame.Frame_Width  = 32;
-                    frame.Frame_Size   = 32*32;
-                    B_Endian::flip_frame_endian(&frame);
-
-                    uint8_t* ptr = palette_animation;
-                    snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/palette_animation.FRM");
-                    FILE* file = fopen(path_buffer, "wb");
-
-                    fwrite(&header, sizeof(FRM_Header), 1, file);
-
-                    for (int i = 0; i < 32; i++)
-                    {
-                        fwrite(&frame, sizeof(FRM_Frame), 1, file);
-                        fwrite(ptr, 1024, 1, file);
-                        ptr += 1024;
-                    }
-
-                    fclose(file);
-                    free(palette_animation);
-                }
+                //used this to create an frm from palette LUT
+                // if (ImGui::Button("Save palette animation...")) {
+                //     char path_buffer[MAX_PATH];
+                //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/fo_color.pal");
+                //     //file management
+                //     uint8_t* palette_animation = (uint8_t*)malloc(1024*32);
+                //     FILE *File_ptr = fopen(path_buffer, "rb");
+                //     fseek(File_ptr, 768, SEEK_SET);
+                //     fread(palette_animation, 1024*32, 1, File_ptr);
+                //     fclose(File_ptr);
+                //     FRM_Header header;
+                //     header.version = 4;
+                //     header.FPS = 10;
+                //     header.Frames_Per_Orient = 32;
+                //     header.Frame_Area = 32*32 + sizeof(FRM_Frame);
+                //     B_Endian::flip_header_endian(&header);
+                //     FRM_Frame frame;
+                //     frame.Frame_Height = 32;
+                //     frame.Frame_Width  = 32;
+                //     frame.Frame_Size   = 32*32;
+                //     B_Endian::flip_frame_endian(&frame);
+                //     uint8_t* ptr = palette_animation;
+                //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/palette_animation.FRM");
+                //     FILE* file = fopen(path_buffer, "wb");
+                //     fwrite(&header, sizeof(FRM_Header), 1, file);
+                //     for (int i = 0; i < 32; i++)
+                //     {
+                //         fwrite(&frame, sizeof(FRM_Frame), 1, file);
+                //         fwrite(ptr, 1024, 1, file);
+                //         ptr += 1024;
+                //     }
+                //     fclose(file);
+                //     free(palette_animation);
+                // }
 
                 ImGui::SameLine();
                 ImGui::Text("Number Windows = %d", counter);

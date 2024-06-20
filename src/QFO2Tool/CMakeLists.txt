@@ -45,6 +45,8 @@ add_library(QFO2ToolLib
   Edit_TILES_LST.cpp
   tiles_pattern.h
   tiles_pattern.cpp
+  Proto_Files.h
+  Proto_Files.cpp
 )
 
 #these need to be located after add_library()

@@ -9,6 +9,7 @@
 
 //malloc town_tile* linked list and populate with generated tile-names
 //return ptr (need to free elsewhere)
+//_tt stands for town_tile*
 town_tile* generate_new_tile_list_tt(char* name, town_tile* tile_head)
 {
     int tile_name_len = strlen(name) + strlen("%03d.FRM\r\n");
@@ -442,16 +443,20 @@ int skip_or_rename(tile_name* node)
     return choice;
 }
 
+//_tt stands for town_tile*
 char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
 {
+    // int tile_name_len = strlen("%03d.FRM\r\n");
+
     town_tile* node = head;
     uint8_t shift_ctr  = 0;
     int     tile_num   = 0;
     int     total_size = 0;
     while (node != nullptr) {
-        if (match_buff[tile_num/8] & 1 << shift_ctr) {    //does this need to be inverted?
+        (match_buff[tile_num/8] |= 1 << shift_ctr);
+        // {    //does this need to be inverted?
             total_size += node->length+1;
-        }
+        // }
         if (shift_ctr < 8) {
             shift_ctr++;
         } else {
@@ -487,13 +492,15 @@ char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
     node       = head;
     shift_ctr  = 0;
     tile_num   = 0;
-    char* c = cropped_list;
+    char* c    = cropped_list;
     while (node != nullptr)
     {
         if (match_buff[tile_num/8] & 1 << shift_ctr) {
             size_t amount_to_copy = node->length+1;
             memcpy(c, node->name_ptr, amount_to_copy);
-            c += amount_to_copy;
+            *(c + node->length)   = '\r';
+            *(c + node->length+1) = '\n';
+            c += amount_to_copy+1;
         }
 
         if (shift_ctr < 8) {
@@ -1126,7 +1133,8 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
                 num_tiles++;
                 ptr = ptr->next;
             }
-            uint8_t match_buff[1+num_tiles/8] = {0};        //TODO: make this more precise
+            uint8_t* match_buff = (uint8_t*)calloc(1, 1+num_tiles/8);
+            // uint8_t match_buff[1+num_tiles/8] = {0};        //TODO: make this more precise
             char* new_tile_list = make_tile_list_tt(new_tile_ll, match_buff);
 
             tiles_lst = write_tiles_lst(save_buff, new_tile_list);

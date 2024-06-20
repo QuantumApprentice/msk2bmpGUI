@@ -8,6 +8,7 @@
 
 #include "load_FRM_OpenGL.h"
 // #include "B_Endian.h"
+#include "Proto_Files.h"
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
 #define MTILE_W (350)
@@ -225,13 +226,28 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     static int offset_x;
     static int offset_y;
 
+    static town_tile* new_tiles = nullptr;
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-        char* new_tiles = export_TMAP_tiles(usr_nfo, usr_nfo->exe_directory, img_data, offset_x, offset_y);
+        new_tiles = export_TMAP_tiles(usr_nfo, usr_nfo->exe_directory, img_data, offset_x, offset_y);
     }
 
-    ImGui::SliderInt("Tile Offset X", &offset_x, -400, 400, NULL);
-    ImGui::SliderInt("Tile Offset Y", &offset_y, -400, 400, NULL);
+    if (ImGui::Button("Export Protos")) {
+        ImGui::OpenPopup("Proto Info");
+    }
+    // Always center this window when appearing
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
+    {
+        export_tile_proto_start(usr_nfo, new_tiles);
+        ImGui::EndPopup();
+    }
+
+
+
+    ImGui::SliderInt("Image Offset X", &offset_x, -400, 400, NULL);
+    ImGui::SliderInt("Image Offset Y", &offset_y, -400, 400, NULL);
 
     // read pixels into buffer
     uint8_t *temp_buffer = (uint8_t *)malloc(img_data->width * img_data->height);

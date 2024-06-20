@@ -1196,7 +1196,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
-char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
+town_tile* export_TMAP_tiles(user_info* usr_info, char* exe_path,
                        image_data* img_data,
                        int x, int y)
 {
@@ -1236,15 +1236,18 @@ char* export_TMAP_tiles(user_info* usr_info, char* exe_path,
         return nullptr;
     }
 
-    char* new_TMAP_list = crop_TMAP_tiles(x, y, img_data, save_path, name);
-    add_TMAP_tiles_to_lst(usr_info, &new_TMAP_list, save_path);
+    //TODO: old methods of exporting tiles, remove these two lines
+    // char* new_TMAP_list = crop_TMAP_tiles(x, y, img_data, save_path, name);
+    // add_TMAP_tiles_to_lst(usr_info, &new_TMAP_list, save_path);
 
     town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, name);
     add_TMAP_tiles_to_lst_tt(usr_info, new_tiles, save_path);
 
     TMAP_tiles_make_row(new_tiles, usr_info);
 
-    return new_TMAP_list;
+    // return new_TMAP_list;
+    // free(new_TMAP_list);
+    return new_tiles;
 }
 
 // void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* usr_info, img_type type, FRM_Header* frm_header)

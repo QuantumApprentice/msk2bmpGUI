@@ -1,3 +1,8 @@
+//creating pattern files for town-map tiles
+//used to auto-magically paint tiles out in the mapper
+//all the current research available is here:
+//http://duckandcover.cx/forums/viewtopic.php?p=168760
+
 #include <tinyfiledialogs.h>
 #include <string.h>
 
@@ -147,7 +152,7 @@ void assign_tile_id_f(town_tile* head, const char* tiles_lst)
     }
 }
 
-
+#include "Proto_Files.h"
 void TMAP_tiles_make_row(town_tile* head, user_info* usr_info)
 {
     int choice = 0;
@@ -183,6 +188,8 @@ void TMAP_tiles_make_row(town_tile* head, user_info* usr_info)
             }
         }
     }
+
+
 
 
 
