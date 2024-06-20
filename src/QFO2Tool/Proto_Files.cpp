@@ -104,7 +104,7 @@ void export_tile_proto(char* save_path, town_tile* tile, proto_info* info)
     proto.ObjectID        = tile->tile_id | 0x4000000;
     proto.TextID          = tile->tile_id * 100;
     //FrmID is the line number (starting from 0?) in art/tiles/TILES.LST
-    // proto.FrmID           = (tile->tile_id - 1) | 0x4000000;    // -1 for off by 1 error?
+    proto.FrmID           = (tile->tile_id - 1) | 0x4000000;    // -1 for off by 1 error?
     //TODO: test if these 3 have effect on tiles
     proto.Light_Radius    = 0;
     proto.Light_Intensity = 0;

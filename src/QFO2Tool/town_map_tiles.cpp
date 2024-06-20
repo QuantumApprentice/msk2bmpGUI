@@ -15,7 +15,6 @@
 
 //crop town map tiles into linked list structs
 
-//TODO: fix so pxl_offs is 2 ints and not ImVec2
 //single tile crop using memcpy
 void crop_single_tile(uint8_t* tile_buff,
                     uint8_t* frm_pxls,
@@ -30,10 +29,6 @@ void crop_single_tile(uint8_t* tile_buff,
         int buf_pos = ((row)*80)   + lft;
         int pxl_pos = ((row)*frm_w + lft)
                       + y*frm_w + x;
-    // printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
-    // printf("&lft: %p\n", &lft);
-    // printf("&lft: 0x%lx\n", &lft);
-    // printf("int size: %d\n\n", sizeof(int));
 
     //prevent TOP & BOTTOM pixels outside image from copying over
         if (row+y < 0 || row+y >= frm_h) {
@@ -59,7 +54,6 @@ void crop_single_tile(uint8_t* tile_buff,
         if ((x+lft) < 0) {
             //set the part of the row not being copied to 0
             memset(tile_buff+buf_pos, 0, rgt-lft);
-            // printf("x: %d lft: %d\n", x, lft);
             //move pointers to account for part being skipped
             buf_pos += 0 - (x+lft);
             pxl_pos += 0 - (x+lft);
@@ -70,7 +64,6 @@ void crop_single_tile(uint8_t* tile_buff,
             }
         }
 
-        // printf("offset: %d\n", offset);
         memcpy(tile_buff+buf_pos, frm_pxls+pxl_pos, offset);
     }
 }

@@ -37,10 +37,6 @@ char *Save_FRM_Image_OpenGL(image_data *img_data, user_info *user_info)
     header.version = B_Endian::write_u32(4);
     header.Frames_Per_Orient = B_Endian::write_u16(1);
 
-    // img_data->FRM_dir[0].frame_data[0]->Frame_Height = B_Endian::write_u16(height);
-    // img_data->FRM_dir[0].frame_data[0]->Frame_Width  = B_Endian::write_u16(width);
-    // img_data->FRM_dir[0].frame_data[0]->Frame_Size   = B_Endian::write_u32(size);
-
     FRM_Frame frame;
     frame.Frame_Height = B_Endian::write_u16(height);
     frame.Frame_Width = B_Endian::write_u16(width);
@@ -465,6 +461,7 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
     return Save_File_Name;
 }
 
+//TODO: remove SDL stuff
 char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
 {
     char *Save_File_Name;
@@ -633,7 +630,6 @@ uint8_t *blend_PAL_texture(image_data *img_data)
 //           game path from menubar (also here?)
 //       5) game path or last used save path is
 //           stored in user_info & msk2bmpGUI.cfg file
-
 bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
 {
     char dest[3][27]{
@@ -871,7 +867,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
             {
                 // FRM = 1, MSK = 0
                 if (save_type == FRM) {
-                    // Split buffer int 350x300 pixel tiles and write to file
+                    // Split buffer into 350x300 pixel tiles and write to file
                     // save header
                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
                     fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
@@ -922,277 +918,6 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
         free(texture_buffer);
     }
 }
-
-
-
-
-/////////////////Bakerstaunch version with simplified logic/////////////////
-// Note - I've changed the parameter order
-// and used separate parameters for the tile
-// top and left
-
-// // This function requires src_tile_left to be >-80
-// // and <src_width, otherwise, we could write more
-// // than intended when we're handling the trimming
-// // on the left and right edge of the tile  i.e.
-// // the two trimmed variables below could extend
-// // past the bounds of the row being written to
-// void crop_single_tileB(uint8_t *dst,
-//         uint8_t *src, int src_width, int src_height,
-//         int src_tile_top, int src_tile_left)
-// {
-//     assert(src_tile_left > -80);
-//     assert(src_tile_left < src_width);
-//     for (int row = 0; row < 36; ++row) {
-//         int row_left  = tile_mask[row*2+0];
-//         int row_right = tile_mask[row*2+1];
-
-//         uint8_t *dst_row_ptr = dst + row * 80;
-
-//         int src_row = src_tile_top + row;
-//         if (src_row < 0 || src_row >= src_height) {
-//             // above top or bottom of the src image
-//             // so we have no pixels to copy, set to 0
-//             memset(dst_row_ptr + row_left, 0, row_right - row_left);
-//             // continue could be used here for an early return,
-//             // but given it's in the middle of the loop it seems
-//             // clearer to use an else
-//         } else {
-//             int src_offset = src_row * src_width + src_tile_left;
-//             int src_row_left  = src_tile_left + row_left;
-//             int src_row_right = src_tile_left + row_right;
-
-//             // put 0s in the left side of dst when we're off
-//             // the left edge of the src image
-//             if (src_row_left < 0) {
-//                 int trimmed = -src_row_left;
-//                 // technically this could set more than
-//                 // row_right - row_left bytes, but that's okay, as it
-//                 // won't go past the end of the row in the destination
-//                 // buffer as long as src_tile_left is > -80
-//                 memset(dst_row_ptr + row_left, 0, trimmed);
-//                 row_left += trimmed;
-
-//                 // the following line is not needed as we currently
-//                 // don't use src_row_left later in the function;
-//                 // however it has been left here in case it's needed
-//                 // in the future as part of the job of this if block
-//                 // is to make sure the left side is within bounds
-//                 // when we read it
-//                 src_row_left = 0;
-//             }
-
-//             // put 0s in the right side of dst when we're off
-//             // the right edge of the src image; it's unlikely
-//             // this will also run when we're trimming the left
-//             // however for thin source images it's possible
-//             if (src_row_right > src_width) {
-//                 int trimmed = src_row_right - src_width;
-//                 row_right -= trimmed;
-//                 // technically this could set more than
-//                 // row_right - row_left bytes, but that's okay, as it
-//                 // won't go past the end of the row in the destination
-//                 // buffer as long as src_tile_left is < src_width
-//                 memset(dst_row_ptr + row_right, 0, trimmed);
-
-//                 // similar to above, we don't need the following line
-//                 // at the moment
-//                 src_row_right = src_width;
-//             }
-
-//             // we need this check as a safeguard against negative
-//             // sizes which could be the result of the row's pixels
-//             // entirely being in a trimmed area
-//             if (row_right - row_left > 0) {
-//                 memcpy(dst_row_ptr + row_left,
-//                     src + src_offset + row_left,
-//                     row_right - row_left);
-//             }
-//         }
-//     }
-// }
-
-// //TODO: needs more tweeking and testing
-// //Bakerstaunch vector clearing version w/SSE2 instructions
-// #include <emmintrin.h>
-// int crop_single_tile_vector_clear(
-//         __restrict__ uint8_t *dst, __restrict__ uint8_t *src,
-//         int src_width, int src_height,
-//         int src_tile_top, int src_tile_left)
-// {
-//     __m128i ZERO = _mm_setzero_si128();
-//     int copied_pixels = 0;
-//     for (int row = 0; row < 36; ++row) {
-//         int row_left  = tile_mask[row*2+0];
-//         int row_right = tile_mask[row*2+1];
-//         uint8_t *dst_row_ptr = dst + row * 80;
-//         // clear the row with transparent pixels
-//         __m128i *dst_row_vec_ptr = (__m128i *)dst_row_ptr;
-//         _mm_storeu_si128(dst_row_vec_ptr+0, ZERO);
-//         _mm_storeu_si128(dst_row_vec_ptr+1, ZERO);
-//         _mm_storeu_si128(dst_row_vec_ptr+2, ZERO);
-//         _mm_storeu_si128(dst_row_vec_ptr+3, ZERO);
-//         _mm_storeu_si128(dst_row_vec_ptr+4, ZERO);
-//         int src_row = src_tile_top + row;
-//         if (src_row < 0 || src_row >= src_height) {
-//             // above top or bottom of the src image
-//             // and we've already cleared the row so
-//             // just go to the next row
-//             continue;
-//         }
-//         int src_row_left  = src_tile_left + row_left;
-//         // if we're off the left side of the image, increase
-//         // row_left by the amount we're off the left side
-//         if (src_row_left < 0) {
-//             // note src_row_left is negative which makes
-//             // this subtraction an addition
-//             row_left -= src_row_left;
-//         }
-//         int src_row_right = src_tile_left + row_right;
-//         // if we're off the right side of the image, decrease
-//         // row_right by the amount we're off the right side
-//         if (src_row_right > src_width) {
-//             row_right -= src_row_right - src_width;
-//         }
-//         int amount_to_copy = row_right - row_left;
-//         // we need this check as a safeguard against negative
-//         // sizes which could be the result of the row's pixels
-//         // entirely being in a trimmed area
-//         if (amount_to_copy > 0) {
-//             int src_offset = src_row * src_width + src_tile_left;
-//             memcpy(dst_row_ptr + row_left,
-//                 src + src_offset + row_left,
-//                 amount_to_copy);
-//             copied_pixels += amount_to_copy;
-//         }
-//     }
-//     return copied_pixels;
-// }
-
-// //TODO: fix so pxl_offs is 2 ints and not ImVec2
-// //single tile crop using memcpy
-// void crop_single_tile(int img_w, int img_h,
-//                     uint8_t* tile_buff,
-//                     uint8_t* frm_pxls,
-//                     int x, int y)
-// {
-//     for (int row = 0; row < 36; row++)
-//     {
-//         int lft = tile_mask[row * 2];
-//         int rgt = tile_mask[row * 2 + 1];
-//         int offset = rgt-lft;
-//         int buf_pos = ((row)*80)   + lft;
-//         int pxl_pos = ((row)*img_w + lft)
-//                       + y*img_w + x;
-//     // printf("x: %d, rgt: %d, total: %d\n", x, rgt, x+rgt);
-//     //prevent RIGHT pixels outside the image from copying over
-//         if ((x + rgt) > img_w) {
-//             //set offset amount of row to 0
-//             //this is outside the right of the image
-//             offset = img_w - (x + lft);
-//             memset(tile_buff+buf_pos+offset, 0, 80-(offset));
-//             if (offset < 0) {
-//                 //if the starting position is also outside the image
-//                 //set the whole row to 0
-//                 memset(tile_buff+buf_pos, 0, 80-lft);
-//                 continue;
-//             }
-//         }
-//     //prevent LEFT pixels outside image from copying over
-//         if ((x+lft) < 0) {
-//             //set the part of the row not being copied to 0
-//             memset(tile_buff+buf_pos, 0, -(x+lft));
-//             //move pointers to account for part being skipped
-//             buf_pos += 0 - (x+lft);
-//             pxl_pos += 0 - (x+lft);
-//             offset = rgt + (x);
-//             if (offset < 0) {
-//                 //skip if ending position offset is outside image
-//                 continue;
-//             }
-//         }
-//     //prevent TOP & BOTTOM pixels outside image from copying over
-//         if (row+y < 0 || row+y >= img_h) {
-//             //just set the buffer lines to 0 and move on
-//             memset(tile_buff+buf_pos, 0, rgt-lft);
-//             continue;
-//         }
-//         // printf("offset: %d\n", offset);
-//         memcpy(tile_buff+buf_pos, frm_pxls+pxl_pos, offset);
-//     }
-// }
-
-// //crop town map tiles from a full image
-// //TODO: need to add offsets to x & y
-// char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
-// {
-//     char full_file_path[MAX_PATH];
-//     uint8_t tile_buff[80 * 36] = {0};
-//     int img_w = img_data->width;
-//     int img_h = img_data->height;
-
-//     FRM_Header header = {};
-//     header.version = 4; // not sure why 4? but vanilla game frm tiles have this
-//     header.FPS = 1;
-//     header.Frames_Per_Orient = 1;
-//     header.Frame_Area = 80 * 36 + sizeof(FRM_Frame);
-//     B_Endian::flip_header_endian(&header);
-
-//     FRM_Frame frame = {};
-//     frame.Frame_Height = 36;
-//     frame.Frame_Width  = 80;
-//     frame.Frame_Size   = 80 * 36;
-//     B_Endian::flip_frame_endian(&frame);
-
-//     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
-
-//     int origin_x = -48 + offset_x;
-//     int origin_y =   0 + offset_y;
-//     int tile_num =   0;
-//     int row_cnt  =   0;
-//     bool running = true;
-//     while (running)
-//     {
-//         //TODO: clean this up, was used for testing different methods
-//         // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h,
-//         //         origin.y, origin.x);
-//         crop_single_tile(img_w, img_h, tile_buff, frm_pxls, origin_x, origin_y);
-//         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
-//         //         origin.y, origin.x);
-
-//         snprintf(full_file_path, MAX_PATH, "%s/%s%03d.FRM", file_path, name, tile_num);
-//         // printf("making tile #%03d\n", tile_num);
-//         save_TMAP_tile(full_file_path, tile_buff, &header, &frame);
-//         tile_num++;
-
-//         //increment one tile position
-//         origin_x +=  48;
-//         origin_y += -12;
-
-//         if ((origin_y <= -36) || (origin_x >= img_w)) {
-//             //increment row and reset tile position
-//             row_cnt++;
-//             origin_x = -16*row_cnt - 48;
-//             origin_y =  36*row_cnt;
-//         }
-//         while ((origin_y >= img_h) || (origin_x <= -80)) {
-//             //increment one tile position until in range of pixels
-//             origin_x +=  48;
-//             origin_y += -12;
-//             //or until outside both width and height of image
-//             if ((origin_x >= img_w)) {
-//                 running = false;
-//                 break;
-//             }
-//         }
-//         // printf("row: %d, tile: %d, origin.x: %.0f, origin.y: %.0f\n", row_cnt, tile_num, origin.x, origin.y);
-//     }
-
-//     char* new_tile_list = generate_new_tile_list(name, tile_num);
-//     // printf("%s", new_tile_list);
-
-//     return new_tile_list;
-// }
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
@@ -1249,92 +974,6 @@ town_tile* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     // free(new_TMAP_list);
     return new_tiles;
 }
-
-// void Split_to_Tiles_SDL(SDL_Surface *surface, struct user_info* usr_info, img_type type, FRM_Header* frm_header)
-//{
-//     int num_tiles_x = surface->w / TILE_W;
-//     int num_tiles_y = surface->h / TILE_H;
-//     int tile_num = 0;
-//     char path[MAX_PATH];
-//     char Save_File_Name[MAX_PATH];
-//
-//     FILE * File_ptr = NULL;
-//
-//
-//     if (!strcmp(user_info->default_game_path, "")) {
-//         Set_Default_Path(user_info);
-//         if (!strcmp(user_info->default_game_path, "")) { return; }
-//     }
-//     strncpy(path, user_info->default_game_path, MAX_PATH);
-//
-//     for (int y = 0; y < num_tiles_y; y++)
-//     {
-//         for (int x = 0; x < num_tiles_x; x++)
-//         {
-//             char buffer[MAX_PATH];
-//             strncpy_s(buffer, MAX_PATH, Create_File_Name(type, path, tile_num, Save_File_Name), MAX_PATH);
-//
-//             //check for existing file first
-//             check_file(type, File_ptr, path, buffer, tile_num, Save_File_Name);
-//             if (buffer == NULL) { return; }
-//
-//             wchar_t* w_save_name = tinyfd_utf8to16(buffer);
-//             _wfopen_s(&File_ptr, w_save_name, L"wb");
-//
-//             if (!File_ptr) {
-//                 tinyfd_messageBox(
-//                     "Error",
-//                     "Can not open this file in write mode.\n"
-//                     "Make sure the default game path is set.",
-//                     "ok",
-//                     "error",
-//                     1);
-//                 return;
-//             }
-//             else {
-//                 // FRM = 1, MSK = 0
-//                 if (type == FRM)
-//                 {
-//                     //save header
-//                     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
-//
-//                     int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
-//                     for (int pixel_i = 0; pixel_i < TILE_H; pixel_i++)
-//                     {
-//                         //write out one row of pixels in each loop
-//                         fwrite((uint8_t*)surface->pixels + pixel_pointer, TILE_W, 1, File_ptr);
-//                         pixel_pointer += surface->pitch;
-//                     }
-//                     fclose(File_ptr);
-//                 }
-/////////////////////////////////////////////////////////////////////////////
-//                if (type == MSK)
-//                {
-//                //Split the surface up into 350x300 pixel surfaces
-//                //      and pass them to Save_Mask()
-//                    Save_MSK_Image_SDL(surface, File_ptr, x, y);
-//
-/////////////////////////////////////////////////////////////////////////////
-//                ///*Blit combination not supported :(
-//                                    /// looks like SDL can't convert anything to binary bitmap
-//                //SDL_Rect tile = { surface->pitch*y * 300, x * 350,
-//                                    // 350, 300 };
-//                                    //SDL_Rect dst = { 0,0, 350, 300 };
-//                                    //SDL_PixelFormat* pxlfmt = SDL_AllocFormat(SDL_PIXELFORMAT_INDEX1MSB);
-//                                    //binary_bitmap = SDL_ConvertSurface(surface, pxlfmt, 0);
-//                                    //binary_bitmap = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_INDEX1MSB, 0);
-//                                    //printf(SDL_GetError());
-//                                    //int error = SDL_BlitSurface(surface, &tile, binary_bitmap, &dst);
-//                                    //if (error != 0)
-//                                    //{
-//                                    //    printf(SDL_GetError());
-//                                    //}
-//                }
-//            }
-//        }
-//    tile_num++;
-//    }
-//}
 
 // checks if the file/folder? already exists before saving
 // sets Save_File_Name[0] = '\0'; if user clicks cancel

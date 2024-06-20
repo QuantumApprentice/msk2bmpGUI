@@ -20,7 +20,6 @@
 //why are tile entries separated by 16 bytes?
 //last 12 bytes (footer?) identify x/y sizes,
 //  pattern entry number?
-//may have to make proto file for tiles?
 
 bool is_tile_blank(town_tile* tile)
 {
@@ -31,9 +30,6 @@ bool is_tile_blank(town_tile* tile)
 
 
     int64_t* ptr = (int64_t*)&ONES;
-
-    // printf("ONES_a: %llu\n", ptr[0]);
-    // printf("ONES_b: %llu\n", ptr[1]);
 
     for (int i = 0; i < buff_size; i++) {
         if (_mm_test_all_zeros(_mm_loadu_si128(frm_ptr128+i), ONES) == false) {
@@ -189,10 +185,7 @@ void TMAP_tiles_make_row(town_tile* head, user_info* usr_info)
         }
     }
 
-
-
-
-
+    //TODO: speed test these
     assign_tile_id_f(head, tiles_lst);  // TILES.LST loop outside
 
     assign_tile_id_w(head, tiles_lst);  // town_map* loop outside
@@ -223,9 +216,8 @@ void TMAP_tiles_make_row(town_tile* head, user_info* usr_info)
     //lay out tiles from node until we get to the end of a row
     //once we're at the end of a row, but not at row_max
     //fill the rest of the row w/blank tiles
-    //TODO: out_tiles needs to malloc?
-    //      out_tiles should be array of
-    //      4x int struct w/pragma pack applied
+    //  out_pattern is array of
+    //  4x int struct w/pragma pack applied
     #pragma pack(push, 1)
     struct pattern {
         uint32_t tile_id;
@@ -237,7 +229,7 @@ void TMAP_tiles_make_row(town_tile* head, user_info* usr_info)
 
     //0x168C is the total length of a pattern file
     //includes length of footer (12 bytes)
-    //total number of tile lines is 360? (needs more research)
+    //total number of tile lines is 360? possibly more (needs more research)
     pattern* out_pattern = (pattern*)calloc(1, 0x168C);
 
     node          = head;
