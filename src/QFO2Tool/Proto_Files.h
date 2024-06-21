@@ -20,4 +20,4 @@ struct tile_proto {
 
 int get_material_id();
 void export_tile_proto_start(user_info* usr_nfo, town_tile* head);
-void export_tile_proto(char* save_path, town_tile* tile, proto_info* info);
+void export_tile_proto(user_info* save_path, town_tile* tile, proto_info* info);

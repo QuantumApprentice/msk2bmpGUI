@@ -1,10 +1,3 @@
-//This will make your computer reboot
-//into text mode after you reboot:
-//  sudo systemctl set-default multi-user.target
-//Then you can run this to make it reboot
-//into graphical mode:
-//  sudo systemctl set-default graphical.target
-//Don't forget to chmod +x the .run file it downloads
 #include "Edit_TILES_LST.h"
 #include "town_map_tiles.h"
 
@@ -13,8 +6,10 @@
 #include <string.h>
 #include "tinyfiledialogs.h"
 
-//crop town map tiles into linked list structs
+void save_TMAP_tile(char *save_path, uint8_t *data, char* name);
 
+
+//crop town map tiles into linked list structs
 //single tile crop using memcpy
 void crop_single_tile(uint8_t* tile_buff,
                     uint8_t* frm_pxls,
@@ -219,7 +214,7 @@ int crop_single_tile_vector_clear(
 }
 
 
-town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, char* name)
+town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name)
 {
     uint8_t tile_buff[80 * 36] = {0};
     int img_w = img_data->width;
@@ -245,9 +240,6 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
 
-        // snprintf(full_file_path, MAX_PATH, "%s/%s%03d.FRM", file_path, name, tile_num);
-        // printf("making tile #%03d\n", tile_num);
-
         //turn each cropped tile into a linked list
         tile = (town_tile*)malloc(sizeof(town_tile));
         tile->name_ptr = (char*)malloc(name_length+1);
@@ -260,6 +252,9 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         tile->tile_id = 0;
         tile->next    = nullptr;
 
+        //TODO: maybe move this into a separate call that just uses town_tile*head and save_path?
+        save_TMAP_tile(save_path, tile_buff, tile->name_ptr);
+
 
         if (head == nullptr) {
             head = tile;
@@ -270,8 +265,8 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
             prev->next = tile;
             prev = tile;
         }
-        // save_TMAP_tile(full_file_path, tile_buff, &header, &frame);
         tile_num++;
+
 
         //increment one tile position
         origin_x +=  48;
@@ -279,16 +274,16 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
 
         if ((origin_y <= -36) || (origin_x >= img_w)) {
             //increment row and reset tile position
-            row_cnt++;
             origin_x = -16*row_cnt - 48;
             origin_y =  36*row_cnt;
+            row_cnt++;
         }
         while ((origin_y >= img_h) || (origin_x <= -80)) {
             //increment one tile position until in range of pixels
             origin_x +=  48;
             origin_y += -12;
             //or until outside both width and height of image
-            if ((origin_x >= img_w)) {
+            if (origin_x >= img_w) {
                 running = false;
                 break;
             }
@@ -296,17 +291,30 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
         // printf("row: %d, tile: %d, origin.x: %.0f, origin.y: %.0f\n", row_cnt, tile_num, origin.x, origin.y);
     }
 
-    // char* new_tile_list = generate_new_tile_list(name, tile_num);
-    // printf("%s", new_tile_list);
-    // return new_tile_list;
     return head;
 
 }
 
 
-void save_TMAP_tile(char *file_path, uint8_t *data, FRM_Header* header, FRM_Frame* frame)
+void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
 {
-    FILE *file_ptr = fopen(file_path, "wb");
+    char full_file_path[MAX_PATH];
+    FRM_Header header = {};
+    header.version = 4; // not sure why 4? but vanilla game frm tiles have this
+    header.FPS = 1;
+    header.Frames_Per_Orient = 1;
+    header.Frame_Area = 80 * 36 + sizeof(FRM_Frame);
+    B_Endian::flip_header_endian(&header);
+    FRM_Frame frame = {};
+    frame.Frame_Height = 36;
+    frame.Frame_Width  = 80;
+    frame.Frame_Size   = 80 * 36;
+    B_Endian::flip_frame_endian(&frame);
+
+
+    snprintf(full_file_path, MAX_PATH, "%s/%s", save_path, name);
+
+    FILE *file_ptr = fopen(full_file_path, "wb");
     if (!file_ptr) {
         tinyfd_messageBox(
             "Error",
@@ -315,12 +323,13 @@ void save_TMAP_tile(char *file_path, uint8_t *data, FRM_Header* header, FRM_Fram
             "ok", "error", 1);
         return;
     }
-    fwrite(header, sizeof(FRM_Header), 1, file_ptr);
-    fwrite(frame,  sizeof(FRM_Frame),  1, file_ptr);
+    fwrite(&header, sizeof(FRM_Header), 1, file_ptr);
+    fwrite(&frame,  sizeof(FRM_Frame),  1, file_ptr);
     fwrite(data, 80 * 36, 1, file_ptr);
     fclose(file_ptr);
 }
 
+#if false
 //crop town map tiles from a full image
 //TODO: need to add offsets to x & y
 char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* file_path, char* name)
@@ -329,22 +338,18 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
     uint8_t tile_buff[80 * 36] = {0};
     int img_w = img_data->width;
     int img_h = img_data->height;
-
     FRM_Header header = {};
     header.version = 4; // not sure why 4? but vanilla game frm tiles have this
     header.FPS = 1;
     header.Frames_Per_Orient = 1;
     header.Frame_Area = 80 * 36 + sizeof(FRM_Frame);
     B_Endian::flip_header_endian(&header);
-
     FRM_Frame frame = {};
     frame.Frame_Height = 36;
     frame.Frame_Width  = 80;
     frame.Frame_Size   = 80 * 36;
     B_Endian::flip_frame_endian(&frame);
-
     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
-
     int origin_x = -48 + offset_x;
     int origin_y =   0 + offset_y;
     int tile_num =   0;
@@ -358,16 +363,13 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
         crop_single_tile(tile_buff, frm_pxls, img_w, img_h, origin_x, origin_y);
         // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
         //         origin.y, origin.x);
-
         snprintf(full_file_path, MAX_PATH, "%s/%s%03d.FRM", file_path, name, tile_num);
         // printf("making tile #%03d\n", tile_num);
         save_TMAP_tile(full_file_path, tile_buff, &header, &frame);
         tile_num++;
-
         //increment one tile position
         origin_x +=  48;
         origin_y += -12;
-
         if ((origin_y <= -36) || (origin_x >= img_w)) {
             //increment row and reset tile position
             row_cnt++;
@@ -386,9 +388,8 @@ char* crop_TMAP_tiles(int offset_x, int offset_y, image_data *img_data, char* fi
         }
         // printf("row: %d, tile: %d, origin.x: %.0f, origin.y: %.0f\n", row_cnt, tile_num, origin.x, origin.y);
     }
-
     char* new_tile_list = generate_new_tile_list(name, tile_num);
     // printf("%s", new_tile_list);
-
     return new_tile_list;
 }
+#endif

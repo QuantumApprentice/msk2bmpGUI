@@ -921,15 +921,14 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
-town_tile* export_TMAP_tiles(user_info* usr_info, char* exe_path,
+town_tile* export_TMAP_tiles(user_info* usr_info,
                        image_data* img_data,
                        int x, int y)
 {
     char save_path[MAX_PATH];
-    char Full_Save_File_Path[MAX_PATH];
     int tile_num = 0;
 
-    bool success = auto_export_question(usr_info, exe_path, save_path, TILE);
+    bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     if (!success) {
         return nullptr;
     }
@@ -947,31 +946,26 @@ town_tile* export_TMAP_tiles(user_info* usr_info, char* exe_path,
     //TODO: check if game engine will take longer than 8-character names
     //      if not, then limit this to 8 (name length + tile digits)
     //      possibly give bypass?
+    //TODO: also, swap this entire tinyfd question for ImGui popup
     if (strlen(name) >= 32) {
         printf("name too long?");
         return nullptr;
     }
-    snprintf(Full_Save_File_Path, MAX_PATH, "%s/%s%03d.%s", save_path, name, tile_num, "FRM");
+
+
 
     // check for existing file first unless "Auto" selected?
     //TODO: need to verify "Auto" setting
     ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
+    char Full_Save_File_Path[MAX_PATH];
+    snprintf(Full_Save_File_Path, MAX_PATH, "%s/%s%03d.%s", save_path, name, tile_num, "FRM");
     check_file(save_path, Full_Save_File_Path, name, tile_num, FRM);
     if (Full_Save_File_Path[0] == '\0') {
         return nullptr;
     }
 
-    //TODO: old methods of exporting tiles, remove these two lines
-    // char* new_TMAP_list = crop_TMAP_tiles(x, y, img_data, save_path, name);
-    // add_TMAP_tiles_to_lst(usr_info, &new_TMAP_list, save_path);
+    town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, save_path, name);
 
-    town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, name);
-    add_TMAP_tiles_to_lst_tt(usr_info, new_tiles, save_path);
-
-    TMAP_tiles_make_row(new_tiles, usr_info);
-
-    // return new_TMAP_list;
-    // free(new_TMAP_list);
     return new_tiles;
 }
 

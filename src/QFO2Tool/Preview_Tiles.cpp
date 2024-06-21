@@ -10,6 +10,16 @@
 // #include "B_Endian.h"
 #include "Proto_Files.h"
 
+
+
+
+#include "Edit_TILES_LST.h"
+#include "tiles_pattern.h"
+
+
+
+
+
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
 #define MTILE_W (350)
 #define MTILE_H (300)
@@ -152,14 +162,6 @@ void masking(image_data *img_data, GLuint msk_texture, ImVec2 TLC, shader_info *
         }
     }
 
-    // for (int y = 0; y < 36; y++)
-    //{
-    //     for (int x = 0; x < 80; x++)
-    //     {
-    //         texture_buffer[(y * 80 + x)] = img_buff[(y * 80 + x) + (tile_x * 80 + tile_y*width*36)];
-    //     }
-    // }
-
     for (int i = 0; i < 80 * 36; i++)
     {
         if (!(texture_buffer[i] && msk_texture_buff[i]))
@@ -220,16 +222,16 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     int img_h = img_data->height;
 
     ImVec2 Top_Left; // = Origin;
-    // ImVec2 Bottom_Right = {  0,   0};
-    // ImVec2 uv_min =       {  0,   0};
-    // ImVec2 uv_max =       {1.0, 1.0};
     static int offset_x;
     static int offset_y;
 
     static town_tile* new_tiles = nullptr;
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-        new_tiles = export_TMAP_tiles(usr_nfo, usr_nfo->exe_directory, img_data, offset_x, offset_y);
+        town_tile* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
+        if (temp != nullptr) {
+            new_tiles = temp;
+        }
     }
 
     if (ImGui::Button("Export Protos")) {
@@ -240,7 +242,9 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
     {
+
         export_tile_proto_start(usr_nfo, new_tiles);
+
         ImGui::EndPopup();
     }
 
