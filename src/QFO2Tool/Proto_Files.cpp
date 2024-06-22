@@ -61,11 +61,12 @@ bool backup_append_LST(char* path, char* string);
 char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
 {
 
-    //total_size = total non-matches * 14 bytes
-    town_tile* node = head;
+    //get total_size of tile_ids where no match was found
+    //used for allocating buffer
     uint8_t shift_ctr  = 0;
     int     tile_num   = 0;
     int     total_size = 0;
+    town_tile* node = head;
     while (node != nullptr) {
         if (!(match_buff[tile_num/8]) & (1 << shift_ctr)) {
             total_size += 14;
@@ -81,12 +82,10 @@ char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
     //if there are no nodes (or none with viable names)
     if (total_size < 1) {
         tinyfd_notifyPopup("TILES.LST not updated...",
-                        "All new tile-names were already\n"
-                        "found on TILES.LST.\n"
-                        "No new tile-names were added.\n",
+                        "All new proto ids were already\n"
+                        "found on /data/proto/tiles/TILES.LST.\n"
+                        "No new proto ids were added.\n",
                         "info");
-        //TODO: test this free()
-        // free_tile_name_lst(linked_lst);
         return nullptr;
     }
 
@@ -133,9 +132,8 @@ char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
     uint8_t shift_ctr = 0;
     int     node_ctr  = 0;
 
-    town_tile* prev = nullptr;
     char* strt = tiles_lst;  //keeps track of position on TILES.LST
-    node = new_protos;       //reset the node for next step
+    node = new_protos;       //reset node for next step
     while (node != nullptr) {
         for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
         {
@@ -161,13 +159,11 @@ char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
         if (node == nullptr) {
             break;
         }
-        prev = node;
         node = node->next;
     }
 
     //generate new list from remaining nodes in linked_lst
-    char* cropped_list = nullptr;
-    cropped_list = make_proto_list_tt(new_protos, matches);
+    char* cropped_list = make_proto_list_tt(new_protos, matches);
 
     return cropped_list;
 }
@@ -220,7 +216,7 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         "and will be applied to all tiles in this set.\n"
     );
     static char buf1[23] = ""; ImGui::InputText(
-        "Name\n(max 23 characters)",                        buf1, 23);
+        "Name\n(max 23 characters)",                       buf1, 23);
     static char buf2[71] = ""; ImGui::InputTextMultiline(
         "Description\n(max 71 characters no line-breaks)", buf2, 71);
 
@@ -283,6 +279,10 @@ void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
     //check if new protos are on old list
     char* old_proto_list = io_load_text_file(save_path);
     char* new_proto_list = check_proto_names_ll_tt(old_proto_list, head);
+    if (new_proto_list == nullptr) {
+        free(old_proto_list);
+        return;
+    }
     //backup and save new list
     backup_append_LST(save_path, new_proto_list);
     free(old_proto_list);
@@ -294,6 +294,9 @@ void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
 bool backup_append_LST(char* path, char* string)
 {
     if (io_file_exists(path) == false) {
+        return false;
+    }
+    if (string == nullptr) {
         return false;
     }
 
