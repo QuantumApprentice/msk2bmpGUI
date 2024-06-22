@@ -206,4 +206,22 @@ bool io_backup_file(char* file_path)
     return true;
 }
 
+//loads a text file into a buffer
+//returns the buffer
+char* io_load_text_file(char* full_path)
+{
+    if (io_file_exists(full_path) == false) {
+        return nullptr;
+    }
 
+    //read the entire file into memory and return ptr
+    int file_size = io_file_size(full_path);
+    char* text_file_buff = (char*)malloc(file_size);
+
+    FILE* tiles_lst = fopen(full_path, "rb");
+    fread(text_file_buff, file_size, 1, tiles_lst);
+    text_file_buff[file_size] = '\0';
+    fclose(tiles_lst);
+
+    return text_file_buff;
+}

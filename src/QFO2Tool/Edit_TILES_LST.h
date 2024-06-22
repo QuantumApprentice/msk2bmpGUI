@@ -15,7 +15,7 @@ struct tile_name_arr {
     uint32_t next;           //points to array index of next viable name
 };
 
-void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_buff);
+// void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_buff);
 char* generate_new_tile_list(char* name, int tile_num);
 void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_list, char* save_buff);
 char* load_tiles_lst_game(char* game_path);

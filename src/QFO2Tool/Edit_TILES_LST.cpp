@@ -48,24 +48,8 @@ char* generate_new_tile_list(char* name, int tile_num)
     return new_tile_list;
 }
 
-char* load_text_file(char* full_path)
-{
-    if (io_file_exists(full_path) == false) {
-        return nullptr;
-    }
 
-    //read the entire file into memory and return ptr
-    int file_size = io_file_size(full_path);
-    char* text_file_buff = (char*)malloc(file_size);
-
-    FILE* tiles_lst = fopen(full_path, "rb");
-    fread(text_file_buff, file_size, 1, tiles_lst);
-    text_file_buff[file_size] = '\0';
-    fclose(tiles_lst);
-
-    return text_file_buff;
-}
-
+//TODO: should I use this? or the one below?
 //read game TILES.LST into memory using the game path
 char* load_tiles_lst_game(char* game_path)
 {
@@ -77,7 +61,7 @@ char* load_tiles_lst_game(char* game_path)
     char full_path[MAX_PATH] = {0};
     snprintf(full_path, MAX_PATH, "%s%s", game_path, "/data/art/tiles/TILES.LST");
 
-    return load_text_file(full_path);
+    return io_load_text_file(full_path);
 }
 
 //read TILES.LST into memory directly from provided path
@@ -91,7 +75,7 @@ char* load_tiles_lst(char* path)
     char full_path[MAX_PATH] = {0};
     snprintf(full_path, MAX_PATH, "%s%s", path, "/TILES.LST");
 
-    return load_text_file(full_path);
+    return io_load_text_file(full_path);
 }
 
 //create/overwrite TILES.LST at provided path
@@ -465,8 +449,9 @@ char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_aut
     }
     node = new_tiles;       //reset the node for next steps
 
-    //TODO: malloc matches
-    uint8_t matches[1+num_tiles/8] = {0};    //TODO: should be able to make this more precise
+    //TODO: can I make this more precise?
+    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
+    // uint8_t matches[1+num_tiles/8] = {0};
     uint8_t shift_ctr = 0;
     int     node_ctr  = 0;
 
@@ -510,11 +495,11 @@ char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_aut
                 }
             }
             if (append_new_only == true) {
-                int ctr = node_ctr/8;
-                int shift = 1 << shift_ctr;
+    // int ctr = node_ctr/8;
+    // int shift = 1 << shift_ctr;
                 //identify this node as having a duplicate match
-                // matches[node_ctr/8] |= 1 << shift_ctr;
-                matches[ctr] |= shift;
+                matches[node_ctr/8] |= 1 << shift_ctr;
+    // matches[ctr] |= shift;
                 //increment all the counters
                 shift_ctr++;
                 if (shift_ctr >= 8) {
@@ -522,17 +507,7 @@ char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_aut
                 } else {
                 }
                 node_ctr++;
-                // char_ctr = 0;
-
-                //TODO: i have the distinct impression
-                //      there should be a better way
-                //      to write this
-                // strt = tiles_lst;
-                // if (node == nullptr) {
-                    break;
-                // } else {
-                    // continue;
-                // }
+                break;
             }
         }
         strt = tiles_lst;

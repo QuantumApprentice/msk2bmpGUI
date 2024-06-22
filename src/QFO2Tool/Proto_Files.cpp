@@ -56,6 +56,123 @@ enum material {
 void proto_tiles_lst_append(user_info* usr_info, town_tile* head);
 bool backup_append_LST(char* path, char* string);
 
+//TODO: refactor append_tiles_lst() to work here
+//_tt stands for town_tile*
+char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
+{
+
+    //total_size = total non-matches * 14 bytes
+    town_tile* node = head;
+    uint8_t shift_ctr  = 0;
+    int     tile_num   = 0;
+    int     total_size = 0;
+    while (node != nullptr) {
+        if (!(match_buff[tile_num/8]) & (1 << shift_ctr)) {
+            total_size += 14;
+        }
+            shift_ctr++;
+        if (shift_ctr >= 8) {
+            shift_ctr = 0;
+        }
+        tile_num++;
+        node = node->next;
+    }
+
+    //if there are no nodes (or none with viable names)
+    if (total_size < 1) {
+        tinyfd_notifyPopup("TILES.LST not updated...",
+                        "All new tile-names were already\n"
+                        "found on TILES.LST.\n"
+                        "No new tile-names were added.\n",
+                        "info");
+        //TODO: test this free()
+        // free_tile_name_lst(linked_lst);
+        return nullptr;
+    }
+
+    //add non-matches to list of ids
+    char* cropped_list = (char*)malloc(total_size+1);
+    char* c    = cropped_list;
+    shift_ctr  = 0;
+    tile_num   = 0;
+    node       = head;
+    while (node != nullptr)
+    {
+        if (!(match_buff[tile_num/8] & 1 << shift_ctr)) {
+            snprintf(c, 15, "%08d.pro\r\n", node->tile_id);
+            c += 14;
+        }
+        //increment all the counters
+        node = node->next;
+        tile_num++;
+        shift_ctr++;
+        if (shift_ctr >= 8) {
+            shift_ctr = 0;
+        }
+    }
+    c[0] = '\0';
+
+    return cropped_list;
+}
+
+//compare names on tiles_lst to names on new_tiles
+//but convert new_tiles to town_tile* linked list first
+char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
+{
+    int num_tiles = 0;
+    int tiles_lst_len = strlen(tiles_lst);
+    town_tile* node = new_protos;
+    while (node != nullptr)
+    {
+        num_tiles++;
+        node = node->next;
+    }
+
+    //TODO: can I make this more precise?
+    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
+    uint8_t shift_ctr = 0;
+    int     node_ctr  = 0;
+
+    town_tile* prev = nullptr;
+    char* strt = tiles_lst;  //keeps track of position on TILES.LST
+    node = new_protos;       //reset the node for next step
+    while (node != nullptr) {
+        for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
+        {
+            if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
+                continue;
+            }
+            //check first char of strt == first char of node.name_ptr
+            if (atoi(strt) != node->tile_id) {
+                strt = &tiles_lst[char_ctr+1];
+                continue;
+            }
+            //identify this node as having a duplicate match
+            matches[node_ctr/8] |= 1 << shift_ctr;
+            //increment all the counters
+            shift_ctr++;
+            if (shift_ctr >= 8) {
+                shift_ctr = 0;
+            }
+            node_ctr++;
+            break;
+        }
+        strt = tiles_lst;
+        if (node == nullptr) {
+            break;
+        }
+        prev = node;
+        node = node->next;
+    }
+
+    //generate new list from remaining nodes in linked_lst
+    char* cropped_list = nullptr;
+    cropped_list = make_proto_list_tt(new_protos, matches);
+
+    return cropped_list;
+}
+
+
 void pro_tile_msg_append(user_info* usr_nfo, proto_info* info, town_tile* tile)
 {
     //append to pro_tile.msg if either a name
@@ -102,8 +219,10 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         "These are Optional,\n"
         "and will be applied to all tiles in this set.\n"
     );
-    static char buf1[32]  = ""; ImGui::InputText("Name",                 buf1, 32);
-    static char buf2[512] = ""; ImGui::InputTextMultiline("Description", buf2, 512);
+    static char buf1[23] = ""; ImGui::InputText(
+        "Name\n(max 23 characters)",                        buf1, 23);
+    static char buf2[71] = ""; ImGui::InputTextMultiline(
+        "Description\n(max 71 characters no line-breaks)", buf2, 71);
 
     if (ImGui::Button("Add to Fallout 2...")) {
         if (head == nullptr) {
@@ -112,7 +231,13 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         }
 
         //copy any game_path changes to user_info for saving to config
-        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+        char game_path[MAX_PATH];
+        snprintf(game_path, MAX_PATH, "%s/fallout2.exe", FObuf);
+        if (io_file_exists(game_path)) {
+            strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+        } else {
+            //TODO: popup warning - can't find fallout2.exe
+        }
         info.name        = buf1;
         info.description = buf2;
         info.material_id = get_material_id();
@@ -151,34 +276,17 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
 
 void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
 {
-    //TODO: refactor append_tiles_lst() to work here
-    int size = 0;
-    town_tile* node = head;
-    while (node != nullptr)
-    {
-        size += 14;
-        node = node->next;
-    }
-
-    char* new_proto_lst = (char*)malloc(size);
-    char* ptr = new_proto_lst;
-    int index = 0;
-    node      = head;
-    while (node != nullptr)
-    {
-        snprintf(ptr, 15, "%08d.pro\r\n", node->tile_id);
-        ptr += 14;
-        node = node->next;
-    }
-
     //this assumes usr_info->default_game_path has been set
     //append to data/proto/tiles/TILES.LST
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
-
-    //TODO: this needs to check if ####.pro is already on the list
-    backup_append_LST(save_path, new_proto_lst);
-    free(new_proto_lst);
+    //check if new protos are on old list
+    char* old_proto_list = io_load_text_file(save_path);
+    char* new_proto_list = check_proto_names_ll_tt(old_proto_list, head);
+    //backup and save new list
+    backup_append_LST(save_path, new_proto_list);
+    free(old_proto_list);
+    free(new_proto_list);
 }
 
 //backs up file at "path",
@@ -230,8 +338,8 @@ void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
     //FrmID is the line number (starting from 0) in art/tiles/TILES.LST
     proto.FrmID           = (tile->tile_id -1) | 0x4000000; // -1 for off by 1 error
     //TODO: test if these 3 have effect on tiles
-    proto.Light_Radius    = 0;
-    proto.Light_Intensity = 0;
+    proto.Light_Radius    = 8;
+    proto.Light_Intensity = 8;
     proto.Flags           = 0xFFFFFFFF;     //this is what the mapper uses on tiles, not sure why yet
     //end TODO
     proto.MaterialID      = info->material_id;
