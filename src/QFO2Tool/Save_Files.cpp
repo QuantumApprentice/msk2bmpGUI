@@ -938,16 +938,19 @@ town_tile* export_TMAP_tiles(user_info* usr_info,
     char* name = tinyfd_inputBox(
                 "Tile Name...",
                 "Please type a default tile name for these,\n"
-                "exporting will append a tile number to this name.\n",
-                "newtile_");
+                "exporting will append a tile number to this name.\n\n"
+                "Tile names can only be 8 characters total,\n"
+                "and currently 3 of those characters are taken\n"
+                "up by the numbering system.\n"
+                "(Which leaves 5 for you to work with).",
+                "new__");
     if (name == nullptr) {
         return nullptr;
     }
-    //TODO: check if game engine will take longer than 8-character names
-    //      if not, then limit this to 8 (name length + tile digits)
-    //      possibly give bypass?
-    //TODO: also, swap this entire tinyfd question for ImGui popup
-    if (strlen(name) >= 32) {
+
+    //TODO:  swap this entire tinyfd question for ImGui popup
+    //game engine/mapper only takes 8 character tile-names
+    if (strlen(name) > 5) {
         printf("name too long?");
         return nullptr;
     }
@@ -1159,45 +1162,6 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
 
     fclose(File_ptr);
 }
-
-// void Save_MSK_Image_SDL(SDL_Surface* surface, FILE* File_ptr, int x, int y)
-//{
-//     uint8_t out_buffer[13200] /*= { 0 }/* ceil(350/8) * 300 */;
-//     uint8_t *outp = out_buffer;
-//
-//     int shift = 0;
-//     uint8_t bitmask = 0;
-//     bool mask_1_or_0;
-//
-//     int pixel_pointer = surface->pitch * y * TILE_H + x * TILE_W;
-//     //don't need to flip for the MSK (maybe need to flip for bitmaps)
-//     for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
-//     {
-//         for (int pxl_x = 0; pxl_x < TILE_W; pxl_x++)
-//         {
-//             bitmask <<= 1;
-//             mask_1_or_0 =
-//                 *((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0;
-//             //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) & 1;
-//             //*((uint8_t*)surface->pixels + (pxl_y * surface->pitch) + pxl_x * 4) > 0 ? 1 : 0;
-//             bitmask |= mask_1_or_0;
-//             if (++shift == 8)
-//             {
-//                 *outp = bitmask;
-//                 ++outp;
-//                 shift = 0;
-//                 bitmask = 0;
-//             }
-//         }
-//         bitmask <<= 2 /* final shift */;
-//         *outp = bitmask;
-//         ++outp;
-//         shift = 0;
-//         bitmask = 0;
-//     }
-//     writelines(File_ptr, out_buffer);
-//     fclose(File_ptr);
-// }
 
 void Save_MSK_Image_OpenGL(uint8_t *tile_buffer, FILE *File_ptr, int width, int height)
 {

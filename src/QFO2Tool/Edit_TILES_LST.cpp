@@ -105,40 +105,6 @@ char* write_tiles_lst(char* tiles_lst_path, char* list_of_tiles)
     return list_of_tiles;
 }
 
-#if false
-// //TODO: delete this
-bool io_file_check(char* file_path)
-{
-    //check if file exists
-    //TODO: need to fclose(tiles_lst_ptr); and finish up this section
-    // FILE* tiles_lst_ptr = nullptr;
-    if (io_file_exists(file_path)) {
-        int choice2 = tinyfd_messageBox(
-                "Warning",
-                "TILES.LST exists...\n"
-                "Overwrite?\n\n"
-                "--YES:    Overwrite existing file\n"
-                "--NO:     Select new folder to save to\n"
-                "--Cancel: Cancel\n",
-                "yesnocancel", "warning", 2);
-        if (choice2 == CANCEL) {        //Cancel: Cancel
-            return false;
-        }
-        if (choice2 == YES) {           //YES:    Overwrite existing file
-            return true;
-        }
-        if (choice2 == NO) {            //NO:     Select new folder to save to
-            char* new_path = tinyfd_selectFolderDialog("Select save folder...", file_path);
-            strncpy(file_path, new_path, MAX_PATH);
-            if (io_path_check(file_path)) {
-                // return create_tiles_lst(file_path);
-            }
-        }
-    }
-    return true;
-}
-#endif
-
 //ask user for new name,
 //use old_name as default
 char* get_new_name(char* old_name)
@@ -364,20 +330,6 @@ void free_tile_name_lst_tt(town_tile* list)
     }
 }
 
-#if false
-//mem-free all tiles in tile_name* linked list
-void free_tile_name_lst(tile_name* list)
-{
-    tile_name* current = list;
-    tile_name* next    = list->next;
-    while (current != nullptr) {
-        next = current->next;
-        free(current);
-        current = next;
-    }
-}
-#endif
-
 //remove & free matching node
 town_tile* free_town_tile_node_tt(town_tile* node, town_tile* prev, town_tile** head)
 {
@@ -427,25 +379,6 @@ int skip_or_rename_tt(town_tile* node)
     return choice;
 }
 
-#if false
-// int skip_or_rename(tile_name* node)
-// {
-//     char msg_buff[MAX_PATH] = {
-//         "One of the new tile-names matches\n"
-//         "a tile-name already on TILES.LST.\n\n"
-//     };
-//     strncat(msg_buff, node->name_ptr, node->length);
-//     strncat(msg_buff, "\n\n"
-//         "YES:   Skip and append only new names?\n"
-//         "NO:    Rename the new tiles?\n", 75);
-//     int choice = tinyfd_messageBox(
-//                 "Match found...",
-//                 msg_buff,
-//                 "yesnocancel", "warning", 2);
-//     return choice;
-// }
-#endif
-
 //_tt stands for town_tile*
 char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
 {
@@ -463,7 +396,6 @@ char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
             shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
-        } else {
         }
         tile_num++;
         node = node->next;
@@ -509,7 +441,6 @@ char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
             shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
-        } else {
         }
         tile_num++;
         node = node->next;
@@ -848,46 +779,6 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
     return final_tiles_list;
 }
 
-#if false
-//append new tile-names to the end of TILES.LST
-char* append_tiles_lst(char* tiles_lst_path, char** new_tiles_list, bool set_auto)
-{
-    if (tiles_lst_path == nullptr) {return nullptr;}
-    int tiles_lst_size = io_file_size(tiles_lst_path);
-    //load TILES.LST into memory
-    char* old_tiles_list = (char*)malloc(tiles_lst_size+1);
-    FILE* tiles_lst = fopen(tiles_lst_path, "rb");
-    int size = fread(old_tiles_list, tiles_lst_size, 1, tiles_lst);
-    if (size != 1) {
-        printf("\n\nUnable to read entire TILES.LST file?\n\n");
-        printf("fread     size: %d\n", size);
-    }
-    fclose(tiles_lst);
-    //search final_tiles_list (TILES.LST)
-    //for matching names from new_tiles_list
-    bool success = check_tile_names_ll(old_tiles_list, new_tiles_list, set_auto);
-    if (success == false) {
-        return old_tiles_list;
-    }
-    io_backup_file(tiles_lst_path);
-    //append new list_of_tiles to the end of original list
-    //in a new buffer large enough to fit both
-    int new_lst_size   = strlen(*new_tiles_list);
-    char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size);
-    strncpy(final_tiles_list, old_tiles_list, tiles_lst_size);
-    if (final_tiles_list[tiles_lst_size] == '\n') {
-        final_tiles_list[tiles_lst_size+1] = '\0';
-    } else {
-        final_tiles_list[tiles_lst_size] = '\0';
-    }
-    strncat(final_tiles_list, *new_tiles_list, new_lst_size);
-    //write combined lists out
-    write_tiles_lst(tiles_lst_path, final_tiles_list);
-    free(old_tiles_list);
-    return final_tiles_list;
-}
-#endif
-
 bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles_lst, char* new_tile_list)
 {
     bool success = false;
@@ -1074,102 +965,3 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
     // strcpy(usr_nfo->game_files.FRM_TILES_LST, tiles_lst);
     usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
 }
-
-#if false
-//append names of new tiles to end of TILES.LST
-//or create new TILES.LST with only these new tiles
-void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_buff)
-{
-    char* tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
-    char* game_path = nullptr;
-    bool success = false;
-    //Auto option
-    if (usr_nfo->auto_export == true) {
-        success = auto_export_TMAP_tiles_lst(usr_nfo, save_buff, tiles_lst, *new_tile_list);
-        if (success == false) {
-            return;
-        }
-    }
-    char popup_string[MAX_PATH + 24];
-    snprintf(popup_string, MAX_PATH+24, "Unable to find %s\n", save_buff);
-    success = io_isdir(save_buff);
-    if (success == false) {
-    //TODO: figure out the behavior of this function
-        tinyfd_notifyPopup(
-            "Warning...folder does not exist.",
-            popup_string,
-            "error"
-        );
-        return;
-    }
-    strncat(save_buff, "/TILES.LST", 11);
-    success = io_file_exists(save_buff);
-    if (success == false) {
-        //TILES.LST doesn't exist in selected folder
-        int choice = tinyfd_messageBox(
-            //TODO: this needs a re-write
-            //      maybe change choice to select game folder?
-            "Cannot find TILES.LST...",
-            "Unable to find TILES.LST in the Fallout 2\n"
-            "game directory -- Would you like to make a\n"
-            "new one? This new TILES.LST will be blank\n"
-            "except for the new tiles made here.\n"
-            "--IMPORTANT--\n"
-            "The Fallout game engine reads tiles in\n"
-            "from TILES.LST based on the line number.\n"
-            "The new TILES.LST file will override the\n"
-            "game list. Only do this if you want to create\n"
-            "the whole tile system from scratch,\n"
-            "or to preview the results before manually merging.\n\n"
-            "YES:    Create new TILES.LST\n"
-            "NO:     Select new folder to save TILES.LST\n",
-            "yesnocancel", "warning", 2);
-        if (choice == CANCEL) {       // Cancel =  null out buffer and return
-            *strrchr(save_buff, '/') = '\0';
-            return;
-        }
-        if (choice == YES) {          // Yes = Create new TILES.LST in this folder
-            tiles_lst = write_tiles_lst(save_buff, *new_tile_list);
-        }
-        if (choice == NO) {           // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-            game_path = tinyfd_selectFolderDialog(
-                "Select directory to save to...", usr_nfo->default_save_path);
-            strncpy(usr_nfo->default_save_path, game_path, MAX_PATH);
-            *strrchr(save_buff, '/') = '\0';
-            return add_TMAP_tiles_to_lst(usr_nfo, new_tile_list, save_buff);
-        }
-    } else {
-        //TILES.LST exists in selected folder
-        int choice = tinyfd_messageBox(
-            "Warning",
-            "Append new tiles to TILES.LST?\n"
-            "(A backup will be made.)\n"
-            "--IMPORTANT--\n"
-            "The Fallout game engine reads tiles in\n"
-            "from TILES.LST based on the line number.\n"
-            "Be careful not to change the order of\n"
-            "tiles once they are on the list.\n\n"
-            "YES:    Append new tiles to end of list\n"
-            "NO:     Create new TILES.LST?\n"
-            "            (a backup will be made.)",
-            "yesnocancel", "warning", 2);
-        if (choice == CANCEL) {          // Cancel =  null out buffer and return
-            *strrchr(save_buff, '/') = '\0';
-            return;
-        }
-        if (choice == YES) {             // Yes = Append to TILES.LST
-            tiles_lst = append_tiles_lst(save_buff, new_tile_list, false);
-        }
-        if (choice == NO) {              // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-        //over-write original file
-            io_backup_file(save_buff);
-            tiles_lst = write_tiles_lst(save_buff, *new_tile_list);
-        }
-    }
-    *strrchr(save_buff, '/') = '\0';
-    if (usr_nfo->game_files.FRM_TILES_LST != nullptr) {
-        free(usr_nfo->game_files.FRM_TILES_LST);
-    }
-    usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
-}
-#endif

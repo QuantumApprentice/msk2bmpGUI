@@ -56,6 +56,28 @@ enum material {
 void proto_tiles_lst_append(user_info* usr_info, town_tile* head);
 bool backup_append_LST(char* path, char* string);
 
+void pro_tile_msg_append(user_info* usr_nfo, proto_info* info, town_tile* tile)
+{
+    //append to pro_tile.msg if either a name
+    //or a description has been provided
+    if (strlen(info->name) > 1 || strlen(info->description) > 1) {
+
+        //append to pro_tile.msg
+        char msg_line[512+32];
+        snprintf(msg_line, 512+32,
+                "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
+                tile->tile_id*100,   info->name,
+                tile->tile_id*100+1, info->description);
+
+        if (*usr_nfo->default_game_path == '\0') {
+            return;
+        }
+        char path_buff[MAX_PATH];
+        snprintf(path_buff, MAX_PATH, "%s/data/Text/english/Game/pro_tile.msg", usr_nfo->default_game_path);
+        backup_append_LST(path_buff, msg_line);
+    }
+}
+
 void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
 {
     proto_info info;
@@ -66,20 +88,22 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         "file made, and an entry for each tile appended to\n\n"
         "   Fallout 2/data/proto/tiles/TILES.LST\n"
         "   Fallout 2/data/art/tiles/TILES.LST.\n\n"
-        "In addition, entries? can? be made in\n\n"
+        "In addition, entries? can optionally be made in\n\n"
         "   Fallout 2/data/Text/english/Game/pro_tile.msg\n\n"
         "to give the tile a name and description in the\n"
         "Fallout 2 mapper (Mapper2.exe).\n\n"
-        "These are Optional,\n"
-        "and will be applied\n"
-        "to all current tiles.\n"
+        "Please provide the path to fallout2.exe in your\n"
+        "modded Fallout 2 folder.\n"
         );
+    static char FObuf[MAX_PATH] = "";
+    strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
+    ImGui::Text(
+        "These are Optional,\n"
+        "and will be applied to all tiles in this set.\n"
+    );
     static char buf1[32]  = ""; ImGui::InputText("Name",                 buf1, 32);
     static char buf2[512] = ""; ImGui::InputTextMultiline("Description", buf2, 512);
-    //TODO: need to write tileID out to Fallout 2/data/Text/english/Game/pro_tile.msg
-    info.name        = buf1;
-    info.description = buf2;
-    info.material_id = get_material_id();
 
     if (ImGui::Button("Add to Fallout 2...")) {
         if (head == nullptr) {
@@ -87,17 +111,37 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
             return;
         }
 
+        //copy any game_path changes to user_info for saving to config
+        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+        info.name        = buf1;
+        info.description = buf2;
+        info.material_id = get_material_id();
+
         add_TMAP_tiles_to_lst_tt(usr_nfo, head, nullptr);
         TMAP_tiles_make_row(usr_nfo, head);
 
-
+        //tiles can reference different line numbers in pro_tile.msg
+        //have all subsequent tiles point to first new tile entry
+        info.pro_tile = head->tile_id * 100;
         town_tile* node = head;
         while (node != nullptr)
         {
             export_tile_proto(usr_nfo, node, &info);
             node = node->next;
         }
+
+        if (usr_nfo->default_game_path[0] == '\0') {
+            return;
+        }
+
+        //add tile protos to data/proto/tiles/TILES.LST
         proto_tiles_lst_append(usr_nfo, head);
+
+        //TODO: need to add option for different languages
+        //TODO: maybe need to create the subfolders
+        //TODO: also need to give options for items already on the list
+        //add name/description to data/Text/english/Game/pro_tile.msg
+        pro_tile_msg_append(usr_nfo, &info, head);
     }
 
     if (ImGui::Button("Close")) {
@@ -107,18 +151,13 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
 
 void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
 {
-    //this assumes usr_info->default_game_path has been set
-    //append to data/proto/tiles/TILES.LST
-    char save_path[MAX_PATH];
-    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
-
     //TODO: refactor append_tiles_lst() to work here
     int size = 0;
     town_tile* node = head;
     while (node != nullptr)
     {
-        //TODO: is this the right length? accounting for /r/n
         size += 14;
+        node = node->next;
     }
 
     char* new_proto_lst = (char*)malloc(size);
@@ -127,10 +166,17 @@ void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
     node      = head;
     while (node != nullptr)
     {
-        snprintf(ptr, 14, "%08d\r\n", node->tile_id-1); //-1 to account for off by one?
-        ptr += node->length+2;
+        snprintf(ptr, 15, "%08d.pro\r\n", node->tile_id);
+        ptr += 14;
         node = node->next;
     }
+
+    //this assumes usr_info->default_game_path has been set
+    //append to data/proto/tiles/TILES.LST
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
+
+    //TODO: this needs to check if ####.pro is already on the list
     backup_append_LST(save_path, new_proto_lst);
     free(new_proto_lst);
 }
@@ -142,24 +188,30 @@ bool backup_append_LST(char* path, char* string)
     if (io_file_exists(path) == false) {
         return false;
     }
-    io_backup_file(path);
 
     int file_size = io_file_size(path);
     int string_len = strlen(string);
     char* buff_tiles_lst = (char*)malloc(file_size + string_len);
     FILE* tiles_lst = fopen(path, "rb");
-    fread(buff_tiles_lst, file_size + string_len, 1, tiles_lst);
+    if (tiles_lst == nullptr) {
+        //TODO: popup warning?
+        //unable to open file for some reason
+        return false;
+    }
+
+    fread(buff_tiles_lst, file_size, 1, tiles_lst);
     fclose(tiles_lst);
 
-    //TODO: check if \0 appended or not
-    strncat(buff_tiles_lst, string, string_len);
+    char* ptr = buff_tiles_lst + file_size;
+    memcpy(ptr, string, string_len);
 
+    io_backup_file(path);
     tiles_lst = fopen(path, "wb");
-    fwrite(buff_tiles_lst, strlen(buff_tiles_lst), 1, tiles_lst);
+    fwrite(buff_tiles_lst, file_size+string_len, 1, tiles_lst);
     fclose(tiles_lst);
 
     free(buff_tiles_lst);
-
+    return true;
 }
 
 //export individual tile proto to save_path
@@ -171,16 +223,12 @@ void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
     }
 
     char path_buff[MAX_PATH];
-    // char temp = tile->name_ptr[tile->length];
-    // tile->name_ptr[tile->length] = '\0';
 
     tile_proto proto;
     proto.ObjectID        = tile->tile_id | 0x4000000;
-    //TODO: test if TextID has to match tile_id somehow
-    proto.TextID          = tile->tile_id * 100;                //used as a key/value pair in pro_tile.msg
-    //FrmID is the line number (starting from 0?) in art/tiles/TILES.LST
-    //TODO: is FrmID supposed to be tile_id -1?
-    proto.FrmID           = tile->tile_id | 0x4000000;    // -1 for off by 1 error?
+    proto.TextID          = info->pro_tile;                //used as a key/value pair in pro_tile.msg
+    //FrmID is the line number (starting from 0) in art/tiles/TILES.LST
+    proto.FrmID           = (tile->tile_id -1) | 0x4000000; // -1 for off by 1 error
     //TODO: test if these 3 have effect on tiles
     proto.Light_Radius    = 0;
     proto.Light_Intensity = 0;
@@ -190,38 +238,13 @@ void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
 
     B_Endian::swap_32(proto.ObjectID);
     B_Endian::swap_32(proto.TextID);
+    B_Endian::swap_32(proto.FrmID);
     B_Endian::swap_32(proto.MaterialID);
 
-
-    snprintf(path_buff, MAX_PATH, "%s/%08d.pro", usr_info->default_save_path, tile->tile_id);
-    // tile->name_ptr[tile->length] = temp;
-
+    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", usr_info->default_game_path, tile->tile_id);
     FILE* tile_pro = fopen(path_buff, "wb");
     fwrite(&proto, sizeof(tile_proto), 1, tile_pro);
     fclose(tile_pro);
-
-    //append to pro_tile.msg if either a name
-    //or a description has been provided
-    char buff_save[MAX_PATH];
-    if (strlen(info->name) > 1 || strlen(info->description) > 1) {
-        //append to pro_tile.msg
-
-        //TODO: can tiles reference different line numbers in pro_tile.msg?
-        //      if so, only write this once and have all subsequent tiles point to it?
-        char msg_line[512+32];
-        snprintf(msg_line, 512+32,
-                "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
-                tile->tile_id*100, info->name,
-                tile->tile_id*100+1, info->description);
-
-        if (*usr_info->default_game_path == '\0') {
-            return;
-        }
-        snprintf(buff_save, MAX_PATH, "%s/data/Text/english/Game/pro_tile.msg", usr_info->default_game_path);
-        backup_append_LST(buff_save, msg_line);
-
-    }
-
 
 }
 

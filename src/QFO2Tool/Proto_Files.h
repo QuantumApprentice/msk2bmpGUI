@@ -5,6 +5,7 @@ struct proto_info {
     char* name;
     char* description;
     int material_id;
+    int pro_tile;
 };
 
 struct tile_proto {
