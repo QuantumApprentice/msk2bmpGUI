@@ -201,7 +201,7 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         "file made, and an entry for each tile appended to\n\n"
         "   Fallout 2/data/proto/tiles/TILES.LST\n"
         "   Fallout 2/data/art/tiles/TILES.LST.\n\n"
-        "In addition, entries? can optionally be made in\n\n"
+        "In addition, entries can optionally be made in\n\n"
         "   Fallout 2/data/Text/english/Game/pro_tile.msg\n\n"
         "to give the tile a name and description in the\n"
         "Fallout 2 mapper (Mapper2.exe).\n\n"
@@ -216,9 +216,9 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         "and will be applied to all tiles in this set.\n"
     );
     static char buf1[23] = ""; ImGui::InputText(
-        "Name\n(max 23 characters)",                       buf1, 23);
+        "Name\n(max 23 characters)",                          buf1, 23);
     static char buf2[71] = ""; ImGui::InputTextMultiline(
-        "Description\n(max 71 characters no line-breaks)", buf2, 71);
+        "Description\n(max 71 characters)\n(no line-breaks)", buf2, 71);
 
     if (ImGui::Button("Add to Fallout 2...")) {
         if (head == nullptr) {

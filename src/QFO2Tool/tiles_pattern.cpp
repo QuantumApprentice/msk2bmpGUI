@@ -246,7 +246,9 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
             last_row = node->row;
             col_indx = 0;
         }
-        out_pattern[tile_indx++].tile_id = node->tile_id;
+        //TODO: the tile_id isn't the actual line number of the art?
+        //      should I assign it correctly in the first place?
+        out_pattern[tile_indx++].tile_id = node->tile_id-1;
         node = node->next;
         col_indx++;
     }
@@ -280,7 +282,7 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     printf("how we doin?\n");
 
     char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%s/new_pattern.pat", usr_info->default_save_path);
+    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000002", usr_info->default_game_path, head->name_ptr);
 
     FILE* pattern_file = fopen(file_buff, "wb");
     fwrite(out_pattern, 0x168C, 1, pattern_file);

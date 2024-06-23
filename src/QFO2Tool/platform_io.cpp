@@ -216,7 +216,7 @@ char* io_load_text_file(char* full_path)
 
     //read the entire file into memory and return ptr
     int file_size = io_file_size(full_path);
-    char* text_file_buff = (char*)malloc(file_size);
+    char* text_file_buff = (char*)malloc(file_size+1);
 
     FILE* tiles_lst = fopen(full_path, "rb");
     fread(text_file_buff, file_size, 1, tiles_lst);
