@@ -75,7 +75,7 @@ Surface* ConvertSurfaceToRGBA(Surface* src)
       dst_pixel->a = 255;
     }
   } else if (src->channels == 4) {
-    memcpy(surface->pixels, src->pixels, src->w * src->pitch);
+    memcpy(surface->pixels, src->pixels, src->h * src->pitch);
   }
   return surface;
 }
