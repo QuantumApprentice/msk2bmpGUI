@@ -17,7 +17,8 @@ struct tile_name_arr {
 
 // void add_TMAP_tiles_to_lst(user_info* usr_nfo, char** new_tile_list, char* save_buff);
 char* generate_new_tile_list(char* name, int tile_num);
-void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_list, char* save_buff);
+void add_TMAP_tiles_to_lst_tt( user_info* usr_nfo, town_tile* new_tile_list, char* save_buff);
+void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle,    char* save_buff);
 char* load_tiles_lst_game(char* game_path);
 tile_name_arr* make_name_list_arr(char* new_tiles_list);
 tile_name* make_name_list(char* tiles_list);

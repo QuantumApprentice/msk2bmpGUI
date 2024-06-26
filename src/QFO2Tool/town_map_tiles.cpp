@@ -213,24 +213,145 @@ int crop_single_tile_vector_clear(
     return copied_pixels;
 }
 
+//explicitly floats so result can be rounded up
+#define pxl_per_row_x       (124)   //  ((80+80-36)    /1) tile per repeat
+#define pxl_per_row_y        (32)   //  ((36+36+36-12) /3) tiles per repeat
+#define pxl_per_col_x        (62)   //  ((80+80-36)    /2) tiles per repeat
+#define pxl_per_col_y        (48)   //  ((36+36+36-12) /2) tiles per repeat
 
+//array version (stores tile position)
+tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name)
+{
+    uint8_t tile_buff[80 * 36] = {0};
+    int img_w = img_data->width;
+    int img_h = img_data->height;
+
+    //rows/columns to the right and left
+    //  of image origin corner
+    float row_lft =      (float)img_h / (float)pxl_per_row_y;         //maybe use ceil() here?
+    float row_rgt =      (float)img_w / (float)pxl_per_row_x;         //maybe use ceil() here?
+    int   col_lft = ceil((float)img_h / (float)pxl_per_col_y);
+    int   col_rgt = ceil((float)img_w / (float)pxl_per_col_x);
+
+    //total number of rows/columns
+    int row_cnt = ceil( row_lft + row_rgt );
+    int col_cnt = col_lft + col_rgt;
+    //move the start position to account for extra columns
+    int origin_x = -48 * col_lft + offset_x;
+    int origin_y =  12 * col_lft + offset_y;
+
+    uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+    tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
+    tt_arr* towntiles = handle->tile;
+    tt_arr* tile = towntiles;
+    int tile_num = 0;
+
+    for (int row = 0; row < row_cnt; row++)
+    {
+        for (int col = 0; col < col_cnt; col++)
+        {
+            // //increment one tile position
+            // origin_x +=  48;
+            // origin_y += -12;
+            tile = &towntiles[row*row_cnt + col];
+
+            while ((origin_y >= img_h) || (origin_x <= -80)) {
+                //assign blank values to this tile entry
+                // tile[row*row_cnt + col].tile_id = 1 | 0x4000000;
+                tile->tile_id = 1;
+                tile->col     = col;
+                tile->row     = row;
+
+                //increment one tile column until in range of pixels
+                origin_x +=  48;
+                origin_y += -12;
+                col++;
+
+                if (col >= col_cnt) {
+                    break;
+                }
+
+            }
+
+            if ((origin_y <= -36) || (origin_x >= img_w)) {
+
+                while (col < col_cnt) {
+                    origin_x +=  48;
+                    origin_y += -12;
+                    tile->tile_id = 1;
+                    col++;
+                }
+
+//Bakerstaunch
+// int tile_x = origin_x + row * pxl_per_row_x + col * pxl_per_col_x;
+// int tile_x = origin_y + row * pxl_per_row_y + col * pxl_per_col_y;
+// and the same for y
+
+// The starting origin x is 
+// -(cols to the left * x pixels per col) 
+// and origin y is 
+// -(cols to the left * y pixels per col)
+
+                origin_x =   -48 * col_lft
+                            + 32 * row - 48
+                            + offset_x;
+                origin_y =    12 * col_lft
+                            + 24 * row
+                            + offset_y;
+            }
+
+            snprintf(tile->name_ptr, 14, "%s%03d.FRM", name, tile_num++);
+
+            //TODO: clean this up, was used for testing different methods
+            // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h,
+            //         origin.y, origin.x);
+            crop_single_tile(tile_buff, frm_pxls, img_w, img_h, origin_x, origin_y);
+            // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
+            //         origin.y, origin.x);
+
+            //TODO: check if blank tile before memcpy
+            //      if blank, tile[row*col_cnt + col].tileID = 1;
+            //      then move to next tile
+
+            memcpy(tile->frm_data, tile_buff, 80*36);
+            tile->row     = row;
+            tile->col     = col;
+            tile->tile_id = 0;
+
+
+            //increment one tile column for next tile
+            origin_x +=  48;
+            origin_y += -12;
+
+        }
+        
+    }
+
+    handle->size = col_cnt*row_cnt;
+    handle->col_cnt = col_cnt;
+    handle->row_cnt = row_cnt;
+
+    return handle;
+}
+
+//linked list version
 town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name)
 {
     uint8_t tile_buff[80 * 36] = {0};
     int img_w = img_data->width;
     int img_h = img_data->height;
 
+    int origin_x = -48 + offset_x;
+    int origin_y =   0 + offset_y;
+
     uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
     int name_length = strlen(name) + 7;
     town_tile* head = nullptr;
     town_tile* prev = nullptr;
     town_tile* tile = nullptr;
-
-    int origin_x = -48 + offset_x;
-    int origin_y =   0 + offset_y;
-    int tile_num =   0;
-    int row_cnt  =   1;
-    bool running = true;
+    int tile_num    = 0;
+    int row_cnt     = 1;
+    bool running    = true;
     while (running)
     {
         //TODO: clean this up, was used for testing different methods

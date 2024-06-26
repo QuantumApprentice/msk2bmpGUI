@@ -17,3 +17,10 @@ int test_assign_tile_id()
 
 
 }
+
+
+int test_export_pattern()
+{
+    pattern* out_pattern = (pattern*)calloc(1, 0x168C); //total filesize is 0x168C
+    
+}

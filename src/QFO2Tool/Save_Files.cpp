@@ -921,7 +921,8 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
-town_tile* export_TMAP_tiles(user_info* usr_info,
+// town_tile* export_TMAP_tiles(user_info* usr_info,
+tt_arr_handle* export_TMAP_tiles(user_info* usr_info,
                        image_data* img_data,
                        int x, int y)
 {
@@ -955,8 +956,6 @@ town_tile* export_TMAP_tiles(user_info* usr_info,
         return nullptr;
     }
 
-
-
     // check for existing file first unless "Auto" selected?
     //TODO: need to verify "Auto" setting
     ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
@@ -967,9 +966,14 @@ town_tile* export_TMAP_tiles(user_info* usr_info,
         return nullptr;
     }
 
+    //TODO: remove this call, replaced by
     town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, save_path, name);
 
-    return new_tiles;
+    tt_arr_handle* handle = crop_TMAP_tile_arr(x, y, img_data, save_path, name);
+
+
+    return handle;
+    // return new_tiles;
 }
 
 // checks if the file/folder? already exists before saving

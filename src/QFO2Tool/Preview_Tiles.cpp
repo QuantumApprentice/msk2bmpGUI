@@ -222,15 +222,21 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     int img_h = img_data->height;
 
     ImVec2 Top_Left; // = Origin;
+    // static int offset_x = -48;
     static int offset_x;
     static int offset_y;
 
     static town_tile* new_tiles = nullptr;
+    static tt_arr_handle* handle = nullptr;
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-        town_tile* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
+        // town_tile* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
+
+        tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
+
         if (temp != nullptr) {
-            new_tiles = temp;
+            // new_tiles = temp;
+            handle = temp;
         }
     }
 
@@ -242,6 +248,8 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
     {
+
+        export_tile_proto_arr_start(usr_nfo, handle);
 
         export_tile_proto_start(usr_nfo, new_tiles);
 
@@ -340,8 +348,6 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     free(temp_buffer);
 }
 
-// #define TMAP_W          (80)
-// #define TMAP_H          (36)
 #define TMAP_W (80 + 48)
 #define TMAP_H (36 + 24)
 void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *img_data)
@@ -424,6 +430,7 @@ void draw_red_squares(image_data *img_data, bool show_squares)
     }
 }
 
+//TODO: delete
 // //this function not used right now
 // void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
 // {
@@ -605,6 +612,7 @@ void draw_tiles_OpenGL(image_data *img_data, shader_info *shader, GLuint *textur
     }
 }
 
+//TODO: delete
 void draw_tiles_ImGui(image_data *img_data, ImVec2 Top_Corner, ImVec2 Bottom_Corner)
 {
     // float scale = img_data->scale;

@@ -41,6 +41,57 @@ bool is_tile_blank(town_tile* tile)
     return not_blank;
 }
 
+void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
+{
+    char c1, c2;        //TODO: test and remove?
+
+    const char* strt = tiles_lst;
+    int tiles_lst_len = strlen(tiles_lst);
+    //TODO: should current_line start at 0?
+    //      proto and pattern files might benefit
+    int current_line = 1;
+
+    tt_arr* node = handle->tile;
+    for (int i = 0; i < handle->size; i++)
+    {
+        for (int j = 0; j < tiles_lst_len; j++)
+        {
+            if (tiles_lst[j] != '\n') {
+                continue;
+            }
+            // if (tiles_lst[i] >= 'A' && tiles_lst[i] <= 'Z') {
+            //     c1 = 'a' + tiles_lst[i] - 'A';
+            // }
+            // if (node[i].name_ptr[0] >= 'A' && node[i].name_ptr[0] <= 'Z') {
+            //     c2 = 'a' + node[i].name_ptr[0] - 'A';
+            // }
+            // if (c1 != c2) {
+            //     continue;
+            // }
+
+            if (tolower(strt[0]) != tolower(node[i].name_ptr[0])) {
+                strt = &tiles_lst[j+1];
+                current_line++;
+                continue;
+            }
+            if (io_strncmp(&strt[0], node[i].name_ptr, 14) != 0) {
+                strt = &tiles_lst[j+1];
+                current_line++;
+                continue;
+            }
+            //match found, assign current line # to current tile_id
+            node[i].tile_id = current_line;
+            break;
+        }
+        if (node[i].tile_id == 0) {
+            //TODO: this needs its own popup window asking for next step
+            printf("we've got a problem here, unable to find matching name\n");
+        }
+        strt = tiles_lst;
+        current_line = 1;
+    }
+}
+
 void assign_tile_id_w(town_tile* head, const char* tiles_lst)
 {
     char c1, c2;
@@ -219,7 +270,7 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     //  out_pattern is array of
     //  4x int struct w/pragma pack applied
     #pragma pack(push, 1)
-    struct pattern {
+    struct patterna {
         uint32_t tile_id;
         uint32_t unkown_b;
         uint32_t unkown_c;
@@ -230,8 +281,12 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     //0x168C is the total length of a pattern file
     //includes length of footer (12 bytes)
     //total number of tile lines is 360? possibly more (needs more research)
-    pattern* out_pattern = (pattern*)calloc(1, 0x168C);
+    patterna* out_pattern = (patterna*)calloc(1, 0x168C);
 
+    //all tile entries appear to need to be (tile_id-1) | 0x4000000
+    //or else they won't show the correct tile pattern
+    //in the preview window (so this takes the FrmID?)
+    //maybe pass in proto info?
     node          = head;
     last_row      = node->row;
     int col_indx  = 0;
@@ -240,7 +295,8 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     {
         if (node->row != last_row) {
             while (col_indx < col_max) {
-                out_pattern[tile_indx++].tile_id = 1;               //0? or 1?
+                //empty tile entries (id==1) also need to be | 0x4000000
+                out_pattern[tile_indx++].tile_id = 1 | 0x4000000;
                 col_indx++;
             }
             last_row = node->row;
@@ -248,18 +304,18 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
         }
         //TODO: the tile_id isn't the actual line number of the art?
         //      should I assign it correctly in the first place?
-        out_pattern[tile_indx++].tile_id = node->tile_id-1;
+        out_pattern[tile_indx++].tile_id = (node->tile_id-1) | 0x4000000;
         node = node->next;
         col_indx++;
     }
     //TODO: remove this if it's unnecessary to keep tiles aligned
     //writes out extra blank tiles at the end
     while (col_indx < col_max) {
-        out_pattern[tile_indx++].tile_id = 1;               //0? or 1?
+        out_pattern[tile_indx++].tile_id = 1 | 0x4000000;               //0? or 1?
         col_indx++;
     }
 
-    pattern* ptr = out_pattern;
+    patterna* ptr = out_pattern;
     for (int k = 0; k < last_row; k++)
     {
         int j = 0;
@@ -278,8 +334,6 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     u32_ptr[0] = col_max;
     u32_ptr[1] = last_row;
     u32_ptr[2] = 0;//unkown exactly what this does?
-
-    printf("how we doin?\n");
 
     char file_buff[MAX_PATH];
     snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000002", usr_info->default_game_path, head->name_ptr);
@@ -300,3 +354,117 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     free(out_pattern);
 }
 
+void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
+{
+    int choice = 0;
+    const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
+    if (tiles_lst == nullptr) {
+        if (strlen(usr_info->default_game_path) > 1) {
+            usr_info->game_files.FRM_TILES_LST = load_tiles_lst_game(usr_info->default_game_path);
+        }
+        if (tiles_lst == nullptr) {
+            choice = tinyfd_messageBox(
+                "TILES.LST missing...",
+                "Unable to find TILES.LST.\n\n"
+
+                "TILES.LST is needed to match up\n"       //which one? proto one? or frm one?
+                "the tile-name to a line number\n"
+                "in TILES.LST,\n"
+                "then that line number is used\n"
+                "in the pattern file to indicate\n"
+                "which tile is in what position.\n\n"
+
+                "",
+                "cancel", "warning", 1
+            );
+
+            if (choice == YES) {
+                //point to TILES.LST?
+            }
+            if (choice == NO) {
+                //create new TILES.LST?
+            }
+            if (choice == CANCEL) {
+                return;
+            }
+        }
+    }
+
+    assign_tile_id_arr(handle, tiles_lst);
+
+    //lay out tiles from node until we get to the end of a row
+    //once we're at the end of a row, but not at row_max
+    //fill the rest of the row w/blank tiles
+    //  out_pattern is array of
+    //  4x int struct w/pragma pack applied
+    #pragma pack(push, 1)
+    struct pattern {
+        uint32_t tile_id;
+        uint32_t unkown_b;
+        uint32_t unkown_c;
+        uint32_t unkown_d;
+    };
+    #pragma pack(pop)
+
+    //0x168C is the total length of a pattern file
+    //includes length of footer (12 bytes)
+    //total number of tile lines is 360? possibly more (needs more research)
+    pattern* out_pattern = (pattern*)calloc(1, 0x168C);
+
+    //all tile entries appear to need to be (tile_id-1) | 0x4000000
+    //or else they won't show the correct tile pattern
+    //0x4000000 == frm is a tile frm (engine looks for art id in TILES.LST)
+    //in the preview window (so this takes the FrmID?)
+    //maybe pass in proto info?
+    tt_arr* node          = handle->tile;
+    int col_indx  = 0;
+    int tile_indx = 0;
+    for (int i = 0; i < handle->size; i++)
+    {
+
+        //empty tile entries (id==1) also need to be | 0x4000000
+        //TODO: the tile_id isn't the actual line number of the art?
+        //      should I assign it correctly in the first place?
+        out_pattern[tile_indx++].tile_id = node[i].tile_id | 0x4000000;
+
+        col_indx++;
+    }
+
+    pattern* ptr = out_pattern;
+    for (int k = 0; k < handle->row_cnt; k++)
+    {
+        int j = 0;
+        for (int i = handle->col_cnt-1; i > (handle->col_cnt-1)/2; i--)
+        {
+            uint32_t temp = ptr[i].tile_id;
+            ptr[i].tile_id = ptr[j].tile_id;
+            ptr[j].tile_id = temp;
+            j++;
+        }
+        ptr = &ptr[handle->col_cnt];
+    }
+
+
+    uint32_t* u32_ptr = (uint32_t*)&out_pattern[360];        //offset for footer
+    u32_ptr[0] = handle->col_cnt;
+    u32_ptr[1] = handle->row_cnt;
+    u32_ptr[2] = 0;//unkown exactly what this does?
+
+    char file_buff[MAX_PATH];
+    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000002", usr_info->default_game_path);
+
+    FILE* pattern_file = fopen(file_buff, "wb");
+    fwrite(out_pattern, 0x168C, 1, pattern_file);
+    fclose(pattern_file);
+
+
+
+    //TODO: actually save the array out
+    //write out 1 row at a time?
+    //16 bytes per row
+    //tile_id in little endian
+    //  using first(last?) four bytes of the 16
+
+    
+    free(out_pattern);
+}
