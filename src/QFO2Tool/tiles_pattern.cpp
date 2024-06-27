@@ -336,7 +336,7 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     u32_ptr[2] = 0;//unkown exactly what this does?
 
     char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000002", usr_info->default_game_path, head->name_ptr);
+    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000001", usr_info->default_game_path, head->name_ptr);
 
     FILE* pattern_file = fopen(file_buff, "wb");
     fwrite(out_pattern, 0x168C, 1, pattern_file);
@@ -451,7 +451,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     u32_ptr[2] = 0;//unkown exactly what this does?
 
     char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000002", usr_info->default_game_path);
+    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000001", usr_info->default_game_path);
 
     FILE* pattern_file = fopen(file_buff, "wb");
     fwrite(out_pattern, 0x168C, 1, pattern_file);

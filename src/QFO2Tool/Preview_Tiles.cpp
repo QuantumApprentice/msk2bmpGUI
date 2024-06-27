@@ -222,8 +222,8 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     int img_h = img_data->height;
 
     ImVec2 Top_Left; // = Origin;
-    // static int offset_x = -48;
-    static int offset_x;
+    static int offset_x;// = -48;
+    // static int offset_x;
     static int offset_y;
 
     static town_tile* new_tiles = nullptr;
@@ -232,7 +232,7 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     if (ImGui::Button("Export Tiles")) {
         // town_tile* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
 
-        tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
+        tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x-48, offset_y);
 
         if (temp != nullptr) {
             // new_tiles = temp;
@@ -269,12 +269,8 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
 
     static int spacing_x;
     static int spacing_y;
-    // static int offset3;
-    // static int offset4;
     ImGui::SliderInt("Tile Spacing X", &spacing_x, 0, 80, NULL);
     ImGui::SliderInt("Tile Spacing Y", &spacing_y, 0, 80, NULL);
-    // ImGui::SliderInt("offset3", &offset3, -80, 80, NULL);
-    // ImGui::SliderInt("offset4", &offset4, -80, 80, NULL);
 
     ImVec2 Origin;
     Origin.x = img_data->offset.x + ImGui::GetItemRectMin().x;
