@@ -382,14 +382,14 @@ int skip_or_rename_tt(town_tile* node)
 
 int skip_or_rename_arr(char* name)
 {
-    char msg_buff[MAX_PATH] = {
+    char msg_buff[255];
+    snprintf(msg_buff, 255,
         "One of the new tile-names matches\n"
         "a tile-name already on TILES.LST.\n\n"
-    };
-    strncat(msg_buff, name, strlen(name));
-    strncat(msg_buff, "\n\n"
+        "%s\n\n"
         "YES:   Skip and append only new names?\n"
-        "NO:    Rename the new tiles?\n", 75);
+        "NO:    Rename the new tiles?\n", name
+    );
 
     int choice = tinyfd_messageBox(
                 "Match found...",
@@ -401,22 +401,23 @@ int skip_or_rename_arr(char* name)
 char* make_tile_list_arr(tt_arr_handle* handle, uint8_t* match_buff)
 {
     //buff_size = total length of all names
-    tt_arr* node = handle->tile;
+    tt_arr* tiles = handle->tile;
     uint8_t shift_ctr  = 0;
     int     tile_num   = 0;
     int     buff_size = 0;
     for (int i = 0; i < handle->size; i++)
     {
-        if (node[i].tile_id == 1) {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
             continue;
         }
 
         int indx = tile_num/8;
         uint8_t shift = 1 << shift_ctr;
         if (!(match_buff[indx] & shift)) {
-            buff_size += strlen(node->name_ptr);
+            buff_size += strlen(node->name_ptr)+2;  //+2 for /r/n
         }
-            shift_ctr++;
+        shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
         }
@@ -444,21 +445,26 @@ char* make_tile_list_arr(tt_arr_handle* handle, uint8_t* match_buff)
     // }
 
     char* cropped_list = (char*)malloc(buff_size+1);
-    node       = handle->tile;
+    // tiles       = handle->tile;
     shift_ctr  = 0;
     tile_num   = 0;
     char* c    = cropped_list;
     for (int i = 0; i < handle->size; i++)
     {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
+            continue;
+        }
+
         if (!(match_buff[tile_num/8] & 1 << shift_ctr)) {
             size_t amount_to_copy = strlen(node->name_ptr);
             memcpy(c, node->name_ptr, amount_to_copy);
             *(c + amount_to_copy)   = '\r';
             *(c + amount_to_copy+1) = '\n';
-            c += amount_to_copy+1;
+            c += amount_to_copy+2;
         }
 
-            shift_ctr++;
+        shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
         }
@@ -635,26 +641,40 @@ char* check_tile_names_arr(char* tiles_lst, tt_arr_handle* handle, bool set_auto
 {
     bool append_new_only = set_auto;
     int num_tiles = 0;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tt_arr* node = &handle->tile[i];
+        if (node->tile_id != 1) {
+            num_tiles++;
+        }
+    }
+
     int tiles_lst_len = strlen(tiles_lst);
     uint8_t shift_ctr = 0;
 
     uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
     char* strt = tiles_lst;             //keeps track of first letter of name on TILES.LST
 
-    tt_arr* node = handle->tile;
+    int match_ctr = 0;
+    tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
+            continue;
+        }
+
         for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
         {
             if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
                 continue;
             }
             //check first char of strt == first char of node[i].name_ptr
-            if (tolower(strt[0]) != tolower(node[i].name_ptr[0])) {
+            if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
                 strt = &tiles_lst[char_ctr+1];
                 continue;
             }
-            if (strcmp(strt, node[i].name_ptr) != 0) {
+            if (strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
                 strt = &tiles_lst[char_ctr+1];
                 continue;
             }
@@ -682,26 +702,24 @@ char* check_tile_names_arr(char* tiles_lst, tt_arr_handle* handle, bool set_auto
             }
             if (append_new_only == true) {
                 //identify this node as having a duplicate match
-                matches[i/8] |= 1 << shift_ctr;
-                //increment all the counters
-                shift_ctr++;
-                if (shift_ctr >= 8) {
-                    shift_ctr = 0;
-                } else {
-                }
+                matches[match_ctr/8] |= 1 << shift_ctr;
                 break;
             }
         }
-        strt = tiles_lst;
-        if (node == nullptr) {
-            break;
+        //increment all the counters
+        match_ctr++;
+        shift_ctr++;
+        if (shift_ctr >= 8) {
+            shift_ctr = 0;
         }
+        strt = tiles_lst;
     }
 
     //generate new list from remaining nodes in linked_lst
     char* cropped_list = nullptr;
     cropped_list = make_tile_list_arr(handle, matches);
 
+    free(matches);
     return cropped_list;
 }
 
@@ -927,7 +945,7 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
     strncat(final_tiles_list, cropped_list, new_lst_size);
 
     //write combined lists out
-    io_backup_file(tiles_lst_path);
+    io_backup_file(tiles_lst_path, nullptr);
     write_tiles_lst(tiles_lst_path, final_tiles_list);
 
     free(old_tiles_list);
@@ -975,7 +993,7 @@ char* append_tiles_lst_arr(char* tiles_lst_path, tt_arr_handle* handle, bool set
     strncat(final_tiles_list, cropped_list, new_lst_size);
 
     //write combined lists out
-    io_backup_file(tiles_lst_path);
+    io_backup_file(tiles_lst_path, nullptr);
     write_tiles_lst(tiles_lst_path, final_tiles_list);
 
     free(old_tiles_list);
@@ -1146,7 +1164,7 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
         }
         if (choice == NO) {              // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
         //backup original file
-            io_backup_file(save_path);
+            io_backup_file(save_path, nullptr);
 
         //over-write original file
             int num_tiles = 0;
@@ -1172,7 +1190,6 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
 void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char* save_buff)
 {
     char save_path[MAX_PATH];
-    // strcpy(save_path, save_buff);
     strcpy(save_path, usr_nfo->default_save_path);
 
     //TODO: load TILES.LST directly instead of from memory
@@ -1267,7 +1284,7 @@ void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char* 
         }
         if (choice == NO) {              // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
         //backup original file
-            io_backup_file(save_path);
+            io_backup_file(save_path, nullptr);
 
         //over-write original file
             int num_tiles = 0;

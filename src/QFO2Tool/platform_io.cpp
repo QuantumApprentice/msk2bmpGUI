@@ -184,26 +184,58 @@ bool io_path_check(char* file_path)
     return true;
 }
 
-//renames a file from file_path as a backup
+//renames a file from file_path
+//to dest_path as a backup file
 //appends date&time in this format
 //      _yyyymmdd_hhmmss
 //appends same file extension as source
-bool io_backup_file(char* file_path)
+bool io_backup_file(char* file_path, char* dest_path)
 {
+    if (dest_path == nullptr) {
+        dest_path = file_path;
+    }
     char* extension = strrchr(file_path, '\0');
     char time_buff[32];
     char rename_buff[MAX_PATH];
     time_t t = time(NULL);
     tm* tp = localtime(&t);
     strftime(time_buff, 32, "_%Y%m%d_%H%M%S", tp);
-    snprintf(rename_buff, MAX_PATH, "%s%s%s", file_path, time_buff, extension-4);
+    snprintf(rename_buff, MAX_PATH, "%s%s%s", dest_path, time_buff, extension-4);
 
     int error = rename(file_path, rename_buff);
     if (error != 0) {
-        perror("Error renaming TILES.LST: ");
+        perror("Error backing up file: ");
         return false;
     }
     return true;
+}
+
+bool io_move_file(char* file_path, char* dest_dir)
+{
+    char* file_name = strrchr(file_path, '/')+1;
+    char rename_buff[MAX_PATH];
+    snprintf(rename_buff, MAX_PATH, "%s%s", dest_dir, file_name);
+
+    int error = rename(file_path, rename_buff);
+    if (error != 0) {
+        perror("Error moving file: ");
+        return false;
+    }
+    return true;
+}
+
+bool io_create_backup_dir(char* dir)
+{
+    char dest_path[MAX_PATH];
+    strcpy(dest_path, dir);
+
+    char time_buff[32];
+    time_t t = time(NULL);
+    tm* tp = localtime(&t);
+    strftime(time_buff, 32, "_%Y%m%d_%H%M%S", tp);
+    snprintf(dir, MAX_PATH, "%s/backup%s", dest_path, time_buff);
+
+    return io_make_dir(dest_path);
 }
 
 //loads a text file into a buffer

@@ -1,14 +1,17 @@
-#include "Edit_TILES_LST.h"
-#include "town_map_tiles.h"
-
-#include "B_Endian.h"
-
 #include <string.h>
 #include "tinyfiledialogs.h"
 
+#include "B_Endian.h"
+#include "platform_io.h"
 
-#define TMAP_W          (80)
-#define TMAP_H          (36)
+#include "Edit_TILES_LST.h"
+#include "town_map_tiles.h"
+
+
+
+
+#define TMAP_W          (80)    //width of a town-map tile
+#define TMAP_H          (36)    //height of a town-map tile
 
 void save_TMAP_tile(char *save_path, uint8_t *data, char* name);
 
@@ -246,24 +249,21 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
     int row_cnt = ceil( row_lft + row_rgt );
     int col_cnt = col_lft + col_rgt;
 
-    uint8_t *frm_pxls = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+    uint8_t *frm_pxls     = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
     tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
-    tt_arr* towntiles = handle->tile;
-    tt_arr* tile = towntiles;
-    int tile_num = 0;
+    tt_arr* towntiles     = handle->tile;
+    tt_arr* tile          = towntiles;
+    int tile_num          = 0;
 
-    for (int row = 0; row <= row_cnt; row++)
-    {
-        for (int col = 0; col <= col_cnt; col++)
-        {
-
-            int origin_x =   -col_offset_x * col_lft
-                            + col_offset_x * col
-                            + row_offset_x * row
+    for (int row = 0; row < row_cnt; row++) {
+        for (int col = 0; col < col_cnt; col++) {
+            int origin_x =   -col_offset_x * col_lft    //initial origin position x
+                            + col_offset_x * col        //individual tile position x_col
+                            + row_offset_x * row        //individual tile position x_row
                             + offset_x;
-            int origin_y =   -col_offset_y * col_lft
-                            + col_offset_y * col
-                            + row_offset_y * row
+            int origin_y =   -col_offset_y * col_lft    //initial origin position y
+                            + col_offset_y * col        //individual tile position y_col
+                            + row_offset_y * row        //individual tile position y_row
                             + offset_y;
             tile = &towntiles[row*col_cnt + col];
 
@@ -302,7 +302,7 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
         }
     }
 
-    handle->size = col_cnt*row_cnt;
+    handle->size    = col_cnt*row_cnt;
     handle->col_cnt = col_cnt;
     handle->row_cnt = row_cnt;
 
@@ -409,6 +409,21 @@ void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
 
 
     snprintf(full_file_path, MAX_PATH, "%s/%s", save_path, name);
+
+    //TODO: make backups of the original tiles
+    // if (io_file_exists(full_file_path)) {
+    //     static char backup_path[MAX_PATH] = {'\0'};
+    //     if (backup_path[0] == '\0') {
+    //         strcpy(backup_path, full_file_path);
+    //         *strrchr(backup_path, '/\\') = '\0';
+    //         bool success = io_create_backup_dir(backup_path);
+    //         if (success == false) {
+    //             printf("Error trying to create a backup of %s...", name);
+    //             return;
+    //         }
+    //     }
+    //     io_move_file(full_file_path, backup_path);
+    // }
 
     FILE *file_ptr = fopen(full_file_path, "wb");
     if (!file_ptr) {

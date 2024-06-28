@@ -122,15 +122,22 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
 
     //get total_size of tile_ids where no match was found
     //used for allocating buffer
+    int     match_ctr = 0;
     uint8_t shift_ctr  = 0;
     int     total_size = 0;
-    tt_arr* node = head->tile;
+    tt_arr* tiles = head->tile;
     for (int i = 0; i < head->size; i++)
     {
-        if (!(match_buff[i/8]) & (1 << shift_ctr)) {
-            total_size += 14;
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
+            continue;
         }
-            shift_ctr++;
+
+        if (!(match_buff[match_ctr/8]) & (1 << shift_ctr)) {
+            total_size += strlen(node->name_ptr)+2;    //+2 for /r/n
+        }
+        match_ctr++;
+        shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
         }
@@ -148,15 +155,19 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
 
     //add non-matches to list of ids
     char* cropped_list = (char*)malloc(total_size+1);
-    char* c    = cropped_list;
-    shift_ctr  = 0;
-    node       = head->tile;
-    // while (node != nullptr)
+    char* c   = cropped_list;
+    shift_ctr = 0;
+    match_ctr = 0;
     for (int i = 0; i < head->size; i++)
     {
-        if (!(match_buff[i/8] & 1 << shift_ctr)) {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
+            continue;
+        }
+
+        if (!(match_buff[match_ctr/8] & 1 << shift_ctr)) {
             snprintf(c, 15, "%08d.pro\r\n", node->tile_id);
-            c += 14;
+            c += strlen(c);
         }
         //increment all the counters
         shift_ctr++;
@@ -175,36 +186,42 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
 {
     int num_tiles = 0;
     int tiles_lst_len = strlen(tiles_lst);
-    tt_arr* node = new_protos->tile;
+    tt_arr* tiles = new_protos->tile;
     for (int i = 0; i < new_protos->size; i++) {
-        if (node[i].tile_id == 1) {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
             continue;
         }
         num_tiles++;
     }
 
-    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
+    int match_ctr = 0;
     uint8_t shift_ctr = 0;
-
     char* strt = tiles_lst;  //keeps track of position on TILES.LST
+    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
     for (int i = 0; i < new_protos->size; i++)
     {
+        tt_arr* node = &tiles[i];
+        //skip blank nodes
+        if (node->tile_id == 1) {
+            continue;
+        }
+
         for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
         {
-            if (node[i].tile_id == 1) {   // 1==blank tile
-                continue;
-            }
             if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
                 continue;
             }
-            //check first char of strt == first char of node[i].name_ptr
-            if (atoi(strt) != node[i].tile_id) {
+            //check if strt == node.tile_id
+            int num = atoi(strt);
+            if (num != node->tile_id) {
                 strt = &tiles_lst[char_ctr+1];
                 continue;
             }
             //identify this node as having a duplicate match
-            matches[i/8] |= 1 << shift_ctr;
+            matches[match_ctr/8] |= 1 << shift_ctr;
             //increment all the counters
+            match_ctr++;
             shift_ctr++;
             if (shift_ctr >= 8) {
                 shift_ctr = 0;
@@ -217,6 +234,7 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
     //generate new list from remaining nodes in linked_lst
     char* cropped_list = make_proto_list_arr(new_protos, matches);
 
+    free(matches);
     return cropped_list;
 }
 
@@ -446,19 +464,20 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         info.description = buf2;
         info.material_id = get_material_id();
 
-        tt_arr* tile_arr = handle->tile;
+        tt_arr* tiles = handle->tile;
         add_TMAP_tiles_to_lst_arr(usr_nfo, handle, nullptr);
         TMAP_tiles_pattern_arr(usr_nfo, handle);
 
         //tiles can reference different line numbers in pro_tile.msg
         //have all subsequent tiles point to first new tile entry
-        info.pro_tile = tile_arr->tile_id * 100;
-        tt_arr* node = tile_arr;
-        // while (node != nullptr)
+        info.pro_tile = tiles->tile_id * 100;
         for (int i = 0; i < handle->size; i++)
         {
+            tt_arr* node = &tiles[i];
+            if (node->tile_id == 1) {
+                continue;
+            }
             export_tile_proto_arr(usr_nfo, node, &info);
-            // node = node->next;
         }
 
         if (usr_nfo->default_game_path[0] == '\0') {
@@ -470,9 +489,9 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
 
         //TODO: need to add option for different languages
         //TODO: maybe need to create the subfolders
-        //TODO: also need to give options for items already on the list
+        //TODO: also need to give options for descriptions already on pro_tile.msg
         //add name/description to data/Text/english/Game/pro_tile.msg
-        pro_tile_msg_append_arr(usr_nfo, &info, tile_arr);
+        pro_tile_msg_append_arr(usr_nfo, &info, tiles);
     }
 
     if (ImGui::Button("Close")) {
@@ -545,7 +564,7 @@ bool backup_append_LST(char* path, char* string)
     char* ptr = buff_tiles_lst + file_size;
     memcpy(ptr, string, string_len);
 
-    io_backup_file(path);
+    io_backup_file(path, nullptr);
     tiles_lst = fopen(path, "wb");
     fwrite(buff_tiles_lst, file_size+string_len, 1, tiles_lst);
     fclose(tiles_lst);
@@ -582,6 +601,9 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
 
     snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", usr_info->default_game_path, tile->tile_id);
     FILE* tile_pro = fopen(path_buff, "wb");
+    if (tile_pro == nullptr) {
+        printf("Unable to open proto file: %s\n", path_buff);
+    }
     fwrite(&proto, sizeof(tile_proto), 1, tile_pro);
     fclose(tile_pro);
 }

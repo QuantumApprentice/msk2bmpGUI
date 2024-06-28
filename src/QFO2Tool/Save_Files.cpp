@@ -966,14 +966,9 @@ tt_arr_handle* export_TMAP_tiles(user_info* usr_info,
         return nullptr;
     }
 
-    //TODO: remove this call, replaced by
-    // town_tile* new_tiles = crop_TMAP_tile_ll(x, y, img_data, save_path, name);
-
     tt_arr_handle* handle = crop_TMAP_tile_arr(x, y, img_data, save_path, name);
 
-
     return handle;
-    // return new_tiles;
 }
 
 // checks if the file/folder? already exists before saving

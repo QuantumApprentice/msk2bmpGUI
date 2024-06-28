@@ -206,37 +206,41 @@ void masking(image_data *img_data, GLuint msk_texture, ImVec2 TLC, shader_info *
 
 
 
+ImVec2 T_Corner =   {48,-12};
 ImVec2 L_Corner = {00, 00};
-ImVec2 T_Corner = {48,-12};
-ImVec2 R_Corner = {80, 12};
-ImVec2 B_Corner = {32, 24};
+ImVec2 R_Corner =       {80, 12};
+ImVec2 B_Corner =   {32, 24};
+
+// ImVec2 T_Corner =   {00,00};
+// ImVec2 L_Corner = {-48, 12};
+// ImVec2 R_Corner =       {32, 24};
+// ImVec2 B_Corner =   {-16, 36};
 void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
                      shader_info *shaders, GLuint tile_texture)
 {
     float scale = img_data->scale;
     ImGuiWindow *window = ImGui::GetCurrentWindow();
-    // ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-    // ImVec2 base_top_corner = top_corner(img_data);
 
     int img_w = img_data->width;
     int img_h = img_data->height;
 
-    ImVec2 Top_Left; // = Origin;
-    static int offset_x;// = -48;
-    // static int offset_x;
+    ImVec2 Top_Left;        // = Origin;
+    static int offset_x;    // = -48;
     static int offset_y;
 
-    static town_tile* new_tiles = nullptr;
     static tt_arr_handle* handle = nullptr;
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-        // town_tile* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y);
 
-        tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x-48, offset_y);
+        tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y-12);
 
         if (temp != nullptr) {
-            // new_tiles = temp;
             handle = temp;
+            for (int i = 0; i < handle->size; i++)
+            {
+                tt_arr* node = &handle->tile[i];
+                // printf("node[%d].tile_id: %d name: %s\n", i, node->tile_id, node->name_ptr);
+            }
         }
     }
 
@@ -248,15 +252,10 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
     {
-
         export_tile_proto_arr_start(usr_nfo, handle);
-
-        export_tile_proto_start(usr_nfo, new_tiles);
 
         ImGui::EndPopup();
     }
-
-
 
     ImGui::SliderInt("Image Offset X", &offset_x, -400, 400, NULL);
     ImGui::SliderInt("Image Offset Y", &offset_y, -400, 400, NULL);
@@ -280,8 +279,20 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     int row_h = (36 + 36 + 24); // 96
     int max_box_x = +2 * ((img_w + (col_w - 1) - offset_x) / col_w);
     int min_box_x = -3 * ((img_h + (row_h - 1) + offset_y) / row_h);
-    int max_box_y = +2 * ((img_w + (col_w - 1) - offset_y) / col_w) + 3 * ((img_h + (row_h - 1) - offset_y) / row_h);
+    int max_box_y = +2 * ((img_w + (col_w - 1) - offset_y) / col_w)
+                    +3 * ((img_h + (row_h - 1) - offset_y) / row_h);
     int min_box_y = -3 * offset_y / row_h - 2  * offset_x  / col_w;
+
+    // #define pxl_per_row_x       (128)   //  ((80+80-32)    /1) tile per repeat
+    // #define pxl_per_row_y        (32)   //  ((36+36+36-12) /3) tiles per repeat
+    // #define pxl_per_col_x        (64)   //  ((80+80-32)    /2) tiles per repeat
+    // #define pxl_per_col_y        (48)   //  ((36+36+36-12) /2) tiles per repeat
+
+    // int max_box_x =  (img_w + (pxl_per_col_x-1) - offset_x)/pxl_per_col_x;
+    // int min_box_x = -(img_h + (96-1)            + offset_y)/pxl_per_row_y;
+    // int max_box_y =  (img_w + (pxl_per_row_x-1) - offset_x)/pxl_per_row_x
+    //                 +(img_h + (96-1)            - offset_y)/pxl_per_row_y;
+    // int min_box_y = -(offset_y/pxl_per_row_y)   -(offset_x /pxl_per_col_x);
 
     ImVec2 Left, Top, Bottom, Right, new_origin;
     for (int y = min_box_y; y < max_box_y; y++)
@@ -291,33 +302,33 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
             new_origin.x = Origin.x + x * spacing_x * scale;
             new_origin.y = Origin.y + y * spacing_y * scale;
 
-            Top_Left.x = new_origin.x + (x *  48 + y * 32) * scale;
-            Top_Left.y = new_origin.y + (x * -12 + y * 24) * scale;
+            Top_Left.x = new_origin.x + (x* 48 + y*32)*scale;
+            Top_Left.y = new_origin.y + (x*-12 + y*24)*scale;
 
-            Left.x = Top_Left.x + L_Corner.x * scale;
-            Left.y = Top_Left.y + L_Corner.y * scale;
+            Left.x   = Top_Left.x + L_Corner.x*scale;
+            Left.y   = Top_Left.y + L_Corner.y*scale;
 
-            Top.x = Top_Left.x + T_Corner.x * scale;
-            Top.y = Top_Left.y + T_Corner.y * scale;
+            Top.x    = Top_Left.x + T_Corner.x*scale;
+            Top.y    = Top_Left.y + T_Corner.y*scale;
 
-            Right.x = Top_Left.x + R_Corner.x * scale;
-            Right.y = Top_Left.y + R_Corner.y * scale;
+            Right.x  = Top_Left.x + R_Corner.x*scale;
+            Right.y  = Top_Left.y + R_Corner.y*scale;
 
-            Bottom.x = Top_Left.x + B_Corner.x * scale;
-            Bottom.y = Top_Left.y + B_Corner.y * scale;
+            Bottom.x = Top_Left.x + B_Corner.x*scale;
+            Bottom.y = Top_Left.y + B_Corner.y*scale;
 
-            ImVec2 uv_l, uv_t, uv_r, uv_b;
-            uv_l.x = (Left.x + offset_x - new_origin.x) / img_data->width / scale;
-            uv_l.y = (Left.y + offset_y - new_origin.y) / img_data->height / scale;
+            ImVec2 uv_l, uv_t, uv_r, uv_b, uv_ref;
+            uv_ref.x = (float)(x* 48 + y*32 + offset_x);
+            uv_ref.y = (float)(x*-12 + y*24 + offset_y);
 
-            uv_t.x = (Top.x + offset_x - new_origin.x) / img_data->width / scale;
-            uv_t.y = (Top.y + offset_y - new_origin.y) / img_data->height / scale;
-
-            uv_r.x = (Right.x + offset_x - new_origin.x) / img_data->width / scale;
-            uv_r.y = (Right.y + offset_y - new_origin.y) / img_data->height / scale;
-
-            uv_b.x = (Bottom.x + offset_x - new_origin.x) / img_data->width / scale;
-            uv_b.y = (Bottom.y + offset_y - new_origin.y) / img_data->height / scale;
+            uv_l.x = (uv_ref.x + L_Corner.x) / img_data->width ;
+            uv_l.y = (uv_ref.y + L_Corner.y) / img_data->height;
+            uv_t.x = (uv_ref.x + T_Corner.x) / img_data->width ;
+            uv_t.y = (uv_ref.y + T_Corner.y) / img_data->height;
+            uv_r.x = (uv_ref.x + R_Corner.x) / img_data->width ;
+            uv_r.y = (uv_ref.y + R_Corner.y) / img_data->height;
+            uv_b.x = (uv_ref.x + B_Corner.x) / img_data->width ;
+            uv_b.y = (uv_ref.y + B_Corner.y) / img_data->height;
 
             glBindTexture(GL_TEXTURE_2D, img_data->render_texture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
@@ -325,9 +336,11 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-            if (((uv_l.x >= 0) && (uv_l.x <= 1.0) && (uv_l.y >= 0) && (uv_l.y <= 1.0)) || ((uv_t.x >= 0) && (uv_t.x <= 1.0) && (uv_t.y >= 0) && (uv_t.y <= 1.0)) || ((uv_r.x >= 0) && (uv_r.x <= 1.0) && (uv_r.y >= 0) && (uv_r.y <= 1.0)) || ((uv_b.x >= 0) && (uv_b.x <= 1.0) && (uv_b.y >= 0) && (uv_b.y <= 1.0)))
+            if (((uv_l.x >= 0) && (uv_l.x <= 1.0) && (uv_l.y >= 0) && (uv_l.y <= 1.0))
+             || ((uv_t.x >= 0) && (uv_t.x <= 1.0) && (uv_t.y >= 0) && (uv_t.y <= 1.0))
+             || ((uv_r.x >= 0) && (uv_r.x <= 1.0) && (uv_r.y >= 0) && (uv_r.y <= 1.0))
+             || ((uv_b.x >= 0) && (uv_b.x <= 1.0) && (uv_b.y >= 0) && (uv_b.y <= 1.0)))
             {
-
                 window->DrawList->AddImageQuad(
                     (ImTextureID)(uintptr_t)img_data->render_texture,
                     Left, Top, Right, Bottom,

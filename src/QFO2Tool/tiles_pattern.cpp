@@ -56,6 +56,7 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
     {
         for (int j = 0; j < tiles_lst_len; j++)
         {
+            tt_arr* ptr = &node[i];
             if (tiles_lst[j] != '\n') {
                 continue;
             }
@@ -74,7 +75,7 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
                 current_line++;
                 continue;
             }
-            if (io_strncmp(&strt[0], node[i].name_ptr, 14) != 0) {
+            if (io_strncmp(&strt[0], node[i].name_ptr, strlen(node[i].name_ptr)) != 0) {
                 strt = &tiles_lst[j+1];
                 current_line++;
                 continue;
@@ -454,6 +455,11 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000001", usr_info->default_game_path);
 
     FILE* pattern_file = fopen(file_buff, "wb");
+    if (pattern_file == nullptr) {
+        free(out_pattern);
+        printf("Can't open pattern file...%d", __LINE__);
+        return;
+    }
     fwrite(out_pattern, 0x168C, 1, pattern_file);
     fclose(pattern_file);
 
