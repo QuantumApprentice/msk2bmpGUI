@@ -43,20 +43,18 @@ bool is_tile_blank(town_tile* tile)
 
 void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
 {
-    char c1, c2;        //TODO: test and remove?
-
     const char* strt = tiles_lst;
     int tiles_lst_len = strlen(tiles_lst);
     //TODO: should current_line start at 0?
     //      proto and pattern files might benefit
     int current_line = 1;
 
-    tt_arr* node = handle->tile;
+    tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
         for (int j = 0; j < tiles_lst_len; j++)
         {
-            tt_arr* ptr = &node[i];
+            tt_arr* node = &tiles[i];
             if (tiles_lst[j] != '\n') {
                 continue;
             }
@@ -70,21 +68,21 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
             //     continue;
             // }
 
-            if (tolower(strt[0]) != tolower(node[i].name_ptr[0])) {
+            if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
                 strt = &tiles_lst[j+1];
                 current_line++;
                 continue;
             }
-            if (io_strncmp(&strt[0], node[i].name_ptr, strlen(node[i].name_ptr)) != 0) {
+            if (io_strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
                 strt = &tiles_lst[j+1];
                 current_line++;
                 continue;
             }
             //match found, assign current line # to current tile_id
-            node[i].tile_id = current_line;
+            node->tile_id = current_line;
             break;
         }
-        if (node[i].tile_id == 0) {
+        if (tiles[i].tile_id == 0) {
             //TODO: this needs its own popup window asking for next step
             printf("we've got a problem here, unable to find matching name\n");
         }
@@ -414,21 +412,22 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
 
     //all tile entries appear to need to be (tile_id-1) | 0x4000000
     //or else they won't show the correct tile pattern
-    //0x4000000 == frm is a tile frm (engine looks for art id in TILES.LST)
+    //0x4000000 == tile frm (engine looks for art id in TILES.LST)
     //in the preview window (so this takes the FrmID?)
     //maybe pass in proto info?
-    tt_arr* node          = handle->tile;
-    int col_indx  = 0;
-    int tile_indx = 0;
+    tt_arr* tiles = handle->tile;
+    // int col_indx  = 0;
+    // int tile_indx = 0;
     for (int i = 0; i < handle->size; i++)
     {
+        tt_arr* node = &tiles[i];
 
         //empty tile entries (id==1) also need to be | 0x4000000
         //TODO: the tile_id isn't the actual line number of the art?
         //      should I assign it correctly in the first place?
-        out_pattern[tile_indx++].tile_id = node[i].tile_id | 0x4000000;
+        out_pattern[i].tile_id = node->tile_id | 0x4000000;
 
-        col_indx++;
+        // col_indx++;
     }
 
     pattern* ptr = out_pattern;
