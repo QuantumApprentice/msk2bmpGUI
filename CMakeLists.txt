@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.25)
 
+# # Enable ASAN globally
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+# set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+
 #compile option (-mavx) for is_tile_blank() in tiles_patterns.cpp
 #applies to current directory & below?
 add_compile_options(
   -mavx             #support for AVX instructions
+  # -fsanitize=address
 )
+
 
 #sets PROJECT_NAME, then other settings
 #PROJECT_NAME is auto set when name is passed as 1st arg

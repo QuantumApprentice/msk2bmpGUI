@@ -98,7 +98,7 @@ char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
     node       = head;
     while (node != nullptr)
     {
-        if (!(match_buff[tile_num/8] & 1 << shift_ctr)) {
+        if (!(match_buff[tile_num/8]) & (1 << shift_ctr)) {
             snprintf(c, 15, "%08d.pro\r\n", node->tile_id);
             c += 14;
         }
@@ -133,7 +133,11 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
             continue;
         }
 
-        if (!(match_buff[match_ctr/8]) & (1 << shift_ctr)) {
+        int match = match_ctr/8;
+        int shift = 1 << shift_ctr;
+
+        // if (!(match_buff[match_ctr/8]) & (1 << shift_ctr)) {
+        if (!(match_buff[match] & shift)) {
             total_size += strlen(node->name_ptr)+2;    //+2 for /r/n
         }
         match_ctr++;
@@ -170,6 +174,7 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
             c += strlen(c);
         }
         //increment all the counters
+        match_ctr++;
         shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
@@ -185,7 +190,6 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
 char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
 {
     int num_tiles = 0;
-    int tiles_lst_len = strlen(tiles_lst);
     tt_arr* tiles = new_protos->tile;
     for (int i = 0; i < new_protos->size; i++) {
         tt_arr* node = &tiles[i];
@@ -194,11 +198,22 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
         }
         num_tiles++;
     }
+    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
 
+    //if tiles_lst doesn't exist
+    //create new list from new_protos and return it
+    if (tiles_lst == nullptr) {
+        char* cropped_list = make_proto_list_arr(new_protos, matches);
+        free(matches);
+        return cropped_list;
+    }
+
+    //identify duplicate entries in the proto/TILES.LST file
+    // and mark them as duplicates in (matches)
     int match_ctr = 0;
     uint8_t shift_ctr = 0;
     char* strt = tiles_lst;  //keeps track of position on TILES.LST
-    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
+    int tiles_lst_len = strlen(tiles_lst);
     for (int i = 0; i < new_protos->size; i++)
     {
         tt_arr* node = &tiles[i];
@@ -220,13 +235,14 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
             }
             //identify this node as having a duplicate match
             matches[match_ctr/8] |= 1 << shift_ctr;
-            //increment all the counters
-            match_ctr++;
-            shift_ctr++;
-            if (shift_ctr >= 8) {
-                shift_ctr = 0;
-            }
             break;
+        }
+        assert(shift_ctr == match_ctr &7);
+        //increment all the counters
+        match_ctr++;
+        shift_ctr++;
+        if (shift_ctr >= 8) {
+            shift_ctr = 0;
         }
         strt = tiles_lst;
     }
@@ -507,6 +523,13 @@ void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head)
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
     //check if new protos are on old list
     char* old_proto_list = io_load_text_file(save_path);
+    if (old_proto_list == nullptr) {
+        //TODO: need either a popup or some menu
+        //      telling the user they're missing this file
+        //      and asking if we should create a new one
+        //      or load the original from master.dat file
+        printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+    }
     char* new_proto_list = check_proto_names_arr(old_proto_list, head);
     if (new_proto_list == nullptr) {
         free(old_proto_list);
@@ -583,10 +606,12 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
     char path_buff[MAX_PATH];
 
     tile_proto proto;
-    proto.ObjectID        = tile->tile_id | 0x4000000;
-    proto.TextID          = info->pro_tile;                //used as a key/value pair in pro_tile.msg
+    //protoIDs are 1 indexed?
+    proto.ObjectID        = tile->tile_id+1 | 0x4000000;
+    //used as a key/value pair in pro_tile.msg
+    proto.TextID          = info->pro_tile;
     //FrmID is the line number (starting from 0) in art/tiles/TILES.LST
-    proto.FrmID           = (tile->tile_id -1) | 0x4000000; // -1 for off by 1 error
+    proto.FrmID           = (tile->tile_id) | 0x4000000;
     //TODO: test if these 3 have effect on tiles
     proto.Light_Radius    = 8;
     proto.Light_Intensity = 8;

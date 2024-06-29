@@ -45,9 +45,8 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
 {
     const char* strt = tiles_lst;
     int tiles_lst_len = strlen(tiles_lst);
-    //TODO: should current_line start at 0?
-    //      proto and pattern files might benefit
-    int current_line = 1;
+    //art FID is 0 indexed, so start at 0 when assigning lines
+    int current_line = 0;
 
     tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)

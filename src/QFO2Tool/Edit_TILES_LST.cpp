@@ -935,8 +935,9 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
     //append new list_of_tiles to the end of original list
     //in a new buffer large enough to fit both
     int new_lst_size   = strlen(cropped_list);
-    char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size);
+    char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size +1);// +1); //+1 for '\0'
     strncpy(final_tiles_list, old_tiles_list, tiles_lst_size);
+    //TODO clean this up
     if (final_tiles_list[tiles_lst_size] == '\n') {
         final_tiles_list[tiles_lst_size+1] = '\0';
     } else {
@@ -958,6 +959,7 @@ char* append_tiles_lst_arr(char* tiles_lst_path, tt_arr_handle* handle, bool set
 
     int tiles_lst_size = io_file_size(tiles_lst_path);
 
+    //TODO: use io_load_text_file() instead
     //load original TILES.LST into memory
     char* old_tiles_list = (char*)malloc(tiles_lst_size+1);
     FILE* tiles_lst = fopen(tiles_lst_path, "rb");
@@ -972,6 +974,7 @@ char* append_tiles_lst_arr(char* tiles_lst_path, tt_arr_handle* handle, bool set
         printf("fread     size: %d\n", size);
     }
     fclose(tiles_lst);
+    old_tiles_list[tiles_lst_size] = '\0';      //fread doesn't auto-append null character
 
     //search old_tiles_list (TILES.LST)
     //for matching names from new_tiles_list
@@ -1245,15 +1248,11 @@ void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char* 
             return;
         }
         if (choice == YES) {          // Yes = Create new TILES.LST in this folder
-            // int num_tiles = 0;
-            // tt_arr* ptr = handle->tile;
-            // while (ptr != nullptr) {
-            //     num_tiles++;
-            //     ptr = ptr->next;
-            // }
-            // uint8_t match_buff[1+num_tiles/8] = {0};
-            char* new_tile_list = make_tile_list_arr(handle, nullptr);
+            //blank match_buff so all tiles are added to new_tile_list
+            uint8_t* match_buff = (uint8_t*)calloc(1+handle->size/8, 1);
+            char* new_tile_list = make_tile_list_arr(handle, match_buff);
             tiles_lst = write_tiles_lst(save_path, new_tile_list);
+            free(match_buff);
         }
         if (choice == NO) {           // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
             game_path = tinyfd_selectFolderDialog(
