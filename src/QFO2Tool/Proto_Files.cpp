@@ -57,6 +57,7 @@ void proto_tiles_lst_append(user_info* usr_info, town_tile* head);
 void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head);
 bool backup_append_LST(char* path, char* string);
 
+#if false
 //TODO: refactor append_tiles_lst() to work here
 //_tt stands for town_tile*
 char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
@@ -114,6 +115,7 @@ char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
 
     return cropped_list;
 }
+#endif
 
 //TODO: refactor append_tiles_lst() to work here
 //arr stands for tt_arr*
@@ -237,7 +239,7 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
             matches[match_ctr/8] |= 1 << shift_ctr;
             break;
         }
-        assert(shift_ctr == match_ctr &7);
+        // assert(shift_ctr == match_ctr &7);
         //increment all the counters
         match_ctr++;
         shift_ctr++;
@@ -254,6 +256,7 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
     return cropped_list;
 }
 
+#if false
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to town_tile* linked list first
 char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
@@ -307,7 +310,7 @@ char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
 
     return cropped_list;
 }
-
+#endif
 
 
 void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
@@ -332,6 +335,7 @@ void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
     }
 }
 
+#if false
 void pro_tile_msg_append(user_info* usr_nfo, proto_info* info, town_tile* tile)
 {
     //append to pro_tile.msg if either a name
@@ -353,7 +357,9 @@ void pro_tile_msg_append(user_info* usr_nfo, proto_info* info, town_tile* tile)
         backup_append_LST(path_buff, msg_line);
     }
 }
+#endif
 
+#if false
 void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
 {
     proto_info info;
@@ -432,6 +438,7 @@ void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
         ImGui::CloseCurrentPopup();
     }
 }
+#endif
 
 void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
 {
@@ -485,7 +492,7 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         TMAP_tiles_pattern_arr(usr_nfo, handle);
 
         //tiles can reference different line numbers in pro_tile.msg
-        //have all subsequent tiles point to first new tile entry
+        //have all tiles from this batch point to first new tile entry
         info.pro_tile = tiles->tile_id * 100;
         for (int i = 0; i < handle->size; i++)
         {
@@ -541,6 +548,7 @@ void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head)
     free(new_proto_list);
 }
 
+#if false
 void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
 {
     //this assumes usr_info->default_game_path has been set
@@ -559,6 +567,7 @@ void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
     free(old_proto_list);
     free(new_proto_list);
 }
+#endif
 
 //backs up file at "path",
 //appends "names" to text file at "path"
@@ -633,6 +642,7 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
     fclose(tile_pro);
 }
 
+#if false
 //export individual tile proto to save_path
 void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
 {
@@ -666,6 +676,7 @@ void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
     fclose(tile_pro);
 
 }
+#endif
 
 //dropdown menu picking type of material
 //to set the proto as

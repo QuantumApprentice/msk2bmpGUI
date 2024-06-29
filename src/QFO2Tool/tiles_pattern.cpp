@@ -16,7 +16,7 @@
 //lay patterns out entire row at a time
 //must be in little endian format
 //rows start from the right in the x direction
-//  and y from the top?
+//  and y from the top
 //why are tile entries separated by 16 bytes?
 //last 12 bytes (footer?) identify x/y sizes,
 //  pattern entry number?
@@ -41,19 +41,27 @@ bool is_tile_blank(town_tile* tile)
     return not_blank;
 }
 
+//tile-names should already be on TILES.LST
+//so we loop through the list and identify the line number
+//then assign that line number as the tile_id
 void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
 {
-    const char* strt = tiles_lst;
     int tiles_lst_len = strlen(tiles_lst);
-    //art FID is 0 indexed, so start at 0 when assigning lines
-    int current_line = 0;
 
     tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
+        tt_arr* node = &tiles[i];
+        //skip known blank tiles
+        if (node->tile_id == 1) {
+            continue;
+        }
+
+        //art FID is 0 indexed, so start at 0 when assigning lines
+        int current_line = 0;
+        const char* strt = tiles_lst;
         for (int j = 0; j < tiles_lst_len; j++)
         {
-            tt_arr* node = &tiles[i];
             if (tiles_lst[j] != '\n') {
                 continue;
             }
@@ -85,11 +93,10 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
             //TODO: this needs its own popup window asking for next step
             printf("we've got a problem here, unable to find matching name\n");
         }
-        strt = tiles_lst;
-        current_line = 1;
     }
 }
 
+#if false
 void assign_tile_id_w(town_tile* head, const char* tiles_lst)
 {
     char c1, c2;
@@ -144,7 +151,9 @@ void assign_tile_id_w(town_tile* head, const char* tiles_lst)
         node = node->next;
     }
 }
+#endif
 
+#if false
 void assign_tile_id_f(town_tile* head, const char* tiles_lst)
 {
     char c1, c2;
@@ -196,7 +205,9 @@ void assign_tile_id_f(town_tile* head, const char* tiles_lst)
         strt = &tiles_lst[i+1];
     }
 }
+#endif
 
+#if false
 #include "Proto_Files.h"
 void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
 {
@@ -351,6 +362,7 @@ void TMAP_tiles_make_row(user_info* usr_info, town_tile* head)
     
     free(out_pattern);
 }
+#endif
 
 void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
 {
@@ -365,9 +377,8 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
                 "TILES.LST missing...",
                 "Unable to find TILES.LST.\n\n"
 
-                "TILES.LST is needed to match up\n"       //which one? proto one? or frm one?
-                "the tile-name to a line number\n"
-                "in TILES.LST,\n"
+                "TILES.LST is needed to match up\n"       // data/art/tiles/TILES.LST
+                "the tile-name to a line number,\n"
                 "then that line number is used\n"
                 "in the pattern file to indicate\n"
                 "which tile is in what position.\n\n"
@@ -377,9 +388,11 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
             );
 
             if (choice == YES) {
+                //TODO:
                 //point to TILES.LST?
             }
             if (choice == NO) {
+                //TODO:
                 //create new TILES.LST?
             }
             if (choice == CANCEL) {
@@ -390,10 +403,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
 
     assign_tile_id_arr(handle, tiles_lst);
 
-    //lay out tiles from node until we get to the end of a row
-    //once we're at the end of a row, but not at row_max
-    //fill the rest of the row w/blank tiles
-    //  out_pattern is array of
+    //  pattern file is array of
     //  4x int struct w/pragma pack applied
     #pragma pack(push, 1)
     struct pattern {
@@ -414,21 +424,19 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     //0x4000000 == tile frm (engine looks for art id in TILES.LST)
     //in the preview window (so this takes the FrmID?)
     //maybe pass in proto info?
+
+    //TODO: watch out!
+    //      only 320 lines available at this current size
     tt_arr* tiles = handle->tile;
-    // int col_indx  = 0;
-    // int tile_indx = 0;
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-
         //empty tile entries (id==1) also need to be | 0x4000000
-        //TODO: the tile_id isn't the actual line number of the art?
-        //      should I assign it correctly in the first place?
         out_pattern[i].tile_id = node->tile_id | 0x4000000;
-
-        // col_indx++;
     }
 
+    //flip the entries around so they line up
+    //correctly when the mapper lays them out
     pattern* ptr = out_pattern;
     for (int k = 0; k < handle->row_cnt; k++)
     {
@@ -443,11 +451,12 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
         ptr = &ptr[handle->col_cnt];
     }
 
-
+    //assign the row and column count
+    //so the mapper knows width/height of pattern
     uint32_t* u32_ptr = (uint32_t*)&out_pattern[360];        //offset for footer
     u32_ptr[0] = handle->col_cnt;
     u32_ptr[1] = handle->row_cnt;
-    u32_ptr[2] = 0;//unkown exactly what this does?
+    u32_ptr[2] = 0;//unkown exactly what does this do?
 
     char file_buff[MAX_PATH];
     snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000001", usr_info->default_game_path);
@@ -461,14 +470,5 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     fwrite(out_pattern, 0x168C, 1, pattern_file);
     fclose(pattern_file);
 
-
-
-    //TODO: actually save the array out
-    //write out 1 row at a time?
-    //16 bytes per row
-    //tile_id in little endian
-    //  using first(last?) four bytes of the 16
-
-    
     free(out_pattern);
 }

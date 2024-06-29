@@ -22,7 +22,7 @@ void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
     }
 }
 
-
+#if false
 //malloc town_tile* linked list and populate with generated tile-names
 //return ptr (need to free elsewhere)
 //_tt stands for town_tile*
@@ -46,7 +46,9 @@ town_tile* generate_new_tile_list_tt(char* name, town_tile* tile_head)
 
     return tile_head;
 }
+#endif
 
+#if false
 //malloc char* and populate with generated tile-names
 //return ptr (need to free elsewhere)
 char* generate_new_tile_list(char* name, int tile_num)
@@ -64,6 +66,7 @@ char* generate_new_tile_list(char* name, int tile_num)
     }
     return new_tile_list;
 }
+#endif
 
 
 //TODO: should I use this? or the one below?
@@ -182,6 +185,7 @@ int skip_or_rename_arr(tile_name_arr* node)
     return choice;
 }
 
+#if false
 //since I can't delete the node like in a linked list
 //just skip it by pointing the previous node to the next
 //if it's the head, then move the head index to the next node
@@ -193,7 +197,9 @@ int skip_this_node(tile_name_arr* node, int index, int head)
     node[index-1].next++;
     return head;
 }
+#endif
 
+#if false
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to linked list array first
 bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
@@ -280,11 +286,13 @@ bool check_tile_names_ll_arr(char* tiles_lst, char** new_tiles)
     free(linked_lst);
     return true;
 }
+#endif
 
 //testing array list version/////////////////////////////////////////////////////end
 
 //testing this linked list struct version////////////////////////////////////////start
 
+#if false
 //create a linked list of tile names
 //from the char* tiles_list passed in
 tile_name* make_name_list(char* tiles_list)
@@ -318,7 +326,9 @@ tile_name* make_name_list(char* tiles_list)
     }
     return strt_tile;
 }
+#endif
 
+#if false
 //mem-free all tiles in town_tile* linked list
 void free_tile_name_lst_tt(town_tile* list)
 {
@@ -330,7 +340,9 @@ void free_tile_name_lst_tt(town_tile* list)
         current = next;
     }
 }
+#endif
 
+#if false
 //remove & free matching node
 town_tile* free_town_tile_node_tt(town_tile* node, town_tile* prev, town_tile** head)
 {
@@ -345,6 +357,7 @@ town_tile* free_town_tile_node_tt(town_tile* node, town_tile* prev, town_tile** 
     free(tmp);
     return node;
 }
+#endif
 
 //remove & free matching node
 // tile_name* free_tile_name_node(tile_name* node, tile_name* prev, tile_name** head)
@@ -362,6 +375,7 @@ town_tile* free_town_tile_node_tt(town_tile* node, town_tile* prev, town_tile** 
 // }
 //testing this linked list struct version////////////////////////////////////////end
 
+#if false
 int skip_or_rename_tt(town_tile* node)
 {
     char msg_buff[MAX_PATH] = {
@@ -379,6 +393,7 @@ int skip_or_rename_tt(town_tile* node)
                 "yesnocancel", "warning", 2);
     return choice;
 }
+#endif
 
 int skip_or_rename_arr(char* name)
 {
@@ -475,6 +490,7 @@ char* make_tile_list_arr(tt_arr_handle* handle, uint8_t* match_buff)
     return cropped_list;
 }
 
+#if false
 //_tt stands for town_tile*
 char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
 {
@@ -545,7 +561,9 @@ char* make_tile_list_tt(town_tile* head, uint8_t* match_buff)
 //test above for speed///////////////////////////////
     return cropped_list;
 }
+#endif
 
+#if false
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to town_tile* linked list first
 char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_auto)
@@ -636,6 +654,7 @@ char* check_tile_names_ll_tt(char* tiles_lst, town_tile* new_tiles, bool set_aut
 
     return cropped_list;
 }
+#endif
 
 char* check_tile_names_arr(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
 {
@@ -903,6 +922,7 @@ bool check_tile_names(char* tiles_lst, char* new_tiles)
 }
 #endif
 
+#if false
 //append new tile-names to the end of TILES.LST
 char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bool set_auto)
 {
@@ -932,17 +952,13 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
         return old_tiles_list;
     }
 
+    //TODO: use an io_ function to append text instead
     //append new list_of_tiles to the end of original list
     //in a new buffer large enough to fit both
     int new_lst_size   = strlen(cropped_list);
     char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size +1);// +1); //+1 for '\0'
     strncpy(final_tiles_list, old_tiles_list, tiles_lst_size);
-    //TODO clean this up
-    if (final_tiles_list[tiles_lst_size] == '\n') {
-        final_tiles_list[tiles_lst_size+1] = '\0';
-    } else {
-        final_tiles_list[tiles_lst_size] = '\0';
-    }
+    final_tiles_list[tiles_lst_size] = '\0';
     strncat(final_tiles_list, cropped_list, new_lst_size);
 
     //write combined lists out
@@ -952,6 +968,7 @@ char* append_tiles_lst_ll_tt(char* tiles_lst_path, town_tile* new_tiles_list, bo
     free(old_tiles_list);
     return final_tiles_list;
 }
+#endif
 
 char* append_tiles_lst_arr(char* tiles_lst_path, tt_arr_handle* handle, bool set_auto)
 {
@@ -983,16 +1000,13 @@ char* append_tiles_lst_arr(char* tiles_lst_path, tt_arr_handle* handle, bool set
         return old_tiles_list;
     }
 
+    //TODO: use an io_ function to append text instead
     //append new list_of_tiles to the end of original list
     //in a new buffer large enough to fit both
     int new_lst_size   = strlen(cropped_list);
-    char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size);
+    char* final_tiles_list = (char*)malloc(tiles_lst_size + new_lst_size +1);   //+1 for null char
     strncpy(final_tiles_list, old_tiles_list, tiles_lst_size);
-    if (final_tiles_list[tiles_lst_size] == '\n') {
-        final_tiles_list[tiles_lst_size+1] = '\0';
-    } else {
-        final_tiles_list[tiles_lst_size] = '\0';
-    }
+    final_tiles_list[tiles_lst_size] = '\0';
     strncat(final_tiles_list, cropped_list, new_lst_size);
 
     //write combined lists out
@@ -1067,6 +1081,7 @@ bool auto_export_TMAP_tiles_lst(user_info* usr_nfo, char* save_buff, char* tiles
         return true;
 }
 
+#if false
 //append names of new tiles to end of TILES.LST
 //or create new TILES.LST with only these new tiles
 void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* save_buff)
@@ -1189,6 +1204,7 @@ void add_TMAP_tiles_to_lst_tt(user_info* usr_nfo, town_tile* new_tile_ll, char* 
     // strcpy(usr_nfo->game_files.FRM_TILES_LST, tiles_lst);
     usr_nfo->game_files.FRM_TILES_LST = tiles_lst;
 }
+#endif
 
 void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char* save_buff)
 {

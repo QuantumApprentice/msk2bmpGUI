@@ -309,6 +309,7 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
     return handle;
 }
 
+#if false
 //linked list version
 town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name)
 {
@@ -390,7 +391,7 @@ town_tile* crop_TMAP_tile_ll(int offset_x, int offset_y, image_data *img_data, c
     return head;
 
 }
-
+#endif
 
 void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
 {
