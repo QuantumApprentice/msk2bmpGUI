@@ -7,17 +7,10 @@
 #include "Zoom_Pan.h"
 
 #include "load_FRM_OpenGL.h"
-// #include "B_Endian.h"
 #include "Proto_Files.h"
-
-
-
 
 #include "Edit_TILES_LST.h"
 #include "tiles_pattern.h"
-
-
-
 
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
@@ -34,7 +27,8 @@ void draw_red_tiles(image_data *img_data, bool show_squares);
 
 void Prev_WMAP_Tiles(variables *My_Variables, image_data *img_data)
 {
-    // handle zoom and panning for the image, plus update image position every frame
+    // handle zoom and panning for the image
+    // plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
     shader_info *shaders = &My_Variables->shaders;
@@ -76,8 +70,6 @@ void Prev_WMAP_Tiles(variables *My_Variables, image_data *img_data)
 
 void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data)
 {
-
-    // ImVec2 size = ImVec2((float)(img_w * scale), (float)(img_h * scale));
     ImVec2 base_top_corner = top_corner(img_data);
     ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -124,97 +116,11 @@ void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, ima
     }
 }
 
-void masking(image_data *img_data, GLuint msk_texture, ImVec2 TLC, shader_info *shaders, uint8_t *img_buff, int tile_x, int tile_y)
-{
-    int width = img_data->width;
-    int height = img_data->height;
-    int img_size = width * height;
-
-    // copy edited texture to buffer, combine with original image
-
-    // create a buffer
-    uint8_t texture_buffer[80 * 36];   // = (uint8_t*)malloc(80 * 36);
-    uint8_t msk_texture_buff[80 * 36]; // = (uint8_t*)malloc(80 * 36);
-
-    static GLuint framebuffer;
-    if (!glIsFramebuffer(framebuffer))
-    {
-        glGenFramebuffers(1, &framebuffer);
-    }
-    glBindFramebuffer(GL_TEXTURE_2D, framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->FRM_texture, 0);
-    if ((TLC.x > -80) && (TLC.y > -36))
-    {
-        glReadPixels(TLC.x, TLC.y, 80, 36, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
-    }
-    else
-    {
-        return;
-    }
-    glBindTexture(GL_TEXTURE_2D, msk_texture);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_ALPHA, GL_UNSIGNED_BYTE, msk_texture_buff);
-
-    for (int i = 0; i < 80 * 36; i++)
-    {
-        if (msk_texture_buff[i] > 0)
-        {
-            msk_texture_buff[i] = 255;
-        }
-    }
-
-    for (int i = 0; i < 80 * 36; i++)
-    {
-        if (!(texture_buffer[i] && msk_texture_buff[i]))
-        {
-            texture_buffer[i] = 00;
-        }
-        // texture_buffer[i] &= msk_texture_buff[i];
-    }
-
-    static GLuint tile_texture;
-    if (!glIsTexture(tile_texture))
-    {
-        glGenTextures(1, &tile_texture);
-    }
-    glBindTexture(GL_TEXTURE_2D, tile_texture);
-    // texture settings
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 80, 36, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
-
-    if (glIsTexture(img_data->PAL_texture))
-    {
-        glDeleteTextures(1, &img_data->PAL_texture);
-    }
-    glGenTextures(1, &img_data->PAL_texture);
-    // texture settings
-    glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 80, 36, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    glBindFramebuffer(GL_TEXTURE_2D, framebuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, img_data->PAL_texture, 0);
-
-    draw_FRM_to_framebuffer(shaders, 80, 36, framebuffer, tile_texture);
-}
-
-
-
 
 ImVec2 T_Corner =   {48,-12};
 ImVec2 L_Corner = {00, 00};
 ImVec2 R_Corner =       {80, 12};
 ImVec2 B_Corner =   {32, 24};
-
-// ImVec2 T_Corner =   {00,00};
-// ImVec2 L_Corner = {-48, 12};
-// ImVec2 R_Corner =       {32, 24};
-// ImVec2 B_Corner =   {-16, 36};
 void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
                      shader_info *shaders, GLuint tile_texture)
 {
@@ -231,16 +137,11 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     static tt_arr_handle* handle = nullptr;
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-
+        //assign handle only if tiles have been fully exported
+        //pressing cancel won't clear old handle
         tt_arr_handle* temp = export_TMAP_tiles(usr_nfo, img_data, offset_x, offset_y-12);
-
         if (temp != nullptr) {
             handle = temp;
-            for (int i = 0; i < handle->size; i++)
-            {
-                tt_arr* node = &handle->tile[i];
-                // printf("node[%d].tile_id: %d name: %s\n", i, node->tile_id, node->name_ptr);
-            }
         }
     }
 
@@ -357,6 +258,9 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     free(temp_buffer);
 }
 
+//TODO: remove these next few functions
+//      they were used to draw red tiles
+//      on the original image
 #define TMAP_W (80 + 48)
 #define TMAP_H (36 + 24)
 void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *img_data)
@@ -438,34 +342,6 @@ void draw_red_squares(image_data *img_data, bool show_squares)
         }
     }
 }
-
-//TODO: delete
-// //this function not used right now
-// void draw_quad(ImVec2 Image_Corner, ImVec2 Top_Left, float scale)
-// {
-//     ImDrawList *Draw_List = ImGui::GetWindowDrawList();
-//     ImVec2 Left, Top, Bottom, Right, new_origin;
-//     ImVec2 Bottom_Right = { 0, 0 };
-//     ImVec2 L_Offset = { 00, 00 };
-//     ImVec2 T_Offset = { 48,-12 };
-//     ImVec2 R_Offset = { 80, 12 };
-//     ImVec2 B_Offset = { 32, 24 };
-//     // Bottom_Right = { (float)(Top_Left.x + TMAP_W * scale), (float)(Top_Left.y + TMAP_H * scale) };
-//     //Draw_List->AddRect(Top_Left, Bottom_Right, 0xff0000ff, 0, 0, 5.0f);
-//     Left.x   = Top_Left.x + L_Offset.x * scale;
-//     Left.y   = Top_Left.y + L_Offset.y * scale;
-//     Top.x    = Top_Left.x + T_Offset.x * scale;
-//     Top.y    = Top_Left.y + T_Offset.y * scale;
-//     Right.x  = Top_Left.x + R_Offset.x * scale;
-//     Right.y  = Top_Left.y + R_Offset.y * scale;
-//     Bottom.x = Top_Left.x + B_Offset.x * scale;
-//     Bottom.y = Top_Left.y + B_Offset.y * scale;
-//     if (Bottom.y < (Image_Corner.y-1)) {
-//         return;
-//     }
-//     //Bottom.y = Origin.y + (i*TMAP_W) - 36;
-//     Draw_List->AddQuad(Left, Bottom, Right, Top, 0xff0000ff, 1.0f);
-// }
 
 // struct to hold the 4 points for the quadrilateral (tile shape or image shape)
 struct outline
@@ -619,25 +495,4 @@ void draw_tiles_OpenGL(image_data *img_data, shader_info *shader, GLuint *textur
         // bind framebuffer back to default
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
-}
-
-//TODO: delete
-void draw_tiles_ImGui(image_data *img_data, ImVec2 Top_Corner, ImVec2 Bottom_Corner)
-{
-    // float scale = img_data->scale;
-    // int tile_w  = img_data->width/128;
-    // int tile_h  = img_data->height/96;
-    // for (int x = 0; x < tile_w; x++)
-    //{
-    //     for (int y = 0; y < tile_h; y++)
-    //     {
-    // Top_Left.x = new_origin.x + (x * 48 + y * 32) *scale;
-    // Top_Left.y = new_origin.y + (x *-12 + y * 24) *scale;
-    // window->DrawList->AddImage(
-    //     (ImTextureID)texture,
-    //     new_corner, new_bottom,
-    //     Top_Left, Bottom_Right,
-    //     )
-    //    }
-    //}
 }

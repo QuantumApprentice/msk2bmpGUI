@@ -20,7 +20,8 @@ flags_ext: 0                //unkown?
 material: Glass             //material type == enum
 */
 
-//tile proto files have: https://falloutmods.fandom.com/wiki/PRO_File_Format#Tiles
+// https://falloutmods.fandom.com/wiki/PRO_File_Format#Tiles
+// tile proto file contents:
 /*
 0x0000  4bytes  ObjectType & ObjectID
 0x0004  4bytes  TextID
@@ -53,69 +54,8 @@ enum material {
     Leather = 7
 };
 
-void proto_tiles_lst_append(user_info* usr_info, town_tile* head);
 void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head);
 bool backup_append_LST(char* path, char* string);
-
-#if false
-//TODO: refactor append_tiles_lst() to work here
-//_tt stands for town_tile*
-char* make_proto_list_tt(town_tile* head, uint8_t* match_buff)
-{
-
-    //get total_size of tile_ids where no match was found
-    //used for allocating buffer
-    uint8_t shift_ctr  = 0;
-    int     tile_num   = 0;
-    int     total_size = 0;
-    town_tile* node = head;
-    while (node != nullptr) {
-        if (!(match_buff[tile_num/8]) & (1 << shift_ctr)) {
-            total_size += 14;
-        }
-            shift_ctr++;
-        if (shift_ctr >= 8) {
-            shift_ctr = 0;
-        }
-        tile_num++;
-        node = node->next;
-    }
-
-    //if there are no nodes (or none with viable names)
-    if (total_size < 1) {
-        tinyfd_notifyPopup("TILES.LST not updated...",
-                        "All new proto ids were already\n"
-                        "found on /data/proto/tiles/TILES.LST.\n"
-                        "No new proto ids were added.\n",
-                        "info");
-        return nullptr;
-    }
-
-    //add non-matches to list of ids
-    char* cropped_list = (char*)malloc(total_size+1);
-    char* c    = cropped_list;
-    shift_ctr  = 0;
-    tile_num   = 0;
-    node       = head;
-    while (node != nullptr)
-    {
-        if (!(match_buff[tile_num/8]) & (1 << shift_ctr)) {
-            snprintf(c, 15, "%08d.pro\r\n", node->tile_id);
-            c += 14;
-        }
-        //increment all the counters
-        node = node->next;
-        tile_num++;
-        shift_ctr++;
-        if (shift_ctr >= 8) {
-            shift_ctr = 0;
-        }
-    }
-    c[0] = '\0';
-
-    return cropped_list;
-}
-#endif
 
 //TODO: refactor append_tiles_lst() to work here
 //arr stands for tt_arr*
@@ -256,63 +196,6 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
     return cropped_list;
 }
 
-#if false
-//compare names on tiles_lst to names on new_tiles
-//but convert new_tiles to town_tile* linked list first
-char* check_proto_names_ll_tt(char* tiles_lst, town_tile* new_protos)
-{
-    int num_tiles = 0;
-    int tiles_lst_len = strlen(tiles_lst);
-    town_tile* node = new_protos;
-    while (node != nullptr)
-    {
-        num_tiles++;
-        node = node->next;
-    }
-
-    //TODO: can I make this more precise?
-    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
-    uint8_t shift_ctr = 0;
-    int     node_ctr  = 0;
-
-    char* strt = tiles_lst;  //keeps track of position on TILES.LST
-    node = new_protos;       //reset node for next step
-    while (node != nullptr) {
-        for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
-        {
-            if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
-                continue;
-            }
-            //check first char of strt == first char of node.name_ptr
-            if (atoi(strt) != node->tile_id) {
-                strt = &tiles_lst[char_ctr+1];
-                continue;
-            }
-            //identify this node as having a duplicate match
-            matches[node_ctr/8] |= 1 << shift_ctr;
-            //increment all the counters
-            shift_ctr++;
-            if (shift_ctr >= 8) {
-                shift_ctr = 0;
-            }
-            node_ctr++;
-            break;
-        }
-        strt = tiles_lst;
-        if (node == nullptr) {
-            break;
-        }
-        node = node->next;
-    }
-
-    //generate new list from remaining nodes in linked_lst
-    char* cropped_list = make_proto_list_tt(new_protos, matches);
-
-    return cropped_list;
-}
-#endif
-
-
 void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
 {
     //append to pro_tile.msg if either a name
@@ -334,111 +217,6 @@ void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
         backup_append_LST(path_buff, msg_line);
     }
 }
-
-#if false
-void pro_tile_msg_append(user_info* usr_nfo, proto_info* info, town_tile* tile)
-{
-    //append to pro_tile.msg if either a name
-    //or a description has been provided
-    if (strlen(info->name) > 1 || strlen(info->description) > 1) {
-
-        //append to pro_tile.msg
-        char msg_line[512+32];
-        snprintf(msg_line, 512+32,
-                "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
-                tile->tile_id*100,   info->name,
-                tile->tile_id*100+1, info->description);
-
-        if (*usr_nfo->default_game_path == '\0') {
-            return;
-        }
-        char path_buff[MAX_PATH];
-        snprintf(path_buff, MAX_PATH, "%s/data/Text/english/Game/pro_tile.msg", usr_nfo->default_game_path);
-        backup_append_LST(path_buff, msg_line);
-    }
-}
-#endif
-
-#if false
-void export_tile_proto_start(user_info* usr_nfo, town_tile* head)
-{
-    proto_info info;
-    //input name
-    ImGui::Text(
-        "In order to get new tiles to appear in the mapper\n"
-        "(and thus in the game), each tile must have a proto(.pro)\n"
-        "file made, and an entry for each tile appended to\n\n"
-        "   Fallout 2/data/proto/tiles/TILES.LST\n"
-        "   Fallout 2/data/art/tiles/TILES.LST.\n\n"
-        "In addition, entries can optionally be made in\n\n"
-        "   Fallout 2/data/Text/english/Game/pro_tile.msg\n\n"
-        "to give the tile a name and description in the\n"
-        "Fallout 2 mapper (Mapper2.exe).\n\n"
-        "Please provide the path to fallout2.exe in your\n"
-        "modded Fallout 2 folder.\n"
-        );
-    static char FObuf[MAX_PATH] = "";
-    strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
-    ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
-    ImGui::Text(
-        "These are Optional,\n"
-        "and will be applied to all tiles in this set.\n"
-    );
-    static char buf1[23] = ""; ImGui::InputText(
-        "Name\n(max 23 characters)",                          buf1, 23);
-    static char buf2[71] = ""; ImGui::InputTextMultiline(
-        "Description\n(max 71 characters)\n(no line-breaks)", buf2, 71);
-
-    if (ImGui::Button("Add to Fallout 2...")) {
-        if (head == nullptr) {
-        //TODO: place a warning here, this needs town_tile*head to work
-            return;
-        }
-
-        //copy any game_path changes to user_info for saving to config
-        char game_path[MAX_PATH];
-        snprintf(game_path, MAX_PATH, "%s/fallout2.exe", FObuf);
-        if (io_file_exists(game_path)) {
-            strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
-        } else {
-            //TODO: popup warning - can't find fallout2.exe
-        }
-        info.name        = buf1;
-        info.description = buf2;
-        info.material_id = get_material_id();
-
-        add_TMAP_tiles_to_lst_tt(usr_nfo, head, nullptr);
-        TMAP_tiles_make_row(usr_nfo, head);
-
-        //tiles can reference different line numbers in pro_tile.msg
-        //have all subsequent tiles point to first new tile entry
-        info.pro_tile = head->tile_id * 100;
-        town_tile* node = head;
-        while (node != nullptr)
-        {
-            export_tile_proto(usr_nfo, node, &info);
-            node = node->next;
-        }
-
-        if (usr_nfo->default_game_path[0] == '\0') {
-            return;
-        }
-
-        //add tile protos to data/proto/tiles/TILES.LST
-        proto_tiles_lst_append(usr_nfo, head);
-
-        //TODO: need to add option for different languages
-        //TODO: maybe need to create the subfolders
-        //TODO: also need to give options for items already on the list
-        //add name/description to data/Text/english/Game/pro_tile.msg
-        pro_tile_msg_append(usr_nfo, &info, head);
-    }
-
-    if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
-    }
-}
-#endif
 
 void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
 {
@@ -548,27 +326,6 @@ void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head)
     free(new_proto_list);
 }
 
-#if false
-void proto_tiles_lst_append(user_info* usr_info, town_tile* head)
-{
-    //this assumes usr_info->default_game_path has been set
-    //append to data/proto/tiles/TILES.LST
-    char save_path[MAX_PATH];
-    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
-    //check if new protos are on old list
-    char* old_proto_list = io_load_text_file(save_path);
-    char* new_proto_list = check_proto_names_ll_tt(old_proto_list, head);
-    if (new_proto_list == nullptr) {
-        free(old_proto_list);
-        return;
-    }
-    //backup and save new list
-    backup_append_LST(save_path, new_proto_list);
-    free(old_proto_list);
-    free(new_proto_list);
-}
-#endif
-
 //backs up file at "path",
 //appends "names" to text file at "path"
 bool backup_append_LST(char* path, char* string)
@@ -641,42 +398,6 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
     fwrite(&proto, sizeof(tile_proto), 1, tile_pro);
     fclose(tile_pro);
 }
-
-#if false
-//export individual tile proto to save_path
-void export_tile_proto(user_info* usr_info, town_tile* tile, proto_info* info)
-{
-    if (tile == nullptr) {
-        //TODO: place a warning here, this needs town_tile*head to work
-        return;
-    }
-
-    char path_buff[MAX_PATH];
-
-    tile_proto proto;
-    proto.ObjectID        = tile->tile_id | 0x4000000;
-    proto.TextID          = info->pro_tile;                //used as a key/value pair in pro_tile.msg
-    //FrmID is the line number (starting from 0) in art/tiles/TILES.LST
-    proto.FrmID           = (tile->tile_id -1) | 0x4000000; // -1 for off by 1 error
-    //TODO: test if these 3 have effect on tiles
-    proto.Light_Radius    = 8;
-    proto.Light_Intensity = 8;
-    proto.Flags           = 0xFFFFFFFF;     //this is what the mapper uses on tiles, not sure why yet
-    //end TODO
-    proto.MaterialID      = info->material_id;
-
-    B_Endian::swap_32(proto.ObjectID);
-    B_Endian::swap_32(proto.TextID);
-    B_Endian::swap_32(proto.FrmID);
-    B_Endian::swap_32(proto.MaterialID);
-
-    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", usr_info->default_game_path, tile->tile_id);
-    FILE* tile_pro = fopen(path_buff, "wb");
-    fwrite(&proto, sizeof(tile_proto), 1, tile_pro);
-    fclose(tile_pro);
-
-}
-#endif
 
 //dropdown menu picking type of material
 //to set the proto as

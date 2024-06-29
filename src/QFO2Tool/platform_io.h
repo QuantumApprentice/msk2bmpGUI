@@ -12,7 +12,6 @@ int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 bool io_isdir(char* dir_path);
 bool io_file_exists(const char* filename);
 bool io_path_check(char* file_path);
-// bool io_file_check(char* file_path, char* file_name);
 bool io_make_dir(char* dir_path);
 int io_file_size(const char* filename);
 bool io_backup_file(char* file_path, char* dest_path);

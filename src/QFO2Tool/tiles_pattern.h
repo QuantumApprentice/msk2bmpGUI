@@ -12,8 +12,4 @@ struct pattern {
 };
 #pragma pack(pop)
 
-
-void TMAP_tiles_make_row(user_info* usr_info, town_tile* head);
 void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle);
-
-
