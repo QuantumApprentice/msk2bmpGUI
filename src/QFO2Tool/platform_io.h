@@ -2,13 +2,13 @@
 #include <cstdint>
 
 #ifdef QFO2_WINDOWS
-    #define NATIVE_STRING_TYPE          const wchart_t
+    #define NATIVE_STRING_TYPE          const wchar_t
 #elif defined(QFO2_LINUX)
     #define NATIVE_STRING_TYPE          const char
 #endif
 
-int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
-// uint64_t nano_time();
+int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
+int io_strncmp(const char* str1, const char* str2, int num_char);
 bool io_isdir(char* dir_path);
 bool io_file_exists(const char* filename);
 bool io_path_check(char* file_path);

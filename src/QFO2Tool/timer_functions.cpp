@@ -8,7 +8,35 @@
 
 uint64_t nano_time()
 {
-    return (clock() / CLOCKS_PER_SEC);
+     //timing code for WINDOWS ONLY
+     LARGE_INTEGER StartingTime;
+     LARGE_INTEGER Frequency;
+     QueryPerformanceFrequency(&Frequency);
+     QueryPerformanceCounter(&StartingTime);
+
+     return StartingTime.QuadPart * (1'000'000'000ULL / Frequency.QuadPart);
+
+    //return (clock() / CLOCKS_PER_SEC);
+}
+
+uint64_t start_timer()
+{
+    //timing code for WINDOWS ONLY
+    return nano_time();
+}
+
+void print_timer(uint64_t StartingTime)
+{
+    ////timing code WINDOWS ONLY
+    // QueryPerformanceCounter(&EndingTime);
+    // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    // ElapsedMicroseconds.QuadPart *= 1000000;
+    // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+    // printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
+    uint64_t EndingTime = nano_time();
+    uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
+    uint64_t microseconds_total = nanoseconds_total / 1000;
+    printf("Total time elapsed: %ldμs\n", microseconds_total);
 }
 
 #elif defined(QFO2_LINUX)
@@ -25,41 +53,23 @@ uint64_t nano_time()
     return nanotime;
     // return (start.tv_sec * 1000 + (start.tv_nsec)/(long)1000000);
 }
-#endif
 
 uint64_t start_timer()
 {
-    #ifdef QFO2_WINDOWS
-        // //timing code for WINDOWS ONLY
-        // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-        // LARGE_INTEGER Frequency;
-        // QueryPerformanceFrequency(&Frequency);
-        // QueryPerformanceCounter(&StartingTime);
-    #elif defined(QFO2_LINUX)
-        // timing code for LINUX
-        uint64_t StartingTime;
-        StartingTime = nano_time();
-        return StartingTime;
-    #endif
-
+    // timing code for LINUX
+    uint64_t StartingTime;
+    StartingTime = nano_time();
+    return StartingTime;
 }
 
 void print_timer(uint64_t StartingTime)
 {
-    #ifdef QFO2_WINDOWS
-        ////timing code WINDOWS ONLY
-        // QueryPerformanceCounter(&EndingTime);
-        // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-        // ElapsedMicroseconds.QuadPart *= 1000000;
-        // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
-        // printf("wstring_view 1_line parent_path_size(a_v < b_v) time: %d\n", ElapsedMicroseconds.QuadPart);
-    #elif defined(QFO2_LINUX)
         // timing code LINUX
         uint64_t EndingTime = nano_time();
         uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
         uint64_t microseconds_total = nanoseconds_total / 1000;
         printf("Total time elapsed: %ldμs\n", microseconds_total);
-    #endif
 }
+#endif
 
 

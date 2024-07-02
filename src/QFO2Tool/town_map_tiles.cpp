@@ -161,7 +161,7 @@ void crop_single_tileB(uint8_t *dst,
 //Bakerstaunch vector clearing version w/SSE2 instructions
 #include <emmintrin.h>
 int crop_single_tile_vector_clear(
-        __restrict__ uint8_t *dst, __restrict__ uint8_t *src,
+        uint8_t *dst, uint8_t *src,
         int src_width, int src_height,
         int src_tile_left, int src_tile_top)
 {
@@ -318,7 +318,7 @@ void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
     header.Frames_Per_Orient = 1;
     header.Frame_Area = 80 * 36 + sizeof(FRM_Frame);
     B_Endian::flip_header_endian(&header);
-    FRM_Frame frame = {};
+    FRM_Frame frame = {0};
     frame.Frame_Height = 36;
     frame.Frame_Width  = 80;
     frame.Frame_Size   = 80 * 36;

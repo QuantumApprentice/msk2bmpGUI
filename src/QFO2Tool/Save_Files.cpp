@@ -507,7 +507,7 @@ bool check_and_write_cfg_file(user_info *user_info, char *exe_path)
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+    _wfopen_s(&cfg_file_ptr, tinyfd_utf8to16(cfg_filepath_buffer), L"rb");
 #elif defined(QFO2_LINUX)
     cfg_file_ptr = fopen(cfg_filepath_buffer, "rb");
 #endif
@@ -848,7 +848,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
             }
 
 #ifdef QFO2_WINDOWS
-            wchar_t *w_save_name = tinyfd_utf8to16(filename_buffer);
+            wchar_t *w_save_name = tinyfd_utf8to16(Full_Save_File_Path);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
             File_ptr = fopen(Full_Save_File_Path, "wb");
@@ -982,7 +982,7 @@ void check_file(char *save_path, char* save_path_name, const char* name, int til
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    wchar_t *w_save_name = tinyfd_utf8to16(Save_File_Name);
+    wchar_t *w_save_name = tinyfd_utf8to16(save_path_name);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
     if (error == 0)
 #elif defined(QFO2_LINUX)
@@ -1172,7 +1172,6 @@ void Save_MSK_Image_OpenGL(uint8_t *tile_buffer, FILE *File_ptr, int width, int 
 
     int shift = 0;
     uint8_t bitmask = 0;
-    // bool mask_1_or_0;
     uint8_t *outp = out_buffer;
     for (int pxl_y = 0; pxl_y < height; pxl_y++)
     {

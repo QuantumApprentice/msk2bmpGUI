@@ -25,7 +25,7 @@
 #include <glad/glad.h>
 
 //TODO: fix this so it compiles for windows
-#if 0
+#ifdef QFO2_WINDOWS
     #include <Windows.h>
 #endif
 
@@ -77,15 +77,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
 void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 
-//int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-//                   PSTR lpCmdLine, INT nCmdShow)
-//{
-//    //int size = GetCurrentDirectory(0, NULL);
-//    //char* buffer = (char*)malloc(size*(sizeof(char)));
-//    //GetCurrentDirectory(size, buffer);
-//
-//    return main(0, NULL);
-//}
+
 
 // Main code
 int main(int argc, char** argv)
@@ -159,9 +151,9 @@ int main(int argc, char** argv)
     snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.frag");
     My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//grid-texture.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources\\grid-texture.png");
     load_tile_texture(&My_Variables.tile_texture_prev, vbuffer);
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//blue_tile_mask.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources\\blue_tile_mask.png");
     load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
 
     //TODO: add user input for a user-specified palette
@@ -1184,3 +1176,15 @@ void popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
     }
     ImGui::End();
 }
+
+#ifdef QFO2_WINDOWS
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    PSTR lpCmdLine, INT nCmdShow)
+{
+    //int size = GetCurrentDirectory(0, NULL);
+    //char* buffer = (char*)malloc(size*(sizeof(char)));
+    //GetCurrentDirectory(size, buffer);
+
+    return main(0, NULL);
+}
+#endif

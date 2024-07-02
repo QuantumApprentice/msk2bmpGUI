@@ -5,26 +5,41 @@
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
 #include <string.h>
+#include <direct.h>
 
-int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+// return 0 == match, <0 == less than match, >0 == greater than match
+int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
     return _wcsnicmp(str1, str2, num_char);
 }
 
-uint64_t nano_time()
+// return 0 == match, <0 == less than match, >0 == greater than match
+int io_strncmp(const char* str1, const char* str2, int num_char)
 {
-    return (clock() / CLOCKS_PER_SEC);
+    return strncmp(str1, str2, num_char);
 }
 
-//TODO: match this return to the linux version
-void io_isdir(char* dir_path)
+// match this return to the linux version
+bool io_isdir(char* dir_path)
 {
     struct __stat64 stat_info;
-    error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
+    int error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
     if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0) {
         /* dir_path exists and is a directory */
-        return;
+        return true;
     }
+    return false;
+    //return (stat_info.st_mode & S_IFDIR);
+}
+
+int io_file_size(const char* filename)
+{
+    struct stat stat_info;
+    int error = stat(filename, &stat_info);
+    if (error) {
+        return 0;
+    }
+    return (stat_info.st_size);
 }
 
 //another way to check if directory exists?
@@ -44,11 +59,11 @@ bool io_file_exists(const char* filename)
 //makes a directory from the path provided
 //recursively makes leading directories if they don't exist
 //returns true on success or directory exists, false on error
-//TODO: this also needs a windows version
+//TODO: make this wchar_t compatible?
 bool io_make_dir(char* dir_path)
 {
     int error;
-    error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
+    error = _mkdir(dir_path);
     if (error == 0) {
         return true;
     }

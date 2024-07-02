@@ -67,8 +67,8 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
     if (!config_file_ptr) {
 
 #ifdef QFO2_WINDOWS
-            printf("error, can't open config file to read, error: %d", err);
-        if (err == 13) {
+        printf("error, can't open config file to read, error: %d", error);
+        if (error == 13) {
             printf("file opened by another program?");
         }
 #elif defined(QFO2_LINUX)

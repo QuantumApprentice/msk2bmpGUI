@@ -153,7 +153,7 @@ bool Supported_Format(const std::filesystem::path &file)
     while (i < k)
     {
         //compare extension to determine if file is viewable
-        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
+        if (io_wstrncmp(file.extension().c_str(), supported[i], 5) == 0)
         {
             return true;
         }
@@ -262,7 +262,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
                 int a_size = a.native().size();
                 int b_size = b.native().size();
                 int larger_size = (a_size < b_size) ? a_size : b_size;
-                return io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+                return io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
             });
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
@@ -596,8 +596,8 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
 {
     char buffer[MAX_PATH];
 #ifdef QFO2_WINDOWS
-    // std::filesystem::path path(tinyfd_utf8to16(file_name));
-    std::filesystem::path path(file_name).u8string().c_str();
+    std::filesystem::path path(tinyfd_utf8to16(file_name));
+    //std::filesystem::path path(file_name).u8string().c_str();
 
 #elif defined(QFO2_LINUX)
     std::filesystem::path path(file_name);

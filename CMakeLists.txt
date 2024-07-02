@@ -57,7 +57,7 @@ target_sources(
 
 #error if SDL2 packaged is not found
 #not sure what SDL2_INCLUDE_DIRS are (#define? where defined?)
-find_package(SDL2 REQUIRED COMPONENTS SDL2)
+#find_package(SDL2 REQUIRED COMPONENTS SDL2)
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 

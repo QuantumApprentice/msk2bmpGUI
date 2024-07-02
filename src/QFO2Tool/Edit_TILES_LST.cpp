@@ -287,13 +287,14 @@ char* check_tile_names_arr(char* tiles_lst, tt_arr_handle* handle, bool set_auto
                 }
                 if (choice == NO)     {     //pick a new name and re-make new_tiles then re-check
                     int length = strlen(node->name_ptr);
-                    char old_name[length];
+                    char* old_name = (char*)malloc(length);
                     strncpy(old_name, node->name_ptr, length);
                     old_name[length-7] = '\0';
 
                     char* new_name = get_new_name(old_name);
                     generate_new_tile_list_arr(new_name, handle);
 
+                    free(old_name);
                     return check_tile_names_arr(tiles_lst, handle, set_auto);
                 }
             }
