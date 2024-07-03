@@ -226,5 +226,6 @@ For now, you need the -dev package for each, they should have
 Then you'll have to manually add the include directories to MSVS,
 and the linker needs to point to the .lib files.
 
-Finally, as part of the final compile step, the .dll files will
-need to be copied to the compile destination folder.
+Finally, as part of the final compile step, the SDL2.dll and 
+SDL_image.dll files will need to be copied to the compile 
+destination folder.
