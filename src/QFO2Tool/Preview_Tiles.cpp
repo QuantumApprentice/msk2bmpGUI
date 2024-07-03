@@ -258,11 +258,7 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     free(temp_buffer);
 }
 
-//TODO: remove these next few functions
-//      they were used to draw red tiles
-//      on the original image
-#define TMAP_W (80 + 48)
-#define TMAP_H (36 + 24)
+
 void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *img_data)
 {
     // handle zoom and panning for the image, plus update image position every frame
@@ -365,6 +361,11 @@ void add_offset(ImVec2 offset, outline *square)
     square->Lft.y += offset.y;
 }
 
+//TODO: remove these next few functions
+//      they were used to draw red tiles
+//      on the original image
+#define TMAP_W (80 + 48)
+#define TMAP_H (36 + 24)
 // draw tiles for the preview screen when checking the tiles box
 void draw_red_tiles(image_data *img_data, bool show_squares)
 {

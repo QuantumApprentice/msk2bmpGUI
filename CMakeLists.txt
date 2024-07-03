@@ -14,11 +14,11 @@ add_compile_options(
 )
 
 
-#sets PROJECT_NAME, then other settings
+#sets PROJECT_NAME
 #PROJECT_NAME is auto set when name is passed as 1st arg
 #https://cmake.org/cmake/help/latest/command/project.html#project
 project(
-  QFO2Solution VERSION 0.1.0
+  QFO2Solution VERSION 1.2.1
   # ${PROJECT_NAME} VERSION 0.1.0
   # DESCRIPTION "${PROJECT_NAME}"
 )
@@ -55,19 +55,12 @@ target_sources(
   src/msk2bmpGUI.cpp
 )
 
-#error if SDL2 packaged is not found
 #not sure what SDL2_INCLUDE_DIRS are (#define? where defined?)
-#find_package(SDL2 REQUIRED COMPONENTS SDL2)
-include_directories(${SDL2_INCLUDE_DIRS})
+#error if SDL2 packaged is not found
+find_package(SDL2 REQUIRED COMPONENTS SDL2)
+find_package(SDL2_image REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
 include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
-
-
-# There are a few way to get a dependecy, we will go through a few of them.
-
-# the SYSTEM parameter indicate the library is a system library which
-# tell the compiler to not run certain static analysis like warnings
-# because as library users we tent not to modify other people library.
-# g++ notice -isystem instead of -I
 
 #these are directories that have CMakeLists.txt files
 #are these used to determine how includes work?
@@ -124,6 +117,7 @@ target_link_libraries(
   tinyfiledialogs
   SDL2_image
   SDL2::SDL2
+  ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES}
 )
 
 #this custom command copies the contents of src/resources

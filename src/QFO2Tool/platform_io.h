@@ -3,11 +3,11 @@
 
 #ifdef QFO2_WINDOWS
     #define NATIVE_STRING_TYPE          const wchar_t
+    int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
 #elif defined(QFO2_LINUX)
     #define NATIVE_STRING_TYPE          const char
 #endif
 
-int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
 int io_strncmp(const char* str1, const char* str2, int num_char);
 bool io_isdir(char* dir_path);
 bool io_file_exists(const char* filename);

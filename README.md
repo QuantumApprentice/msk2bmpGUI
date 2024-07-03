@@ -107,35 +107,51 @@ from swimming to the Oil Rig in Fallout 2 (and not much else in Fallout).
 
 The "Export Mask Tiles" button is currently unimplemented.
 - Currently working on this one, hoping to have it available for the next
-  alpha release.
+  beta release.
   Should work similar to the "Save as Map Tiles" button.
   
   
+### *Create Town Map Tiles* (a little buggy, but works)
+You can take a large image (currently about 300 tiles worth) and this tool
+will crop the image into a set of tiles that can be laid out on the town
+map.  
+Not only this but, if the Fallout 2 directory is set correctly and
+the necessary sub-directories exist, this tool can also integrate new tiles
+directly into the game and make them accessible in the mapper without having
+to enable library mode and importing them one at a time.
+
+### *Pattern Files* (very simple right now, but plan to expand in the future)
+On top of exporting new tiles for the town map, integrating them into the
+game (and thus the mapper), this tool will also create pattern files that the
+Fallout 2 mapper (mapper2.exe) can use to simply paint an entire image out
+in one stroke.
+Currently this works best on new (blank) maps because of how the mapper paints
+out tiles from pattern files and replaces surrounding tiles with blank tiles,
+but this is easily the fastest way to import entire building roof images such
+as the Gecko power plant, or the 2 and 3 story buildings in New Reno.
+
 ### *Other Features*
 --Wide Character Support--
-The first alpha release of this tool doesn't yet support wide characters
-(languages that use an alphabet other than the English one).
-The next alpha release should have wide character support, but will
-need some testing.
+This release should have wide character support, but
+needs some testing.
+Please leave some feedback if you're running a foreign
+language operating system (OS).
 
 --Multidirectional Animations in FRMs--
-I'm not sure how much effort I should put into making this image
-editor handle animation frames from all 6 directions for a standard
-critter FRM, so this will probably be added later in developement.
-I can't imagine it being much more difficult than what I've already 
-made, but I haven't been able to come up with a layout to properly 
-display all frames one way or the other.
-Frame Animator 2 seems to handle this pretty well so far, and can
+Animated FRM's will now play in all 6 directions based on user
+selections in the display menu.
+
+You can't change offsets per image yet, but this is something 
+I plan to implement in this tool eventually.
+Frame Animator 2 seems to handle this pretty well, and can 
 be used to easily put an animation together if the scripting 
-language is understood.
-Implementing something similar for this tool seems excessive, 
-though I can see the value in having an open source tool that
-would do the same job.
+language is understood, but you can change the offsets for 
+an individual image.
+
 
 --Drag & Drop--
-I plan on implementing a drag and drop feature, allowing users
-to drag images onto the window and having the editor automatically
-open them.
+You can now drag and drop individual images onto the window
+and the editor will automatically open them.
 Eventually I'd like to implement this in such a way as to allow the
 user to drop a set of map tile FRMs, or a set of mask tile MSKs,
 onto the window and it will automatically organize them visually
@@ -180,7 +196,7 @@ imgui-docking
 
 tinyfiledialogs
 
-### If on linux:
+## Linux:
 
 Might have to uninstall libtbb-dev if building with cmake
 
@@ -193,3 +209,22 @@ cd build
 ### In the newly created /build/ folder:
 
 make
+
+## Windows
+
+The msk2bmpGUI.sln file can be opened and compiled 
+in Microsoft Visual Studio.
+
+Disable/Uninstall the "C++ CMake tools for Windows" plugin.
+
+SDL2 and SDL_image v2.6.3 will have to be installed separately
+for the time being, but I plan on replacing SDL with stb_image
+so this should change eventually.
+For now, you need the -dev package for each, they should have
+.dll and .lib files as well as a .h header file.
+
+Then you'll have to manually add the include directories to MSVS,
+and the linker needs to point to the .lib files.
+
+Finally, as part of the final compile step, the .dll files will
+need to be copied to the compile destination folder.

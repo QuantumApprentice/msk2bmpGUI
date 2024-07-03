@@ -154,7 +154,6 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
     // and mark them as duplicates in (matches)
     int match_ctr = 0;
     uint8_t shift_ctr = 0;
-    char* strt = tiles_lst;  //keeps track of position on TILES.LST
     int tiles_lst_len = strlen(tiles_lst);
     for (int i = 0; i < new_protos->size; i++)
     {
@@ -164,6 +163,7 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
             continue;
         }
 
+        char* strt = tiles_lst;  //keeps track of position on TILES.LST
         for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
         {
             if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
@@ -179,14 +179,13 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
             matches[match_ctr/8] |= 1 << shift_ctr;
             break;
         }
-        // assert(shift_ctr == match_ctr &7);
+        assert(shift_ctr == (match_ctr & 7));
         //increment all the counters
         match_ctr++;
         shift_ctr++;
         if (shift_ctr >= 8) {
             shift_ctr = 0;
         }
-        strt = tiles_lst;
     }
 
     //generate new list from remaining nodes in linked_lst

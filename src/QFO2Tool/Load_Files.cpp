@@ -135,18 +135,15 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
     return false;   //shouldn't have to do this, shouldn't be able to reach this line
 }
 
+#ifdef QFO2_WINDOWS
 // Checks the file extension against known working extensions
 // Returns true if any extension matches, else return false
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
-#ifdef QFO2_WINDOWS
     constexpr const static wchar_t supported[5][6]{L".FRM", L".MSK", L".PNG", L".JPG", L".JPEG"};
     int k = sizeof(supported) / (6 * sizeof(wchar_t));
-#elif defined(QFO2_LINUX)
-    constexpr const static char supported[5][6]{".FRM", ".MSK", ".PNG", ".JPG", ".JPEG"};
-    int k = sizeof(supported) / (6 * sizeof(char));
-#endif
+
 
     // actual extension check
     int i = 0;
@@ -162,6 +159,30 @@ bool Supported_Format(const std::filesystem::path &file)
 
     return false;
 }
+#elif defined(QFO2_LINUX)
+// Checks the file extension against known working extensions
+// Returns true if any extension matches, else return false
+bool Supported_Format(const std::filesystem::path &file)
+{
+    // array of compatible filetype extensions
+    constexpr const static char supported[5][6]{".FRM", ".MSK", ".PNG", ".JPG", ".JPEG"};
+    int k = sizeof(supported) / (6 * sizeof(char));
+
+    // actual extension check
+    int i = 0;
+    while (i < k)
+    {
+        //compare extension to determine if file is viewable
+        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
+        {
+            return true;
+        }
+        i++;
+    }
+
+    return false;
+}
+#endif
 
 // tried to handle a subdirectory in regular C, but didn't actually finish making this
 char **handle_subdirectory_char(const std::filesystem::path &directory)
@@ -262,7 +283,11 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
                 int a_size = a.native().size();
                 int b_size = b.native().size();
                 int larger_size = (a_size < b_size) ? a_size : b_size;
+#ifdef QFO2_WINDOWS
                 return io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+#elif defined(QFO2_LINUX)
+                return io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+#endif
             });
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
@@ -877,40 +902,3 @@ void load_tile_texture(GLuint *texture, char *file_name)
 
     printf("glError: %d\n", glGetError());
 }
-
-// void Load_Edit_MSK_SDL(LF* F_Prop, user_info* user_info)
-//{
-//     char buffer[MAX_PATH];
-//     snprintf(buffer, MAX_PATH, "%s\\", user_info->default_load_path);
-//     char * FilterPattern1[1] = { "*.msk" };
-//
-//     char *FileName = tinyfd_openFileDialog(
-//         "Open files...",
-//         buffer,
-//         1,
-//         FilterPattern1,
-//         NULL,
-//         1);
-//
-//     if (!FileName) { return; }
-//     else {
-//         if (!(strncmp(F_Prop->extension, "MSK", 4)))
-//         {
-//             tinyfd_messageBox("Error",
-//                 "This window only opens .MSK files,\n"
-//                 "Please load other file types from\n"
-//                 "the main menu.",
-//                 "ok",
-//                 "warning",
-//                 1);
-//             return;
-//         }
-//         else
-//         {
-//             F_Prop->Map_Mask = Load_MSK_Tile_SDL(FileName);
-//             Image2Texture(F_Prop->Map_Mask,
-//                 &F_Prop->Optimized_Mask_Texture,
-//                 &F_Prop->edit_image_window);
-//         }
-//     }
-// }
