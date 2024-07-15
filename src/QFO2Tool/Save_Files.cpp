@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <cstdint>
-#include <SDL.h>
-#include <SDL_image.h>
+#include <sys/types.h>
+#include <stb_image_write.h>
 #include <filesystem>
 
 #ifdef QFO2_WINDOWS
@@ -10,11 +10,8 @@
 
 #endif
 
-#include <sys/types.h>
-// #include <sys/stat.h>
 
 #include "Save_Files.h"
-#include "town_map_tiles.h"
 
 #include "B_Endian.h"
 #include "tinyfiledialogs.h"
@@ -24,6 +21,7 @@
 #include "platform_io.h"
 #include "Edit_TILES_LST.h"
 #include "tiles_pattern.h"
+#include "town_map_tiles.h"
 
 void write_cfg_file(user_info *user_info, char *exe_path);
 
@@ -294,9 +292,6 @@ char *Save_FRx_Animation_OpenGL(image_data *img_data, char *default_save_path, c
                     1);
                 return NULL;
             }
-            // else {
-            //     fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
-            // }
 
             bool success = Save_Single_Dir_Animation_OpenGL(img_data, File_ptr, dir);
             if (!success)
@@ -461,13 +456,12 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
     return Save_File_Name;
 }
 
-//TODO: remove SDL stuff
-char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
+char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo)
 {
     char *Save_File_Name;
     const char *lFilterPatterns[2] = {"*.BMP", ""};
     char buffer[MAX_PATH];
-    snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", user_info->default_save_path);
+    snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", usr_nfo->default_save_path);
 
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
@@ -482,13 +476,14 @@ char *Save_IMG_SDL(SDL_Surface *b_surface, user_info *user_info)
     else
     {
         // TODO: check for existing file first
-        SDL_SaveBMP(b_surface, Save_File_Name);
+        // SDL_SaveBMP(b_surface, Save_File_Name);
+
         // TODO: add support for more file formats (GIF in particular)
         // IMG_SavePNG();
 
         // parse Save_File_Name to isolate the directory and store in default_save_path
         std::filesystem::path p(Save_File_Name);
-        strncpy(user_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+        strncpy(usr_nfo->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
     }
     return Save_File_Name;
 }

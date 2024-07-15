@@ -41,87 +41,6 @@ int i = 0;
 FILE *infile;
 line_array_t inputLines;
 
-// //TODO: allow drag and drop .MSK files to be passed into here
-// //also TODO: re-write this entire thing to handle errors and wide character files
-// //TODO TODO TODO: delete? don't think I'm using this
-// int MSK_Convert(char* File_Name, const char ** argv)
-// {
-//     bool bFlipVertical = true;
-//     const char* FileName = argv[1];
-// #ifdef QFO2_WINDOWS
-//     fopen_s(&infile, File_Name, "rb");
-// #elif defined(QFO2_LINUX)
-//     infile = fopen(File_Name, "rb");
-// #endif
-//     if (infile == NULL)
-//     {
-//         fprintf(stderr, "[ERROR] Unable to open file.");
-//         return 1;
-//     }
-//     // Extension for output file.
-//     const char *TargetExtension = { "" };
-//     // Load Input File
-//     //TODO: modify IsBMPFile() check to switch between
-//     //      files dropped on here and surfaces passed
-//     //      in from the converter
-//     bool bBMP2MSK = false;
-//     if (bBMP2MSK)
-//     {
-//         if (!ReadBmpLines(infile, inputLines))
-//         {
-//             printf("[ERROR] Unable to read BMP file");
-//             fclose(infile);
-//             return 1;
-//         }
-//         TargetExtension = "MSK";
-//     }
-//     else {
-//         Read_MSK_Tile(infile, inputLines);
-//         TargetExtension = "BMP";
-//     }
-//     fclose(infile);
-//     // Change format if needed
-//     // MSK files are top-left origin. 
-//     // BMP files are bottom-left origin.
-//     // (Some BMP files are top-left origin. 
-//     // These ones will end up flipping the 
-//     // image until they are addressed in ReadBmpLines)
-//     //TODO: is flipping necessary for binary SDL surface?
-//     if (bFlipVertical)
-//     {
-//         for (int i = 0; i < MAX_LINES / 2; i++)
-//         {
-//             char buffer[44];
-//             memcpy(buffer, inputLines[i], 44);
-//             memcpy(inputLines[i], inputLines[MAX_LINES - 1 - i], 44);
-//             memcpy(inputLines[MAX_LINES - 1 - i], buffer, 44);
-//         }
-//     }
-//     // Open Output File
-//     char *sOutputFileName;
-//     int y = strlen(argv[1]) + 1;
-//     sOutputFileName = (char *)calloc(y, sizeof(char));
-//     memcpy(sOutputFileName, FileName, y);
-//     strncpy(&sOutputFileName[y - 4], TargetExtension, 3);
-//     // Write Output File
-//     //TODO: this needs a little cleanup
-//     //      and probably refactor into a helper function
-//     FILE *fb;
-//     fb = fopen(sOutputFileName, "wb");
-//     FILE *outfile = fb;
-//     if (bBMP2MSK)
-//     {
-//         writelines(outfile, inputLines);
-//     }
-//     else
-//     {
-//         fwrite(bmpHeader, 1, 62, outfile);
-//         writelines(outfile, inputLines);
-//     }
-//     fclose(fb);
-//     free(sOutputFileName);
-// }
-
 void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44])
 {
     // Each line in an MSK file is 44 bytes. 
@@ -341,43 +260,37 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     }
 }
 
-//bool GetBit(this byte b, int bitNumber)
-//{
-//    return (b & (1 << bitNumber)) != 0;
-//}
+// union Pxl_info_32 {
+//     struct {
+//         uint8_t a;
+//         uint8_t b;
+//         uint8_t g;
+//         uint8_t r;
+//     };
+//     uint8_t pxl[4];
+// };
 
-union Pxl_info_32 {
-    struct {
-        uint8_t a;
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
-    };
-    uint8_t arr[4];
-};
-
-void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data)
+void Convert_Surface_to_MSK(Surface* surface, image_data* img_data)
 {
     int width  = surface->w;
     int height = surface->h;
     int size   = width * height;
     uint8_t* data = (uint8_t*)calloc(1, size);
 
-    SDL_PixelFormat* pxlFMT_UnPal = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    SDL_Surface* Surface_32 = SDL_ConvertSurface(surface, pxlFMT_UnPal, 0);
+    Surface* Surface_32 = Convert_Surface_to_RGBA(surface);
     if (!Surface_32) {
-        printf("Error: %s\n", SDL_GetError());
+        printf("Error, unable to allocate surface for MSK\n");
     }
 
-    Pxl_info_32 rgba;
+    Color rgba;
     int white = 1;
     int i;
     for (int y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
-            i = (Surface_32->pitch * y) + x * (sizeof(Pxl_info_32));
-            memcpy(&rgba, (uint8_t*)Surface_32->pixels + i, sizeof(Pxl_info_32));
+            i = (Surface_32->pitch * y) + x * (sizeof(Color));
+            memcpy(&rgba, (uint8_t*)Surface_32->pxls + i, sizeof(Color));
 
             if (rgba.r > 0 || rgba.g > 0 || rgba.b > 0) {
                 data[y*width + x] = white;
@@ -388,7 +301,7 @@ void Convert_SDL_Surface_to_MSK(SDL_Surface* surface, image_data* img_data)
     img_data->type = MSK;
 }
 
-SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
+Surface* Load_MSK_Tile_STB(char* FileName)
 {
     //open the file & error checking
 #ifdef QFO2_WINDOWS
@@ -405,28 +318,14 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
     //read the binary lines in
     Read_MSK_Tile(infile, inputLines);
 
-    ///*this section was used to convert the pixels using SDL_ConvertSurface...
-    ///*works, but needs palette to get correct coloring
-    ////Create the binary_bitmap surface
-    //SDL_Surface* binary_bitmap;
-    //binary_bitmap = SDL_CreateRGBSurface(0, 350, 300, 1, 0, 0, 0, 0);
-    ////copy inputLines to binary_bitmap surface
-    //memcpy(binary_bitmap->pixels, inputLines, MAX_LINES * 44);
-    ////convert to regular 32bit surface
-    //SDL_PixelFormat* pxlFMT_32 = SDL_AllocFormat(SDL_PIXELFORMAT_RGBA8888);
-    //SDL_Surface*temp_surface = SDL_ConvertSurfaceFormat(binary_bitmap, SDL_PIXELFORMAT_RGBA8888, 0);
-    printf(SDL_GetError());
-
-    SDL_Surface* Mask_Surface = SDL_CreateRGBSurface(0, TILE_W, TILE_H, 32, 0, 0, 0, 0);
-    printf(SDL_GetError());
+    Surface* Mask_Surface = Create_RGBA_Surface(TILE_W, TILE_H);
     //TODO: refactor this and make sure the inputLines buffer
     //      matches the other buffer for exporting
     uint8_t *bin_ptr = (uint8_t*)inputLines;
-    //int shift = 0;
     uint8_t bitmask = 128;
     uint8_t buff = 0;
     bool mask_1_or_0;
-    SDL_Color white = { 255,255,255,128 };
+    Color white = { 255,255,255,128 };
 
     for (int pxl_y = 0; pxl_y < TILE_H; pxl_y++)
     {
@@ -436,7 +335,7 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
 
             mask_1_or_0 = (buff & bitmask);
             if (mask_1_or_0) {
-                *((SDL_Color*)Mask_Surface->pixels + (pxl_y * Mask_Surface->pitch/4) + pxl_x) = white;
+                *((Color*)Mask_Surface->pxls + (pxl_y * Mask_Surface->pitch/4) + pxl_x) = white;
             }
 
             bitmask >>= 1;
@@ -447,13 +346,9 @@ SDL_Surface* Load_MSK_Tile_SDL(char* FileName)
                 bitmask = 128;
             }
         }
-        //bitmask <<= 2 /* final shift */;
         ++bin_ptr;
         bitmask = 128;
     }
 
-    printf(SDL_GetError());
-
     return Mask_Surface;
 }
-

@@ -23,6 +23,8 @@ add_library(QFO2ToolLib
   load_FRM_OpenGL.h
   Load_Settings.cpp
   Load_Settings.h
+  MiniSDL.h
+  MiniSDL.cpp
   MSK_Convert.cpp
   MSK_Convert.h
   Palette_Cycle.cpp
@@ -72,4 +74,6 @@ target_include_directories(
   ../dependencies/GLAD/include
   ../dependencies/tinyfiledialogs
   ../dependencies/imgui-1.90.8-docking
+  ../dependencies/GLFW/glfw-3.4/include/
+  ../dependencies/stb
 )

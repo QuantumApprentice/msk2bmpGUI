@@ -92,13 +92,14 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int x_offset = img_data->ANM_dir[frame_num].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = img_data->ANM_dir[frame_num].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
+    Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
+    // SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte, SDL_Surfaces are typically 4-byte
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     //bind data to FRM_texture for display
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pxls);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
@@ -109,8 +110,6 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     float fps = 10 * playback_speeds[img_data->playback_speed];
 
     int orient = img_data->display_orient_num;
-    //int width  = img_data->ANM_bounding_box[orient].x2 - img_data->ANM_bounding_box[orient].x1;
-    //int height = img_data->ANM_bounding_box[orient].y2 - img_data->ANM_bounding_box[orient].y1;
 
     int img_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
     int img_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;

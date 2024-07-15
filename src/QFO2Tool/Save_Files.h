@@ -3,6 +3,7 @@
 #include "load_FRM_OpenGL.h"
 #include "Load_Files.h"
 #include "town_map_tiles.h"
+#include "MiniSDL.h"
 
 uint8_t* blend_PAL_texture(image_data* img_data);
 
@@ -13,7 +14,7 @@ bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int 
 bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir);
 char* Set_Save_File_Name(image_data* img_data, char* name);
 
-char* Save_IMG_SDL(SDL_Surface *b_surface, struct user_info* user_info);
+char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo);
 void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
 
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, struct user_info* user_info, char* exe_path);

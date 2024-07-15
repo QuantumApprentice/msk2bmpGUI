@@ -45,12 +45,12 @@ mkdir -p "$build"
 INCLUDE_ARGS=(
   -I "$src/QFO2Tool"
   -I "$src/dependencies/GLAD/include"
-  -I "$src/dependencies/glfw-3.4/include"
+  -I "$src/dependencies/GLFW/glfw-3.4/include"
   -I "$src/dependencies/imgui-1.90.8-docking"
   -I "$src/dependencies/imgui-1.90.8-docking/backends"
   -I "$src/dependencies/tinyfiledialogs"
   -I "$src/dependencies/stb"
-  -I "/usr/include/SDL2"
+  # -I "/usr/include/SDL2"
 )
 #^^^^^^^^^^^^^^^these area all variables storing file info
 
@@ -100,14 +100,16 @@ echo "TinyFileDialogs next..."
 cc -g -c -o "$build/tinyfiledialogs.o" "$src/dependencies/tinyfiledialogs/tinyfiledialogs.c"
 echo "TinyFileDialogs built"
 echo
+
 echo "Building Dear ImGui..."
 c++ "${CPP_ARGS[@]}" -c -o "$build/imgui_docking.o" "build_linux_dearimgui.c"
 echo $'Dear ImGui Built\n'
 
 echo "Building Qs FO2Tool..."
-c++ -DQFO2_LINUX -I "$src/dependencies/imgui-1.90.8-docking/backends" "${CPP_ARGS[@]}" \
+c++ -DQFO2_LINUX \
+    "${CPP_ARGS[@]}" \
     -o "$build/QFO2Tool" "$project_dir/build_linux.cpp" \
-    "$build"/*.o -lSDL2 -lSDL2_image
+    "$build"/*.o 
 echo $'QFO2Tool Built\n'
 
 echo "Copying resources"
@@ -149,7 +151,7 @@ if [[ "${1:-}" == "test" ]];
       -o build/test                     \
       test/test_crop_single_tile.cpp    \
       test/test_assign_tile_id.cpp      \
-      "$build"/*.o -lSDL2 -lSDL2_image
+      # "$build"/*.o -lSDL2 -lSDL2_image
 
   echo "Running tests..."
   #() == parenthises create a subshell to run commands in

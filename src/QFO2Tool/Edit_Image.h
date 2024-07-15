@@ -1,5 +1,5 @@
 #pragma once
-#include <SDL.h>
+// #include <SDL.h>
 #include "Image2Texture.h"
 
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick);

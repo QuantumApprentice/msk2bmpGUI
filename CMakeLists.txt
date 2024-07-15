@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 3.25)
 # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
 # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
 
+
 #compile option (-mavx) for is_tile_blank() in tiles_patterns.cpp
 #applies to current directory & below?
 add_compile_options(
@@ -46,26 +47,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS FALSE)
 
-#target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17) # requires minimum C++17
-#set_property(TARGET ${EXECUTABLE_NAME} PROPERTY CXX_EXTENSIONS FALSE)
-
-
 target_sources(
   ${EXECUTABLE_NAME} PRIVATE
   src/msk2bmpGUI.cpp
 )
 
-#not sure what SDL2_INCLUDE_DIRS are (#define? where defined?)
-#error if SDL2 packaged is not found
-find_package(SDL2 REQUIRED COMPONENTS SDL2)
-find_package(SDL2_image REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
-include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
-
 #these are directories that have CMakeLists.txt files
-#are these used to determine how includes work?
+#they automatically compile into libraries
+#just have to figure out how to hook them in
 add_subdirectory(src/dependencies/GLAD            SYSTEM)
-add_subdirectory(src/dependencies/SDL_image       SYSTEM)
+add_subdirectory(src/dependencies/GLFW/glfw-3.4   SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
 
 #is this what allows <> around local #includes?
@@ -82,30 +73,59 @@ add_library(tinyfiledialogs
   src/dependencies/tinyfiledialogs/tinyfiledialogs.h
 )
 
+add_library(STB
+  src/dependencies/stb/stb_c_lexer.h
+  src/dependencies/stb/stb_connected_components.h
+  src/dependencies/stb/stb_divide.h
+  src/dependencies/stb/stb_ds.h
+  src/dependencies/stb/stb_dxt.h
+  src/dependencies/stb/stb_easy_font.h
+  src/dependencies/stb/stb_herringbone_wang_tile.h
+  src/dependencies/stb/stb_hexwave.h
+  src/dependencies/stb/stb_image_resize2.h
+  src/dependencies/stb/stb_image_write.h
+  src/dependencies/stb/stb_image.h
+  src/dependencies/stb/stb_include.h
+  src/dependencies/stb/stb_leakcheck.h
+  src/dependencies/stb/stb_perlin.h
+  src/dependencies/stb/stb_rect_pack.h
+  src/dependencies/stb/stb_sprintf.h
+  src/dependencies/stb/stb_textedit.h
+  src/dependencies/stb/stb_tilemap_editor.h
+  src/dependencies/stb/stb_truetype.h
+  src/dependencies/stb/stb_voxel_render.h
+
+  src/dependencies/stb/stb_vorbis.c
+)
+
 add_library(imgui_docking
-  src/dependencies/imgui-1.90.8-docking/imgui.h
   src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.h
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.cpp
 
-  #TODO: get rid of SDL dependencies
-  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.cpp
-  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_sdl2.h
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_glfw.h
+  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_glfw.cpp
 
+  src/dependencies/imgui-1.90.8-docking/imgui.h
   src/dependencies/imgui-1.90.8-docking/imgui.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_demo.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_draw.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_tables.cpp
   src/dependencies/imgui-1.90.8-docking/imgui_widgets.cpp
-
-  src/dependencies/imgui-1.90.8-docking/backends/imgui_impl_opengl3.cpp
 )
+
 #must include target directories
 #_AFTER_ the target is declared w/add_library()
 target_include_directories(
   imgui_docking PUBLIC
   src/dependencies/imgui-1.90.8-docking
   src/dependencies/imgui-1.90.8-docking/backends
+  src/dependencies/GLFW/glfw-3.4/include
 )
 
+target_include_directories(
+  STB PUBLIC
+  src/dependencies/stb/
+)
 
 # finally we link these libraries to our executable
 # PRIVATE because nothing (target) will depend on our executable
@@ -115,9 +135,8 @@ target_link_libraries(
   imgui_docking
   QFO2ToolLib
   tinyfiledialogs
-  SDL2_image
-  SDL2::SDL2
-  ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES}
+  STB
+  glfw
 )
 
 #this custom command copies the contents of src/resources

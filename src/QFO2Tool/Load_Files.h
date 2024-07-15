@@ -1,5 +1,6 @@
 #pragma once
-#include <SDL.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 #include <filesystem>
 #include <optional>
@@ -8,6 +9,7 @@
 #include "load_FRM_OpenGL.h"
 #include "Load_Settings.h"
 #include "shader_class.h"
+
 
 #ifdef QFO2_WINDOWS
     #define PLATFORM_SLASH  ('\\')
@@ -25,8 +27,6 @@ struct LF {
 
     char * c_name;
     char * extension;
-    //TODO: remove IMG_Surface, not used anymore
-    // SDL_Surface* IMG_Surface = nullptr;
     bool alpha          = true;
     bool show_stats     = false;
     bool show_squares   = false;
@@ -51,7 +51,16 @@ struct shader_info {
     mesh giant_triangle;
 };
 
+//wrapper for array of strings
+struct dropped_files {
+    size_t count;
+    size_t total_size;
+    //lay out null terminated strings one after another?
+    char* first_path;
+};
+
 char* Program_Directory();
+void dropped_files_callback(GLFWwindow* window, int count, const char** paths);
 bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data, const char* file_name);
 bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
@@ -59,5 +68,4 @@ std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* wind
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 void prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
-SDL_Surface* Surface_32_Check(SDL_Surface* surface);
 void load_tile_texture(GLuint* texture, char* file_name);

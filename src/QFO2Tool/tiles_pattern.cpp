@@ -20,6 +20,8 @@
 //why are tile entries separated by 16 bytes?
 //last 12 bytes (footer?) identify x/y sizes,
 //  pattern entry number?
+#include <emmintrin.h>
+#include <smmintrin.h>
 
 bool is_tile_blank(town_tile* tile)
 {

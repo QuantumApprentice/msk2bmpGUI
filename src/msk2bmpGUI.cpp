@@ -1,3 +1,12 @@
+//PLaces to post when I get this debugged and working well enough to post:
+//https://www.nma-fallout.com/threads/help-with-fallout-map-rendering.201969/?ref=0xceed.com
+//https://www.nma-fallout.com/threads/fallout-tile-geometry.160287/
+//https://www.nma-fallout.com/threads/fallout-2-map-editor.194536/
+
+//ImGUI File Dialogs
+//https://github.com/aiekick/ImGuiFileDialog?tab=readme-ov-file
+
+
 //#define _CRTDBG_MAP_ALLOC
 ////#define SDL_MAIN_HANDLED
 //
@@ -11,18 +20,17 @@
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
-#define SDL_MAIN_HANDLED
-
 // ImGui header files
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
+#include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_internal.h"
 
 #include <stdio.h>
-#include <SDL.h>
-#include <SDL_blendmode.h>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h> // Will drag system OpenGL headers
+
+#include <MiniSDL.h>
 
 //TODO: fix this so it compiles for windows
 #ifdef QFO2_WINDOWS
@@ -60,24 +68,36 @@
 
 // Our state
 user_info usr_info;
+static struct dropped_files all_dropped_files = {0};
 
 // Function declarations
-void Show_Preview_Window(variables *My_Variables, int counter, SDL_Event* event); //, SDL_Renderer* renderer);
+void Show_Preview_Window(variables *My_Variables, int counter);
 void Preview_Tiles_Window(variables *My_Variables, int counter);
-// void Preview_Town_Tiles_Window(variables *My_Variables, int counter);
 void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
 void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables);
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables);
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables);
 
 void contextual_buttons(variables* My_Variables, int window_number_focus);
 void Show_MSK_Palette_Window(variables* My_Variables);
 void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 
+void dropped_files_callback(GLFWwindow* window, int count, const char** paths);
 
+static void glfw_error_callback(int error, const char* description)
+{
+    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+}
 
 // Main code
 int main(int argc, char** argv)
@@ -90,47 +110,39 @@ int main(int argc, char** argv)
     char** my_argv = argv;
 #endif
 
-
-    // Setup SDL
-    // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
-    // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
-    {
-        printf("Error: %s\n", SDL_GetError());
-        return -1;
+    glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit()) {
+        printf("\nglfwInit() failed\n\n");
+        return 1;
     }
-    SDL_GL_LoadLibrary(NULL);
 
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 330 core";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
     // Create window with graphics context
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Q's Beta Fallout Image Editor", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    SDL_GL_MakeCurrent(window, gl_context);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+    if (window == nullptr) {return 1;}
 
-    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetDropCallback(window, dropped_files_callback);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
+
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
-        printf("Glad Loader failed?..."); // %s", SDL_GetVideoDriver);
+        printf("Glad Loader failed?...");
         exit(-1);
-    }
-    else
-    {
+    } else {
         printf("Vendor: %s\n",       glGetString(GL_VENDOR));
         printf("Renderer: %s\n",     glGetString(GL_RENDERER));
         printf("Version: %s\n",      glGetString(GL_VERSION));
         printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
     }
 
-    SDL_GL_SetSwapInterval(0); // Enable vsync
 
     //State variables
     struct variables My_Variables = {};
@@ -139,31 +151,31 @@ int main(int argc, char** argv)
 
     char vbuffer[MAX_PATH];
     char fbuffer[MAX_PATH];
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//render_PAL.frag");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/render_PAL.frag");
     My_Variables.shaders.render_PAL_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//render_FRM.frag");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/render_FRM.frag");
     My_Variables.shaders.render_FRM_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.vert");
-    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources//shaders//passthru_shader.frag");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/passthru_shader.vert");
+    snprintf(fbuffer, sizeof(fbuffer), "%s%s", My_Variables.exe_directory, "resources/shaders/passthru_shader.frag");
     My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
 
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources\\grid-texture.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/grid-texture.png");
     load_tile_texture(&My_Variables.tile_texture_prev, vbuffer);
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources\\blue_tile_mask.png");
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/blue_tile_mask.png");
     load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
 
     //TODO: add user input for a user-specified palette
-    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/color.pal");
-    My_Variables.pxlFMT_FO_Pal = load_palette_to_SDL_PixelFormat(vbuffer);
+    snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/fo_color.pal");
+    My_Variables.FO_Palette = load_palette_from_path(vbuffer);
+    My_Variables.FO_Palette->num_colors = 228;
 
 
     Load_Config(&usr_info, My_Variables.exe_directory);
 
-    //My_Variables.pxlFMT_FO_Pal = loadPalette("file name for palette here");
     bool success = load_palette_to_float_array(My_Variables.shaders.palette, My_Variables.exe_directory);
     if (!success) { printf("failed to load palette to float array for OpenGL\n"); }
 
@@ -196,7 +208,7 @@ int main(int argc, char** argv)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
 
@@ -220,7 +232,7 @@ int main(int argc, char** argv)
     //IM_ASSERT(font != NULL);
 
     //this counter is used to identify which image slot is being used for now
-    //TODO: need to swap this for a linked list
+    //TODO: need to swap this for a linked list, store current image slot in the window itself
     static int counter = 0;
 
 
@@ -233,13 +245,6 @@ int main(int argc, char** argv)
             MB_ABORTRETRYIGNORE);
     }
     else {
-        //for (int i = 0; i < my_argc; i++)
-        //{
-        //    MessageBoxW(NULL,
-        //        my_argv[i],
-        //        L"AAARrrrrrgggghhhhv",
-        //        MB_ABORTRETRYIGNORE);
-        //}
         if (my_argc > 1) {
             handle_file_drop(tinyfd_utf16to8(my_argv[1]),
                 &My_Variables.F_Prop[counter],
@@ -261,44 +266,24 @@ int main(int argc, char** argv)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     // used to reset the default layout back to original
     bool firstframe = true;
-    std::vector<std::string> dropped_file_path;
 
+    // std::vector<std::string> dropped_file_path;
     // Main loop
-    bool done = false;
-    while (!done)
+    // bool done = false;
+    // while (!done)
+    while (!glfwWindowShouldClose(window))
     {
         //handling dropped files in different windows
-        bool file_dropping_frame = false;
+        bool file_drop_frame = all_dropped_files.count > 0;
+
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
         // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
         // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
         // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-        {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_QUIT)
-                done = true;
-            if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
-                done = true;
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        done = true;
-                        break;
-                }
-            }
-            //TODO: SDL_DROPFILE doesn't support wide characters :_(
-            if (event.type == SDL_DROPFILE) {
 
-                dropped_file_path.emplace_back(event.drop.file);
-                SDL_free(event.drop.file);
+        glfwPollEvents();
 
-                file_dropping_frame = true;
-
-            }
-        }
 
         {// mouse position handling for panning
             //store previous mouse position before assigning current
@@ -323,7 +308,7 @@ int main(int argc, char** argv)
 
         // Start the Dear ImGui frame
         ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
@@ -331,7 +316,6 @@ int main(int argc, char** argv)
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        //ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
         ImGuiID dock_id_right = 0;
         ShowMainMenuBar(&counter, &My_Variables);
@@ -372,7 +356,7 @@ int main(int argc, char** argv)
             ImGui::Begin("File Info###file");  // Create a window and append into it.
                 //load files
                 if (ImGui::Button("Load Files...")) {
-                    Open_Files(&usr_info, &counter, My_Variables.pxlFMT_FO_Pal, &My_Variables);
+                    Open_Files(&usr_info, &counter, My_Variables.FO_Palette, &My_Variables);
                 }
                 //used this to create an frm from palette LUT
                 // if (ImGui::Button("Save palette animation...")) {
@@ -420,7 +404,7 @@ int main(int argc, char** argv)
                 }
 
             //set contextual menu for main window
-            if (ImGui::IsWindowHovered() && file_dropping_frame) {
+            if (ImGui::IsWindowHovered() && file_drop_frame) {
                 My_Variables.window_number_focus = -1;
                 My_Variables.edit_image_focused = false;
             }
@@ -428,10 +412,13 @@ int main(int argc, char** argv)
             ImGui::End();
 
             //handle opening dropped files
-            if (file_dropping_frame) {
-                for (std::string& path : dropped_file_path)
+            if (file_drop_frame) {
+                // for (std::string& path : dropped_file_path)
+                char* path = all_dropped_files.first_path;
+                for (int i = 0; i < all_dropped_files.count; i++)
                 {
-                    std::optional<bool> directory = handle_directory_drop(path.data(),
+                    // std::optional<bool> directory = handle_directory_drop(path.data(),
+                    std::optional<bool> directory = handle_directory_drop(path,
                                                         My_Variables.F_Prop,
                                                         &My_Variables.window_number_focus,
                                                         &counter,
@@ -439,15 +426,17 @@ int main(int argc, char** argv)
         //TODO: maybe I should handle these as an enum instead of std::optional<>
                     if (directory.has_value()) {
                         if (!directory.operator*()) {
-                            handle_file_drop(path.data(),
+                            // handle_file_drop(path.data(),
+                            handle_file_drop(path,
                                 &My_Variables.F_Prop[counter],
                                 &counter,
                                 &My_Variables.shaders);
                         }
                     }
                 }
-                dropped_file_path.clear();
-                file_dropping_frame = false;
+                free(all_dropped_files.first_path);
+                memset(&all_dropped_files, 0, sizeof(dropped_files));
+                file_drop_frame = false;
             }
 
             //contextual palette window for MSK vs FRM editing
@@ -468,7 +457,7 @@ int main(int argc, char** argv)
             {
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
-                    Show_Preview_Window(&My_Variables, i, &event);
+                    Show_Preview_Window(&My_Variables, i);
                 }
             }
         }
@@ -483,27 +472,25 @@ int main(int argc, char** argv)
 
         // Update and Render additional Platform Windows
         // (Platform functions may change the current OpenGL context, so we save/restore it to make it easier to paste this code elsewhere.
-        //  For this specific demo app we could also call SDL_GL_MakeCurrent(window, gl_context) directly)
         if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
-            SDL_Window* backup_current_window = SDL_GL_GetCurrentWindow();
-            SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+            GLFWwindow* current_context_backup = glfwGetCurrentContext();
+
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
-            SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+            glfwMakeContextCurrent(current_context_backup); 
         }
-        SDL_GL_SwapWindow(window);
+        glfwSwapBuffers(window);
     }
 
     // Cleanup
     //TODO: test if freeing manually vs freeing by hand is faster/same
     ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_GL_DeleteContext(gl_context);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    glfwDestroyWindow(window);
+    glfwTerminate();
 
     write_cfg_file(&usr_info, usr_info.exe_directory);
 
@@ -515,13 +502,47 @@ int main(int argc, char** argv)
 }
 //end of main////////////////////////////////////////////////////////////////////////
 
-void Show_Preview_Window(struct variables *My_Variables, int counter, SDL_Event* event)
+
+void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
+{
+    //TODO: remove this when I figure out how to pass in all_dropped_files
+
+    size_t size = 0;
+    //get total length of all strings
+    for (int i = 0; i < count; i++)
+    {
+        size += strlen(paths[i]) +1;
+    }
+
+    char* c;
+    if (all_dropped_files.count > 0) {
+        c = (char*)realloc(all_dropped_files.first_path,
+                           all_dropped_files.total_size + size);
+        all_dropped_files.first_path = c;
+        c += size;
+    } else {
+        c = (char*)malloc(size);
+        all_dropped_files.first_path = c;
+    }
+
+    all_dropped_files.count += count;
+    all_dropped_files.total_size += size;
+    for (int i = 0; i < count; i++)
+    {
+        size_t len = strlen(paths[i]) + 1;
+        memcpy(c, paths[i], len);
+        c += len;
+    }
+}
+
+
+void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
     shader_info* shaders = &My_Variables->shaders;
 
     //shortcuts...possibly replace variables* with just LF*
     LF* F_Prop = &My_Variables->F_Prop[counter];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
 
     std::string a = F_Prop->c_name;
     char b[3];
@@ -668,7 +689,6 @@ void Preview_Tiles_Window(variables* My_Variables, int counter)
     std::string name = image_name + " Preview...###render" + window_id;
 
     //shortcuts
-
     if (ImGui::Begin(name.c_str(), &F_Prop->preview_tiles_window, 0)) {
 
         if (ImGui::IsWindowFocused()) {
@@ -742,19 +762,12 @@ void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int 
 
 //TODO: Need to test wide character support
 //TODO: fix the pxlFMT_FO_Pal loading part
-void Open_Files(struct user_info* usr_info, int* counter, SDL_PixelFormat* pxlFMT, struct variables* My_Variables) {
+void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables) {
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
     // (limit is greater than 1600x1200 for menus at least - tested on MR)
     LF* F_Prop = &My_Variables->F_Prop[*counter];
-
-    // if (My_Variables->pxlFMT_FO_Pal == NULL)
-    // {
-    //     printf("Error: Palette not loaded...");
-    //     My_Variables->pxlFMT_FO_Pal = loadPalette("file name for palette here...eventually");
-    // }
-
     F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
 
     if (My_Variables->F_Prop[*counter].c_name) {
@@ -772,7 +785,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             if (ImGui::MenuItem("New - Unimplemented yet...")) {
                 /*TODO: add a new file option w/blank surfaces*/ }
             if (ImGui::MenuItem("Open", "Ctrl+O")) { 
-                Open_Files(&usr_info, counter, My_Variables->pxlFMT_FO_Pal, My_Variables);
+                Open_Files(&usr_info, counter, My_Variables->FO_Palette, My_Variables);
             }
             if (ImGui::MenuItem("Default Fallout Path")) {
                 Set_Default_Game_Path(&usr_info, My_Variables->exe_directory);
@@ -838,7 +851,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 {
     //shortcuts, need to replace with direct calls?
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
-    SDL_PixelFormat* pxlFMT_FO_Pal = My_Variables->pxlFMT_FO_Pal;
+    Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
     //TODO: save as animated image, needs more work
     static bool open_window     = false;
     static bool single_dir      = false;
@@ -931,34 +944,34 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
         //closes both edit windows, doesn't cancel all edits yet
         if (ImGui::Button("Cancel Editing...")) {
-            F_Prop->edit_image_window = false;
             F_Prop->edit_MSK = false;
+            F_Prop->edit_image_window = false;
             My_Variables->edit_image_focused = false;
         }
     }
     //Preview_Image buttons
     else if (!My_Variables->edit_image_focused) {
         ImGui::Text("Zoom: %%%.2f", F_Prop->img_data.scale * 100);
-        
+
         ImGui::PushItemWidth(100);
         ImGui::DragFloat("##Zoom", &F_Prop->img_data.scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
         ImGui::PopItemWidth();
         bool alpha_off = checkbox_handler("Alpha Enabled", &F_Prop->alpha);
-        const char * items[] = { "SDL Color Matching", "Euclidan Color Matching" };
+        const char * items[] = { "Euclidan Color Matching", "Not Implemented..." };
         ImGui::SameLine();
-        ImGui::Combo("##color_match", &My_Variables->SDL_color, items, IM_ARRAYSIZE(items));
+        ImGui::Combo("##color_match", &My_Variables->color_match_algo, items, IM_ARRAYSIZE(items));
 
         if (F_Prop->img_data.type == OTHER) {
             if (ImGui::Button("Color Match and Edit")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
             }
             if (ImGui::Button("Color Match & Preview as Image")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->show_image_render, alpha_off);
                 F_Prop->preview_tiles_window = false;
             }
@@ -968,7 +981,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 if (ImGui::Button("Color Match & Preview Tiles")) {
                     Prep_Image(F_Prop,
                         pxlFMT_FO_Pal,
-                        My_Variables->SDL_color,
+                        My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
@@ -979,11 +992,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
             }
             if (ImGui::Button("Convert Regular Image to MSK")) {
-                Convert_SDL_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                Convert_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                           &F_Prop->img_data);
                 Prep_Image(F_Prop,
                     NULL,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
                 F_Prop->edit_MSK = true;
             }
@@ -992,13 +1005,13 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             if (ImGui::Button("Edit this FRM")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
             }
             if (ImGui::Button("Preview FRM as full image")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->show_image_render, alpha_off);
                 F_Prop->preview_tiles_window = false;
             }
@@ -1008,18 +1021,18 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 if (ImGui::Button("Convert FRM to Tiles")) {
                     Prep_Image(F_Prop,
                         pxlFMT_FO_Pal,
-                        My_Variables->SDL_color,
+                        My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
             }
             if (ImGui::Button("Convert FRM Image to MSK")) {
-                Convert_SDL_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                Convert_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                           &F_Prop->img_data);
                 Prep_Image(F_Prop,
                     NULL,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
                 F_Prop->edit_MSK = true;
             }
@@ -1028,7 +1041,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             if (ImGui::Button("Edit MSK file")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
-                    My_Variables->SDL_color,
+                    My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
             }
             //TODO: manage some sort of contextual menu for tileable images?
@@ -1037,7 +1050,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 if (ImGui::Button("Color Match & Preview Tiles")) {
                     Prep_Image(F_Prop,
                         pxlFMT_FO_Pal,
-                        My_Variables->SDL_color,
+                        My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
@@ -1059,13 +1072,13 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Convert Animation to FRM for Editing")) {
                 //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
-                F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->pxlFMT_FO_Pal);
+                F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->FO_Palette);
             }
         }
         if (My_Variables->tile_window_focused) {
             if (ImGui::Button("Save as Map Tiles...")) {
                 if (strcmp(F_Prop->extension, "FRM") == 0) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_STB(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 else {
@@ -1090,7 +1103,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 open_window = true;
 
                 if (save_type == OTHER) {
-                    Save_IMG_SDL(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_STB(F_Prop->img_data.ANM_dir->frame_data->frame_start,
                                 &usr_info);
                 }
                 if (save_type == FRM) {

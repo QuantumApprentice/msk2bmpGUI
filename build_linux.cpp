@@ -12,6 +12,7 @@
 #include "src/QFO2Tool/Load_Files.cpp"
 #include "src/QFO2Tool/load_FRM_OpenGL.cpp"
 #include "src/QFO2Tool/Load_Settings.cpp"
+#include "src/QFO2Tool/MiniSDL.cpp"
 #include "src/QFO2Tool/MSK_Convert.cpp"
 #include "src/QFO2Tool/Palette_Cycle.cpp"
 #include "src/QFO2Tool/platform_io.cpp"

@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <SDL_image.h>
-
 #include <cstdint>
 #include <algorithm>
 
@@ -18,7 +16,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     std::sort(path_set.begin(), path_set.end());
 
     snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
-    // snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).u8string().c_str());
     //TODO: test this!          8==D
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).parent_path().parent_path().u8string().c_str());
 
@@ -33,11 +30,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
 
     F_Prop->c_name    = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
-
-    //char* dir_ptr = strrchr(path_set, PLATFORM_SLASH);
-    //snprintf(buffer, (strlen(file_names[0]) - (strlen(dir_ptr)-1)), "%s", file_names[0]);
-    //dir_ptr = strrchr(buffer, PLATFORM_SLASH);
-    //snprintf(direction, strlen(dir_ptr), "%s", dir_ptr+1);
 
     Direction temp_orient = assign_direction(direction);
     int num_frames = path_set.size();
@@ -76,9 +68,10 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     int i = 0;
     for (const std::filesystem::path& path : path_set) {
 
-        frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
+        frame_data[i].frame_start  = Load_File_to_RGBA(path.u8string().c_str());
+        // frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
         //handle image bit depth less than 32bpp
-        frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
+        // frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
 
         frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
         frame_data[i].Frame_Height = frame_data[i].frame_start->h;
@@ -103,15 +96,11 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     if (img_data->ANM_dir[temp_orient].frame_data) {
-        SDL_Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
+        Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-        //bind data to FRM_texture for display
-        //uint8_t * blank = (uint8_t*)calloc(1, data->w*data->h);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->w, data->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pixels);
-        //glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
-        //free(blank);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data->w, data->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data->pxls);
 
         bool success = init_framebuffer(img_data);
         if (!success) {
@@ -213,7 +202,7 @@ void Clear_img_data(image_data* img_data)
                 //TODO: check if number of frames are set for individual images
                 for (int j = 0; j < img_data->ANM_dir[i].num_frames; j++)
                 {
-                    SDL_FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
+                    FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
                 }
                 free(img_data->ANM_dir[i].frame_data);
                 img_data->ANM_dir[i].frame_data = NULL;

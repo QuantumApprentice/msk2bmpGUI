@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 // #include <stringapiset.h>
-#include <SDL_image.h>
+// #include <SDL_image.h>
+#include <stb_image.h>
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -70,6 +71,7 @@ void handle_file_drop(char *file_name, LF *F_Prop, int *counter, shader_info *sh
         (*counter)++;
     }
 }
+
 
 bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
                          LF *F_Prop, shader_info *shaders, bool *multiple_files,
@@ -606,11 +608,8 @@ std::set<std::filesystem::path> handle_subdirectory_set(const std::filesystem::p
                 temp_name = strrchr((char *)(u8file_path.c_str()), '\\');
             }
             animation_images.insert(temp_name + 1);
-
-            // animation_images.insert(std::filesystem::relative(file.path(), directory));
         }
     }
-    // std::sort(animation_images.begin(), animation_images.end());
 
     return animation_images;
 }
@@ -755,48 +754,23 @@ bool FRx_check(char *ext)
     }
 }
 
-SDL_Surface *Surface_32_Check(SDL_Surface *surface)
-{
-    if (surface)
-    {
-        if (surface->format->BitsPerPixel < 32)
-        {
-            SDL_Surface *Temp_Surface = NULL;
-            Temp_Surface = Unpalettize_Image(surface);
-
-            SDL_FreeSurface(surface);
-            return Temp_Surface;
-        }
-        else
-        {
-            return surface;
-        }
-    }
-    return nullptr;
-}
-
 //TODO: maybe combine with Supported_Format()?
 bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, const char *file_name)
 {
     prep_extension(F_Prop, NULL, file_name);
     // FRx_check checks extension to make sure it's one of the FRM variants (FRM, FR0, FR1...FR5)
-    if (FRx_check(F_Prop->extension))
-    {
+    if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);
-
         F_Prop->img_data.type = FRM;
 
         draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
                                 img_data->framebuffer, img_data->FRM_texture);
     }
-    else if (!(io_strncmp(F_Prop->extension, "MSK", 4)))
-    {
+    else if (!(io_strncmp(F_Prop->extension, "MSK", 4))) {
 
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
-
         F_Prop->img_data.type = MSK;
-
         init_framebuffer(img_data);
 
         draw_MSK_to_framebuffer(shaders->palette,
@@ -806,38 +780,33 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     }
     // do this for all other more common (generic) image types
     // TODO: add another type for other generic image types?
-    else
-    {
-        SDL_Surface *temp_surface = nullptr;
-        temp_surface = IMG_Load(F_Prop->Opened_File);
+    else {
+        // SDL_Surface *temp_surface = nullptr;
+        Surface* temp_surface = nullptr;
+        temp_surface = Load_File_to_RGBA(F_Prop->Opened_File);
+        // temp_surface = IMG_Load(F_Prop->Opened_File);
         if (temp_surface) {
 
-            temp_surface = Surface_32_Check(temp_surface);
+            // temp_surface = Surface_32_Check(temp_surface);
 
             F_Prop->img_data.ANM_dir = (ANM_Dir *)malloc(sizeof(ANM_Dir) * 6);
-            if (!F_Prop->img_data.ANM_dir)
-            {
+            if (!F_Prop->img_data.ANM_dir) {
                 printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
-            }
-            else
-            {   //initialize the allocated memory?
+            } else {
+                //initialize the allocated memory?
                 new (img_data->ANM_dir) ANM_Dir[6];
             }
 
             F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame *)malloc(sizeof(ANM_Frame));
-            if (!F_Prop->img_data.ANM_dir->frame_data)
-            {
+            if (!F_Prop->img_data.ANM_dir->frame_data) {
                 printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
-            }
-            else
-            {
+            } else {
                 new (img_data->ANM_dir->frame_data) ANM_Frame;
             }
 
             F_Prop->img_data.ANM_dir->frame_data->frame_start = temp_surface;
 
-            if (F_Prop->img_data.ANM_dir->frame_data->frame_start)
-            {
+            if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
                 F_Prop->img_data.width = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
                 F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
                 F_Prop->img_data.ANM_dir->num_frames = 1;
@@ -853,9 +822,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 //assign display direction to same as image slot so we can see the image on load
                 img_data->display_orient_num = NE;
             }
-        }
-        else
-        {
+        } else {
             printf("Unable to load image: %s\n", F_Prop->Opened_File);
             return false;
         }
@@ -866,9 +833,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     {
         if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
         {
-            printf("Unable to open image file %s! SDL Error: %s\n",
-                   F_Prop->Opened_File,
-                   SDL_GetError());
+            printf("Unable to open image file %s!\n", F_Prop->Opened_File);
             return false;
         }
     }
@@ -878,7 +843,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
 
 void load_tile_texture(GLuint *texture, char *file_name)
 {
-    SDL_Surface *surface = IMG_Load(file_name);
+    Surface *surface = Load_File_to_RGBA(file_name);
+    // SDL_Surface *surface = IMG_Load(file_name);
 
     if (!glIsTexture(*texture))
     {
@@ -895,10 +861,11 @@ void load_tile_texture(GLuint *texture, char *file_name)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); // Same
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pxls);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    SDL_FreeSurface(surface);
+    FreeSurface(surface);
+    // SDL_FreeSurface(surface);
 
     printf("glError: %d\n", glGetError());
 }

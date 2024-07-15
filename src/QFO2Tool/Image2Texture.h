@@ -21,7 +21,7 @@ struct variables {
 
     //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
-    SDL_PixelFormat *pxlFMT_FO_Pal = nullptr;
+    Palette* FO_Palette = nullptr;
     GLuint tile_texture_prev;
     GLuint tile_texture_rend;
 
@@ -39,15 +39,13 @@ struct variables {
 
     ImFont* Font;
     int global_font_size = 32;
-    int SDL_color = 0;
+    int color_match_algo = 0;   //0 used to be SDL, is now Euclidian_Distance
     int window_number_focus = -1;
 
 };
 
-void SDL_to_OpenGl(SDL_Surface* Temp_Surface, GLuint *Optimized_Texture);
-//bool bind_PAL_data(SDL_Surface* surface, struct image_data* img_data);
-//void Image2Texture(variables* My_Variables, int counter);
-bool Image2Texture(SDL_Surface* surface, GLuint* texture);
-void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off = false);
-bool bind_NULL_texture(struct image_data* img_data, SDL_Surface* surface, img_type type);
+void Surface_to_OpenGl(Surface* Temp_Surface, GLuint *Optimized_Texture);
+bool Image2Texture(Surface* surface, GLuint* texture);
+void Prep_Image(LF* F_Prop, Palette* palette, int color_match, bool* window, bool alpha_off = false);
+bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type type);
 bool checkbox_handler(const char* text, bool* alpha);
