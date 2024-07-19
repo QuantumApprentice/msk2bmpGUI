@@ -16,8 +16,7 @@ typedef union Color {
         uint8_t a;
     };
     uint8_t clr[4];
-    uint32_t abgr;
-    //TODO: why abgr? shouldn't it be rgba?
+    uint32_t rgba;
 } Color;
 
 typedef struct Palette {

@@ -98,12 +98,14 @@ uint8_t* FRM_Color_Convert(Surface *src, Palette* pxlFMT, int color_match_algo)
     Surface* Surface_32 = Convert_Surface_to_RGBA(src);
     if (!Surface_32) {
         printf("Error: Unable to allocate 32-bit surface\n");
+        return nullptr;
     }
 
     // Setup for palettizing image
     Surface* Surface_8 = Create_8Bit_Surface(src->w, src->h, pxlFMT);
     if (!Surface_8) {
-        printf("Error: Unable to allocate 8-bit palette\n");
+        printf("Error: Unable to allocate 8-bit surface\n");
+        return nullptr;
     }
     //switch to change between euclidian and sdl color match algorithms
     if (color_match_algo == 0) {
@@ -122,8 +124,7 @@ uint8_t* FRM_Color_Convert(Surface *src, Palette* pxlFMT, int color_match_algo)
     uint8_t* data = (uint8_t*)malloc(size + sizeof(FRM_Header) + sizeof(FRM_Frame));
     FRM_Frame* data_ptr = (FRM_Frame*)(data + sizeof(FRM_Header));
     int pxl_ptr = 0;
-    for (int y = 0; y < height; y++)
-    {
+    for (int y = 0; y < height; y++) {
         //write out one row of pixels in each loop
         memcpy(data_ptr->frame_start + (width*y), ((uint8_t*)Surface_8->pxls + pxl_ptr), width);
         pxl_ptr += Surface_8->pitch;
@@ -159,11 +160,11 @@ void Euclidian_Distance_Color_Match(
         for (int x = 0; x < Surface_32->w; x++) {
 
             w_smallest = INT_MAX;
-            int i = (Surface_32->pitch * y) + x * (sizeof(Color));
-            memcpy(&rgba, (uint8_t*)Surface_32->pxls + i, sizeof(Color));
+            int i = (Surface_32->pitch * y) + (x * Surface_32->channels);
+            memcpy(&rgba, &Surface_32->pxls[i], sizeof(Color));
 
             if (rgba.a < 255) {
-                ((uint8_t*)Surface_8->pxls)[(Surface_8->pitch*y) + x] = 0;
+                w_PaletteColor = 0;
             } else {
                 for (int j = 0; j < Surface_8->palette->num_colors; j++)
                 {
@@ -180,7 +181,7 @@ void Euclidian_Distance_Color_Match(
                     w = sqrt(s + t + u + v);
 
                     if (w < w_smallest) {
-                        w_smallest = w;
+                        w_smallest     = w;
                         w_PaletteColor = j;
                     }
                 // TODO: if w == 0 here
@@ -198,6 +199,7 @@ void Euclidian_Distance_Color_Match(
                     }
                 }
             }
+
             //TODO: need to clean this up
             //      used to keep track of palettization
             if (i == c) {
@@ -205,7 +207,7 @@ void Euclidian_Distance_Color_Match(
                 c *= 10;
             }
 
-            ((uint8_t*)Surface_8->pxls)[(Surface_8->pitch*y) + x] = w_PaletteColor;
+            Surface_8->pxls[(Surface_8->pitch*y) + x] = w_PaletteColor;
         }
     }
 }

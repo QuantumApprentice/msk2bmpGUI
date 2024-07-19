@@ -97,18 +97,21 @@ Surface* Load_File_to_RGBA(const char* filename)
     return surface;
 }
 
+//src, src_rect, dst, dst_rect
+//both surfaces must be same pixel width (RGB/RGBA etc)
+//src_rect.w & h must be == dst_rect
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect)
 {
     assert(src_rect.w == dst_rect.w);
     assert(src_rect.h == dst_rect.h);
-    uint8_t* src_pxls = &src->pxls[src_rect.h*src->pitch + src_rect.x];
-    uint8_t* dst_pxls = &dst->pxls[dst_rect.h*dst->pitch + dst_rect.x];
+    //set starting position for top left corner of rectangle to copy
+    uint8_t* src_pxls = &src->pxls[src_rect.y*src->pitch + src_rect.x*src->channels];
+    uint8_t* dst_pxls = &dst->pxls[dst_rect.y*dst->pitch + dst_rect.x*dst->channels];
 
-    for (int row = 0; row < src_rect.h; row++)
-    {
-        memcpy(dst, src, src_rect.w);
+    //copy each row of src rectangle to dst surface
+    for (int row = 0; row < src_rect.h; row++) {
+        memcpy(dst_pxls, src_pxls, dst->pitch);
         src_pxls += src->pitch;
         dst_pxls += dst->pitch;
     }
-    
 }

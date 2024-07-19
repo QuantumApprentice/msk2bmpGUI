@@ -17,14 +17,16 @@ struct offsets {
     int16_t y_offset = 0;
 };
 
+//calls FRM_color_convert()
+//returns pointer to FRM header, including frame info
 uint8_t* Crop_Frame(pxl_pos* pos_data, ANM_Frame* anm_frame, Palette* FO_Palette)
 {
-    int Frame_Width  = pos_data->r_pxl - pos_data->l_pxl;
-    int Frame_Height = pos_data->b_pxl - pos_data->t_pxl;
+    int Frame_Width  = pos_data->w;
+    int Frame_Height = pos_data->h;
 
     Rect src_rectangle;
     src_rectangle.w = Frame_Width;
-    src_rectangle.h = Frame_Width;
+    src_rectangle.h = Frame_Height;
     src_rectangle.x = pos_data->l_pxl;
     src_rectangle.y = pos_data->t_pxl;
 
@@ -40,12 +42,13 @@ uint8_t* Crop_Frame(pxl_pos* pos_data, ANM_Frame* anm_frame, Palette* FO_Palette
 
     uint8_t* out_data = FRM_Color_Convert(out_surface, FO_Palette, 0);
 
+    free(out_surface);
     return out_data;
 }
 
 bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Palette)
 {
-    int FRM_frame_size = sizeof(FRM_Frame);
+    // int FRM_frame_size = sizeof(FRM_Frame);
     int num_frames = 0;
     Color rgba;
     bool free_surface = false;
@@ -120,6 +123,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
                 }
                 if (!Surface_32) {
                     printf("Error: unable to allocate Surface_32\n");
+                    return false;
                 }
 
                 //check every pixel in a frame for edge of cropped image
@@ -127,8 +131,9 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        int i = (pitch * y) + x * (sizeof(Color));
-                        memcpy(&rgba, (uint8_t*)Surface_32->pxls + i, sizeof(Color));
+                        int i = pitch*y + x*sizeof(Color);
+                        memcpy(&rgba, &Surface_32->pxls[i], sizeof(Color));
+                        // memcpy(&rgba, (uint8_t*)Surface_32->pxls + i, sizeof(Color));
 
                         if (rgba.a > img_data->alpha_threshold) {
                             if (x < pos_data[j].l_pxl) {
@@ -151,22 +156,21 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
                 pos_data[j].w = pos_data[j].r_pxl - pos_data[j].l_pxl;
                 pos_data[j].h = pos_data[j].b_pxl - pos_data[j].t_pxl;
 
-                int data_frame_size = pos_data[j].w*pos_data[j].h;
+                int image_size = pos_data[j].w*pos_data[j].h;
 
-                FRM_Frame* frame_data = (FRM_Frame*)malloc(FRM_frame_size + data_frame_size);
+                FRM_Frame* frame_data = (FRM_Frame*)malloc(sizeof(FRM_Frame) + image_size);
                 if (!frame_data) {
                     printf("Unable to allocate memory for frame_data: frame: %d, line: %d\n", j, __LINE__);
                     return false;
                 }
 
-                frame_data->Frame_Width = pos_data[j].w;
+                frame_data->Frame_Width  = pos_data[j].w;
                 frame_data->Frame_Height = pos_data[j].h;
-                frame_data->Frame_Size = data_frame_size;
+                frame_data->Frame_Size   = image_size;
                 if (j > 0) {
                     frame_data->Shift_Offset_x = (pos_data[j].l_pxl + pos_data[j].r_pxl) / 2 - (pos_data[j - 1].l_pxl + pos_data[j - 1].r_pxl) / 2;
-                    frame_data->Shift_Offset_y = pos_data[j].b_pxl - pos_data[j - 1].b_pxl;
-                }
-                else {
+                    frame_data->Shift_Offset_y =  pos_data[j].b_pxl - pos_data[j - 1].b_pxl;
+                } else {
                     //set frame 0 offset
                     frame_data->Shift_Offset_x = 0;
                     frame_data->Shift_Offset_y = 0;
@@ -174,7 +178,8 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
 
                 //convert each frame to 8-bit paletted, copy to FRM_frame_ptrs at correct position
                 uint8_t* data = Crop_Frame(&pos_data[j], &img_data->ANM_dir[i].frame_data[j], FO_Palette);
-                memcpy((uint8_t*)frame_data + FRM_frame_size, data, data_frame_size);
+                memcpy(frame_data->frame_start, data + sizeof(FRM_Header) + sizeof(FRM_Frame), image_size);
+                // memcpy((uint8_t*)frame_data + FRM_frame_size, data, data_frame_size);
                 frm_frame_ptrs[j] = frame_data;
                 free(data);
 
