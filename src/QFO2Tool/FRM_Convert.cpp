@@ -144,8 +144,6 @@ void Euclidian_Distance_Color_Match(
     Color rgba;
     Pxl_Err err;
 
-    int w_smallest;
-
     int s;
     int t;
     int u;
@@ -153,15 +151,14 @@ void Euclidian_Distance_Color_Match(
     int w;
 
     int c = 100;    //TODO: remove this counter
-    int pixel_idx = 0;
     Color* PaletteColors = Surface_8->palette->colors;
 
     for (int y = 0; y < Surface_32->h; y++) {
         for (int x = 0; x < Surface_32->w; x++) {
 
-            w_smallest = INT_MAX;
-            int i = (Surface_32->pitch * y) + (x * Surface_32->channels);
-            memcpy(&rgba, &Surface_32->pxls[i], sizeof(Color));
+            int w_smallest = INT_MAX;
+            int idx = (Surface_32->pitch * y) + (x * Surface_32->channels);
+            memcpy(&rgba, &Surface_32->pxls[idx], sizeof(Color));
 
             if (rgba.a < 255) {
                 w_PaletteColor = 0;
@@ -177,8 +174,9 @@ void Euclidian_Distance_Color_Match(
                     t *= t;
                     u *= u;
                     v *= v;
-                    //TODO: get rid of this sqrt() to make it faster
-                    w = sqrt(s + t + u + v);
+                    //TODO: non-sqrt() is faster, but produces different results
+                    w = (s + t + u + v);
+                    // w = sqrt(s + t + u + v);
 
                     if (w < w_smallest) {
                         w_smallest     = w;
@@ -202,8 +200,8 @@ void Euclidian_Distance_Color_Match(
 
             //TODO: need to clean this up
             //      used to keep track of palettization
-            if (i == c) {
-                printf("Euclidian color match loop #: %d\n", i);
+            if (idx == c) {
+                printf("Euclidian color match loop #: %d\n", idx);
                 c *= 10;
             }
 
