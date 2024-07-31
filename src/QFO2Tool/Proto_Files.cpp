@@ -8,7 +8,8 @@
 //data/proto/tiles/TILES.LST            //proto version
 //data/Text/english/Game/pro_tile.msg   //alternates for other languages?
 
-
+//https://www.nma-fallout.com/threads/using-the-bis-mapper-to-edit-create-a-new-proto.220548/#post-4471019
+//https://falloutmods.fandom.com/wiki/Making_prototypes
 //Mapper produces interim text files to produce proto files:
 /*      //example//
 pid: 67111980 00003116      //proto ID number?  //line number in TILES.LST art file //check hex trick used to produce proto id from line number
@@ -20,6 +21,7 @@ flags_ext: 0                //unkown?
 material: Glass             //material type == enum
 */
 
+// https://www.nma-fallout.com/threads/i-made-a-pro-file-editor.222442/
 // https://falloutmods.fandom.com/wiki/PRO_File_Format#Tiles
 // tile proto file contents:
 /*

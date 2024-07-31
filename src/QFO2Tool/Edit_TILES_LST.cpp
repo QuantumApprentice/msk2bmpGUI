@@ -1,3 +1,5 @@
+//Building and cutting new tiles for Fallout 1 and 2. by Pixote
+//https://www.nma-fallout.com/threads/faq-guides-tutorials.156494/page-2#post-3839275
 #include <time.h>
 
 #include "platform_io.h"
@@ -5,8 +7,6 @@
 #include "Save_Files.h"
 #include "Edit_TILES_LST.h"
 #include "tinyfiledialogs.h"
-
-
 
 void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
 {
