@@ -98,8 +98,13 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
     }
 }
 
-void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
+void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* file_buff)
 {
+    if (handle == nullptr) {
+    //TODO: place a warning here, this needs tile_arr*head to work
+        return;
+    }
+
     int choice = 0;
     const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
     if (tiles_lst == nullptr) {
@@ -192,9 +197,6 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     u32_ptr[1] = handle->row_cnt;
     u32_ptr[2] = 0;//unkown exactly what does this do?
 
-    char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/00000001", usr_info->default_game_path);
-
     FILE* pattern_file = fopen(file_buff, "wb");
     if (pattern_file == nullptr) {
         free(out_pattern);
@@ -205,4 +207,58 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle)
     fclose(pattern_file);
 
     free(out_pattern);
+}
+
+
+void export_pattern_file(user_info* usr_nfo, tt_arr_handle* handle)
+{
+    if (fallout2exe_exists(usr_nfo->default_game_path) == false) {
+        ImGui::Text(
+            "Default game path is not set.\n"
+            "Please set the path for fallout2.exe here:"
+        );
+        ImGui::InputText("###fallout2.exe", usr_nfo->default_game_path, MAX_PATH);
+    }
+
+    //check pattern filename
+    int patt_num = 1;
+    static char file_buff[MAX_PATH];
+    snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/00000001", usr_nfo->default_game_path);
+    while (io_file_exists(file_buff)) {
+        snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", usr_nfo->default_game_path, ++patt_num);
+    }
+    //allow user to change filename
+    static char patt_buff[12];
+    if (patt_buff[0] == '\0') {
+        snprintf(patt_buff, 12, "%08d", patt_num);
+    }
+    ImGui::Text(
+        "%s\n"
+        "was the first slot open for pattern files.\n"
+        "To use a different slot number, change it here.\n"
+        "(This actually changes the filename, if you\n"
+        "want this file to work, change only the end number\n"
+        "and it must be contiguous from any previous number.)\n",
+        patt_buff
+    );
+    ImGui::InputText("###patternfile", patt_buff, 9);
+
+
+    //export button
+    if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
+        if (handle == nullptr) {
+        //TODO: place a warning here, this needs tile_arr*head to work
+            return;
+        }
+        if (atoi(patt_buff) != patt_num) {
+            snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, patt_buff);
+        }
+
+        TMAP_tiles_pattern_arr(usr_nfo, handle, file_buff);
+
+        ImGui::EndPopup();
+    }
+    if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+    }
 }

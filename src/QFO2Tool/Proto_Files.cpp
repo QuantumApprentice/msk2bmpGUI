@@ -228,13 +228,13 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         "(and thus in the game), each tile must have a proto(.pro)\n"
         "file made, and an entry for each tile appended to\n\n"
         "   Fallout 2/data/proto/tiles/TILES.LST\n"
-        "   Fallout 2/data/art/tiles/TILES.LST.\n\n"
+        "   Fallout 2/data/art/tiles/TILES.LST\n\n"
         "In addition, entries can optionally be made in\n\n"
         "   Fallout 2/data/Text/english/Game/pro_tile.msg\n\n"
         "to give the tile a name and description in the\n"
         "Fallout 2 mapper (Mapper2.exe).\n\n"
-        "Please provide the path to fallout2.exe in your\n"
-        "modded Fallout 2 folder.\n"
+        "For this to work, please provide the path to\n"
+        "fallout2.exe in your modded Fallout 2 folder.\n"
         );
     static char FObuf[MAX_PATH] = "";
     strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
@@ -255,9 +255,7 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         }
 
         //copy any game_path changes to user_info for saving to config
-        char game_path[MAX_PATH];
-        snprintf(game_path, MAX_PATH, "%s/fallout2.exe", FObuf);
-        if (io_file_exists(game_path)) {
+        if (fallout2exe_exists(FObuf)) {
             strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
         } else {
             //TODO: popup warning - can't find fallout2.exe
@@ -268,7 +266,7 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
 
         tt_arr* tiles = handle->tile;
         add_TMAP_tiles_to_lst_arr(usr_nfo, handle, nullptr);
-        TMAP_tiles_pattern_arr(usr_nfo, handle);
+        // TMAP_tiles_pattern_arr(usr_nfo, handle);
 
         //tiles can reference different line numbers in pro_tile.msg
         //have all tiles from this batch point to first new tile entry

@@ -158,6 +158,18 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
         ImGui::EndPopup();
     }
 
+    if (ImGui::Button("Export Pattern File")) {
+        ImGui::OpenPopup("Pattern File");
+    }
+    // Always center this window when appearing
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
+    {
+        export_pattern_file(usr_nfo, handle);
+
+        ImGui::EndPopup();
+    }
+
     ImGui::SliderInt("Image Offset X", &offset_x, -400, 400, NULL);
     ImGui::SliderInt("Image Offset Y", &offset_y, -400, 400, NULL);
 

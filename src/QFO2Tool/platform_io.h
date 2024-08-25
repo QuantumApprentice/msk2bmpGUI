@@ -18,3 +18,4 @@ bool io_backup_file(char* file_path, char* dest_path);
 bool io_create_backup_dir(char* dir);
 bool io_move_file(char* file_path, char* dest_dir);
 char* io_load_text_file(char* full_path);
+bool fallout2exe_exists(char* game_path);

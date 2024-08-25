@@ -19,6 +19,7 @@
 // (SDL is a cross-platform general purpose library for handling windows, inputs, OpenGL/Vulkan/Metal graphics context creation, etc.)
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
+bool show_demo_window = false;
 
 // ImGui header files
 #include "imgui.h"
@@ -312,7 +313,6 @@ int main(int argc, char** argv)
         ImGui::NewFrame();
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        bool show_demo_window = false;
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
@@ -540,6 +540,7 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 {
     shader_info* shaders = &My_Variables->shaders;
 
+    //TODO: store image/editing info in the window itself
     //shortcuts...possibly replace variables* with just LF*
     LF* F_Prop = &My_Variables->F_Prop[counter];
     Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
@@ -808,6 +809,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                     My_Variables->F_Prop[*counter].show_stats = true;
                 }
             }
+            //TODO: implement "Open Recent" menu
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
         }

@@ -12,4 +12,5 @@ struct pattern {
 };
 #pragma pack(pop)
 
-void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle);
+void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* file_buff);
+void export_pattern_file(user_info* usr_info, tt_arr_handle* handle);

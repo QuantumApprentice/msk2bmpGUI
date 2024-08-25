@@ -99,21 +99,11 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
 
     if (type == 2) {            //no, open each image individually
         for (const std::filesystem::path &path : path_vec) {
-
-//TODO: remove this extra garbage if u8string() works for windows
-// #ifdef QFO2_WINDOWS
-//             F_Prop[*counter].file_open_window =
-//                 Drag_Drop_Load_Files(tinyfd_utf16to8(path.c_str()),
-//                                      &F_Prop[*counter],
-//                                      &F_Prop[*counter].img_data,
-//                                      shaders);
-// #elif defined(QFO2_LINUX)
             F_Prop[*counter].file_open_window =
                 Drag_Drop_Load_Files(path.u8string().c_str(),
                                      &F_Prop[*counter],
                                      &F_Prop[*counter].img_data,
                                      shaders);
-// #endif
             (*counter)++;
         }
         return true;
@@ -229,7 +219,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         bool is_subdirectory = file.is_directory(error);
         if (error)
         {
-            // TODO: convert to tinyfd_filedialog() popup warning
+            // TODO: convert to popup? warning
             printf("error when checking if file_name is directory when loading file: %d", __LINE__);
             return animation_images;
         }
@@ -620,6 +610,7 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
 {
     char buffer[MAX_PATH];
 #ifdef QFO2_WINDOWS
+    //TODO: which method am I using?
     std::filesystem::path path(tinyfd_utf8to16(file_name));
     //std::filesystem::path path(file_name).u8string().c_str();
 
@@ -647,7 +638,7 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
         {
             is_subdirectory = file.is_directory(error);
             if (error) {
-                // TODO: convert to tinyfd_filedialog() popup warning
+                // TODO: convert to popup? warning
                 printf("error when checking if file_name is directory");
                 return std::nullopt;
             }
@@ -781,13 +772,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     // do this for all other more common (generic) image types
     // TODO: add another type for other generic image types?
     else {
-        // SDL_Surface *temp_surface = nullptr;
         Surface* temp_surface = nullptr;
         temp_surface = Load_File_to_RGBA(F_Prop->Opened_File);
-        // temp_surface = IMG_Load(F_Prop->Opened_File);
         if (temp_surface) {
-
-            // temp_surface = Surface_32_Check(temp_surface);
 
             F_Prop->img_data.ANM_dir = (ANM_Dir *)malloc(sizeof(ANM_Dir) * 6);
             if (!F_Prop->img_data.ANM_dir) {
@@ -844,7 +831,6 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
 void load_tile_texture(GLuint *texture, char *file_name)
 {
     Surface *surface = Load_File_to_RGBA(file_name);
-    // SDL_Surface *surface = IMG_Load(file_name);
 
     if (!glIsTexture(*texture))
     {
@@ -865,7 +851,6 @@ void load_tile_texture(GLuint *texture, char *file_name)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     FreeSurface(surface);
-    // SDL_FreeSurface(surface);
 
     printf("glError: %d\n", glGetError());
 }

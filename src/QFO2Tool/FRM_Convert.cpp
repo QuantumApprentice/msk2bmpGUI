@@ -169,7 +169,8 @@ void Euclidian_Distance_Color_Match(
                     t = rgba.g - PaletteColors[j].g;
                     u = rgba.b - PaletteColors[j].b;
                     v = rgba.a - PaletteColors[j].a;
-
+//SDL source code for conversion
+//https://github.com/libsdl-org/SDL/blob/e5101ebae68b62453930b94e19d62ae04e0df1f1/src/video/SDL_pixels.c#L1162
                     s *= s;
                     t *= t;
                     u *= u;

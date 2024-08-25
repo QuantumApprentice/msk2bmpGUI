@@ -275,3 +275,10 @@ char* io_load_text_file(char* full_path)
     text_file_buff[file_size] = '\0';
     return text_file_buff;
 }
+
+bool fallout2exe_exists(char* game_path)
+{
+    char temp[MAX_PATH];
+    snprintf(temp, MAX_PATH, "%s/fallout2.exe", game_path);
+    return io_file_exists(temp);
+}
