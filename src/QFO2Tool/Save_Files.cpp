@@ -1197,3 +1197,11 @@ void Save_MSK_Image_OpenGL(uint8_t *tile_buffer, FILE *File_ptr, int width, int 
     fwrite(out_buffer, buff_size, 1, File_ptr);
     free(out_buffer);
 }
+
+void Save_to_GIF(image_data* img_data, struct user_info* usr_nfo)
+{
+    if (img_data->FRM_data == nullptr) {
+        return;
+    }
+    
+}

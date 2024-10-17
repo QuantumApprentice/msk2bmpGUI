@@ -16,7 +16,7 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, boo
     shader_info* shaders = &My_Variables->shaders;
     if (img_data->FRM_dir) {
         if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
-            ImGui::Text("No Image Data");
+            ImGui::Text("No frame_data");
             return;
         }
         else {
@@ -29,13 +29,13 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, boo
         }
     }
     else {
-        ImGui::Text("No Image Data");
+        ImGui::Text("No FRM_dir");
         return;
     }
     //handle frame display by orientation and number
     int orient  = img_data->display_orient_num;
-    int frame   = img_data->display_frame_num;
-    int max_frm = img_data->FRM_dir[orient].num_frames;
+    // int frame   = img_data->display_frame_num;
+    // int max_frm = img_data->FRM_dir[orient].num_frames;
 
     float scale = img_data->scale;
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;

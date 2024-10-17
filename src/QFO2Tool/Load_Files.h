@@ -55,7 +55,7 @@ struct shader_info {
 struct dropped_files {
     size_t count;
     size_t total_size;
-    //lay out null terminated strings one after another?
+    //lay out null terminated strings one after another
     char* first_path;
 };
 

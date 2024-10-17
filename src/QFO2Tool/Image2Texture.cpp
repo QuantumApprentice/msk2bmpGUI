@@ -52,27 +52,27 @@ void init_FRM(image_data* edit_data)
     int height = edit_data->height;
     int size   = width * height;
 
-    edit_data->FRM_hdr = (FRM_Header*)malloc(sizeof(FRM_Header) * 6);
-    new(edit_data->FRM_hdr) FRM_Header[6];
+    edit_data->FRM_hdr = (FRM_Header*)malloc(sizeof(FRM_Header));
+    new(edit_data->FRM_hdr) FRM_Header;
+
     edit_data->FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
+    edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+    edit_data->FRM_dir[0].frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
+    edit_data->FRM_dir[0].frame_data[0] = (FRM_Frame*)(edit_data->FRM_data + sizeof(FRM_Header));
 
-    edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir));
-    edit_data->FRM_dir->frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
-    edit_data->FRM_dir->frame_data[0] = (FRM_Frame*)(edit_data->FRM_data + sizeof(FRM_Header));
+    edit_data->FRM_dir[0].frame_data[0]->Frame_Width    = width;
+    edit_data->FRM_dir[0].frame_data[0]->Frame_Height   = height;
+    edit_data->FRM_dir[0].frame_data[0]->Frame_Size     = size;
+    edit_data->FRM_dir[0].frame_data[0]->Shift_Offset_x = 0;
+    edit_data->FRM_dir[0].frame_data[0]->Shift_Offset_y = 0;
 
-    edit_data->FRM_dir->frame_data[0]->Frame_Width    = width;
-    edit_data->FRM_dir->frame_data[0]->Frame_Height   = height;
-    edit_data->FRM_dir->frame_data[0]->Frame_Size     = size;
-    edit_data->FRM_dir->frame_data[0]->Shift_Offset_x = 0;
-    edit_data->FRM_dir->frame_data[0]->Shift_Offset_y = 0;
-
-    edit_data->FRM_dir->bounding_box = (rectangle*)malloc(sizeof(rectangle));
+    edit_data->FRM_dir[0].bounding_box = (rectangle*)malloc(sizeof(rectangle));
     new(edit_data->FRM_dir->bounding_box) rectangle;
 
-    edit_data->FRM_dir->bounding_box->x2 = width;
-    edit_data->FRM_dir->bounding_box->y2 = height;
-    edit_data->FRM_bounding_box->x2      = width;
-    edit_data->FRM_bounding_box->y2      = height;
+    edit_data->FRM_dir[0].bounding_box->x2 = width;
+    edit_data->FRM_dir[0].bounding_box->y2 = height;
+    edit_data->FRM_bounding_box[0].x2      = width;
+    edit_data->FRM_bounding_box[0].y2      = height;
 
     edit_data->FRM_dir->orientation = NE;
 
@@ -82,15 +82,62 @@ void init_FRM(image_data* edit_data)
 void copy_it_all(image_data* img_data, image_data* edit_data)
 {
     edit_data->FRM_data = (uint8_t*)malloc(img_data->FRM_size);
-
-    init_FRM(edit_data);
-
     memcpy(edit_data->FRM_data, img_data->FRM_data, img_data->FRM_size);
-    memcpy(edit_data->FRM_dir, img_data->FRM_dir, sizeof(FRM_Dir));
-    memcpy(edit_data->FRM_hdr, img_data->FRM_hdr, sizeof(FRM_Header));
+    FRM_Header* header = (FRM_Header*)edit_data->FRM_data;
+
+    // init_FRM(edit_data);
+
+    int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
+    int num_frames  = header->Frames_Per_Orient;
+    if (num_orients < 6) {
+        edit_data->display_orient_num = img_data->display_orient_num;
+    }
+
+    edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+    if (!edit_data->FRM_dir) {
+        printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
+    }
+    else {
+        new(edit_data->FRM_dir) FRM_Dir[6];
+    }
+
+    FRM_Dir* frm_dir = edit_data->FRM_dir;
+
+    for (int i = 0; i < num_orients; i++)
+    {
+        if (num_orients < 6) {
+            i = edit_data->display_orient_num;
+        }
+        //TODO: change to ptr assignment after malloc-ing entire memory above ^^
+        frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
+        if (!frm_dir[i].frame_data) {
+            printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
+            return;
+        }
+        frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
+        if (!frm_dir[i].bounding_box) {
+            printf("Unable to allocate memory for frm_dir[%d].bounding_box: %d", i, __LINE__);
+            return;
+        }
+
+        int buff_offset        = header->Frame_0_Offset[i] + sizeof(FRM_Header);
+        frm_dir[i].orientation = (Direction)i;
+        frm_dir[i].num_frames  = num_frames;
+
+        for (size_t j = 0; j < num_frames; j++)
+        {
+            FRM_Frame* frame_start     = (FRM_Frame*)(edit_data->FRM_data + buff_offset);
+            frm_dir[i].frame_data[j]   = frame_start;
+            frm_dir[i].bounding_box[j] = img_data->FRM_dir[i].bounding_box[j];
+            buff_offset += frame_start->Frame_Size + sizeof(FRM_Frame);
+        }
+    }
+
     memcpy(edit_data->FRM_bounding_box, img_data->FRM_bounding_box, sizeof(rectangle[6]));
-
-
+    int this_dir = img_data->display_orient_num;
+    // edit_data->width  = edit_data->FRM_bounding_box[this_dir].x2 - edit_data->FRM_bounding_box[this_dir].x1;
+    // edit_data->height = edit_data->FRM_bounding_box[this_dir].y2 - edit_data->FRM_bounding_box[this_dir].y1;
+    edit_data->FRM_hdr = (FRM_Header*)edit_data->FRM_data;
 }
 
 //Palettize to 8-bit FO pallet, and dither
@@ -111,6 +158,8 @@ void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window
         F_Prop->edit_data.offset   = F_Prop->img_data.offset;
 
         copy_it_all(&F_Prop->img_data, &F_Prop->edit_data);
+
+        F_Prop->edit_data.type = FRM;
 
         //bind edit data for editing
         bind_NULL_texture(&F_Prop->edit_data, NULL, F_Prop->img_data.type);
@@ -152,7 +201,7 @@ void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window
         //TODO: need to allocate header? info etc?
         //      need to assign FRM_dir[] pointers into FRM_data
         init_FRM(&F_Prop->edit_data);
-
+        F_Prop->edit_data.FRM_dir[0].num_frames = 1;
 
 
         if (alpha_off) {
@@ -199,7 +248,8 @@ bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type t
     }
     else if (type == FRM) {
         if (img_data->FRM_data) {
-            uint8_t* data = img_data->FRM_dir->frame_data[0]->frame_start;
+            int dir = img_data->display_orient_num;
+            uint8_t* data = img_data->FRM_dir[dir].frame_data[0]->frame_start;
             glGenTextures(1, &img_data->FRM_texture);
             glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
             //texture settings

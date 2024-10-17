@@ -32,3 +32,5 @@ void check_file(char* path, char* path_name, const char* name, int tile_num, img
 void Create_File_Name(char* buffer, const char* name, img_type type, char* path, int tile_num);
 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);
+
+void Save_to_GIF(image_data* img_data, struct user_info* usr_nfo);

@@ -10,8 +10,10 @@
 void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick) {
     //TODO: maybe pass the dithering choice through?
 
+    shader_info* shaders  = &My_Variables->shaders;
     image_data* edit_data = &F_Prop->edit_data;
-    shader_info* shaders = &My_Variables->shaders;
+    //handle zoom and panning for the image, plus update image position every frame
+    zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
     ////TODO: use a menu bar for the editor/previewer?
     //if (ImGui::BeginMenuBar()) {
@@ -32,13 +34,37 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //    ImGui::EndMenuBar();
     //}
 
-    //handle zoom and panning for the image, plus update image position every frame
-    zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
+
+
+    if (edit_data->FRM_dir) {
+        if (edit_data->FRM_dir[edit_data->display_orient_num].frame_data == NULL) {
+            ImGui::Text("No frame_data");
+            return;
+        }
+        else {
+            animate_FRM_to_framebuff(shaders->palette,
+                shaders->render_FRM_shader,
+                shaders->giant_triangle,
+                edit_data,
+                My_Variables->CurrentTime_ms,
+                My_Variables->Palette_Update);
+        }
+    } else {
+        ImGui::Text("No FRM_dir");
+        return;
+    }
+    //handle frame display by orientation and number
+    int orient  = edit_data->display_orient_num;
+    // int frame   = edit_data->display_frame_num;
+    // int max_frm = edit_data->FRM_dir[orient].num_frames;
+
 
     //shortcuts
     float scale = edit_data->scale;
-    int width   = edit_data->width;
-    int height  = edit_data->height;
+    // int width   = edit_data->width;
+    // int height  = edit_data->height;
+    int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
+    int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec4 tint   = My_Variables->tint_col;
@@ -56,7 +82,6 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
         image_edited = true;
 
         texture_paint(My_Variables, edit_data, F_Prop->edit_MSK);
-
     }
 
     //Converts unpalettized image to texture for display

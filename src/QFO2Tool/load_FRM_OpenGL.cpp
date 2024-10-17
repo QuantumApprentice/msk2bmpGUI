@@ -163,11 +163,7 @@ Direction assign_direction_FRM(const char* direction)
 
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
-    int buff_offset = 0;
-    int frame_size  = sizeof(FRM_Frame);
-    int hdr_size    = sizeof(FRM_Header);
     uint8_t* buffer = load_entire_file(file_name, &img_data->FRM_size);
-
     if (!buffer) {
         return false;
     }
@@ -178,7 +174,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
-    Direction dir = no_data;
+    Direction dir   = no_data;
     const char* ext_ptr = strrchr(file_name, '.') + 1;
     if (num_orients < 6) {
         dir = assign_direction_FRM(ext_ptr);
@@ -186,6 +182,12 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     }
 
     img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+    // img_data->FRM_dir = (FRM_Dir*)malloc(
+    //         sizeof(FRM_Dir)*6 +
+    //         sizeof(FRM_Frame*)*num_frames*6 +
+    //         sizeof(rectangle)*num_frames*6
+    //     );
+
     if (!img_data->FRM_dir) {
         printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
     }
@@ -193,20 +195,18 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
         new(img_data->FRM_dir) FRM_Dir[6];
     }
 
-    rectangle bounding_box      = {};
-    rectangle FRM_bounding_box  = {};
 
-    FRM_Frame* frame_start;
     FRM_Dir* frm_dir = img_data->FRM_dir;
-    buff_offset = hdr_size;
-    frame_start = (FRM_Frame*)(buffer + buff_offset);
+    int buff_offset = sizeof(FRM_Header);
 
     for (int i = 0; i < num_orients; i++)
     {
         if (num_orients < 6) {
             i = dir;
         }
+        //TODO: change to ptr assignment after malloc-ing entire memory above ^^
         frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
+        // frm_dir[i].frame_data = (FRM_Frame**)
         if (!frm_dir[i].frame_data) {
             printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
             return false;
@@ -217,25 +217,26 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
             return false;
         }
 
-        FRM_bounding_box = {};
-        bounding_box = {};
+        rectangle bounding_box      = {};
+        rectangle FRM_bounding_box  = {};
 
-        frm_dir[i].num_frames = num_frames;
+        frm_dir[i].num_frames  = num_frames;
         frm_dir[i].orientation = (Direction)i;
+        int frame_size         = sizeof(FRM_Frame);
         for (int j = 0; j < num_frames; j++)
         {
+            FRM_Frame* frame_start   = (FRM_Frame*)(buffer + buff_offset);
             frm_dir[i].frame_data[j] = frame_start;
             B_Endian::flip_frame_endian(frame_start);
             calculate_bounding_box(&bounding_box, &FRM_bounding_box, frame_start, frm_dir, i, j);
 
             buff_offset += frame_start->Frame_Size + frame_size;
-            frame_start = (FRM_Frame*)(buffer + buff_offset);
         }
         img_data->FRM_bounding_box[i] = FRM_bounding_box;
     }
-    int this_time = (num_orients < 6) ? dir : 0;
-    img_data->width  = img_data->FRM_bounding_box[this_time].x2 - img_data->FRM_bounding_box[this_time].x1;
-    img_data->height = img_data->FRM_bounding_box[this_time].y2 - img_data->FRM_bounding_box[this_time].y1;
+    int this_dir = (num_orients < 6) ? dir : 0;
+    img_data->width  = img_data->FRM_bounding_box[this_dir].x2 - img_data->FRM_bounding_box[this_dir].x1;
+    img_data->height = img_data->FRM_bounding_box[this_dir].y2 - img_data->FRM_bounding_box[this_dir].y1;
 
     img_data->FRM_data = buffer;
 

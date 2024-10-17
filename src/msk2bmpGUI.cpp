@@ -72,10 +72,10 @@ user_info usr_info;
 static struct dropped_files all_dropped_files = {0};
 
 // Function declarations
-void Show_Preview_Window(variables *My_Variables, int counter);
-void Preview_Tiles_Window(variables *My_Variables, int counter);
-void Show_Image_Render(variables *My_Variables, struct user_info* usr_info, int counter);
-void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter);
+void Show_Preview_Window(variables *My_Variables, LF* F_Prop, int counter);
+void Preview_Tiles_Window(variables *My_Variables, LF* F_Prop, int counter);
+void Show_Image_Render(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter);
+void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter);
 
 void Show_Palette_Window(struct variables *My_Variables);
 
@@ -233,7 +233,7 @@ int main(int argc, char** argv)
     //IM_ASSERT(font != NULL);
 
     //this counter is used to identify which image slot is being used for now
-    //TODO: need to swap this for a linked list, store current image slot in the window itself
+    //TODO: need to swap this for a linked list (or a static F_Prop?), store current image slot in the window itself
     static int counter = 0;
 
 
@@ -413,7 +413,6 @@ int main(int argc, char** argv)
 
             //handle opening dropped files
             if (file_drop_frame) {
-                // for (std::string& path : dropped_file_path)
                 char* path = all_dropped_files.first_path;
                 for (int i = 0; i < all_dropped_files.count; i++)
                 {
@@ -426,7 +425,6 @@ int main(int argc, char** argv)
         //TODO: maybe I should handle these as an enum instead of std::optional<>
                     if (directory.has_value()) {
                         if (!directory.operator*()) {
-                            // handle_file_drop(path.data(),
                             handle_file_drop(path,
                                 &My_Variables.F_Prop[counter],
                                 &counter,
@@ -442,10 +440,10 @@ int main(int argc, char** argv)
             //contextual palette window for MSK vs FRM editing
             if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK) {
                 Show_MSK_Palette_Window(&My_Variables);
-            }
-            else {
+            } else {
                 Show_Palette_Window(&My_Variables);
             }
+
             //update palette at regular intervals
             {
                 update_palette_array(My_Variables.shaders.palette,
@@ -457,7 +455,7 @@ int main(int argc, char** argv)
             {
                 if (My_Variables.F_Prop[i].file_open_window)
                 {
-                    Show_Preview_Window(&My_Variables, i);
+                    Show_Preview_Window(&My_Variables, &My_Variables.F_Prop[i], i);
                 }
             }
         }
@@ -484,7 +482,7 @@ int main(int argc, char** argv)
     }
 
     // Cleanup
-    //TODO: test if freeing manually vs freeing by hand is faster/same
+    //TODO: test if freeing manually vs freeing by hand? is faster/same
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -502,10 +500,10 @@ int main(int argc, char** argv)
 }
 //end of main////////////////////////////////////////////////////////////////////////
 
-
+//copies dropped file-paths to
+//global dropped_files* all_dropped_files
 void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
 {
-    //TODO: remove this when I figure out how to pass in all_dropped_files
 
     size_t size = 0;
     //get total length of all strings
@@ -514,6 +512,7 @@ void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
         size += strlen(paths[i]) +1;
     }
 
+    //all_dropped_files is global
     char* c;
     if (all_dropped_files.count > 0) {
         c = (char*)realloc(all_dropped_files.first_path,
@@ -536,14 +535,26 @@ void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
 }
 
 
-void Show_Preview_Window(struct variables *My_Variables, int counter)
+void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter)
 {
     shader_info* shaders = &My_Variables->shaders;
+    Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
 
     //TODO: store image/editing info in the window itself
     //shortcuts...possibly replace variables* with just LF*
-    LF* F_Prop = &My_Variables->F_Prop[counter];
-    Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
+    // F_Prop = &My_Variables->F_Prop[counter];
+    // static LF* F_Prop = (LF*)malloc(sizeof(LF));
+    // memcpy(F_Prop, &My_Variables->F_Prop[counter], sizeof(LF));
+    // strncpy(F_Prop->Frst_File, My_Variables->F_Prop[counter].Frst_File, MAX_PATH);
+    // strncpy(F_Prop->Prev_File, My_Variables->F_Prop[counter].Prev_File, MAX_PATH);
+    // strncpy(F_Prop->Opened_File, My_Variables->F_Prop[counter].Opened_File, MAX_PATH);
+    // strncpy(F_Prop->Next_File, My_Variables->F_Prop[counter].Next_File, MAX_PATH);
+    // strncpy(F_Prop->Last_File, My_Variables->F_Prop[counter].Last_File, MAX_PATH);
+    // F_Prop->c_name = My_Variables->F_Prop[counter].c_name;
+    // F_Prop->extension = My_Variables->F_Prop[counter].extension;
+    // F_Prop->show_image_render = My_Variables->F_Prop[counter].show_image_render;
+    // F_Prop->img_data = My_Variables->F_Prop[counter].img_data;
+
 
     std::string a = F_Prop->c_name;
     char b[3];
@@ -611,15 +622,15 @@ void Show_Preview_Window(struct variables *My_Variables, int counter)
 
     // Preview tiles from red boxes
     if (F_Prop->preview_tiles_window) {
-        Preview_Tiles_Window(My_Variables, counter);
+        Preview_Tiles_Window(My_Variables, F_Prop, counter);
     }
     // Preview full image
     if (F_Prop->show_image_render) {
-        Show_Image_Render(My_Variables, &usr_info, counter);
+        Show_Image_Render(My_Variables, F_Prop, &usr_info, counter);
     }
     // Edit full image
     if (F_Prop->edit_image_window) {
-        Edit_Image_Window(My_Variables, &usr_info, counter);
+        Edit_Image_Window(My_Variables, F_Prop, &usr_info, counter);
     }
 }
 
@@ -681,9 +692,9 @@ void Show_MSK_Palette_Window(variables* My_Variables)
     ImGui::End();
 }
 
-void Preview_Tiles_Window(variables* My_Variables, int counter)
+void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
 {
-    LF* F_Prop = &My_Variables->F_Prop[counter];
+    // LF* F_Prop = &My_Variables->F_Prop[counter];
     std::string image_name = F_Prop->c_name;
     char window_id[3];
     sprintf(window_id, "%02d", counter);
@@ -708,9 +719,9 @@ void Preview_Tiles_Window(variables* My_Variables, int counter)
     ImGui::End();
 }
 
-void Show_Image_Render(variables* My_Variables, struct user_info* usr_info, int counter)
+void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
-    LF* F_Prop = &My_Variables->F_Prop[counter];
+    // LF* F_Prop = &My_Variables->F_Prop[counter];
     char b[3];
     sprintf(b, "%02d", counter);
     std::string a = F_Prop->c_name;
@@ -734,22 +745,29 @@ void Show_Image_Render(variables* My_Variables, struct user_info* usr_info, int 
     ImGui::End();
 }
 
-void Edit_Image_Window(variables *My_Variables, struct user_info* usr_info, int counter)
+void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
     char b[3];
     sprintf(b, "%02d", counter);
-    LF* F_Prop = &My_Variables->F_Prop[counter];
     std::string a = F_Prop->c_name;
     std::string name = a + " Edit Window...###edit" + b;
 
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
+    ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
+    if (F_Prop->show_stats) {
+        show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
+    }
+
+
+
         if (ImGui::IsWindowFocused()) {
             My_Variables->window_number_focus = counter;
             My_Variables->edit_image_focused = true;
         }
 
-        Edit_Image(My_Variables, &My_Variables->F_Prop[counter], My_Variables->Palette_Update, &My_Variables->Color_Pick);
+        Edit_Image(My_Variables, F_Prop, My_Variables->Palette_Update, &My_Variables->Color_Pick);
+        Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
 
     }
 

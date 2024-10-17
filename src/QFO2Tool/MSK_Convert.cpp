@@ -170,7 +170,7 @@ bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
 
 bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int height)
 {
-    //TODO: refactor this and make sure the inputLines/file_buffer buffer
+    //TODO: refactor this and make sure the inputLines/file_buffer
     //      matches the other buffer for exporting
 
     FILE* File_ptr;
