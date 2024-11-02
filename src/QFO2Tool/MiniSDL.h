@@ -34,9 +34,15 @@ typedef struct Surface {
 } Surface;
 
 
+struct Edit_Surface{
+    Surface** edit_frame;
+};
+
+
 void FreeSurface(Surface* src);
 Surface* Create_8Bit_Surface(int width, int height, Palette* palette);
 Surface* Create_RGBA_Surface(int width, int height);
 Surface* Load_File_to_RGBA(const char* filename);
 Surface* Convert_Surface_to_RGBA(Surface* src);
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect);
+void PaintSurface(Surface* dst, Rect dst_rect, uint8_t color);

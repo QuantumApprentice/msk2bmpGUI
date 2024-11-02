@@ -297,7 +297,6 @@ int main(int argc, char** argv)
             //store offset for mouse movement between frames
             My_Variables.mouse_delta.x = My_Variables.new_mouse_pos.x - old_mouse_pos.x;
             My_Variables.mouse_delta.y = My_Variables.new_mouse_pos.y - old_mouse_pos.y;
-
         }
 
         {// Store these variables at frame start for cycling palette colors and animations
@@ -490,6 +489,7 @@ int main(int argc, char** argv)
     glfwDestroyWindow(window);
     glfwTerminate();
 
+    //write config file when closing
     write_cfg_file(&usr_info, usr_info.exe_directory);
 
 #ifdef QFO2_WINDOWS
@@ -745,6 +745,27 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
     ImGui::End();
 }
 
+void init_edit_struct(Edit_Surface* edit_struct, image_data*edit_data, Palette* palette)
+{
+    for (int dir = 0; dir < 6; dir++) {
+        int num_frames = edit_data->FRM_dir[dir].num_frames;
+        edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
+
+        for (int frame = 0; frame < num_frames; frame++) {
+            //create 8bit surface and copy FRM image to it
+            if (edit_data->FRM_dir[dir].frame_data == NULL) {
+                break;
+            }
+            FRM_Frame* frame_data = edit_data->FRM_dir[dir].frame_data[frame];
+            int w = frame_data->Frame_Width;
+            int h = frame_data->Frame_Height;
+
+            edit_struct[dir].edit_frame[frame] = Create_8Bit_Surface(w, h, palette);
+            memcpy(edit_struct[dir].edit_frame[frame]->pxls, frame_data->frame_start, w*h);
+        }
+    }
+}
+
 void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
     char b[3];
@@ -752,23 +773,30 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     std::string a = F_Prop->c_name;
     std::string name = a + " Edit Window...###edit" + b;
 
+    image_data* edit_data = &F_Prop->edit_data;
+
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
-    ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
-    if (F_Prop->show_stats) {
-        show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
-    }
+        ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
+        if (F_Prop->show_stats) {
+            show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
+        }
 
-
+        static Edit_Surface edit_struct[6];
+        if (!edit_struct[0].edit_frame) {
+            init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
+        }
 
         if (ImGui::IsWindowFocused()) {
             My_Variables->window_number_focus = counter;
-            My_Variables->edit_image_focused = true;
+            My_Variables->edit_image_focused  = true;
         }
 
-        Edit_Image(My_Variables, F_Prop, My_Variables->Palette_Update, &My_Variables->Color_Pick);
+        Edit_Image(My_Variables, &F_Prop->edit_data,
+                    edit_struct, F_Prop->edit_MSK,
+                    My_Variables->Palette_Update,
+                    &My_Variables->Color_Pick);
         Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
-
     }
 
     ImGui::End();
@@ -901,11 +929,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             }
-            if (ImGui::Button("Save as Map Tiles...")) {
+            if (ImGui::Button("Save as Overworld Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
             }
-            if (ImGui::Button("Save image as Townmap Tiles...")) {
+            if (ImGui::Button("Save image as Town Map Tiles...")) {
                 // save_TMAP_tiles();
                 // My_Variables.
             }
@@ -1028,7 +1056,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off);
             }
-            if (ImGui::Button("Preview FRM as full image")) {
+            if (ImGui::Button("Preview FRM as image (not tiles)")) {
                 Prep_Image(F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,

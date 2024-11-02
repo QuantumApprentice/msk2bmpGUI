@@ -2,7 +2,6 @@
 #include "B_Endian.h"
 #include "Load_Files.h"
 
-
 #define ms_PER_sec                    (1000)
 
 mesh load_giant_triangle()
@@ -148,6 +147,76 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void render_SURFACE_OpenGL(uint8_t* pxls, int x_offset, int y_offset, int frm_width, int frm_height, int total_width, int total_height)
+{
+    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    //FRM's are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //bind blank background to FRM_texture for display, then paint data onto texture
+    uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, pxls);
+    free(blank);
+}
+
+void animate_SURFACE_to_framebuff(float* palette, Shader* shader, mesh& triangle,
+                              image_data* img_data, Surface* edit_srfc,
+                              uint64_t current_time, bool palette_update)
+{
+    //TODO: maybe handle single image FRM's slightly differently with dropdown?
+    //int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
+    int frame_num = img_data->display_frame_num;
+    int orient = img_data->display_orient_num;
+
+    int total_w = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
+    int total_h = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
+
+    int frame_w = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Width;
+    int frame_h = img_data->FRM_dir[orient].frame_data[frame_num]->Frame_Height;
+
+    int x_offset = img_data->FRM_dir[orient].bounding_box[frame_num].x1 - img_data->FRM_bounding_box[orient].x1;
+    int y_offset = img_data->FRM_dir[orient].bounding_box[frame_num].y1 - img_data->FRM_bounding_box[orient].y1;
+
+    // uint8_t* pxls = edit_struct[orient].edit_frame[frame_num]->pxls;
+    // uint8_t* data  = img_data->FRM_dir[orient].frame_data[frame_num]->frame_start;
+
+
+    float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
+    int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
+    float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
+
+    glViewport(0, 0, img_data->width, img_data->height);
+    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+    glBindVertexArray(triangle.VAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+
+    static uint64_t last_time = 0;
+    if ((fps != 0) && ((float)(current_time - last_time)/ms_PER_sec > 1 / fps)) {
+        last_time = current_time;
+
+        img_data->display_frame_num     += 1;
+        if (img_data->display_frame_num >= img_data->FRM_hdr->Frames_Per_Orient) {
+            img_data->display_frame_num  = 0;
+        }
+        // render_FRM_OpenGL(img_data, width, height);
+        render_SURFACE_OpenGL(edit_srfc->pxls, x_offset, y_offset, frame_w, frame_h, total_w, total_h);
+    }
+    else if (palette_update) {
+        // render_FRM_OpenGL(img_data, width, height);
+        render_SURFACE_OpenGL(edit_srfc->pxls, x_offset, y_offset, frame_w, frame_h, total_w, total_h);
+    }
+
+    //shader
+    shader->use();
+    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
+    shader->setInt("Indexed_FRM", 0);
+    //draw image to framebuffer
+    glDrawArrays(GL_TRIANGLES, 0, triangle.vertexCount);
+
+    //bind framebuffer back to default
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, uint64_t current_time, bool palette_update)
@@ -161,7 +230,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
     float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 
-    glViewport(0, 0, img_data->width, img_data->height);
+    glViewport(0, 0, width, height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle.VAO);
     glActiveTexture(GL_TEXTURE0);
@@ -175,9 +244,9 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     if ((fps != 0) && ((float)(current_time - last_time)/ms_PER_sec > 1 / fps)) {
         last_time = current_time;
 
-        img_data->display_frame_num += 1;
+        img_data->display_frame_num     += 1;
         if (img_data->display_frame_num >= img_data->FRM_hdr->Frames_Per_Orient) {
-            img_data->display_frame_num = 0;
+            img_data->display_frame_num  = 0;
         }
         render_FRM_OpenGL(img_data, width, height);
     }

@@ -2,33 +2,33 @@
 #include "imgui.h"
 #include "Load_Files.h"
 #include "FRM_Convert.h"
-//#include "shaders/shader_class.h"
 
 
 struct variables {
+    char* exe_directory = NULL;
+
+    //TODO: maybe store Color_Pick in config settings?
+    Palette* FO_Palette = nullptr;
+    GLuint tile_texture_prev;
+    GLuint tile_texture_rend;
+    shader_info shaders;
     ImVec4 tint_col   = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
     ImVec4 border_col = ImVec4(1.0f, 1.0f, 1.0f, 0.5f);
     ImVec2 uv_min     = ImVec2(0.0f, 0.0f);                 // Top-left
     ImVec2 uv_max     = ImVec2(1.0f, 1.0f);                 // Bottom-right
+    bool link_brush_sizes = true;
+    ImVec2 brush_size{ 10, 10 };
+    // uint8_t Color_Pick = 230;
+
+    int color_match_algo = 0;   //0 used to be SDL, is now Euclidian_Distance
 
     bool Palette_Update = false;
-    char* exe_directory = NULL;
 
     uint64_t CurrentTime_ms = 0;        //TODO: need to test on 32-bit apps
 
     ImVec2 mouse_delta;
     ImVec2 new_mouse_pos;
-
-    //TODO: maybe store the color in config settings?
     uint8_t Color_Pick = 230;
-    Palette* FO_Palette = nullptr;
-    GLuint tile_texture_prev;
-    GLuint tile_texture_rend;
-
-    bool link_brush_sizes = true;
-    ImVec2 brush_size{ 10, 10 };
-
-    shader_info shaders;
 
     struct LF F_Prop[99]{};
 
@@ -39,9 +39,7 @@ struct variables {
 
     ImFont* Font;
     int global_font_size = 32;
-    int color_match_algo = 0;   //0 used to be SDL, is now Euclidian_Distance
     int window_number_focus = -1;
-
 };
 
 void Surface_to_OpenGl(Surface* Temp_Surface, GLuint *Optimized_Texture);

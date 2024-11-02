@@ -7,11 +7,10 @@
 #include "Zoom_Pan.h"
 #include "imgui_internal.h"
 
-void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_t* Color_Pick) {
-    //TODO: maybe pass the dithering choice through?
 
+//TODO: maybe pass the dithering choice through?
+void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* edit_struct, bool edit_MSK, bool Palette_Update, uint8_t* Color_Pick) {
     shader_info* shaders  = &My_Variables->shaders;
-    image_data* edit_data = &F_Prop->edit_data;
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
@@ -34,35 +33,43 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     //    ImGui::EndMenuBar();
     //}
 
-
-
+    //handle frame display by orientation and number
+    int frame_num = edit_data->display_frame_num;
+    int orient    = edit_data->display_orient_num;
+    Surface* edit_srfc = edit_struct[orient].edit_frame[frame_num];
     if (edit_data->FRM_dir) {
-        if (edit_data->FRM_dir[edit_data->display_orient_num].frame_data == NULL) {
+        if (edit_data->FRM_dir[orient].frame_data == NULL) {
             ImGui::Text("No frame_data");
             return;
         }
         else {
-            animate_FRM_to_framebuff(shaders->palette,
+            // animate_FRM_to_framebuff(
+            //     shaders->palette,
+            //     shaders->render_FRM_shader,
+            //     shaders->giant_triangle,
+            //     edit_data,
+            //     My_Variables->CurrentTime_ms,
+            //     My_Variables->Palette_Update
+            // );
+
+            animate_SURFACE_to_framebuff(
+                shaders->palette,
                 shaders->render_FRM_shader,
                 shaders->giant_triangle,
-                edit_data,
+                edit_data, edit_srfc,
                 My_Variables->CurrentTime_ms,
-                My_Variables->Palette_Update);
+                My_Variables->Palette_Update
+            );
         }
     } else {
         ImGui::Text("No FRM_dir");
         return;
     }
-    //handle frame display by orientation and number
-    int orient  = edit_data->display_orient_num;
-    // int frame   = edit_data->display_frame_num;
-    // int max_frm = edit_data->FRM_dir[orient].num_frames;
+
 
 
     //shortcuts
     float scale = edit_data->scale;
-    // int width   = edit_data->width;
-    // int height  = edit_data->height;
     int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
     int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
@@ -80,8 +87,7 @@ void Edit_Image(variables* My_Variables, LF* F_Prop, bool Palette_Update, uint8_
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
-
-        texture_paint(My_Variables, edit_data, F_Prop->edit_MSK);
+        texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
     }
 
     //Converts unpalettized image to texture for display
@@ -170,7 +176,8 @@ bool Create_MSK_OpenGL(image_data* img_data)
     //}
 }
 
-//TODO: change input from My_Variables to F_Prop[] (or maybe image_data* now)
+//TODO: DELETE!
+//  change input from My_Variables to F_Prop[] (or maybe image_data* now)
 //TODO: also change to work with openGL
 //void Edit_MSK_SDL(LF* F_Prop, bool* Palette_Update, ImVec2 Origin)
 //{
@@ -225,8 +232,9 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    }
 //}
 
+//TODO: DELETE!
 //bool blend == true will blend surfaces
-//TODO: remove! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
+//TODO: DELETE! left here for Map_Mask stuff, need to remove after mask stuff converted to openGL
 //void Update_Palette_SDL(struct LF* files, bool blend) {
 //    SDL_FreeSurface(files->Final_Render);
 //    if (files->type == MSK) {
@@ -263,7 +271,7 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    SDL_FreeSurface(Temp_Surface);
 //}
 
-////TODO: remove! same as above
+////TODO: DELETE! same as above
 //void CPU_Blend_SDL(SDL_Surface* msk_surface, SDL_Surface* img_surface)
 //{
 //    int width  = msk_surface->w;
@@ -302,14 +310,20 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //}
 
 //void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
-void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK)
+void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc, bool edit_MSK)
 {
     int color_pick = My_Variables->Color_Pick;
-    float brush_w = My_Variables->brush_size.x;
-    float brush_h = My_Variables->brush_size.y;
+    float brush_w  = My_Variables->brush_size.x;
+    float brush_h  = My_Variables->brush_size.y;
     int brush_size = brush_h * brush_w;
     uint8_t* color = (uint8_t*)malloc(brush_size);
     memset(color, color_pick, brush_size);
+
+    int orient = edit_data->display_orient_num;
+    int frame  = edit_data->display_frame_num;
+
+    int offset_x = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_x;
+    int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
 
 
     float scale = edit_data->scale;
@@ -345,12 +359,23 @@ void texture_paint(variables* My_Variables, image_data* edit_data, bool edit_MSK
             y = brush_h / 2;
         }
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, *texture);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
-            GL_RED, GL_UNSIGNED_BYTE,
-            color);
+        //TODO: switch to editing the surface directly
+        //TODO: implement undo tree
+        if (!edit_MSK) {
+            x -= brush_w/2;
+            y -= brush_h/2;
+            x -= offset_x;
+            y -= offset_y;
+            Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
+            PaintSurface(edit_srfc, dst_rect, My_Variables->Color_Pick);
+        }
+
+        // glActiveTexture(GL_TEXTURE0);
+        // glBindTexture(GL_TEXTURE_2D, *texture);
+        // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        // glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
+        //     GL_RED, GL_UNSIGNED_BYTE,
+        //     color);
     }
 
     free(color);

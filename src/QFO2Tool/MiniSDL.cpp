@@ -115,3 +115,15 @@ void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect)
         dst_pxls += dst->pitch;
     }
 }
+
+//sets dst->pxls to 'color' palette index
+//brush_rect determines section to color
+void PaintSurface(Surface* dst, Rect brush_rect, uint8_t color)
+{
+    uint8_t* dst_pxls = &dst->pxls[brush_rect.y*dst->pitch + brush_rect.x*dst->channels];
+    //copy each row of src rectangle to dst surface
+    for (int row = 0; row < brush_rect.h; row++) {
+        memset(dst_pxls, color, brush_rect.w);
+        dst_pxls += dst->pitch;
+    }
+}

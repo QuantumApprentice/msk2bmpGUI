@@ -109,9 +109,9 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
             for (int j = 0; j < num_frames; j++)
             {
                 Surface* surface = img_data->ANM_dir[i].frame_data[j].frame_start;
-                int width = surface->w;
+                int width  = surface->w;
                 int height = surface->h;
-                int pitch = surface->pitch;
+                int pitch  = surface->pitch;
 
                 Surface* Surface_32 = NULL;
 

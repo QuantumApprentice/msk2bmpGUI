@@ -56,7 +56,7 @@ void init_FRM(image_data* edit_data)
     new(edit_data->FRM_hdr) FRM_Header;
 
     edit_data->FRM_hdr->Frame_Area = size + sizeof(FRM_Frame);
-    edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+    edit_data->FRM_dir = (FRM_Dir*)calloc(6,sizeof(FRM_Dir));
     edit_data->FRM_dir[0].frame_data    = (FRM_Frame**)malloc(sizeof(FRM_Frame*));
     edit_data->FRM_dir[0].frame_data[0] = (FRM_Frame*)(edit_data->FRM_data + sizeof(FRM_Header));
 
@@ -149,7 +149,27 @@ void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window
         //TODO: need to allocate and copy by entire FRM_data
         //      need to allocate and assign FRM_dir and FRM_frame pointers
 
-        //F_Prop->edit_data.FRM_data = F_Prop->img_data.FRM_data;
+
+        //TODO: remove?
+        //      was going to allocate this here
+        //      and attach it to edit_data, but
+        //      it occurred to me to attach it 
+        //      to the window instead?
+        //      --msk2bmpGUI.cpp--line 764
+        // int frm_dir   = F_Prop->edit_data.display_orient_num;
+        // int frm_frame = F_Prop->edit_data.display_frame_num;
+        // FRM_Frame* frame_data = F_Prop->edit_data.FRM_dir[frm_dir].frame_data[frm_frame];
+        // uint8_t* frm_src = frame_data->frame_start;
+        // static Surface* edit_surface;
+        // if (!edit_surface) {
+        //     Surface* edit_surface = Create_8Bit_Surface(frame_data->Frame_Width, frame_data->Frame_Height, palette);
+        //     memcpy(edit_surface, frame_data, frame_data->Frame_Width*frame_data->Frame_Height);
+        // }
+
+
+
+
+
 
         F_Prop->edit_data.FRM_size = F_Prop->img_data.FRM_size;
         F_Prop->edit_data.width    = F_Prop->img_data.width;
