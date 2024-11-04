@@ -437,7 +437,7 @@ int main(int argc, char** argv)
             }
 
             //contextual palette window for MSK vs FRM editing
-            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK) {
+            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK && My_Variables.window_number_focus>-1) {
                 Show_MSK_Palette_Window(&My_Variables);
             } else {
                 Show_Palette_Window(&My_Variables);
