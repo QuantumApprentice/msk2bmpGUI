@@ -23,9 +23,9 @@
 #include "tiles_pattern.h"
 #include "town_map_tiles.h"
 
-void write_cfg_file(user_info *user_info, char *exe_path);
+void write_cfg_file(user_info* user_info, char* exe_path);
 
-char *Save_FRM_Image_OpenGL(image_data *img_data, user_info *user_info)
+char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 {
     int width = img_data->width;
     int height = img_data->height;
@@ -101,7 +101,7 @@ char *Save_FRM_Image_OpenGL(image_data *img_data, user_info *user_info)
     return Save_File_Name;
 }
 
-const char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
+const char *Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
 {
     if (num_dirs > 1)
     {
@@ -131,7 +131,7 @@ const char *Set_Save_Ext(image_data *img_data, int current_dir, int num_dirs)
 }
 
 //used by Save_FRM_Animation_OpenGL()
-int Set_Save_Patterns(const char*** filter, image_data *img_data)
+int Set_Save_Patterns(const char*** filter, image_data* img_data)
 {
     int num_dirs = 0;
     for (int i = 0; i < 6; i++)
@@ -155,11 +155,11 @@ int Set_Save_Patterns(const char*** filter, image_data *img_data)
     }
 }
 
-bool Save_Single_FRx_Animation_OpenGL(image_data *img_data, char *c_name, int dir)
+bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir)
 {
-    FILE *File_ptr = NULL;
-    wchar_t *w_save_name = NULL;
-    char *Save_File_Name = Set_Save_File_Name(img_data, c_name);
+    FILE* File_ptr = NULL;
+    wchar_t* w_save_name = NULL;
+    char* Save_File_Name = Set_Save_File_Name(img_data, c_name);
     if (!Save_File_Name)
     {
         return false;
@@ -195,7 +195,7 @@ bool Save_Single_FRx_Animation_OpenGL(image_data *img_data, char *c_name, int di
     }
 }
 
-bool Save_Single_Dir_Animation_OpenGL(image_data *img_data, FILE *File_ptr, int dir)
+bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir)
 {
     int size = 0;
     uint32_t total_frame_size = 0;
@@ -232,12 +232,12 @@ bool Save_Single_Dir_Animation_OpenGL(image_data *img_data, FILE *File_ptr, int 
 
 char* Set_Save_File_Name(image_data* img_data, char* name)
 {
-    char *Save_File_Name;
+    char* Save_File_Name;
     int num_patterns = 6;
-    static const char *const lFilterPatterns[6] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
-    const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
+    static const char* const lFilterPatterns[6] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
+    const char* ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
-    char *temp_name = (char *)malloc(sizeof(char) * buffsize);
+    char* temp_name = (char *)malloc(sizeof(char) * buffsize);
     snprintf(temp_name, buffsize, "%s%s", name, ext);
 
     Save_File_Name = tinyfd_saveFileDialog(
@@ -251,9 +251,9 @@ char* Set_Save_File_Name(image_data* img_data, char* name)
     return Save_File_Name;
 }
 
-char *Save_FRx_Animation_OpenGL(image_data *img_data, char *default_save_path, char *name)
+char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name)
 {
-    char *Save_File_Name = Set_Save_File_Name(img_data, name);
+    char* Save_File_Name = Set_Save_File_Name(img_data, name);
 
     if (Save_File_Name != NULL)
     {
@@ -307,7 +307,7 @@ char *Save_FRx_Animation_OpenGL(image_data *img_data, char *default_save_path, c
     return Save_File_Name;
 }
 
-char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char *name)
+char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char* name)
 {
     FILE *File_ptr = NULL;
     char *Save_File_Name;
@@ -458,8 +458,8 @@ char *Save_FRM_Animation_OpenGL(image_data *img_data, user_info *usr_info, char 
 
 char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo)
 {
-    char *Save_File_Name;
-    const char *lFilterPatterns[2] = {"*.BMP", ""};
+    char* Save_File_Name;
+    const char* lFilterPatterns[2] = {"*.BMP", ""};
     char buffer[MAX_PATH];
     snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", usr_nfo->default_save_path);
 
@@ -491,14 +491,14 @@ char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo)
 //checks if msk2bmpGUI.cfg exists,
 //if it doesn't, creates the file (including folder)
 //then it writes current settings to cfg file
-bool check_and_write_cfg_file(user_info *user_info, char *exe_path)
+bool check_and_write_cfg_file(user_info* user_info, char* exe_path)
 {
     char cfg_filepath_buffer[MAX_PATH];
     char cfg_path_buffer[MAX_PATH];
     snprintf(cfg_filepath_buffer, sizeof(cfg_filepath_buffer), "%s%s", exe_path, "config/msk2bmpGUI.cfg");
     snprintf(cfg_path_buffer, sizeof(cfg_path_buffer), "%s%s", exe_path, "config/");
 
-    FILE *cfg_file_ptr = NULL;
+    FILE* cfg_file_ptr = NULL;
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
@@ -543,7 +543,7 @@ bool check_and_write_cfg_file(user_info *user_info, char *exe_path)
 //Ask user where the default Fallout 2 path is,
 //then store path in both default_game_path and default_save_path if default_save_path is '\0'
 //then write user_info out to config file
-void Set_Default_Game_Path(user_info *usr_info, char *exe_path)
+void Set_Default_Game_Path(user_info* usr_info, char* exe_path)
 {
     //Set the default Fallout 2 game path
     bool path_set = export_auto(usr_info, exe_path, NULL, UNK);
@@ -557,7 +557,7 @@ void Set_Default_Game_Path(user_info *usr_info, char *exe_path)
 #define MAP_TILE_H (300)
 #define MAP_TILE_SIZE (350 * 300)
 
-void Save_FRM_Tiles_OpenGL(LF *F_Prop, user_info *user_info, char *exe_path)
+void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 {
     FRM_Header FRM_Header = {};
     FRM_Header.version = (4);
@@ -575,13 +575,13 @@ void Save_FRM_Tiles_OpenGL(LF *F_Prop, user_info *user_info, char *exe_path)
 }
 
 // wrapper to save MSK tiles
-void Save_MSK_Tiles_OpenGL(image_data *img_data, struct user_info *user_info, char *exe_path)
+void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, char* exe_path)
 {
     // tinyfd_messageBox("Error", "Unimplemented, working on it", "Ok", "error", 1);
     Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL, exe_path);
 }
 
-uint8_t *blend_PAL_texture(image_data *img_data)
+uint8_t *blend_PAL_texture(image_data* img_data)
 {
     int img_size = img_data->width * img_data->height;
 
@@ -589,8 +589,8 @@ uint8_t *blend_PAL_texture(image_data *img_data)
     glBindTexture(GL_TEXTURE_2D, img_data->PAL_texture);
 
     // create a buffer
-    uint8_t *texture_buffer = (uint8_t *)malloc(img_size);
-    uint8_t *blend_buffer = (uint8_t *)malloc(img_size);
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
+    uint8_t* blend_buffer = (uint8_t*)malloc(img_size);
 
     // read pixels into buffer
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -625,7 +625,7 @@ uint8_t *blend_PAL_texture(image_data *img_data)
 //           game path from menubar (also here?)
 //       5) game path or last used save path is
 //           stored in user_info & msk2bmpGUI.cfg file
-bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
+bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type save_type)
 {
     char dest[3][27]{
         {"/data/art/intrface"},     //WRLDMPxx.FRM
@@ -643,7 +643,7 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
     if (choice == 1)
     {                   // Set default FO2 directory, auto_export = true
         usr_info->auto_export = 1;
-        char *current_save_path;
+        char* current_save_path;
         current_save_path = tinyfd_selectFolderDialog(
             "Select your modded Fallout 2 base directory...",
             usr_info->default_save_path);
@@ -672,7 +672,7 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
     }
     if (choice == 2)
     {                   // Manual - chosen instead of selecting default path from previous popup
-        char *current_save_path;
+        char* current_save_path;
         current_save_path = tinyfd_selectFolderDialog(
             "Select directory to save to...",
             usr_info->default_save_path);
@@ -700,7 +700,7 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
 {
     usr_info->auto_export = 2;
 
-    char *current_save_path;
+    char* current_save_path;
     current_save_path = tinyfd_selectFolderDialog(
         "Select directory to save to...",
         usr_info->default_save_path);
@@ -723,7 +723,7 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
     return true;
 }
 
-bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type)
+bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, img_type save_type)
 {
     char dest[3][24] {
         {"/data/art/intrface"},     //WRLDMPxx.FRM
@@ -778,9 +778,9 @@ bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, 
 
 // save_type is the file type being saved to (not the img_type coming in from img_data)
 // img_type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
-void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
-                           img_type save_type, FRM_Header *frm_header,
-                           char *exe_path)
+void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* usr_info,
+                           img_type save_type, FRM_Header* frm_header,
+                           char* exe_path)
 {
     int img_width  = img_data->width;
     int img_height = img_data->height;
@@ -802,7 +802,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
     frame_data.Frame_Size   = (MAP_TILE_SIZE);
     B_Endian::flip_frame_endian(&frame_data);
 
-    FILE *File_ptr = NULL;
+    FILE* File_ptr = NULL;
 
     bool success = auto_export_question(usr_info, exe_path, save_path, save_type);
     if (!success) {
@@ -810,8 +810,8 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
     }
 
     // create buffers for use in tiling
-    uint8_t *blend_buffer = NULL;
-    uint8_t *texture_buffer = (uint8_t *)malloc(img_size);
+    uint8_t* blend_buffer = NULL;
+    uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
     if (save_type == FRM) {                                     //exporting as FRM
         // create buffer from texture and original FRM_data
         blend_buffer = blend_PAL_texture(img_data);
@@ -843,7 +843,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
             }
 
 #ifdef QFO2_WINDOWS
-            wchar_t *w_save_name = tinyfd_utf8to16(Full_Save_File_Path);
+            wchar_t* w_save_name = tinyfd_utf8to16(Full_Save_File_Path);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
             File_ptr = fopen(Full_Save_File_Path, "wb");
@@ -882,7 +882,7 @@ void Split_to_Tiles_OpenGL(image_data *img_data, struct user_info *usr_info,
                     //       and pass them to Save_MSK_Image_OpenGL()
 
                     // create buffers
-                    uint8_t *tile_buffer = (uint8_t *)malloc(MAP_TILE_SIZE);
+                    uint8_t* tile_buffer = (uint8_t*)malloc(MAP_TILE_SIZE);
 
                     int tile_pointer  = (y * img_width * MAP_TILE_H) + (x * MAP_TILE_W);
                     int img_row_pntr  = 0;
@@ -969,15 +969,15 @@ tt_arr_handle* export_TMAP_tiles(user_info* usr_info,
 // checks if the file/folder? already exists before saving
 // sets Save_File_Name[0] = '\0'; if user clicks cancel
 // when prompted to overwrite a file
-void check_file(char *save_path, char* save_path_name, const char* name, int tile_num, img_type type)
+void check_file(char* save_path, char* save_path_name, const char* name, int tile_num, img_type type)
 {
-    FILE *File_ptr = NULL;
-    char *alt_path;
-    const char *lFilterPatterns[3] = {"*.FRM", "*.MSK", ""};
+    FILE* File_ptr = NULL;
+    char* alt_path;
+    const char* lFilterPatterns[3] = {"*.FRM", "*.MSK", ""};
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    wchar_t *w_save_name = tinyfd_utf8to16(save_path_name);
+    wchar_t* w_save_name = tinyfd_utf8to16(save_path_name);
     errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
     if (error == 0)
 #elif defined(QFO2_LINUX)
@@ -1070,7 +1070,7 @@ void check_file(char *save_path, char* save_path_name, const char* name, int til
 // Create a filename based on the directory and export file type
 //TODO: clean up this function, buff_size is not used
 // img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
-void Create_File_Name(char *return_buffer, const char* name, img_type save_type, char *save_path, int tile_num)
+void Create_File_Name(char* return_buffer, const char* name, img_type save_type, char* save_path, int tile_num)
 {
     char ext[2][4] = {
         {"MSK"},
@@ -1088,7 +1088,7 @@ void Create_File_Name(char *return_buffer, const char* name, img_type save_type,
     // printf("%s\n%s\n", return_buffer, ext[save_type]);
 }
 
-void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
+void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
 {
     if (usr_info->save_full_MSK_warning)
     {
@@ -1106,7 +1106,7 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     }
 
     int texture_size = img_data->width * img_data->height;
-    uint8_t *texture_buffer = (uint8_t *)malloc(texture_size);
+    uint8_t* texture_buffer = (uint8_t*)malloc(texture_size);
     // copy edited texture to buffer, combine with original image
     glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
     // read pixels into buffer
@@ -1114,9 +1114,9 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, texture_buffer);
 
     // get filename
-    FILE *File_ptr = NULL;
-    char *Save_File_Name;
-    const char *lFilterPatterns[2] = {"*.MSK", ""};
+    FILE* File_ptr = NULL;
+    char* Save_File_Name;
+    const char* lFilterPatterns[2] = {"*.MSK", ""};
     char save_path[MAX_PATH];
 
     snprintf(save_path, MAX_PATH, "%s/temp001.MSK", usr_info->default_save_path);
@@ -1134,7 +1134,7 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     }
 
 #ifdef QFO2_WINDOWS
-    wchar_t *w_save_name = tinyfd_utf8to16(Save_File_Name);
+    wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
     _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
     File_ptr = fopen(Save_File_Name, "wb");
@@ -1157,7 +1157,7 @@ void Save_Full_MSK_OpenGL(image_data *img_data, user_info *usr_info)
     fclose(File_ptr);
 }
 
-void Save_MSK_Image_OpenGL(uint8_t *tile_buffer, FILE *File_ptr, int width, int height)
+void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 {
     // int buff_size = ceil(width / 8.0f) * height;
     int buff_size = (width + 7) / 8 * height;
@@ -1167,7 +1167,7 @@ void Save_MSK_Image_OpenGL(uint8_t *tile_buffer, FILE *File_ptr, int width, int 
 
     int shift = 0;
     uint8_t bitmask = 0;
-    uint8_t *outp = out_buffer;
+    uint8_t* outp = out_buffer;
     for (int pxl_y = 0; pxl_y < height; pxl_y++)
     {
         for (int pxl_x = 0; pxl_x < width; pxl_x++)

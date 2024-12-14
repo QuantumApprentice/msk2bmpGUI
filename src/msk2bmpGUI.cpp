@@ -402,11 +402,12 @@ int main(int argc, char** argv)
                     contextual_buttons(&My_Variables, My_Variables.window_number_focus);
                 }
 
-            //set contextual menu for main window
-            if (ImGui::IsWindowHovered() && file_drop_frame) {
-                My_Variables.window_number_focus = -1;
-                My_Variables.edit_image_focused = false;
-            }
+                //set contextual menu for main window
+                //when file is dropped on window
+                if (ImGui::IsWindowHovered() && file_drop_frame) {
+                    My_Variables.window_number_focus = -1;
+                    My_Variables.edit_image_focused = false;
+                }
 
             ImGui::End();
 
@@ -859,18 +860,18 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             //if (ImGui::BeginMenu("Open Recent")) {}
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Edit - currently unimplemented, work in progress"))
-        {   //TODO: implement undo tree
-            if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+        if (ImGui::BeginMenu("Edit - WIP")) {
+            //TODO: implement undo tree
+            if (ImGui::MenuItem("(not yet implemented)", "", false, false))
+            if (ImGui::MenuItem("Undo", "CTRL+Z", false, false)) {}
             if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
             ImGui::Separator();
-            if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-            if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-            if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+            if (ImGui::MenuItem("Cut", "CTRL+X", false, false)) {}
+            if (ImGui::MenuItem("Copy", "CTRL+C", false, false)) {}
+            if (ImGui::MenuItem("Paste", "CTRL+V", false, false)) {}
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Config"))
-        {
+        if (ImGui::BeginMenu("Config")) {
             if (ImGui::MenuItem("Toggle Auto Mode")) {
                 if (usr_info.auto_export != 0) {
                     usr_info.auto_export = 0;
@@ -880,7 +881,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                     usr_info.auto_export = true;
                 }
             }
-            if (ImGui::MenuItem("Reset ImGui.ini (not yet implemented)")) {
+            if (ImGui::MenuItem("Reset ImGui.ini (not yet implemented)", "", false, false)) {
                 char buff[MAX_PATH];
                 snprintf(buff, MAX_PATH, "%s%s", My_Variables->exe_directory, "/imgui.ini");
                 FILE* file_ptr = fopen(buff, "rb");
@@ -890,6 +891,9 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
                 }
             }
             ImGui::EndMenu();
+        }
+        if (ImGui::MenuItem("Help")) {
+
         }
         ImGui::EndMainMenuBar();
     }
