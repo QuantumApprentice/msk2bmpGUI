@@ -1,3 +1,6 @@
+// If you feel like dropping a dollar on me :)
+// https://www.subscribestar.com/quantumapprentice
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -7,6 +10,28 @@
 #include "Zoom_Pan.h"
 #include "imgui_internal.h"
 
+
+void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc);
+
+void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
+{
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    //image I'm trying to pan with
+    ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
+    ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
+    ImVec4 tint   = My_Variables->tint_col;
+    //shortcuts
+    int orient    = edit_data->display_orient_num;
+    float scale = edit_data->scale;
+    int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
+    int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
+    ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
+    window->DrawList->AddImage(
+        (ImTextureID)(uintptr_t)edit_data->render_texture,
+        top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
+        uv_min, uv_max, ImGui::GetColorU32(tint));
+
+}
 
 //TODO: maybe pass the dithering choice through?
 void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* edit_struct, bool edit_MSK, bool Palette_Update, uint8_t* Color_Pick) {
@@ -37,6 +62,7 @@ void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* ed
     int frame_num = edit_data->display_frame_num;
     int orient    = edit_data->display_orient_num;
     Surface* edit_srfc = edit_struct[orient].edit_frame[frame_num];
+    Surface* MSK_srfc  = nullptr;
     if (edit_data->FRM_dir) {
         if (edit_data->FRM_dir[orient].frame_data == NULL) {
             ImGui::Text("No frame_data");
@@ -66,28 +92,15 @@ void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* ed
         return;
     }
 
-
-
-    //shortcuts
-    float scale = edit_data->scale;
-    int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
-    int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
-    ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
-    ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
-    ImVec4 tint   = My_Variables->tint_col;
-    ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
-
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    //image I'm trying to pan with
-    window->DrawList->AddImage(
-        (ImTextureID)(uintptr_t)edit_data->render_texture,
-        top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
-        uv_min, uv_max, ImGui::GetColorU32(tint));
-
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
-        texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
+        // texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
+        if (edit_MSK) {
+            surface_paint(My_Variables, edit_data, MSK_srfc);
+        } else {
+            surface_paint(My_Variables, edit_data, edit_srfc);
+        }
     }
 
     //Converts unpalettized image to texture for display
@@ -359,7 +372,7 @@ void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit
             y = brush_h / 2;
         }
 
-        //TODO: switch to editing the surface directly
+        //TODO: switch to editing the both MSK & FRM surface directly
         //TODO: implement undo tree
         if (!edit_MSK) {
             x -= brush_w/2;
@@ -368,8 +381,14 @@ void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit
             y -= offset_y;
             Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
             PaintSurface(edit_srfc, dst_rect, My_Variables->Color_Pick);
+        } else {
+            //TODO: edit MSK surface here?
+            //...no, I should move this check outside of this function
+            // and just use this to edit both MSK and FRM as Surface*
         }
 
+    //old code showing how to paint a brush sized square
+    //onto an openGL bound texture
         // glActiveTexture(GL_TEXTURE0);
         // glBindTexture(GL_TEXTURE_2D, *texture);
         // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -379,6 +398,65 @@ void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit
     }
 
     free(color);
+}
+
+//paint surfaces for both MSK and FRM items (possibly also PAL? or other 32bit surfaces?)
+//TODO: need to have a brush shape in place of (or on top of) the mouse cursor when painting
+//TODO: repack all the x&y variables into vectors of appropriate type (int/float)
+void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc)
+{
+    int color_pick = My_Variables->Color_Pick;
+    float brush_w  = My_Variables->brush_size.x;
+    float brush_h  = My_Variables->brush_size.y;
+    int brush_size = brush_h * brush_w;
+
+    int orient = edit_data->display_orient_num;
+    int frame  = edit_data->display_frame_num;
+
+    int offset_x = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_x;
+    int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
+
+
+    float scale = edit_data->scale;
+    int width   = edit_data->width;
+    int height  = edit_data->height;
+    ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
+
+
+    float x, y;
+    x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
+    y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
+
+
+    if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
+        //clamp brush to edge when close enough
+        if ((x + brush_w / 2) > width) {
+            x = width - brush_w / 2;
+        }
+        if ((x - brush_w / 2) < 0) {
+            x = brush_w /2;
+        }
+        if ((y + brush_h / 2) > height) {
+            y = height - brush_h / 2;
+        }
+        if ((y - brush_h / 2) < 0) {
+            y = brush_h / 2;
+        }
+
+        //TODO: implement undo tree
+        //further clamp the brush to prevent overflow
+        //TODO: this is a lazy implementation that doesn't allow
+        //      the brush to shrink in size as it goes over the edge
+        //      or rather, to clip the brush so it doesn't paint off the edge
+        x -= brush_w/2;
+        y -= brush_h/2;
+        x -= offset_x;
+        y -= offset_y;
+
+
+        Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
+        PaintSurface(edit_srfc, dst_rect, color_pick);
+    }
 }
 
 void brush_size_handler(variables* My_Variables)

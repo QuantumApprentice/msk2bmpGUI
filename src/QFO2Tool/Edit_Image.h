@@ -16,4 +16,5 @@ bool Create_MSK_OpenGL(image_data* img_data);
 //void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture);
 void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc, bool edit_MSK);
 void brush_size_handler(variables* My_Variables);
+void display_img_ImGUI(variables* My_Variables, image_data* edit_data);
 

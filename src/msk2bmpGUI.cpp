@@ -793,6 +793,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
             My_Variables->edit_image_focused  = true;
         }
 
+        display_img_ImGUI(My_Variables, edit_data);
+
         Edit_Image(My_Variables, &F_Prop->edit_data,
                     edit_struct, F_Prop->edit_MSK,
                     My_Variables->Palette_Update,
@@ -825,12 +827,10 @@ void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struc
 
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 {
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginMenu("File"))
-        {
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
             ImGui::MenuItem("(demo menu)", NULL, false, false);
-            if (ImGui::MenuItem("New - Unimplemented yet...")) {
+            if (ImGui::MenuItem("New (not yet implemented)", "", false, false)) {
                 /*TODO: add a new file option w/blank surfaces*/ }
             if (ImGui::MenuItem("Open", "Ctrl+O")) { 
                 Open_Files(&usr_info, counter, My_Variables->FO_Palette, My_Variables);
@@ -861,13 +861,13 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Edit - WIP")) {
-            //TODO: implement undo tree
-            if (ImGui::MenuItem("(not yet implemented)", "", false, false))
-            if (ImGui::MenuItem("Undo", "CTRL+Z", false, false)) {}
-            if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+            //TODO: implement undo tree :: all are disabled for now (..., false, false)
+            if (ImGui::MenuItem("(not yet implemented)", "", false, false)) {}
+            if (ImGui::MenuItem("Undo",  "CTRL+Z", false, false)) {}
+            if (ImGui::MenuItem("Redo",  "CTRL+Y", false, false)) {}
             ImGui::Separator();
-            if (ImGui::MenuItem("Cut", "CTRL+X", false, false)) {}
-            if (ImGui::MenuItem("Copy", "CTRL+C", false, false)) {}
+            if (ImGui::MenuItem("Cut",   "CTRL+X", false, false)) {}
+            if (ImGui::MenuItem("Copy",  "CTRL+C", false, false)) {}
             if (ImGui::MenuItem("Paste", "CTRL+V", false, false)) {}
             ImGui::EndMenu();
         }
@@ -892,8 +892,11 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             }
             ImGui::EndMenu();
         }
-        if (ImGui::MenuItem("Help")) {
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem("Shortcuts","",false,false)) {
 
+            }
+            ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }

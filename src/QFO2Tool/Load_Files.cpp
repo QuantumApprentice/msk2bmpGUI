@@ -714,12 +714,10 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
         NULL,
         1);
 
-    if (FileName)
-    {
+    if (FileName) {
         return File_Type_Check(F_Prop, shaders, img_data, FileName);
     }
-    else
-    {
+    else {
         return false;
     }
 }
@@ -729,13 +727,13 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 bool FRx_check(char *ext)
 {
     if (
-        !(io_strncmp(ext, "FRM", 4))
-     || !(io_strncmp(ext, "FR0", 4))
-     || !(io_strncmp(ext, "FR1", 4))
-     || !(io_strncmp(ext, "FR2", 4))
-     || !(io_strncmp(ext, "FR3", 4))
-     || !(io_strncmp(ext, "FR4", 4))
-     || !(io_strncmp(ext, "FR5", 4)))
+        (io_strncmp(ext, "FRM", 4) == 0)
+     || (io_strncmp(ext, "FR0", 4) == 0)
+     || (io_strncmp(ext, "FR1", 4) == 0)
+     || (io_strncmp(ext, "FR2", 4) == 0)
+     || (io_strncmp(ext, "FR3", 4) == 0)
+     || (io_strncmp(ext, "FR4", 4) == 0)
+     || (io_strncmp(ext, "FR5", 4) == 0))
     {
         return true;
     }
@@ -758,8 +756,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
                                 img_data->framebuffer, img_data->FRM_texture);
     }
-    else if (!(io_strncmp(F_Prop->extension, "MSK", 4))) {
-
+    else if ((io_strncmp(F_Prop->extension, "MSK", 4)) == 0) {  // 0 == match
         F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
         F_Prop->img_data.type = MSK;
         init_framebuffer(img_data);

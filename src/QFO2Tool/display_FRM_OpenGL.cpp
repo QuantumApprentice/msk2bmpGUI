@@ -185,6 +185,7 @@ void animate_SURFACE_to_framebuff(float* palette, Shader* shader, mesh& triangle
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
     float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 
+    //openGL setup
     glViewport(0, 0, img_data->width, img_data->height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle.VAO);
