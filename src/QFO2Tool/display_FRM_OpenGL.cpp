@@ -147,8 +147,13 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void render_SURFACE_OpenGL(uint8_t* pxls, int x_offset, int y_offset, int frm_width, int frm_height, int total_width, int total_height)
+void SURFACE_to_texture(uint8_t* pxls, GLuint texture,
+                        int x_offset, int y_offset,
+                        int frm_width, int frm_height,
+                        int total_width, int total_height)
 {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -159,7 +164,10 @@ void render_SURFACE_OpenGL(uint8_t* pxls, int x_offset, int y_offset, int frm_wi
     free(blank);
 }
 
-void animate_SURFACE_to_framebuff(float* palette, Shader* shader, mesh& triangle,
+//TODO: handle the current_time break outside this code
+//      to prevent this from being called when not directly
+//      changing either a frame or a palette color-cycle
+void animate_SURFACE_to_texture(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, Surface* edit_srfc,
                               uint64_t current_time, bool palette_update)
 {
@@ -185,13 +193,6 @@ void animate_SURFACE_to_framebuff(float* palette, Shader* shader, mesh& triangle
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
     float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 
-    //openGL setup
-    glViewport(0, 0, img_data->width, img_data->height);
-    glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
-    glBindVertexArray(triangle.VAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
-
     static uint64_t last_time = 0;
     if ((fps != 0) && ((float)(current_time - last_time)/ms_PER_sec > 1 / fps)) {
         last_time = current_time;
@@ -200,23 +201,17 @@ void animate_SURFACE_to_framebuff(float* palette, Shader* shader, mesh& triangle
         if (img_data->display_frame_num >= img_data->FRM_hdr->Frames_Per_Orient) {
             img_data->display_frame_num  = 0;
         }
-        // render_FRM_OpenGL(img_data, width, height);
-        render_SURFACE_OpenGL(edit_srfc->pxls, x_offset, y_offset, frame_w, frame_h, total_w, total_h);
+        // // render_FRM_OpenGL(img_data, width, height);
+        // SURFACE_to_texture(edit_srfc->pxls, img_data->FRM_texture,
+        //                     x_offset, y_offset,frame_w, frame_h,
+        //                     total_w, total_h);
     }
-    else if (palette_update) {
+    // else if (palette_update) {
         // render_FRM_OpenGL(img_data, width, height);
-        render_SURFACE_OpenGL(edit_srfc->pxls, x_offset, y_offset, frame_w, frame_h, total_w, total_h);
-    }
-
-    //shader
-    shader->use();
-    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
-    shader->setInt("Indexed_FRM", 0);
-    //draw image to framebuffer
-    glDrawArrays(GL_TRIANGLES, 0, triangle.vertexCount);
-
-    //bind framebuffer back to default
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        SURFACE_to_texture(edit_srfc->pxls, img_data->FRM_texture,
+                            x_offset, y_offset, frame_w, frame_h,
+                            total_w, total_h);
+    // }
 }
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
@@ -291,11 +286,17 @@ void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+//TODO: rename this? draw_TEXTURES_to_Framebuffer()?
+//      it used to work just for PAL images
+//      but now it just takes 3 textures
+//      and combines them into one in the framebuffer
+//      while applying the palette cycle
 void draw_PAL_to_framebuffer(float* palette, Shader* shader,
                             mesh* triangle, struct image_data* img_data)
 {
     glViewport(0, 0, img_data->width, img_data->height);
 
+    //bind framebuffer to draw to
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
     glBindVertexArray(triangle->VAO);
     glActiveTexture(GL_TEXTURE0);
@@ -314,6 +315,7 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
 
     //printf("glGetError: %d\n", glGetError());
 
+    //draw to framebuffer
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
 
     //bind framebuffer back to default

@@ -13,10 +13,12 @@
 
 void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc);
 
+//displays edit_data->render_texture in window
+//size and position stored in edit_data
+//uv_min/uv_max/tint all stored in My_Variables
+//TODO: check this against image_render()
 void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
 {
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    //image I'm trying to pan with
     ImVec2 uv_min = My_Variables->uv_min;      // (0.0f,0.0f)
     ImVec2 uv_max = My_Variables->uv_max;      // (1.0f,1.0f)
     ImVec4 tint   = My_Variables->tint_col;
@@ -26,6 +28,9 @@ void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
     int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
     int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
     ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
+
+    //image I'm trying to pan with
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
     window->DrawList->AddImage(
         (ImTextureID)(uintptr_t)edit_data->render_texture,
         top_corner(edit_data), bottom_corner(size, top_corner(edit_data)),
@@ -34,10 +39,19 @@ void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
 }
 
 //TODO: maybe pass the dithering choice through?
-void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* edit_struct, bool edit_MSK, bool Palette_Update, uint8_t* Color_Pick) {
+void Edit_Image(variables* My_Variables,
+                image_data* edit_data, Edit_Surface* edit_struct,
+                Surface* edit_MSK_srfc, bool edit_MSK,
+                bool Palette_Update, uint8_t* Color_Pick) {
     shader_info* shaders  = &My_Variables->shaders;
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
+
+    //TODO: zoom and other info needs to be its own function call
+    //      window_info()? window_stats()? image_stats()?
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("##Zoom", &edit_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
+    ImGui::PopItemWidth();
 
     ////TODO: use a menu bar for the editor/previewer?
     //if (ImGui::BeginMenuBar()) {
@@ -61,32 +75,31 @@ void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* ed
     //handle frame display by orientation and number
     int frame_num = edit_data->display_frame_num;
     int orient    = edit_data->display_orient_num;
-    Surface* edit_srfc = edit_struct[orient].edit_frame[frame_num];
-    Surface* MSK_srfc  = nullptr;
+    Surface* edit_FRM_srfc = edit_struct[orient].edit_frame[frame_num];
+
     if (edit_data->FRM_dir) {
         if (edit_data->FRM_dir[orient].frame_data == NULL) {
             ImGui::Text("No frame_data");
             return;
         }
-        else {
-            // animate_FRM_to_framebuff(
+        // else {
+            // // animate_FRM_to_framebuff(
+            // //     shaders->palette,
+            // //     shaders->render_FRM_shader,
+            // //     shaders->giant_triangle,
+            // //     edit_data,
+            // //     My_Variables->CurrentTime_ms,
+            // //     My_Variables->Palette_Update
+            // // );
+            // animate_SURFACE_to_texture(
             //     shaders->palette,
             //     shaders->render_FRM_shader,
             //     shaders->giant_triangle,
-            //     edit_data,
+            //     edit_data, edit_FRM_srfc,
             //     My_Variables->CurrentTime_ms,
             //     My_Variables->Palette_Update
             // );
-
-            animate_SURFACE_to_framebuff(
-                shaders->palette,
-                shaders->render_FRM_shader,
-                shaders->giant_triangle,
-                edit_data, edit_srfc,
-                My_Variables->CurrentTime_ms,
-                My_Variables->Palette_Update
-            );
-        }
+        // }
     } else {
         ImGui::Text("No FRM_dir");
         return;
@@ -95,16 +108,50 @@ void Edit_Image(variables* My_Variables, image_data* edit_data, Edit_Surface* ed
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
-        // texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
+        // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
         if (edit_MSK) {
-            surface_paint(My_Variables, edit_data, MSK_srfc);
+            //paint MSK surface
+            surface_paint(My_Variables, edit_data, edit_MSK_srfc);
+
+            //TODO: this needs to be its own function call?
+            //      probably edit animate_SURFACE_to_texture()
+            //      to work for MSK_texture too?
+            //blit edit_MSK_surface to MSK_texture using openGL
+            int total_w = edit_MSK_srfc->w;
+            int total_h = edit_MSK_srfc->h;
+            //blit the whole surface to MSK_texture?
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, edit_data->MSK_texture);
+            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+            //MSK's are also aligned to 1-byte
+            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_w, total_h, 0, GL_RED, GL_UNSIGNED_BYTE, edit_MSK_srfc->pxls);
+
         } else {
-            surface_paint(My_Variables, edit_data, edit_srfc);
+            //paint FRM surface
+            surface_paint(My_Variables, edit_data, edit_FRM_srfc);
         }
     }
 
     //Converts unpalettized image to texture for display
+    //TODO:
+    //***this no longer works as described above
+    //      now it takes 3 textures (MSK, PAL, FRM)
+    //      and draws them all onto edit_data.framebuffer
+    //      also it only does this in draw_PAL_to_framebuffer()
+    //      which also needs to be renamed
     if (Palette_Update || image_edited) {
+
+        animate_SURFACE_to_texture(
+            shaders->palette,
+            shaders->render_FRM_shader,
+            shaders->giant_triangle,
+            edit_data, edit_FRM_srfc,
+            My_Variables->CurrentTime_ms,
+            My_Variables->Palette_Update
+        );
+        //TODO: rename?
+        //      this takes 3 textures and draws them into 1 framebuffer
         draw_PAL_to_framebuffer(shaders->palette,
                                 shaders->render_PAL_shader,
                                &shaders->giant_triangle,

@@ -188,7 +188,9 @@ void Clear_img_data(image_data* img_data)
 {
     if (img_data->MSK_data) {
         free(img_data->MSK_data);
+        free(img_data->MSK_srfc);
         img_data->MSK_data = NULL;
+        img_data->MSK_srfc = NULL;
     }
     if (img_data->FRM_data) {
         free(img_data->FRM_data);

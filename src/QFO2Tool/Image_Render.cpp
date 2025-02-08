@@ -6,6 +6,7 @@
 
 
 //render a full image after palettizing
+//TODO: check this against display_img_ImGUI()
 void image_render(variables* My_Variables, image_data* img_data)
 {
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);

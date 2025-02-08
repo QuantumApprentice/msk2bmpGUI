@@ -746,8 +746,11 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
     ImGui::End();
 }
 
-void init_edit_struct(Edit_Surface* edit_struct, image_data*edit_data, Palette* palette)
+//TODO: need to add direct MSK file editing
+//      probably in a different function?
+void init_edit_struct(Edit_Surface* edit_struct, image_data* edit_data, Palette* palette)
 {
+    // if (edit_data->FRM_data)
     for (int dir = 0; dir < 6; dir++) {
         int num_frames = edit_data->FRM_dir[dir].num_frames;
         edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
@@ -757,6 +760,12 @@ void init_edit_struct(Edit_Surface* edit_struct, image_data*edit_data, Palette* 
             if (edit_data->FRM_dir[dir].frame_data == NULL) {
                 break;
             }
+
+            //TODO: maybe this needs to be "edit_data->FRM_dir[0].bounding_box.x1" etc?
+            //      doing this might make it easier to edit a frame (maybe fewer crashes?)
+            //      but doing this and painting outside the official Frame_Width/_Height would
+            //      have to be dealt with by expanding the _Width/_Height whenever this happens
+            //      AND give the user some feedback that this is happening
             FRM_Frame* frame_data = edit_data->FRM_dir[dir].frame_data[frame];
             int w = frame_data->Frame_Width;
             int h = frame_data->Frame_Height;
@@ -766,7 +775,29 @@ void init_edit_struct(Edit_Surface* edit_struct, image_data*edit_data, Palette* 
         }
     }
 }
+void init_MSK_surface(Surface* edit_MSK_srfc)
+{
+    //these were both for when the entire struct was being allocated at once
+    // edit_MSK_srfc->pxls = (uint8_t*)(&(edit_MSK_srfc->pxls)+1);  //alternate way of assigning ptr
+    // edit_MSK_srfc.pxls = (uint8_t*)(edit_MSK_srfc+1);
+    //TODO: replace 350*300 with something that works for different sized MSK files?
+    edit_MSK_srfc->pxls = (uint8_t*)calloc(1, 350*300);
 
+    if (edit_MSK_srfc->pxls) {
+        edit_MSK_srfc->channels = 1;
+        edit_MSK_srfc->w        = 350;
+        edit_MSK_srfc->h        = 300;
+        edit_MSK_srfc->pitch    = 350;
+
+    } else {
+        printf("[Error] unable to allocate MSK surface pixels.\n");
+        return;
+    }
+}
+
+//TODO: remove this runOnce variable
+//      see TODO where it's called
+bool runOnce = true;
 void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
     char b[3];
@@ -788,17 +819,37 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
             init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
         }
 
+
+        // static Surface* edit_MSK_srfc = (Surface*)calloc(1, sizeof(*edit_MSK_srfc) + edit_data->width * edit_data->height);
+        static Surface edit_MSK_srfc;
+        if (!edit_MSK_srfc.pxls) {
+            init_MSK_surface(&edit_MSK_srfc);
+        }
+        //TODO: this runOnce is dumb, replace with something not dumb
+        //      should probably run when loading MSK to slot
+        if (runOnce) {
+            if (edit_data->MSK_srfc) {
+                runOnce = false;
+                memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, 350*300);
+            }
+        }
+
+
         if (ImGui::IsWindowFocused()) {
             My_Variables->window_number_focus = counter;
             My_Variables->edit_image_focused  = true;
         }
 
+        //TODO: check this against image_render()
         display_img_ImGUI(My_Variables, edit_data);
 
-        Edit_Image(My_Variables, &F_Prop->edit_data,
-                    edit_struct, F_Prop->edit_MSK,
+        Edit_Image(My_Variables,
+                    &F_Prop->edit_data, edit_struct,
+                    &edit_MSK_srfc, F_Prop->edit_MSK,
                     My_Variables->Palette_Update,
                     &My_Variables->Color_Pick);
+
+
         Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
     }
 
@@ -816,7 +867,7 @@ void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struc
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
-    // (limit is greater than 1600x1200 for menus at least - tested on MR)
+    // (limit is greater than 1600x1200 for Hi-Res menus at least - tested on MR f2_res.dat)
     LF* F_Prop = &My_Variables->F_Prop[*counter];
     F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
 
@@ -893,7 +944,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem("Shortcuts","",false,false)) {
+            if (ImGui::MenuItem("Shortcuts -- WIP","",false,false)) {
 
             }
             ImGui::EndMenu();
@@ -908,6 +959,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     LF* F_Prop = &My_Variables->F_Prop[window_number_focus];
     Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
     //TODO: save as animated image, needs more work
+    //      specifically need to save as GIF at least
     static bool open_window     = false;
     static bool single_dir      = false;
     static int  save_type       = UNK;
@@ -922,6 +974,9 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             if (ImGui::Button("Clear All Changes...")) {
+                //TODO: need to change this to Surface clearing
+                //ClearSurface(Surface* dst);
+
                 int texture_size = width * height;
                 uint8_t* clear = (uint8_t*)malloc(texture_size);
                 memset(clear, 0, texture_size);

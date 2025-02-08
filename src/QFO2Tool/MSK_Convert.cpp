@@ -34,6 +34,7 @@ uint8_t bmpHeader[62] = {
     0xFF, 0xFF, 0xFF, 0x00  // 1
 };
 
+bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int height);
 
 
 // Lines of bits. Essentially the raw MSK file.
@@ -150,24 +151,29 @@ int BytesToInt(char *C, int numBytes)
 bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
 {
     if (img_data->FRM_data == NULL) {
-        if (Load_MSK_File_OpenGL(FileName, img_data, TILE_W, TILE_H)) {
+        if (Load_MSK_File_Surface(FileName, img_data, TILE_W, TILE_H)) {
             return true;
         }
-        else {
-            return false;
-        }
+        // if (Load_MSK_File_OpenGL(FileName, img_data, TILE_W, TILE_H)) {
+        //     return true;
+        // }
     }
     else {
         //TODO: change this to load a new file type, different extension, include width/height in the header
-        if (Load_MSK_File_OpenGL(FileName, img_data, img_data->width, img_data->height)) {
+        if (Load_MSK_File_Surface(FileName, img_data, img_data->width, img_data->height)) {
             return true;
         }
-        else {
-            return false;
-        }
+        // if (Load_MSK_File_OpenGL(FileName, img_data, img_data->width, img_data->height)) {
+        //     return true;
+        // }
     }
+    return false;   //fail condition
 }
 
+//loads MSK FileName to uint8_t binary buffer,
+//then parses this buffer into another uint8_t 8-bit buffer
+//before assigning the 8-bit buffer to img_data->MSK_data
+//and freeing the original binary buffer
 bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int height)
 {
     //TODO: refactor this and make sure the inputLines/file_buffer
@@ -202,73 +208,169 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     uint8_t* bin_ptr = MSK_buffer;
     uint8_t* data    = (uint8_t*)calloc(1, width*height);
 
-    if (data) {
-        for (int pxl_y = 0; pxl_y < height; pxl_y++)
+    if (!data) {
+        printf("Failed to allocate memory for MSK surface");
+        printf("MSK image didn't load...\n");
+        return false;
+    }
+
+    for (int pxl_y = 0; pxl_y < height; pxl_y++)
+    {
+        for (int pxl_x = 0; pxl_x < width; pxl_x++)
         {
-            for (int pxl_x = 0; pxl_x < width; pxl_x++)
-            {
-                buff = *bin_ptr;
+            buff = *bin_ptr;
 
-                mask_1_or_0 = (buff & bitmask);
-                if (mask_1_or_0) {
-                    *(data + (pxl_y * width) + pxl_x) = white;
-                }
-                bitmask >>= 1;
-
-                if (bitmask == 0) {
-                    ++bin_ptr;
-                    bitmask = 128;
-                }
+            mask_1_or_0 = (buff & bitmask);
+            if (mask_1_or_0) {
+                *(data + (pxl_y * width) + pxl_x) = white;
             }
-            if (bitmask < 128) {
+            bitmask >>= 1;
+
+            if (bitmask == 0) {
                 ++bin_ptr;
                 bitmask = 128;
             }
         }
-
-        img_data->width  = width;
-        img_data->height = height;
-
-        //load & gen texture
-        glGenTextures(1, &img_data->MSK_texture);
-        glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
-        //texture settings
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-        //MSK's are aligned to 1-byte
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        //bind data to FRM_texture for display
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
-
-        bool success = false;
-        success = init_framebuffer(img_data);
-        if (!success) {
-            printf("image framebuffer failed to attach correctly?\n");
-            return false;
+        if (bitmask < 128) {
+            ++bin_ptr;
+            bitmask = 128;
         }
-        img_data->MSK_data = data;
-
-        free(MSK_buffer);
-        return true;
     }
-    else {
-        printf("MSK image didn't load...\n"); 
+
+    img_data->width  = width;
+    img_data->height = height;
+
+    //load & gen texture
+    glGenTextures(1, &img_data->MSK_texture);
+    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+    //texture settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    //MSK's are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //bind data to FRM_texture for display
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
+
+    bool success = false;
+    success = init_framebuffer(img_data);
+    if (!success) {
+        printf("image framebuffer failed to attach correctly?\n");
         return false;
     }
+    img_data->MSK_data = data;
+
+    free(MSK_buffer);
+    return true;
 }
 
-// union Pxl_info_32 {
-//     struct {
-//         uint8_t a;
-//         uint8_t b;
-//         uint8_t g;
-//         uint8_t r;
-//     };
-//     uint8_t pxl[4];
-// };
+//loads MSK FileName to uint8_t binary buffer,
+//then parses this buffer into another uint8_t 8-bit Surface
+//before assigning the binary buffer to img_data->MSK_data
+//and assigning the 8-bit Surface to img_data->MSK_srfc
+bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int height)
+{
+    //TODO: refactor this and make sure the inputLines/file_buffer
+    //      matches the other buffer for exporting
+
+    FILE* File_ptr;
+
+    int buffsize = (width + 7) / 8 * height;
+    uint8_t* MSK_buffer = (uint8_t*)malloc(buffsize);
+    if (!MSK_buffer) {
+        printf("[ERROR] Failed to allocate memory for MSK_buffer.\n");
+        printf("MSK image didn't load...\n");
+        return false;
+    }
+
+    //open the file & error checking
+#ifdef QFO2_WINDOWS
+    fopen_s(&File_ptr, FileName, "rb");
+#elif defined(QFO2_LINUX)
+    File_ptr = fopen(FileName, "rb");
+#endif
+
+    if (File_ptr == NULL)
+    {
+        //TODO: fprintf? or printf? (stderr or stdout)?
+        fprintf(stderr, "[ERROR] Unable to open file: %s.\n", FileName);
+        return false;
+    }
+
+    //read the binary lines in
+    fread(MSK_buffer, buffsize, 1, File_ptr);
+    fclose(File_ptr);
+
+    uint8_t bitmask = 128;
+    uint8_t buff = 0;
+    bool mask_1_or_0 = false;
+    uint8_t white    = 1;
+    uint8_t* bin_ptr = MSK_buffer;
+    Surface* MSK_srfc = (Surface*)calloc(1, sizeof(*MSK_srfc) + width*height);
+    // MSK_srfc->pxls = (uint8_t*)calloc(1, width*height);
+    MSK_srfc->pxls = (uint8_t*)(MSK_srfc+1);
+
+    if (!MSK_srfc) {
+        printf("[ERROR] Failed to allocate memory for MSK surface.\n");
+        printf("MSK image didn't load...\n");
+        return false;
+    }
+
+    //parse binary MSK data and turn into 8-bit surface->pxls
+    for (int pxl_y = 0; pxl_y < height; pxl_y++) {
+        for (int pxl_x = 0; pxl_x < width; pxl_x++) {
+            buff = *bin_ptr;
+
+            mask_1_or_0 = (buff & bitmask);
+            if (mask_1_or_0) {
+                *(MSK_srfc->pxls + (pxl_y * width) + pxl_x) = white;
+            }
+            bitmask >>= 1;
+
+            if (bitmask == 0) {
+                ++bin_ptr;
+                bitmask = 128;
+            }
+        }
+        if (bitmask < 128) {
+            ++bin_ptr;
+            bitmask = 128;
+        }
+    }
+
+    MSK_srfc->w        = width;
+    MSK_srfc->h        = height;
+    MSK_srfc->pitch    = width;
+    MSK_srfc->channels = 1;
+    MSK_srfc->palette  = nullptr;
+
+    //load & gen texture
+    glGenTextures(1, &img_data->MSK_texture);
+    glBindTexture(GL_TEXTURE_2D, img_data->MSK_texture);
+    //texture settings
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    //MSK's are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //bind data to FRM_texture for display
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, MSK_srfc->pxls);
+
+    bool success = false;
+    success = init_framebuffer(img_data);
+    if (!success) {
+        printf("image framebuffer failed to attach correctly?\n");
+        return false;
+    }
+    img_data->MSK_data = MSK_buffer;
+    img_data->MSK_srfc = MSK_srfc;
+
+    return true;
+}
 
 void Convert_Surface_to_MSK(Surface* surface, image_data* img_data)
 {
@@ -285,10 +387,8 @@ void Convert_Surface_to_MSK(Surface* surface, image_data* img_data)
     Color rgba;
     int white = 1;
     int i;
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
-        {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
             i = (Surface_32->pitch * y) + x * (sizeof(Color));
             memcpy(&rgba, (uint8_t*)Surface_32->pxls + i, sizeof(Color));
 

@@ -55,6 +55,7 @@ struct image_data {
     img_type type     = UNK;
     uint8_t* FRM_data = NULL;
     uint8_t* MSK_data = NULL;
+    Surface* MSK_srfc = NULL;
 
     GLuint FRM_texture;
     GLuint MSK_texture;

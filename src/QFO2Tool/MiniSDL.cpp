@@ -130,3 +130,16 @@ void PaintSurface(Surface* dst, Rect brush_rect, uint8_t color)
         dst_pxls += dst->pitch;
     }
 }
+
+void ClearSurface(Surface* dst)
+{
+    if (dst == nullptr) {
+        return;
+    }
+    uint8_t* pxls = dst->pxls;
+    for (int i = 0; i < dst->h; i++)
+    {
+        memset(pxls, 0, dst->pitch);
+        pxls += dst->pitch;
+    }
+}

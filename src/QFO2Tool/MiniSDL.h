@@ -46,3 +46,4 @@ Surface* Load_File_to_RGBA(const char* filename);
 Surface* Convert_Surface_to_RGBA(Surface* src);
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect);
 void PaintSurface(Surface* dst, Rect dst_rect, uint8_t color);
+void ClearSurface(Surface* dst);
