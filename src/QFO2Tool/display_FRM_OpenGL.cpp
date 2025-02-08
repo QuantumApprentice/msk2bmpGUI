@@ -148,6 +148,21 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 }
 
 void SURFACE_to_texture(uint8_t* pxls, GLuint texture,
+                        int width, int height, int alignment)
+{
+    if (!pxls) {
+        return;
+    }
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+    //MSK & FRM are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, pxls);
+
+}
+
+void SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int x_offset, int y_offset,
                         int frm_width, int frm_height,
                         int total_width, int total_height)
@@ -167,7 +182,7 @@ void SURFACE_to_texture(uint8_t* pxls, GLuint texture,
 //TODO: handle the current_time break outside this code
 //      to prevent this from being called when not directly
 //      changing either a frame or a palette color-cycle
-void animate_SURFACE_to_texture(float* palette, Shader* shader, mesh& triangle,
+void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, Surface* edit_srfc,
                               uint64_t current_time, bool palette_update)
 {
@@ -208,7 +223,7 @@ void animate_SURFACE_to_texture(float* palette, Shader* shader, mesh& triangle,
     }
     // else if (palette_update) {
         // render_FRM_OpenGL(img_data, width, height);
-        SURFACE_to_texture(edit_srfc->pxls, img_data->FRM_texture,
+        SURFACE_to_sub_texture(edit_srfc->pxls, img_data->FRM_texture,
                             x_offset, y_offset, frame_w, frame_h,
                             total_w, total_h);
     // }
@@ -291,6 +306,9 @@ void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
 //      but now it just takes 3 textures
 //      and combines them into one in the framebuffer
 //      while applying the palette cycle
+//TODO: maybe restructure this to take an array of textures?
+//      textures ordered by index?
+//      passed in framebuffer to draw to?
 void draw_PAL_to_framebuffer(float* palette, Shader* shader,
                             mesh* triangle, struct image_data* img_data)
 {
@@ -298,6 +316,7 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
 
     //bind framebuffer to draw to
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
+
     glBindVertexArray(triangle->VAO);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);

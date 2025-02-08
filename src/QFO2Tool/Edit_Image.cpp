@@ -108,29 +108,18 @@ void Edit_Image(variables* My_Variables,
     bool image_edited = false;
     if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
         image_edited = true;
-        // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
+        Surface* srfc_ptr = edit_FRM_srfc;
+        GLuint texture = edit_data->FRM_texture;
         if (edit_MSK) {
-            //paint MSK surface
-            surface_paint(My_Variables, edit_data, edit_MSK_srfc);
-
-            //TODO: this needs to be its own function call?
-            //      probably edit animate_SURFACE_to_texture()
-            //      to work for MSK_texture too?
-            //blit edit_MSK_surface to MSK_texture using openGL
-            int total_w = edit_MSK_srfc->w;
-            int total_h = edit_MSK_srfc->h;
-            //blit the whole surface to MSK_texture?
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, edit_data->MSK_texture);
-            //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-            //MSK's are also aligned to 1-byte
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_w, total_h, 0, GL_RED, GL_UNSIGNED_BYTE, edit_MSK_srfc->pxls);
-
-        } else {
-            //paint FRM surface
-            surface_paint(My_Variables, edit_data, edit_FRM_srfc);
+            srfc_ptr = edit_MSK_srfc;
+            texture  = edit_data->MSK_texture;
         }
+        //paint MSK surface
+        // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
+        surface_paint(My_Variables, edit_data, srfc_ptr);
+        //MSK & FRM are aligned to 1-byte
+        SURFACE_to_texture(edit_MSK_srfc->pxls, edit_data->MSK_texture,
+                            edit_MSK_srfc->w, edit_MSK_srfc->h, 1);
     }
 
     //Converts unpalettized image to texture for display
@@ -142,7 +131,7 @@ void Edit_Image(variables* My_Variables,
     //      which also needs to be renamed
     if (Palette_Update || image_edited) {
 
-        animate_SURFACE_to_texture(
+        animate_SURFACE_to_sub_texture(
             shaders->palette,
             shaders->render_FRM_shader,
             shaders->giant_triangle,
