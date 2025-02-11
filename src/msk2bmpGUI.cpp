@@ -775,11 +775,13 @@ void init_edit_struct(Edit_Surface* edit_struct, image_data* edit_data, Palette*
         }
     }
 }
+
 void init_MSK_surface(Surface* edit_MSK_srfc)
 {
     //these were both for when the entire struct was being allocated at once
     // edit_MSK_srfc->pxls = (uint8_t*)(&(edit_MSK_srfc->pxls)+1);  //alternate way of assigning ptr
     // edit_MSK_srfc.pxls = (uint8_t*)(edit_MSK_srfc+1);
+
     //TODO: replace 350*300 with something that works for different sized MSK files?
     edit_MSK_srfc->pxls = (uint8_t*)calloc(1, 350*300);
 
@@ -806,6 +808,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     std::string name = a + " Edit Window...###edit" + b;
 
     image_data* edit_data = &F_Prop->edit_data;
+    static Edit_Surface edit_struct[6];
+    static Surface edit_MSK_srfc;
 
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
@@ -814,14 +818,13 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
             show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
         }
 
-        static Edit_Surface edit_struct[6];
+
         if (!edit_struct[0].edit_frame) {
             init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
         }
 
 
         // static Surface* edit_MSK_srfc = (Surface*)calloc(1, sizeof(*edit_MSK_srfc) + edit_data->width * edit_data->height);
-        static Surface edit_MSK_srfc;
         if (!edit_MSK_srfc.pxls) {
             init_MSK_surface(&edit_MSK_srfc);
         }
@@ -830,7 +833,7 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
         if (runOnce) {
             if (edit_data->MSK_srfc) {
                 runOnce = false;
-                memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, 350*300);
+                memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, edit_MSK_srfc.w*edit_MSK_srfc.h);
             }
         }
 
@@ -855,7 +858,14 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 
     ImGui::End();
 
+    //stuff that happens when window is closed?
     if (!F_Prop->edit_image_window) {
+        free(edit_MSK_srfc.pxls);
+        for (int i = 0; i < 6; i++)
+        {
+            free(edit_struct[i].edit_frame);
+        }
+        
         My_Variables->window_number_focus = -1;
         My_Variables->edit_image_focused = false;
     }

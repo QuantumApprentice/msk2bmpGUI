@@ -47,7 +47,7 @@ void Edit_Image(variables* My_Variables,
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
-    //TODO: zoom and other info needs to be its own function call
+    //TODO: zoom display and other info needs to be its own function call
     //      window_info()? window_stats()? image_stats()?
     ImGui::PushItemWidth(100);
     ImGui::DragFloat("##Zoom", &edit_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);

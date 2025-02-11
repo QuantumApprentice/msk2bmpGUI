@@ -24,6 +24,7 @@
 #include "town_map_tiles.h"
 
 void write_cfg_file(user_info* user_info, char* exe_path);
+uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h);
 
 char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
 {
@@ -88,14 +89,17 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
             fwrite(&frame, sizeof(FRM_Frame), 1, File_ptr);
 
             // create buffer from texture and original FRM_data
-            uint8_t *blend_buffer = blend_PAL_texture(img_data);
+            // uint8_t *blend_ PAL_texture(img_data);
+            uint8_t* buffer = texture_to_buff(img_data->FRM_texture, 1, img_data->width, img_data->height);
 
             // write to file
-            fwrite(blend_buffer, size, 1, File_ptr);
+            // fwrite(blend_buffer, size, 1, File_ptr);
+            fwrite(buffer, size, 1, File_ptr);
             // TODO: also want to add animation frames?
 
             fclose(File_ptr);
-            free(blend_buffer);
+            // free(blend_buffer);
+            free(buffer);
         }
     }
     return Save_File_Name;
@@ -581,6 +585,44 @@ void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, ch
     Split_to_Tiles_OpenGL(img_data, user_info, MSK, NULL, exe_path);
 }
 
+//returns a buffer ripped from an openGL texture
+//bpp = bytes per pixel
+uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h)
+{
+    int size = w*h;
+    int type = 0;
+    switch (bpp)
+    {
+    case 1:
+        type = GL_RED;
+        break;
+    case 3:
+        type = GL_RGB;
+        size *= 3;
+        break;
+    case 4:
+        type = GL_RGBA;
+        size *= 4;
+        break;
+    }
+    if (type == 0) {
+        printf("failed to set color type");
+        return NULL;
+    }
+
+    uint8_t* buffer = (uint8_t*)malloc(size);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glPixelStorei(GL_PACK_ALIGNMENT, bpp);
+    glGetTexImage(GL_TEXTURE_2D, 0, type, GL_UNSIGNED_BYTE, buffer);
+
+    return buffer;
+}
+
+//TODO: do I need this blending system?
+//      seems like it was used to get alpha channels back
+//      into the FRM, but not sure how well it worked
+//      --certainly doesn't work now
 uint8_t *blend_PAL_texture(image_data* img_data)
 {
     int img_size = img_data->width * img_data->height;
@@ -590,7 +632,7 @@ uint8_t *blend_PAL_texture(image_data* img_data)
 
     // create a buffer
     uint8_t* texture_buffer = (uint8_t*)malloc(img_size);
-    uint8_t* blend_buffer = (uint8_t*)malloc(img_size);
+    uint8_t* blend_buffer   = (uint8_t*)malloc(img_size);
 
     // read pixels into buffer
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
