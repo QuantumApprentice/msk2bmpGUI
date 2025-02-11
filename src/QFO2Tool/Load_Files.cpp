@@ -667,8 +667,7 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
                 return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
             }
         }
-    }
-    else {
+    } else {
         return false;
     }
 }

@@ -46,17 +46,15 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
     FILE *File_ptr = NULL;
     char *Save_File_Name;
     const char *lFilterPatterns[2] = {"", "*.FRM"};
+    //TODO: replace all tinyfd_ file dialogs with imGui version
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
         "temp001.FRM",
         2,
         lFilterPatterns,
         nullptr);
-    if (Save_File_Name == NULL)
-    {
-    }
-    else
-    {
+    if (Save_File_Name == NULL) {}
+    else {
 
 #ifdef QFO2_WINDOWS
         // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
@@ -73,8 +71,7 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
         File_ptr = fopen(Save_File_Name, "wb");
 #endif
 
-        if (!File_ptr)
-        {
+        if (!File_ptr) {
             tinyfd_messageBox(
                 "Error",
                 "Can not open this file in write mode",
@@ -83,24 +80,22 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* user_info)
                 1);
             return NULL;
         }
-        else
-        {
-            fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
-            fwrite(&frame, sizeof(FRM_Frame), 1, File_ptr);
 
-            // create buffer from texture and original FRM_data
-            // uint8_t *blend_ PAL_texture(img_data);
-            uint8_t* buffer = texture_to_buff(img_data->FRM_texture, 1, img_data->width, img_data->height);
+        fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+        fwrite(&frame,  sizeof(FRM_Frame),  1, File_ptr);
 
-            // write to file
-            // fwrite(blend_buffer, size, 1, File_ptr);
-            fwrite(buffer, size, 1, File_ptr);
-            // TODO: also want to add animation frames?
+        // create buffer from texture and original FRM_data
+        // uint8_t *blend_ PAL_texture(img_data);
+        uint8_t* buffer = texture_to_buff(img_data->FRM_texture, 1, img_data->width, img_data->height);
 
-            fclose(File_ptr);
-            // free(blend_buffer);
-            free(buffer);
-        }
+        // write to file
+        // fwrite(blend_buffer, size, 1, File_ptr);
+        fwrite(buffer, size, 1, File_ptr);
+        // TODO: also want to add animation frames?
+
+        fclose(File_ptr);
+        // free(blend_buffer);
+        free(buffer);
     }
     return Save_File_Name;
 }

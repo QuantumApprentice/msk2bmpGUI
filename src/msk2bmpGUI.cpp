@@ -233,7 +233,8 @@ int main(int argc, char** argv)
     //IM_ASSERT(font != NULL);
 
     //this counter is used to identify which image slot is being used for now
-    //TODO: need to swap this for a linked list (or a static F_Prop?), store current image slot in the window itself
+    //TODO: need to swap this for a linked list (or a static F_Prop?),
+    //      or store current image slot in the window itself
     static int counter = 0;
 
 
@@ -311,7 +312,9 @@ int main(int argc, char** argv)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        // 1. Show the big demo window
+        //    (Most of the sample code is in ImGui::ShowDemoWindow()!
+        //    You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
@@ -431,6 +434,7 @@ int main(int argc, char** argv)
                                 &My_Variables.shaders);
                         }
                     }
+                    path += strlen(path)+1;
                 }
                 free(all_dropped_files.first_path);
                 memset(&all_dropped_files, 0, sizeof(dropped_files));
@@ -451,10 +455,8 @@ int main(int argc, char** argv)
                                     &My_Variables.Palette_Update);
             }
 
-            for (int i = 0; i < counter; i++)
-            {
-                if (My_Variables.F_Prop[i].file_open_window)
-                {
+            for (int i = 0; i < counter; i++) {
+                if (My_Variables.F_Prop[i].file_open_window) {
                     Show_Preview_Window(&My_Variables, &My_Variables.F_Prop[i], i);
                 }
             }
@@ -516,6 +518,7 @@ void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
     //all_dropped_files is global
     char* c;
     if (all_dropped_files.count > 0) {
+        //if already storing filenames
         c = (char*)realloc(all_dropped_files.first_path,
                            all_dropped_files.total_size + size);
         all_dropped_files.first_path = c;
@@ -527,8 +530,7 @@ void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
 
     all_dropped_files.count += count;
     all_dropped_files.total_size += size;
-    for (int i = 0; i < count; i++)
-    {
+    for (int i = 0; i < count; i++) {
         size_t len = strlen(paths[i]) + 1;
         memcpy(c, paths[i], len);
         c += len;
