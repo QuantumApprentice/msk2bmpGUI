@@ -157,13 +157,15 @@ bool Supported_Format(const std::filesystem::path &file)
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
-    constexpr const static char supported[5][6]{".FRM", ".MSK", ".PNG", ".JPG", ".JPEG"};
+    constexpr const static char supported[7][6]{
+        ".FRM", ".MSK", ".PNG", 
+        ".BMP", ".JPG", ".JPEG",
+        ".GIF"};
     int k = sizeof(supported) / (6 * sizeof(char));
 
     // actual extension check
     int i = 0;
-    while (i < k)
-    {
+    while (i < k) {
         //compare extension to determine if file is viewable
         if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
         {
@@ -466,6 +468,13 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     // QueryPerformanceFrequency(&Frequency);
     // QueryPerformanceCounter(&StartingTime);
 
+    //TODO: I don't think this is hit anymore
+    //      since I moved the check to Next_Prev_Buttons()
+    if (!strlen(current)) {
+        //TODO: make popup error
+        return;
+    }
+
     std::filesystem::path file_path(current);
     std::filesystem::path directory = file_path.parent_path();
     size_t parent_path_size = directory.native().size();
@@ -479,22 +488,16 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
     {
         bool is_subdirectory = file.is_directory(error);
-        if (error)
-        {
+        if (error) {
             // TODO: convert to tinyfd_filedialog() popup warning
             printf("error when checking if file_name is directory");
         }
-        if (is_subdirectory)
-        {
+        if (is_subdirectory) {
             // TODO: handle different directions in subdirectories?
             // handle_subdirectory(file.path());
             continue;
-        }
-        else
-        {
-            if (Supported_Format(file))
-            {
-
+        } else {
+            if (Supported_Format(file)) {
                 iter_file = (file.path().c_str() + parent_path_size);
 
                 if (l_frst.empty() || strcasecmp(iter_file, (l_frst.c_str() + parent_path_size)) < 0)
@@ -509,15 +512,12 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 
                 int cmp = strcasecmp(iter_file, (current + parent_path_size));
 
-                if (cmp < 0)
-                {
+                if (cmp < 0) {
                     if (l_prev.empty() || strcasecmp(iter_file, (l_prev.c_str() + parent_path_size)) > 0)
                     {
                         l_prev = file;
                     }
-                }
-                else if (cmp > 0)
-                {
+                } else if (cmp > 0) {
                     if (l_next.empty() || strcasecmp(iter_file, (l_next.c_str() + parent_path_size)) < 0)
                     {
                         l_next = file;
@@ -766,13 +766,13 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                                 img_data);
     }
     // do this for all other more common (generic) image types
-    // TODO: add another type for other generic image types?
+    // TODO: add another type for known generic image types?
     else {
         Surface* temp_surface = nullptr;
         temp_surface = Load_File_to_RGBA(F_Prop->Opened_File);
         if (temp_surface) {
 
-            F_Prop->img_data.ANM_dir = (ANM_Dir *)malloc(sizeof(ANM_Dir) * 6);
+            F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
             if (!F_Prop->img_data.ANM_dir) {
                 printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
             } else {

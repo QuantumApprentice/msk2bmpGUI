@@ -236,18 +236,28 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
 
     bool file_check = false;
     if (ImGui::Button("next", button_size) || ImGui::IsKeyPressed(ImGuiKey_Period)) {
-        Clear_img_data(img_data);
-        current_file = F_Prop->Next_File;
-        file_check   = true;
+        if (strlen(F_Prop->Next_File)) {
+            Clear_img_data(img_data);
+            current_file = F_Prop->Next_File;
+            file_check   = true;
+        } else {
+            //TODO: need to make a popup?
+            printf("Found a file type that stb_image can load, but is not in Supported_Format()\n");
+        }
     }
 
     ImGui::SetCursorPosX(button_pos.x - button_size.x - 2);
     ImGui::SetCursorPosY(button_pos.y);
 
     if (ImGui::Button("prev", button_size) || ImGui::IsKeyPressed(ImGuiKey_Comma)) {
-        Clear_img_data(img_data);
-        current_file = F_Prop->Prev_File;
-        file_check   = true;
+        if (strlen(F_Prop->Next_File)) {
+            Clear_img_data(img_data);
+            current_file = F_Prop->Prev_File;
+            file_check   = true;
+        } else {
+            //TODO: need to make a popup?
+            printf("Found a file type that stb_image can load, but is not in Supported_Format()\n");
+        }
     }
 
     ImGui::SetCursorPos(origin);

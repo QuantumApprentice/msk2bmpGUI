@@ -478,7 +478,7 @@ int main(int argc, char** argv)
 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
-            glfwMakeContextCurrent(current_context_backup); 
+            glfwMakeContextCurrent(current_context_backup);
         }
         glfwSwapBuffers(window);
     }

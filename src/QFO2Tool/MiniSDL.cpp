@@ -88,11 +88,11 @@ Surface* Load_File_to_RGBA(const char* filename)
     if (!pxls) {return nullptr;}
 
     Surface* surface = (Surface*)malloc(sizeof(Surface));
-    surface->w = w;
-    surface->h = h;
+    surface->w        = w;
+    surface->h        = h;
     surface->channels = 4; //why not =channels?
     surface->pitch    = w*4;
-    surface->pxls = pxls;
+    surface->pxls     = pxls;
 
     return surface;
 }
