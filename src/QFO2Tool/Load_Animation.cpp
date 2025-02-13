@@ -55,7 +55,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     }
     frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     if (!frame_data) {
-        //TODO: change to tinyfd_dialog() warning
+        //TODO: make a popup warning
         //TODO: possibly log out to txt file instead?
         printf("Unable to allocate enough memory");
         return false;

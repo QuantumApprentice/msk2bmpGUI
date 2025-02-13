@@ -216,17 +216,10 @@ void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triang
         if (img_data->display_frame_num >= img_data->FRM_hdr->Frames_Per_Orient) {
             img_data->display_frame_num  = 0;
         }
-        // // render_FRM_OpenGL(img_data, width, height);
-        // SURFACE_to_texture(edit_srfc->pxls, img_data->FRM_texture,
-        //                     x_offset, y_offset,frame_w, frame_h,
-        //                     total_w, total_h);
     }
-    // else if (palette_update) {
-        // render_FRM_OpenGL(img_data, width, height);
-        SURFACE_to_sub_texture(edit_srfc->pxls, img_data->FRM_texture,
-                            x_offset, y_offset, frame_w, frame_h,
-                            total_w, total_h);
-    // }
+    SURFACE_to_sub_texture(edit_srfc->pxls, img_data->FRM_texture,
+                        x_offset, y_offset, frame_w, frame_h,
+                        total_w, total_h);
 }
 
 void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,

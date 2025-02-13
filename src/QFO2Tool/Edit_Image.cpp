@@ -47,11 +47,9 @@ void Edit_Image(variables* My_Variables,
     //handle zoom and panning for the image, plus update image position every frame
     zoom_pan(edit_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
 
-    //TODO: zoom display and other info needs to be its own function call
-    //      window_info()? window_stats()? image_stats()?
-    ImGui::PushItemWidth(100);
-    ImGui::DragFloat("##Zoom", &edit_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
-    ImGui::PopItemWidth();
+
+
+
 
     ////TODO: use a menu bar for the editor/previewer?
     //if (ImGui::BeginMenuBar()) {
@@ -103,6 +101,27 @@ void Edit_Image(variables* My_Variables,
     } else {
         ImGui::Text("No FRM_dir");
         return;
+    }
+
+
+    //TODO: zoom display and other info needs to be its own function call
+    //      window_info()? window_stats()? image_stats()?
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("##Zoom", &edit_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
+    ImGui::PopItemWidth();
+    if (ImGui::Button("Clear All Changes")) {
+        //TODO: this is a rough fix
+        //      need to check if FRMs are loaded in as surfaces
+        //      and where they are stored and blit from there instead
+        ClearSurface(edit_FRM_srfc);
+        FRM_Frame* frame_data = edit_data->FRM_dir[orient].frame_data[frame_num];
+        int w = frame_data->Frame_Width;
+        int h = frame_data->Frame_Height;
+        memcpy(edit_FRM_srfc->pxls, frame_data->frame_start, w*h);
+
+        // BlitSurface(edit_data->FRM_dir[orient].frame_data[frame_num])
+        SURFACE_to_texture(edit_FRM_srfc->pxls, edit_data->FRM_texture,
+                            edit_FRM_srfc->w, edit_FRM_srfc->h, 1);
     }
 
     bool image_edited = false;
@@ -358,6 +377,8 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    }
 //}
 
+//TODO: archive & DELETE
+//      surface_paint() is used now
 //void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
 void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc, bool edit_MSK)
 {

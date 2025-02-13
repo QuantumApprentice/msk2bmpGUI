@@ -572,8 +572,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         if (dir->num_frames < 2) {
             if (dir->frame_data == NULL) {
                 wrong_size = false;
-            }
-            else {
+            } else {
                 wrong_size = ((dir->frame_data->frame_start->w != 350)
                            || (dir->frame_data->frame_start->h != 300));
             }
@@ -609,8 +608,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         else if (F_Prop->img_data.type == MSK) {
             Preview_MSK_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
         }
-        else if (F_Prop->img_data.type == OTHER)
-        {
+        else if (F_Prop->img_data.type == OTHER) {
             Preview_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
             //Draw red squares for possible overworld map tiling
             draw_red_squares(&F_Prop->img_data, F_Prop->show_squares);
@@ -713,7 +711,7 @@ void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
         }
 
         if (F_Prop->show_squares) {
-            Prev_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
+            Preview_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
         }
         else {
             Prev_TMAP_Tiles(&usr_info, My_Variables, &F_Prop->edit_data);
@@ -985,19 +983,21 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         // ImGui::DragFloat("##zoom", &My_Variables->F_Prop[window_number_focus].edit_data.scale);
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
-            if (ImGui::Button("Clear All Changes...")) {
+            if (ImGui::Button("Clear All Changes...(disabled)")) {
                 //TODO: need to change this to Surface clearing
+                //      actually, need to move this to Edit_Image
                 //ClearSurface(Surface* dst);
 
-                int texture_size = width * height;
-                uint8_t* clear = (uint8_t*)malloc(texture_size);
-                memset(clear, 0, texture_size);
-                glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
-                glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                    width, height,
-                    0, GL_RED, GL_UNSIGNED_BYTE, clear);
-                free(clear);
+
+                // int texture_size = width * height;
+                // uint8_t* clear = (uint8_t*)malloc(texture_size);
+                // memset(clear, 0, texture_size);
+                // glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
+                // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                //     width, height,
+                //     0, GL_RED, GL_UNSIGNED_BYTE, clear);
+                // free(clear);
             }
             //TODO: add frame editing functions/frame saving functions
             if (ImGui::Button("Export Image...")) {

@@ -25,12 +25,12 @@ void draw_red_tiles(image_data *img_data, bool show_squares);
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-void Prev_WMAP_Tiles(variables *My_Variables, image_data *img_data)
+void Preview_WMAP_Tiles(variables *My_Variables, image_data *img_data)
 {
     // handle zoom and panning for the image
     // plus update image position every frame
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
-
+// display_img_ImGUI
     shader_info *shaders = &My_Variables->shaders;
 
     // draw_FRM_to_framebuffer(shaders->palette,
@@ -38,28 +38,27 @@ void Prev_WMAP_Tiles(variables *My_Variables, image_data *img_data)
     //                        &shaders->giant_triangle,
     //                         img_data);
 
-    if (img_data->FRM_dir)
-    {
-        if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL)
-        {
-            ImGui::Text("No Image Data");
-            return;
-        }
-        else
-        {
-            animate_FRM_to_framebuff(shaders->palette,
-                                     shaders->render_FRM_shader,
-                                     shaders->giant_triangle,
-                                     img_data,
-                                     My_Variables->CurrentTime_ms,
-                                     My_Variables->Palette_Update);
-        }
-    }
-    else
-    {
+    if (!img_data->FRM_dir) {
         ImGui::Text("No Image Data");
         return;
     }
+    if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
+        ImGui::Text("No Image Data");
+        return;
+    }
+    animate_FRM_to_framebuff(shaders->palette,
+                            shaders->render_FRM_shader,
+                            shaders->giant_triangle,
+                            img_data,
+                            My_Variables->CurrentTime_ms,
+                            My_Variables->Palette_Update);
+    // animate_SURFACE_to_sub_texture(
+    //     shaders->palette,
+    //     shaders->render_FRM_shader,
+    //     shaders->giant_triangle,
+    //     img_data,
+    //     img_data->FRM_dir[0])
+
 
     float scale = img_data->scale;
     int img_width = img_data->width;
@@ -99,6 +98,12 @@ void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, ima
             ImVec2 new_bottom;
             new_bottom.x = new_corner.x + (tile_w * scale);
             new_bottom.y = new_corner.y + (tile_h * scale);
+
+#pragma region render tiles
+            //TODO: blit each crop to a single texture
+            //      with adequate spacing between
+            //      then display that texture directly in window call
+            //  then use regular zoom/pan on that texture drawlist call
 
             // image I'm trying to pan and zoom with
             window->DrawList->AddImage(
