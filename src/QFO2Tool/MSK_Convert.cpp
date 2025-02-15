@@ -9,6 +9,7 @@
 
 #include "MSK_Convert.h"
 #include "tinyfiledialogs.h"
+#include "ImGui_Warning.h"
 
 // Windows BITMAPINFOHEADER format, for historical reasons
 uint8_t bmpHeader[62] = {
@@ -148,24 +149,38 @@ int BytesToInt(char *C, int numBytes)
 #define TILE_SIZE   (350*300)
 //TODO: might want to move this entire function to Save_Files.cpp
 //      and swap out ReadMskLines for something more generic
+//TODO: delete this function
+//      not used anywhere?
 bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data)
+{
+    if (img_data->FRM_data == NULL) {
+        if (Load_MSK_File_OpenGL(FileName, img_data, TILE_W, TILE_H)) {
+            return true;
+        }
+    }
+    else {
+        //TODO: change this to load a new file type, different extension, include width/height in the header
+        if (Load_MSK_File_OpenGL(FileName, img_data, img_data->width, img_data->height)) {
+            return true;
+        }
+    }
+    return false;   //fail condition
+}
+
+bool Load_MSK_Tile_Surface(char* FileName, image_data* img_data)
 {
     if (img_data->FRM_data == NULL) {
         if (Load_MSK_File_Surface(FileName, img_data, TILE_W, TILE_H)) {
             return true;
         }
-        // if (Load_MSK_File_OpenGL(FileName, img_data, TILE_W, TILE_H)) {
-        //     return true;
-        // }
     }
     else {
-        //TODO: change this to load a new file type, different extension, include width/height in the header
+        //TODO: change this to load a new file type,
+        //      different extension,
+        //      include width/height in the header
         if (Load_MSK_File_Surface(FileName, img_data, img_data->width, img_data->height)) {
             return true;
         }
-        // if (Load_MSK_File_OpenGL(FileName, img_data, img_data->width, img_data->height)) {
-        //     return true;
-        // }
     }
     return false;   //fail condition
 }
@@ -193,6 +208,8 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
 
     if (File_ptr == NULL)
     {
+        set_popup_warning("[ERROR] Unable to open file.\n");
+
         fprintf(stderr, "[ERROR] Unable to open file.");
         return false;
     }
@@ -209,6 +226,9 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     uint8_t* data    = (uint8_t*)calloc(1, width*height);
 
     if (!data) {
+        set_popup_warning(
+            "[ERROR] Failed to allocate memory for MSK surface.\n"
+        );
         printf("Failed to allocate memory for MSK surface");
         printf("MSK image didn't load...\n");
         return false;
@@ -257,6 +277,9 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
     bool success = false;
     success = init_framebuffer(img_data);
     if (!success) {
+        set_popup_warning(
+            "[ERROR] Image framebuffer failed to attach correctly?\n"
+        );
         printf("image framebuffer failed to attach correctly?\n");
         return false;
     }
@@ -280,6 +303,9 @@ bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int 
     int buffsize = (width + 7) / 8 * height;
     uint8_t* MSK_buffer = (uint8_t*)malloc(buffsize);
     if (!MSK_buffer) {
+        set_popup_warning(
+            "[ERROR] Failed to allocate memory for MSK_buffer.\n"
+        );
         printf("[ERROR] Failed to allocate memory for MSK_buffer.\n");
         printf("MSK image didn't load...\n");
         return false;
@@ -294,6 +320,9 @@ bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int 
 
     if (File_ptr == NULL)
     {
+        set_popup_warning(
+            "[ERROR] Unable to open file.\n"
+        );
         //TODO: fprintf? or printf? (stderr or stdout)?
         fprintf(stderr, "[ERROR] Unable to open file: %s.\n", FileName);
         return false;
@@ -313,6 +342,9 @@ bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int 
     MSK_srfc->pxls = (uint8_t*)(MSK_srfc+1);
 
     if (!MSK_srfc) {
+        set_popup_warning(
+            "[ERROR] Failed to allocate memory for MSK surface.\n"
+        );
         printf("[ERROR] Failed to allocate memory for MSK surface.\n");
         printf("MSK image didn't load...\n");
         return false;
@@ -363,6 +395,9 @@ bool Load_MSK_File_Surface(char* FileName, image_data* img_data, int width, int 
     bool success = false;
     success = init_framebuffer(img_data);
     if (!success) {
+        set_popup_warning(
+            "[ERROR] Image framebuffer failed to attach correctly?\n"
+        );
         printf("image framebuffer failed to attach correctly?\n");
         return false;
     }

@@ -15,6 +15,8 @@ add_library(QFO2ToolLib
   Image_Render.h
   Image2Texture.cpp
   Image2Texture.h
+  ImGui_Warning.cpp
+  ImGui_Warning.h
   Load_Animation.cpp
   Load_Animation.h
   Load_Files.cpp

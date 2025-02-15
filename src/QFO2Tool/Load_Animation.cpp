@@ -6,6 +6,7 @@
 #include "Load_Animation.h"
 #include "Edit_Animation.h"
 #include "tinyfiledialogs.h"
+#include "ImGui_Warning.h"
 
 
 bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF* F_Prop)
@@ -35,13 +36,17 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     int num_frames = path_set.size();
     if (img_data->ANM_dir == NULL) {
         img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
-        new(img_data->ANM_dir) ANM_Dir[6];
         if (!img_data->ANM_dir) {
-            //TODO: change to tinyfd_dialog() warning
-            //TODO: possibly log out to txt file instead?
-            printf("Unable to allocate enough memory");
+            //TODO: log out to txt file
+            set_popup_warning("Unable to allocate enough memory");
+            printf("Unable to allocate enough memory\n");
+            return false;
+        } else {
+            new(img_data->ANM_dir) ANM_Dir[6];
         }
     }
+
+
 
     img_data->ANM_dir[temp_orient].orientation = temp_orient;
     if (img_data->ANM_dir[temp_orient].num_frames != num_frames) {
@@ -55,12 +60,11 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     }
     frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     if (!frame_data) {
-        //TODO: make a popup warning
-        //TODO: possibly log out to txt file instead?
+        //TODO: log out to txt file
+        set_popup_warning("Unable to allocate enough memory");
         printf("Unable to allocate enough memory");
         return false;
-    }
-    else {
+    } else {
         img_data->ANM_dir[temp_orient].frame_data = frame_data;
     }
 
@@ -105,6 +109,9 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         bool success = init_framebuffer(img_data);
         if (!success) {
             //TODO: log out to txt file
+            set_popup_warning(
+                "image framebuffer failed to attach correctly?\n"
+            );
             printf("image framebuffer failed to attach correctly?\n");
             return false;
         }
@@ -112,6 +119,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     }
     else {
         //TODO: log out to txt file
+        set_popup_warning("FRM image didn't load...\n");
         printf("FRM image didn't load...\n");
         return false;
     }
@@ -234,15 +242,18 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
 
     char* current_file = NULL;
 
-    bool file_check = false;
+    bool check_file_type = false;
     if (ImGui::Button("next", button_size) || ImGui::IsKeyPressed(ImGuiKey_Period)) {
         if (strlen(F_Prop->Next_File)) {
             Clear_img_data(img_data);
-            current_file = F_Prop->Next_File;
-            file_check   = true;
+            current_file    = F_Prop->Next_File;
+            check_file_type = true;
         } else {
-            //TODO: need to make a popup?
-            printf("Found a file type that stb_image can load, but is not in Supported_Format()\n");
+            set_popup_warning(
+                "Found a file type that stb_image can load,\n"
+                "but is not in Supported_Format().\n"
+                "Please report this bug so I can fix it. :)"
+            );
         }
     }
 
@@ -252,17 +263,22 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
     if (ImGui::Button("prev", button_size) || ImGui::IsKeyPressed(ImGuiKey_Comma)) {
         if (strlen(F_Prop->Next_File)) {
             Clear_img_data(img_data);
-            current_file = F_Prop->Prev_File;
-            file_check   = true;
+            current_file    = F_Prop->Prev_File;
+            check_file_type = true;
         } else {
-            //TODO: need to make a popup?
-            printf("Found a file type that stb_image can load, but is not in Supported_Format()\n");
+            set_popup_warning(
+                "Found a file type that stb_image can load,\n"
+                "but is not in Supported_Format().\n"
+                "Please report this bug so I can fix it. :)"
+            );
         }
     }
 
+
+
     ImGui::SetCursorPos(origin);
 
-    if (file_check) {
+    if (check_file_type) {
         File_Type_Check(F_Prop, shaders, img_data, current_file);
     }
 }

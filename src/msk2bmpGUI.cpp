@@ -63,6 +63,7 @@ bool show_demo_window = false;
 #include "Edit_Animation.h"
 
 #include "timer_functions.h"
+#include "ImGui_Warning.h"
 
 //remove
 #include "B_Endian.h"
@@ -425,7 +426,8 @@ int main(int argc, char** argv)
                                                         &My_Variables.window_number_focus,
                                                         &counter,
                                                         &My_Variables.shaders);
-        //TODO: maybe I should handle these as an enum instead of std::optional<>
+                    //TODO: maybe I should handle these as an enum
+                    //      instead of std::optional<>
                     if (directory.has_value()) {
                         if (!directory.operator*()) {
                             handle_file_drop(path,
@@ -462,6 +464,7 @@ int main(int argc, char** argv)
             }
         }
 
+        popup_warnings();
         // Rendering
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
@@ -618,7 +621,9 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
         }
         Next_Prev_Buttons(F_Prop, &F_Prop->img_data, shaders);
+
     }
+    popup_warnings();
     ImGui::End();
 
     // Preview tiles from red boxes
@@ -809,7 +814,21 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 
     image_data* edit_data = &F_Prop->edit_data;
     static Edit_Surface edit_struct[6];
+    if (!edit_struct[0].edit_frame) {
+        init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
+    }
     static Surface edit_MSK_srfc;
+    if (!edit_MSK_srfc.pxls) {
+        init_MSK_surface(&edit_MSK_srfc);
+    }
+    //TODO: this runOnce is dumb, replace with something not dumb
+    //      should probably run when loading MSK to slot
+    if (runOnce) {
+        if (edit_data->MSK_srfc) {
+            runOnce = false;
+            memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, edit_MSK_srfc.w*edit_MSK_srfc.h);
+        }
+    }
 
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
@@ -817,26 +836,6 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
         if (F_Prop->show_stats) {
             show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
         }
-
-
-        if (!edit_struct[0].edit_frame) {
-            init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
-        }
-
-
-        // static Surface* edit_MSK_srfc = (Surface*)calloc(1, sizeof(*edit_MSK_srfc) + edit_data->width * edit_data->height);
-        if (!edit_MSK_srfc.pxls) {
-            init_MSK_surface(&edit_MSK_srfc);
-        }
-        //TODO: this runOnce is dumb, replace with something not dumb
-        //      should probably run when loading MSK to slot
-        if (runOnce) {
-            if (edit_data->MSK_srfc) {
-                runOnce = false;
-                memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, edit_MSK_srfc.w*edit_MSK_srfc.h);
-            }
-        }
-
 
         if (ImGui::IsWindowFocused()) {
             My_Variables->window_number_focus = counter;
@@ -861,11 +860,13 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     //stuff that happens when window is closed?
     if (!F_Prop->edit_image_window) {
         free(edit_MSK_srfc.pxls);
+        edit_MSK_srfc.pxls = NULL;
         for (int i = 0; i < 6; i++)
         {
             free(edit_struct[i].edit_frame);
+            edit_struct[i].edit_frame = NULL;
         }
-        
+
         My_Variables->window_number_focus = -1;
         My_Variables->edit_image_focused = false;
     }
@@ -983,22 +984,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         // ImGui::DragFloat("##zoom", &My_Variables->F_Prop[window_number_focus].edit_data.scale);
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
-            if (ImGui::Button("Clear All Changes...(disabled)")) {
-                //TODO: need to change this to Surface clearing
-                //      actually, need to move this to Edit_Image
-                //ClearSurface(Surface* dst);
-
-
-                // int texture_size = width * height;
-                // uint8_t* clear = (uint8_t*)malloc(texture_size);
-                // memset(clear, 0, texture_size);
-                // glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.PAL_texture);
-                // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                //     width, height,
-                //     0, GL_RED, GL_UNSIGNED_BYTE, clear);
-                // free(clear);
-            }
             //TODO: add frame editing functions/frame saving functions
             if (ImGui::Button("Export Image...")) {
                 Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
@@ -1007,7 +992,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
             }
-            if (ImGui::Button("Save image as Town Map Tiles...")) {
+            if (ImGui::Button("Save image as Town Map Tiles...(not yet implemented)")) {
                 // save_TMAP_tiles();
                 // My_Variables.
             }

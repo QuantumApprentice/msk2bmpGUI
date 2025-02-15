@@ -14,6 +14,7 @@ void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44]);
 int BytesToInt(char *C, int numBytes);
 
 bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data);
+bool Load_MSK_Tile_Surface(char* FileName, image_data* img_data);
 bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int height);
 
 Surface* Load_MSK_Tile_STB(char* FileName);

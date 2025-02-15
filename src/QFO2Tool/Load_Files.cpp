@@ -30,6 +30,7 @@
 #include "display_FRM_OpenGL.h"
 
 #include "timer_functions.h"
+#include "ImGui_Warning.h"
 
 char *Program_Directory()
 {
@@ -133,7 +134,10 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
-    constexpr const static wchar_t supported[5][6]{L".FRM", L".MSK", L".PNG", L".JPG", L".JPEG"};
+    constexpr const static wchar_t supported[7][6]{
+                    L".FRM", L".MSK", L".PNG",
+                    L".JPG", L".JPEG", L".BMP",
+                    L".GIF"};
     int k = sizeof(supported) / (6 * sizeof(wchar_t));
 
 
@@ -158,7 +162,7 @@ bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
     constexpr const static char supported[7][6]{
-        ".FRM", ".MSK", ".PNG", 
+        ".FRM", ".MSK", ".PNG",
         ".BMP", ".JPG", ".JPEG",
         ".GIF"};
     int k = sizeof(supported) / (6 * sizeof(char));
@@ -178,6 +182,7 @@ bool Supported_Format(const std::filesystem::path &file)
 }
 #endif
 
+//TODO: delete, not used anywhere
 // tried to handle a subdirectory in regular C, but didn't actually finish making this
 char **handle_subdirectory_char(const std::filesystem::path &directory)
 {
@@ -219,20 +224,19 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
     {
         bool is_subdirectory = file.is_directory(error);
-        if (error)
-        {
-            // TODO: convert to popup? warning
+        if (error) {
             printf("error when checking if file_name is directory when loading file: %d", __LINE__);
+            set_popup_warning(
+                "[ERROR] When checking if file_name is directory when loading file"
+            );
             return animation_images;
         }
-        if (is_subdirectory)
-        {
+        if (is_subdirectory) {
             // TODO: handle different directions in subdirectories?
             // animation_images = handle_subdirectory_vec(file.path());
             continue;
         }
-        else if (Supported_Format(file))
-        {
+        else if (Supported_Format(file)) {
             animation_images.push_back(file);
         }
     }
@@ -703,7 +707,7 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 {
     char load_path[MAX_PATH];
     snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
-    const char *FilterPattern1[5] = {"*.bmp", "*.png", "*.frm", "*.msk", "*.jpg"};
+    const char *FilterPattern1[7] = {"*.bmp", "*.png", "*.frm", "*.msk", "*.jpg", "*.jpeg", "*.gif"};
 
     char *FileName = tinyfd_openFileDialog(
         "Open files...",
@@ -755,8 +759,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
                                 img_data->framebuffer, img_data->FRM_texture);
     }
-    else if ((io_strncmp(F_Prop->extension, "MSK", 4)) == 0) {  // 0 == match
-        F_Prop->file_open_window = Load_MSK_Tile_OpenGL(F_Prop->Opened_File, img_data);
+    else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
+        F_Prop->file_open_window = Load_MSK_Tile_Surface(F_Prop->Opened_File, img_data);
         F_Prop->img_data.type = MSK;
         init_framebuffer(img_data);
 
