@@ -168,6 +168,7 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClInclude Include="src\QFO2Tool\FRM_Convert.h" />
     <ClInclude Include="src\QFO2Tool\Image2Texture.h" />
     <ClInclude Include="src\QFO2Tool\Image_Render.h" />
+    <ClInclude Include="src\QFO2Tool\ImGui_Warning.h" />
     <ClInclude Include="src\QFO2Tool\Load_Animation.h" />
     <ClInclude Include="src\QFO2Tool\Load_Files.h" />
     <ClInclude Include="src\QFO2Tool\load_FRM_OpenGL.h" />
@@ -235,6 +236,7 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClCompile Include="src\QFO2Tool\FRM_Convert.cpp" />
     <ClCompile Include="src\QFO2Tool\Image2Texture.cpp" />
     <ClCompile Include="src\QFO2Tool\Image_Render.cpp" />
+    <ClCompile Include="src\QFO2Tool\ImGui_Warning.cpp" />
     <ClCompile Include="src\QFO2Tool\Load_Animation.cpp" />
     <ClCompile Include="src\QFO2Tool\Load_Files.cpp" />
     <ClCompile Include="src\QFO2Tool\load_FRM_OpenGL.cpp" />
