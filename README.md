@@ -216,16 +216,3 @@ The msk2bmpGUI.sln file can be opened and compiled
 in Microsoft Visual Studio.
 
 Disable/Uninstall the "C++ CMake tools for Windows" plugin.
-
-SDL2 and SDL_image v2.6.3 will have to be installed separately
-for the time being, but I plan on replacing SDL with stb_image
-so this should change eventually.
-For now, you need the -dev package for each, they should have
-.dll and .lib files as well as a .h header file.
-
-Then you'll have to manually add the include directories to MSVS,
-and the linker needs to point to the .lib files.
-
-Finally, as part of the final compile step, the SDL2.dll and 
-SDL_image.dll files will need to be copied to the compile 
-destination folder.
