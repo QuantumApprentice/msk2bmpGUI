@@ -214,5 +214,3 @@ make
 
 The msk2bmpGUI.sln file can be opened and compiled 
 in Microsoft Visual Studio.
-
-Disable/Uninstall the "C++ CMake tools for Windows" plugin.
