@@ -1244,7 +1244,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
         if (save_type == FRx && single_dir) {
             if (data_ptr->FRM_dir[data_ptr->display_orient_num].orientation < 0) {
-                tinyfd_messageBox("You done effed up!",
+                tinyfd_messageBox(
+                    "You done effed up!",
                     "The selected direction has no data.",
                     "ok", "error", 1);
                 open_window = false;

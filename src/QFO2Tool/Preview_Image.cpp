@@ -14,24 +14,22 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, boo
     //new openGL version of pallete cycling
     //redraws FRM to framebuffer every time the palette update timer is true or animates
     shader_info* shaders = &My_Variables->shaders;
-    if (img_data->FRM_dir) {
-        if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
-            ImGui::Text("No frame_data");
-            return;
-        }
-        else {
-            animate_FRM_to_framebuff(shaders->palette,
-                shaders->render_FRM_shader,
-                shaders->giant_triangle,
-                img_data,
-                My_Variables->CurrentTime_ms,
-                My_Variables->Palette_Update);
-        }
-    }
-    else {
+    if (!img_data->FRM_dir) {
         ImGui::Text("No FRM_dir");
         return;
     }
+    if (img_data->FRM_dir[img_data->display_orient_num].frame_data == NULL) {
+        ImGui::Text("No frame_data");
+        return;
+    }
+    animate_FRM_to_framebuff(shaders->palette,
+        shaders->render_FRM_shader,
+        shaders->giant_triangle,
+        img_data,
+        My_Variables->CurrentTime_ms,
+        My_Variables->Palette_Update);
+
+
     //handle frame display by orientation and number
     int orient  = img_data->display_orient_num;
     // int frame   = img_data->display_frame_num;
@@ -128,12 +126,11 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
         ImGui::Text("No Image Data");
         return;
     }
-    else {
-        animate_OTHER_to_framebuff(My_Variables->shaders.render_OTHER_shader,
-            &My_Variables->shaders.giant_triangle,
-            img_data,
-            My_Variables->CurrentTime_ms);
-    }
+    animate_OTHER_to_framebuff(
+        My_Variables->shaders.render_OTHER_shader,
+        &My_Variables->shaders.giant_triangle,
+        img_data,
+        My_Variables->CurrentTime_ms);
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
@@ -223,8 +220,7 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
         snprintf(buff, 256, "FRM_bounding_y2: %d", img_data->FRM_bounding_box[dir].y2);
         ImGui::Text(buff);
         ImGui::PopFont();
-    }
-    else {
+    } else {
         ImGui::Text("Like it says, No Image Data");
     }
 }

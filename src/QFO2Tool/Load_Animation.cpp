@@ -249,6 +249,7 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
             current_file    = F_Prop->Next_File;
             check_file_type = true;
         } else {
+            //TODO: log to file
             set_popup_warning(
                 "Found a file type that stb_image can load,\n"
                 "but is not in Supported_Format().\n"
@@ -324,15 +325,13 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
         if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
             img_data->display_orient_num++;
             if (img_data->display_orient_num > 5) {
-                //TODO: maybe make this wrap instead of halt?
-                img_data->display_orient_num = 5;
+                img_data->display_orient_num = 0;
             }
         }
         if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
             img_data->display_orient_num--;
             if (img_data->display_orient_num < 0) {
-                //TODO: maybe make this wrap instead of halt?
-                img_data->display_orient_num = 0;
+                img_data->display_orient_num = 5;
             }
         }
     }

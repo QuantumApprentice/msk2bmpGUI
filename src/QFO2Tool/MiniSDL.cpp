@@ -5,6 +5,7 @@
 #include <stb_image.h>
 
 #include "MiniSDL.h"
+#include "ImGui_Warning.h"
 
 //create blank 4-byte per pixel surface (RGBA?)
 Surface* Create_RGBA_Surface(int width, int height)
@@ -86,11 +87,23 @@ Surface* Load_File_to_RGBA(const char* filename)
     int w, h, channels;
     uint8_t* pxls = (uint8_t*)stbi_load(filename, &w, &h, &channels, 4);
     if (!pxls) {return nullptr;}
+    if (channels != 4) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] Load_File_to_RGBA()\n\n"
+            "stbi loaded this image with something\n"
+            "other than 4 channels, need to look into"
+        );
+        printf("stbi loaded this image with %d channels: %s\n", channels, filename);
+    }
 
     Surface* surface = (Surface*)malloc(sizeof(Surface));
+    if (!surface) {
+        return NULL;
+    }
     surface->w        = w;
     surface->h        = h;
-    surface->channels = 4; //why not =channels?
+    surface->channels = 4; //why not =channels? TODO: JPG returns 3 channels?!!!
     surface->pitch    = w*4;
     surface->pxls     = pxls;
 

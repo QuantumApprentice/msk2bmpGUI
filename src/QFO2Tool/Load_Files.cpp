@@ -45,6 +45,11 @@ char *Program_Directory()
     ssize_t read_size = readlink("/proc/self/exe", utf8_buff, MAX_PATH - 1);
     if (read_size >= MAX_PATH || read_size == -1)
     {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] Program Directory()\n\n"
+            "Error reading program .exe location."
+        );
         printf("Error reading program .exe location, read_size: %d", read_size);
         return NULL;
     }
@@ -627,53 +632,62 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
     bool is_directory = std::filesystem::is_directory(path, error);
     if (error)
     {
-        tinyfd_notifyPopup("Error checking if dropped file is a directory",
-                           "This usually happens when the text encoding is not UTF8/16.",
-                           "info");
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] handle_directory_drop()\n\n"
+            "Error checking if dropped file is a directory.\n"
+            "This usually happens when the text encoding is not UTF8/16."
+        );
+        // tinyfd_notifyPopup("Error checking if dropped file is a directory",
+        //                    "This usually happens when the text encoding is not UTF8/16.",
+        //                    "info");
         printf("error checking if file_name is directory");
         return std::nullopt;
     }
 
-    if (is_directory)
-    {
-        bool is_subdirectory = false;
-        bool multiple_files  = false;
-        for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
-        {
-            is_subdirectory = file.is_directory(error);
-            if (error) {
-                // TODO: convert to popup? warning
-                printf("error when checking if file_name is directory");
-                return std::nullopt;
-            }
-            if (is_subdirectory) {
-                // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
-                std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
-
-                if (!images.empty()) {
-                    open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-                }
-
-                continue;
-            }
-            else {
-                animation_images.push_back(file);
-            }
-        }
-        if (is_subdirectory) {
-            return true;
-        }
-        else {
-            if (animation_images.empty()) {
-                return false;
-            }
-            else {
-                return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-            }
-        }
-    } else {
+    if (!is_directory) {
         return false;
     }
+    bool is_subdirectory = false;
+    bool multiple_files  = false;
+    for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
+    {
+        is_subdirectory = file.is_directory(error);
+        if (error) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] handle_directory_drop()\n\n"
+                "Error when checking if file_name is directory."
+            );
+            printf("error when checking if file_name is directory");
+            return std::nullopt;
+        }
+        if (is_subdirectory) {
+            // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
+            std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
+
+            if (!images.empty()) {
+                open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
+            }
+
+            continue;
+        }
+        else {
+            animation_images.push_back(file);
+        }
+    }
+    if (is_subdirectory) {
+        return true;
+    }
+    else {
+        if (animation_images.empty()) {
+            return false;
+        }
+        else {
+            return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
+        }
+    }
+
 }
 
 void prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
@@ -774,44 +788,61 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     else {
         Surface* temp_surface = nullptr;
         temp_surface = Load_File_to_RGBA(F_Prop->Opened_File);
-        if (temp_surface) {
-
-            F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
-            if (!F_Prop->img_data.ANM_dir) {
-                printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
-            } else {
-                //initialize the allocated memory?
-                new (img_data->ANM_dir) ANM_Dir[6];
-            }
-
-            F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame *)malloc(sizeof(ANM_Frame));
-            if (!F_Prop->img_data.ANM_dir->frame_data) {
-                printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
-            } else {
-                new (img_data->ANM_dir->frame_data) ANM_Frame;
-            }
-
-            F_Prop->img_data.ANM_dir->frame_data->frame_start = temp_surface;
-
-            if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
-                F_Prop->img_data.width = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-                F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
-                F_Prop->img_data.ANM_dir->num_frames = 1;
-
-                F_Prop->img_data.type = OTHER;
-
-                // TODO: rewrite this function
-                F_Prop->file_open_window 
-                    = Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
-                                   &F_Prop->img_data.FRM_texture);
-
-                init_framebuffer(img_data);
-                //assign display direction to same as image slot so we can see the image on load
-                img_data->display_orient_num = NE;
-            }
-        } else {
+        if (!temp_surface) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to load image."
+            );
             printf("Unable to load image: %s\n", F_Prop->Opened_File);
             return false;
+        }
+
+        F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
+        if (!F_Prop->img_data.ANM_dir) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to allocate memory for ANM_dir."
+            );
+            printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+            return false;
+        }
+        //initialize allocated memory
+        new (img_data->ANM_dir) ANM_Dir[6];
+
+        F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame *)malloc(sizeof(ANM_Frame));
+        if (!F_Prop->img_data.ANM_dir->frame_data) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to allocate memory for ANM_Frame."
+            );
+            printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
+            free(F_Prop->img_data.ANM_dir);
+            return false;
+        } else {
+            new (img_data->ANM_dir->frame_data) ANM_Frame;
+        }
+
+        F_Prop->img_data.ANM_dir->frame_data->frame_start = temp_surface;
+
+        if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
+            F_Prop->img_data.width = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
+            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
+            F_Prop->img_data.ANM_dir->num_frames = 1;
+
+            F_Prop->img_data.type = OTHER;
+
+            // TODO: rewrite this function
+            F_Prop->file_open_window 
+                = Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                                &F_Prop->img_data.FRM_texture);
+
+            init_framebuffer(img_data);
+            //assign display direction to same as image slot
+            //so we can see the image on load
+            img_data->display_orient_num = NE;
         }
     }
 
@@ -820,6 +851,11 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     {
         if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
         {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to open image file."
+            );
             printf("Unable to open image file %s!\n", F_Prop->Opened_File);
             return false;
         }

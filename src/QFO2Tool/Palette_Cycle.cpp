@@ -2,6 +2,7 @@
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
 #include "tinyfiledialogs.h"
+#include "ImGui_Warning.h"
 #ifdef QFO2_WINDOWS
     #include <Windows.h>
 #elif defined(QFO2_LINUX)
@@ -53,59 +54,57 @@ double g_dwLastCycleVeryFast = 0;
 
 void update_palette_array(float* palette, double CurrentTime, bool* Palette_Update)
 {
-    {
-        uint16_t g_dwCycleSpeedFactor = 1;
+    uint16_t g_dwCycleSpeedFactor = 1;
 
-        if (CurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
-            // Slime        ///////////////////////////////////////////////////////
-            Color_Cycle(palette, &g_dwSlimeCurrent, 229, g_nSlime, 3);
-            // Fire_slow    ///////////////////////////////////////////////////////
-            Color_Cycle(palette, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
-            // Shoreline    ///////////////////////////////////////////////////////
-            Color_Cycle(palette, &g_dwShorelineCurrent, 248, g_nShoreline, 5);
+    if (CurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
+        // Slime        ///////////////////////////////////////////////////////
+        Color_Cycle(palette, &g_dwSlimeCurrent, 229, g_nSlime, 3);
+        // Fire_slow    ///////////////////////////////////////////////////////
+        Color_Cycle(palette, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
+        // Shoreline    ///////////////////////////////////////////////////////
+        Color_Cycle(palette, &g_dwShorelineCurrent, 248, g_nShoreline, 5);
 
-            g_dwLastCycleSlow = CurrentTime;
-            *Palette_Update = true;
-        }
+        g_dwLastCycleSlow = CurrentTime;
+        *Palette_Update = true;
+    }
 
-        if (CurrentTime - g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
-            // Fire_fast    ///////////////////////////////////////////////////////
-            Color_Cycle(palette, &g_dwFireFastCurrent, 243, g_nFireFast, 4);
+    if (CurrentTime - g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
+        // Fire_fast    ///////////////////////////////////////////////////////
+        Color_Cycle(palette, &g_dwFireFastCurrent, 243, g_nFireFast, 4);
 
-            g_dwLastCycleMedium = CurrentTime;
-            *Palette_Update = true;
-        }
+        g_dwLastCycleMedium = CurrentTime;
+        *Palette_Update = true;
+    }
 
-        if (CurrentTime - g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
-            // Monitors     ///////////////////////////////////////////////////////
-            Color_Cycle(palette, &g_dwMonitorsCurrent, 233, g_nMonitors, 4);
+    if (CurrentTime - g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
+        // Monitors     ///////////////////////////////////////////////////////
+        Color_Cycle(palette, &g_dwMonitorsCurrent, 233, g_nMonitors, 4);
 
-            g_dwLastCycleFast = CurrentTime;
-            *Palette_Update = true;
-        }
+        g_dwLastCycleFast = CurrentTime;
+        *Palette_Update = true;
+    }
 
-        if (CurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
-            // Blinking red ///////////////////////////////////////////////////////
-            //TODO: need to fix this color cycle...doesn't update in ImGui correctly yet
-            if ((g_nBlinkingRedCurrent == 0) || (g_nBlinkingRedCurrent == 60*4))
-            { g_nBlinkingRed = -g_nBlinkingRed; }
+    if (CurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
+        // Blinking red ///////////////////////////////////////////////////////
+        //TODO: need to fix this color cycle...doesn't update in ImGui correctly yet
+        if ((g_nBlinkingRedCurrent == 0) || (g_nBlinkingRedCurrent == 60*4))
+        { g_nBlinkingRed = -g_nBlinkingRed; }
 
-            palette[254*3+0] = (g_nBlinkingRedCurrent + g_nBlinkingRed) / 255.0f;
-            palette[254*3+1] = 0;
-            palette[254*3+2] = 0;
+        palette[254*3+0] = (g_nBlinkingRedCurrent + g_nBlinkingRed) / 255.0f;
+        palette[254*3+1] = 0;
+        palette[254*3+2] = 0;
 
-            /* color value range
-              0,  16,  32,  48,
-             64,  80,  96, 112,
-            128, 142, 160, 176,
-            192, 208, 224, 240
-            */
+        /* color value range
+          0,  16,  32,  48,
+         64,  80,  96, 112,
+        128, 142, 160, 176,
+        192, 208, 224, 240
+        */
 
-            g_nBlinkingRedCurrent += g_nBlinkingRed;
+        g_nBlinkingRedCurrent += g_nBlinkingRed;
 
-            g_dwLastCycleVeryFast = CurrentTime;
-            *Palette_Update = true;
-        }
+        g_dwLastCycleVeryFast = CurrentTime;
+        *Palette_Update = true;
     }
 }
 
@@ -143,13 +142,24 @@ bool load_palette_to_float_array(float* palette, char* exe_path)
 #ifdef QFO2_WINDOWS
     errno_t error = _wfopen_s(&File_ptr, tinyfd_utf8to16(path_buffer), L"rb");
     if (error != 0) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] load_palette_to_float_array()\n\n"
+            "Can't open palette file."
+        );
         printf("error %d, can't open palette", error);
         return false;
     }
 #elif defined(QFO2_LINUX)
     File_ptr = fopen(path_buffer, "rb");
     if (File_ptr == NULL) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] load_palette_to_float_array()\n\n"
+            "Can't open palette file."
+        );
         printf("error %d, can't open palette\n%s", errno, strerror(errno));
+        return false;
     }
 #endif
 
@@ -163,25 +173,25 @@ bool load_palette_to_float_array(float* palette, char* exe_path)
     }
 
     fclose(File_ptr);
-    if (uint8_t_data) {
-        for (int i = 0; i < 765; i++)
-        {
-            if (uint8_t_data[i] < 64) {
-                uint8_t_data[i] *= 4;
-            }
-        }
-        for (int i = 765; i < 768; i++)
-        {
-            uint8_t_data[i] = 0;
-        }
-        for (int i = 0; i < 256 * 3; i++)
-        {
-            palette[i] = uint8_t_data[i] / 255.0;
-        }
-        return true;
-    }
-    else {
+    if (!uint8_t_data) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] load_palette_to_float_array()\n\n"
+            "Palette file opened, but couldn't read?"
+        );
         printf("Palette file opened, but couldn't read?");
         return false;
     }
+    for (int i = 0; i < 765; i++) {
+        if (uint8_t_data[i] < 64) {
+            uint8_t_data[i] *= 4;
+        }
+    }
+    for (int i = 765; i < 768; i++) {
+        uint8_t_data[i] = 0;
+    }
+    for (int i = 0; i < 256 * 3; i++) {
+        palette[i] = uint8_t_data[i] / 255.0;
+    }
+    return true;
 }

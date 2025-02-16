@@ -75,11 +75,14 @@ void Edit_Image(variables* My_Variables,
     int orient    = edit_data->display_orient_num;
     Surface* edit_FRM_srfc = edit_struct[orient].edit_frame[frame_num];
 
-    if (edit_data->FRM_dir) {
-        if (edit_data->FRM_dir[orient].frame_data == NULL) {
-            ImGui::Text("No frame_data");
-            return;
-        }
+    if (!edit_data->FRM_dir) {
+        ImGui::Text("No FRM_dir");
+        return;
+    }
+    if (edit_data->FRM_dir[orient].frame_data == NULL) {
+        ImGui::Text("No frame_data");
+        return;
+    }
         // else {
             // // animate_FRM_to_framebuff(
             // //     shaders->palette,
@@ -98,10 +101,7 @@ void Edit_Image(variables* My_Variables,
             //     My_Variables->Palette_Update
             // );
         // }
-    } else {
-        ImGui::Text("No FRM_dir");
-        return;
-    }
+
 
 
     //TODO: zoom display and other info needs to be its own function call
