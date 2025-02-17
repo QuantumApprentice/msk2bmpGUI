@@ -221,6 +221,7 @@ void Clear_img_data(image_data* img_data)
         free(img_data->ANM_dir);
         img_data->ANM_dir = NULL;
     }
+    img_data->type = UNK;
 }
 
 void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)

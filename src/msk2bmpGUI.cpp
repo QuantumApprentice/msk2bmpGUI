@@ -510,7 +510,6 @@ int main(int argc, char** argv)
 //global dropped_files* all_dropped_files
 void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
 {
-
     size_t size = 0;
     //get total length of all strings
     for (int i = 0; i < count; i++)
