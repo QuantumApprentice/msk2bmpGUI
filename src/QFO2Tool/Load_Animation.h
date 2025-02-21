@@ -30,7 +30,7 @@ struct ANM_Frame {
     uint32_t Frame_Size;
     int16_t  Shift_Offset_x;
     int16_t  Shift_Offset_y;
-    Surface* frame_start;
+    Surface* frame_start = NULL;
 };
 
 enum Direction
@@ -48,7 +48,8 @@ struct ANM_Dir {
     int num_frames = 0;
     Direction orientation = no_data;
     ANM_Frame* frame_data = NULL;
-    rectangle bounding_box = {};
+    rectangle bounding_box = {};    //TODO: remove this
+    rectangle* frame_box = {};
 };
 
 struct LF;

@@ -763,25 +763,48 @@ bool FRx_check(char *ext)
 //TODO: maybe combine with Supported_Format()?
 bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, const char *file_name)
 {
+    //TODO: make a function that checks if image has a different palette
+    //      besides the default Fallout 1/2 palette
+    //      also need to convert all float* palettes to Palette*
     prep_extension(F_Prop, NULL, file_name);
     // FRx_check checks extension to make sure it's one of the FRM variants (FRM, FR0, FR1...FR5)
     if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL
-        F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data);
+        F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data, shaders);
         F_Prop->img_data.type = FRM;
 
-        draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
-                                img_data->framebuffer, img_data->FRM_texture);
+        // draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
+        //                         img_data->framebuffer, img_data->FRM_texture);
     }
     else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
         F_Prop->file_open_window = Load_MSK_Tile_Surface(F_Prop->Opened_File, img_data);
         F_Prop->img_data.type = MSK;
         init_framebuffer(img_data);
-
-        draw_MSK_to_framebuffer(shaders->palette,
-                                shaders->render_FRM_shader,
-                                &shaders->giant_triangle,
-                                img_data);
+        bool success = false;
+        success = framebuffer_init(&F_Prop->img_data.render_texture, &F_Prop->img_data.framebuffer, 350, 300);
+        if (!success) {
+            set_popup_warning(
+                "[ERROR] Load_MSK_File_SURFACE\n\n"
+                "Image framebuffer failed to attach correctly?"
+            );
+            printf("image framebuffer failed to attach correctly?\n");
+            return false;
+        }
+        SURFACE_to_texture(
+            img_data->MSK_srfc,
+            img_data->MSK_texture,
+            350, 300, 1);
+        draw_texture_to_framebuffer(
+            shaders->palette,
+            shaders->render_FRM_shader,
+            &shaders->giant_triangle,
+            img_data->framebuffer,
+            img_data->MSK_texture, 350, 300);
+        // draw_MSK_to_framebuffer(
+        //     shaders->palette,
+        //     shaders->render_FRM_shader,
+        //     &shaders->giant_triangle,
+        //     img_data);
     }
     // do this for all other more common (generic) image types
     // TODO: add another type for known generic image types?

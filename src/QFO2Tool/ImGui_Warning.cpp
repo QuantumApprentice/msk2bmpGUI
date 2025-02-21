@@ -31,7 +31,7 @@ void set_popup_warning(const char* str)//, const char* name)
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 }
 
-void popup_warnings()//const char* modal_name, const char* str)
+void show_popup_warnings()//const char* modal_name, const char* str)
 {
     if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_MenuBar))
     {

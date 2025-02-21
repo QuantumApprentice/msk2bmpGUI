@@ -44,16 +44,16 @@ struct FRM_Dir {
 };
 
 struct image_data {
-    FRM_Header* FRM_hdr = NULL;
-    FRM_Dir*    FRM_dir = NULL;
-    rectangle FRM_bounding_box[6];
+    FRM_Header* FRM_hdr = NULL;     //same as FRM_data
+    FRM_Dir*    FRM_dir = NULL;     //TODO: remove
+    rectangle FRM_bounding_box[6];  //TODO: remove
 
     ANM_Header* ANM_hdr = NULL;
     ANM_Dir*    ANM_dir = NULL;
     rectangle ANM_bounding_box[6];
 
     img_type type     = UNK;
-    uint8_t* FRM_data = NULL;
+    uint8_t* FRM_data = NULL;       //same as FRM_hdr
     uint8_t* MSK_data = NULL;
     Surface* MSK_srfc = NULL;
 
@@ -76,7 +76,8 @@ struct image_data {
 };
 
 //FRM loading
+bool framebuffer_init(GLuint* texture, GLuint* framebuffer, int w, int h);
 bool init_framebuffer(struct image_data* img_data);
-bool load_FRM_OpenGL(const char* file_name, image_data* img_data);
-void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box, FRM_Frame* frame_start, FRM_Dir* frm_dir, int i, int j);
+bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* shaders);
+void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box, FRM_Frame* frame_start, rectangle* box);//, FRM_Dir* frm_dir, int i, int j);
 bool Render_FRM0_OpenGL(image_data* img_data, int dir);

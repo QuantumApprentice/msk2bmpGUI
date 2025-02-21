@@ -180,6 +180,7 @@ int main(int argc, char** argv)
 
     bool success = load_palette_to_float_array(My_Variables.shaders.palette, My_Variables.exe_directory);
     if (!success) { printf("failed to load palette to float array for OpenGL\n"); }
+    My_Variables.shaders.pal = My_Variables.FO_Palette;
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
 
@@ -412,6 +413,7 @@ int main(int argc, char** argv)
                     My_Variables.window_number_focus = -1;
                     My_Variables.edit_image_focused = false;
                 }
+                show_popup_warnings();
 
             ImGui::End();
 
@@ -464,7 +466,6 @@ int main(int argc, char** argv)
             }
         }
 
-        popup_warnings();
         // Rendering
         ImGui::Render();
         glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
@@ -542,8 +543,8 @@ void dropped_files_callback(GLFWwindow* window, int count, const char** paths)
 
 void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter)
 {
-    shader_info* shaders = &My_Variables->shaders;
-    Palette* pxlFMT_FO_Pal = My_Variables->FO_Palette;
+    shader_info* shaders      = &My_Variables->shaders;
+    Palette* pxlFMT_FO_Pal    = My_Variables->FO_Palette;
 
     //TODO: store image/editing info in the window itself
     //shortcuts...possibly replace variables* with just LF*
@@ -602,7 +603,8 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         if (F_Prop->img_data.type == FRM) {
             //show the original image for previewing
             //TODO: finish setting up usr.info.show_image_stats in settings config in menu
-            Preview_FRM_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            // Preview_FRM_Image(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
+            preview_FRM_SURFACE(My_Variables, &F_Prop->img_data, (F_Prop->show_stats || usr_info.show_image_stats));
 
             //gui video controls
             Gui_Video_Controls(&F_Prop->img_data, F_Prop->img_data.type);
@@ -622,7 +624,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         Next_Prev_Buttons(F_Prop, &F_Prop->img_data, shaders);
 
     }
-    popup_warnings();
+    show_popup_warnings();
     ImGui::End();
 
     // Preview tiles from red boxes
@@ -754,7 +756,18 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
 //      probably in a different function?
 void init_edit_struct(Edit_Surface* edit_struct, image_data* edit_data, Palette* palette)
 {
-    // if (edit_data->FRM_data)
+    //this is for editing MSK files when loading them solo
+    if (!edit_data->FRM_dir) {
+        // edit_data->display_orient_num = 0;
+        // edit_data->FRM_hdr
+        edit_struct[0].edit_frame = (Surface**)malloc(sizeof(Surface*));
+        edit_struct[0].edit_frame[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
+        edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir*));
+        edit_data->FRM_dir[0].orientation = NE;
+
+        return;
+    }
+
     for (int dir = 0; dir < 6; dir++) {
         int num_frames = edit_data->FRM_dir[dir].num_frames;
         edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
@@ -813,7 +826,7 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 
     image_data* edit_data = &F_Prop->edit_data;
     static Edit_Surface edit_struct[6];
-    if (!edit_struct[0].edit_frame) {
+    if (!edit_struct[0].edit_frame) {// && F_Prop->img_data.type != MSK) {
         init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
     }
     static Surface edit_MSK_srfc;
@@ -1168,7 +1181,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         ImGui::Separator();
 
-        if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+        // if (F_Prop->img_data.type == FRM && F_Prop->img_data.FRM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
+        if (F_Prop->img_data.type == FRM && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Save as Animation...")) {
                 open_window = true;
                 data_ptr = &F_Prop->img_data;

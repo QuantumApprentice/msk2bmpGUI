@@ -17,7 +17,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     std::sort(path_set.begin(), path_set.end());
 
     snprintf(direction, MAX_PATH, "%s", (*path_set.begin()).parent_path().filename().u8string().c_str());
-    //TODO: test this!          8==D
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", (*path_set.begin()).parent_path().parent_path().u8string().c_str());
 
     // store filepaths in this directory for navigating through
@@ -32,18 +31,20 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     F_Prop->c_name    = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
-    Direction temp_orient = assign_direction(direction);
+    Direction temp_orient = assign_direction(direction);    //folder name direction (NE/E/SE/SW/W/NW)
     int num_frames = path_set.size();
     if (img_data->ANM_dir == NULL) {
         img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
         if (!img_data->ANM_dir) {
             //TODO: log out to txt file
-            set_popup_warning("Unable to allocate enough memory");
-            printf("Unable to allocate enough memory\n");
+            set_popup_warning(
+                "[ERROR] Drag_Drop_Load_Animation()\n\n"
+                "Unable to allocate enough memory."
+            );
+            printf("Unable to allocate enough memory : L%d\n", __LINE__);
             return false;
-        } else {
-            new(img_data->ANM_dir) ANM_Dir[6];
         }
+        new(img_data->ANM_dir) ANM_Dir[6];
     }
 
 
@@ -61,12 +62,14 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
     if (!frame_data) {
         //TODO: log out to txt file
-        set_popup_warning("Unable to allocate enough memory");
-        printf("Unable to allocate enough memory");
+        set_popup_warning(
+            "[ERROR] Drag_Drop_Load_Animation()\n\n"
+            "Unable to allocate enough memory"
+        );
+        printf("Unable to allocate enough memory L%d\n", __LINE__);
         return false;
-    } else {
-        img_data->ANM_dir[temp_orient].frame_data = frame_data;
     }
+    img_data->ANM_dir[temp_orient].frame_data = frame_data;
 
     //iterate over images in directory provided and assign to frame_data[]
     int i = 0;
@@ -110,17 +113,21 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         if (!success) {
             //TODO: log out to txt file
             set_popup_warning(
-                "image framebuffer failed to attach correctly?\n"
+                "[ERROR] Drag_Drop_Load_Animation()\n\n"
+                "Image framebuffer failed to attach correctly?\n"
             );
-            printf("image framebuffer failed to attach correctly?\n");
+            printf("Image framebuffer failed to attach correctly: L%d\n", __LINE__);
             return false;
         }
         return true;
     }
     else {
         //TODO: log out to txt file
-        set_popup_warning("FRM image didn't load...\n");
-        printf("FRM image didn't load...\n");
+        set_popup_warning(
+            "[ERROR] Drag_Drop_Load_Animation()\n\n"
+            "FRM image didn't load..."
+        );
+        printf("FRM image didn't load : L%d\n", __LINE__);
         return false;
     }
 
@@ -158,14 +165,16 @@ void set_directions(const char** names_array, image_data* img_data)
 
     for (int i = 0; i < 6; i++)
     {
-        if (img_data->type == OTHER) {
+        //TODO: refactor this to remove this wacky pointer address thingy
+        // if (img_data->type == OTHER) {
             dir_ptr = &img_data->ANM_dir[i].orientation;
-        }
-        else if (img_data->type == FRM ) {
-            dir_ptr = &img_data->FRM_dir[i].orientation;
-        }
+        // }
+        // else if (img_data->type == FRM) {
+        //     dir_ptr = &img_data->FRM_dir[i].orientation;
+        // }
         assert(dir_ptr != NULL && "Not FRM or OTHER?");
         switch (*dir_ptr)
+        // switch(dir)
         {
         case(NE):
             names_array[i] = "NE";
@@ -256,6 +265,7 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
                 "but is not in Supported_Format().\n"
                 "Please report this bug so I can fix it. :)"
             );
+            printf("File type not officially supported yet, %s : L%d\n", current_file, __LINE__);
         }
     }
 
@@ -268,11 +278,13 @@ void Next_Prev_Buttons(LF* F_Prop, image_data* img_data, shader_info* shaders)
             current_file    = F_Prop->Prev_File;
             check_file_type = true;
         } else {
+            //TODO: log to file
             set_popup_warning(
                 "Found a file type that stb_image can load,\n"
                 "but is not in Supported_Format().\n"
                 "Please report this bug so I can fix it. :)"
             );
+            printf("File type not officially supported yet, %s : L%d\n", current_file, __LINE__);
         }
     }
 
@@ -300,12 +312,14 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
     const char* speeds[] = { "Pause", "1/4x", "1/2x", "Play", "2x" };
     ImGui::Combo("Playback Speed", &img_data->playback_speed, speeds, IM_ARRAYSIZE(speeds));
 
-    //populate directions[] only with existing directions
-    const char* directions[6];
-    set_directions(directions, img_data);
-    ImGui::Combo("Direction", &img_data->display_orient_num, directions, IM_ARRAYSIZE(directions));
-    int max_frame = 0;
+    if (!type == MSK) { //TODO: this shouldn't be necessary for MSK files (or others)
+        //populate directions[] only with existing directions
+        const char* directions[6];
+        set_directions(directions, img_data);
+        ImGui::Combo("Direction", &img_data->display_orient_num, directions, IM_ARRAYSIZE(directions));
+    }
 
+    int max_frame = 0;
     if (ImGui::IsWindowFocused()) {
         if (ImGui::IsKeyPressed(ImGuiKey_Space)) {
             static int last_selected_speed = 3;         //3 is index value for 1.0x speed in playback_speeds[]
@@ -348,8 +362,11 @@ void Gui_Video_Controls(image_data* img_data, img_type type)
         ImGui::SliderInt("Frame Number", &img_data->display_frame_num, 0, max_frame, NULL);
     }
     else if (type == FRM) {
-        if (img_data->FRM_dir[img_data->display_orient_num].num_frames > 0) {
-            max_frame = img_data->FRM_dir[img_data->display_orient_num].num_frames - 1;
+        // if (img_data->FRM_dir[img_data->display_orient_num].num_frames > 0) {
+        //     max_frame = img_data->FRM_dir[img_data->display_orient_num].num_frames - 1;
+        // }
+        if (img_data->ANM_dir[img_data->display_orient_num].num_frames > 0) {
+            max_frame = img_data->ANM_dir[img_data->display_orient_num].num_frames - 1;
         }
         else {
             img_data->display_frame_num = 0;

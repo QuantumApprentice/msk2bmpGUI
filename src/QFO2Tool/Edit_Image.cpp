@@ -73,16 +73,36 @@ void Edit_Image(variables* My_Variables,
     //handle frame display by orientation and number
     int frame_num = edit_data->display_frame_num;
     int orient    = edit_data->display_orient_num;
-    Surface* edit_FRM_srfc = edit_struct[orient].edit_frame[frame_num];
 
-    if (!edit_data->FRM_dir) {
+
+
+
+    Surface* edit_FRM_srfc;// = edit_struct[orient].edit_frame[frame_num];
+    if (edit_struct) {
+        edit_FRM_srfc = edit_struct[orient].edit_frame[frame_num];
+    } else {
+        
+    }
+
+    if (!edit_data->ANM_dir) {
         ImGui::Text("No FRM_dir");
         return;
     }
-    if (edit_data->FRM_dir[orient].frame_data == NULL) {
+    if (edit_data->ANM_dir[orient].frame_data == NULL) {
         ImGui::Text("No frame_data");
         return;
     }
+
+
+
+    // if (!edit_data->FRM_dir) {
+    //     ImGui::Text("No FRM_dir");
+    //     return;
+    // }
+    // if (edit_data->FRM_dir[orient].frame_data == NULL) {
+    //     ImGui::Text("No frame_data");
+    //     return;
+    // }
         // else {
             // // animate_FRM_to_framebuff(
             // //     shaders->palette,
@@ -102,7 +122,35 @@ void Edit_Image(variables* My_Variables,
             // );
         // }
 
+    bool image_edited = false;
+    if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
 
+        float scale = edit_data->scale;
+        int width   = edit_data->width;
+        int height  = edit_data->height;
+        ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
+
+        float x, y;
+        x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
+        y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
+
+        if ((0 <= x && x <= img_size.x) || (0 <= y && y <= img_size.y)) {
+            image_edited = true;
+
+            Surface* srfc_ptr = edit_FRM_srfc;
+            GLuint texture = edit_data->FRM_texture;
+            if (edit_MSK) {
+                srfc_ptr = edit_MSK_srfc;
+                texture  = edit_data->MSK_texture;
+            }
+            //paint MSK surface
+            // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
+            surface_paint(My_Variables, edit_data, srfc_ptr);
+            //MSK & FRM are aligned to 1-byte
+            SURFACE_to_texture(srfc_ptr, texture,
+                                srfc_ptr->w, srfc_ptr->h, 1);
+        }
+    }
 
     //TODO: zoom display and other info needs to be its own function call
     //      window_info()? window_stats()? image_stats()?
@@ -120,25 +168,8 @@ void Edit_Image(variables* My_Variables,
         memcpy(edit_FRM_srfc->pxls, frame_data->frame_start, w*h);
 
         // BlitSurface(edit_data->FRM_dir[orient].frame_data[frame_num])
-        SURFACE_to_texture(edit_FRM_srfc->pxls, edit_data->FRM_texture,
+        SURFACE_to_texture(edit_FRM_srfc, edit_data->FRM_texture,
                             edit_FRM_srfc->w, edit_FRM_srfc->h, 1);
-    }
-
-    bool image_edited = false;
-    if (ImGui::GetIO().MouseDown[0] && ImGui::IsWindowFocused()) {
-        image_edited = true;
-        Surface* srfc_ptr = edit_FRM_srfc;
-        GLuint texture = edit_data->FRM_texture;
-        if (edit_MSK) {
-            srfc_ptr = edit_MSK_srfc;
-            texture  = edit_data->MSK_texture;
-        }
-        //paint MSK surface
-        // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
-        surface_paint(My_Variables, edit_data, srfc_ptr);
-        //MSK & FRM are aligned to 1-byte
-        SURFACE_to_texture(edit_MSK_srfc->pxls, edit_data->MSK_texture,
-                            edit_MSK_srfc->w, edit_MSK_srfc->h, 1);
     }
 
     //Converts unpalettized image to texture for display
@@ -462,6 +493,21 @@ void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit
 //TODO: repack all the x&y variables into vectors of appropriate type (int/float)
 void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc)
 {
+    float scale = edit_data->scale;
+    int width   = edit_data->width;
+    int height  = edit_data->height;
+    ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
+
+    float x, y;
+    x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
+    y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
+
+    // if (!(0 <= x && x <= img_size.x) || !(0 <= y && y <= img_size.y)) {
+    //     return;
+    // }
+
+
+
     int color_pick = My_Variables->Color_Pick;
     float brush_w  = My_Variables->brush_size.x;
     float brush_h  = My_Variables->brush_size.y;
@@ -474,18 +520,12 @@ void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit
     int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
 
 
-    float scale = edit_data->scale;
-    int width   = edit_data->width;
-    int height  = edit_data->height;
-    ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
 
 
-    float x, y;
-    x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
-    y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
 
 
-    if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
+
+    // if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
         //clamp brush to edge when close enough
         if ((x + brush_w / 2) > width) {
             x = width - brush_w / 2;
@@ -513,7 +553,7 @@ void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit
 
         Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
         PaintSurface(edit_srfc, dst_rect, color_pick);
-    }
+    // }
 }
 
 void brush_size_handler(variables* My_Variables)

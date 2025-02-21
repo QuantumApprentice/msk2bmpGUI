@@ -183,7 +183,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
                 frm_frame_ptrs[j] = frame_data;
                 free(data);
 
-                calculate_bounding_box(&bounding_box, &FRM_bounding_box, frm_frame_ptrs[j], FRM_dir, i, j);
+                calculate_bounding_box(&bounding_box, &FRM_bounding_box, frm_frame_ptrs[j], &FRM_dir[i].bounding_box[j]);// FRM_dir, i, j);
 
                 if (free_surface) {
                     FreeSurface(Surface_32);

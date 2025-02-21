@@ -13,7 +13,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
 void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, Surface* edit_srfc,
                               uint64_t current_time, bool palette_update);
-void SURFACE_to_texture(uint8_t* pxls, GLuint texture, int width, int height, int alignment);
+void SURFACE_to_texture(Surface* src, GLuint texture, int width, int height, int alignment);
 void SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int x_offset, int y_offset,
                         int frm_width, int frm_height,
@@ -23,3 +23,4 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader, mesh* triangle, str
 void draw_MSK_to_framebuffer(float* palette, Shader* shader, mesh* triangle, struct image_data* img_data);
 void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, uint64_t current_time);
 void render_NULL_OpenGL(image_data* img_data, mesh* triangle, Shader* shader, int width, int height);
+void draw_texture_to_framebuffer(float* palette, Shader* shader, mesh* triangle, GLuint framebuffer, GLuint texture, int w, int h);

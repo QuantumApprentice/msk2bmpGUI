@@ -47,3 +47,4 @@ bool Image2Texture(Surface* surface, GLuint* texture);
 void Prep_Image(LF* F_Prop, Palette* palette, int color_match, bool* window, bool alpha_off = false);
 bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type type);
 bool checkbox_handler(const char* text, bool* alpha);
+GLuint init_texture(Surface* src, int w, int h, img_type type);

@@ -12,6 +12,9 @@ Surface* Create_RGBA_Surface(int width, int height)
 {
     int size = sizeof(Surface) + width*height*4;
     Surface* surface = (Surface*)malloc(size);
+    if (!surface) {
+        return NULL;
+    }
     surface->w = width;
     surface->h = height;
     surface->channels = 4;
@@ -25,12 +28,15 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
 {
     int size = sizeof(Surface) + width*height;
     Surface* surface = (Surface*)malloc(size);
-    surface->w = width;
-    surface->h = height;
+    if (!surface) {
+        return NULL;
+    }
+    surface->w        = width;
+    surface->h        = height;
     surface->channels = 1;
     surface->pitch    = width;
     surface->palette  = palette;
-    surface->pxls     = ((uint8_t*)surface) + sizeof(Surface);
+    surface->pxls     = ((uint8_t*)surface) + sizeof(Surface); 
 
     return surface;
 }
@@ -47,6 +53,9 @@ void FreeSurface(Surface* src)
 Surface* Convert_Surface_to_RGBA(Surface* src)
 {
     Surface* RGBA_surface = Create_RGBA_Surface(src->w, src->h);
+    if (!RGBA_surface) {
+        return NULL;
+    }
 
     Color* dst_pxl = (Color*)RGBA_surface->pxls;
     uint8_t* src_pxl = src->pxls;
@@ -82,20 +91,14 @@ Surface* Convert_Surface_to_RGBA(Surface* src)
     return RGBA_surface;
 }
 
+// loads stbi recognized image to Surface*
+// returns NULL on fail
+// always 4 channels even though stbi tracks original image number
 Surface* Load_File_to_RGBA(const char* filename)
 {
     int w, h, channels;
     uint8_t* pxls = (uint8_t*)stbi_load(filename, &w, &h, &channels, 4);
     if (!pxls) {return nullptr;}
-    if (channels != 4) {
-        //TODO: log to file
-        set_popup_warning(
-            "[ERROR] Load_File_to_RGBA()\n\n"
-            "stbi loaded this image with something\n"
-            "other than 4 channels, need to look into"
-        );
-        printf("stbi loaded this image with %d channels: %s\n", channels, filename);
-    }
 
     Surface* surface = (Surface*)malloc(sizeof(Surface));
     if (!surface) {
@@ -103,7 +106,7 @@ Surface* Load_File_to_RGBA(const char* filename)
     }
     surface->w        = w;
     surface->h        = h;
-    surface->channels = 4; //why not =channels? TODO: JPG returns 3 channels?!!!
+    surface->channels = 4;
     surface->pitch    = w*4;
     surface->pxls     = pxls;
 
@@ -127,6 +130,26 @@ void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect)
         src_pxls += src->pitch;
         dst_pxls += dst->pitch;
     }
+}
+
+//returns copy of surface
+Surface* Copy8BitSurface(Surface* src)
+{
+    if (!src) {
+        return NULL;
+    }
+    Surface* dst = Create_8Bit_Surface(src->w, src->h, src->palette);
+    if (!dst) {
+        return NULL;
+    }
+    memcpy(dst->pxls, src->pxls, src->w*src->h);
+    dst->channels = src->channels;
+    dst->palette  = src->palette;
+    dst->pitch    = src->pitch;
+    dst->w        = src->w;
+    dst->h        = src->h;
+
+    return dst;
 }
 
 //sets dst->pxls to 'color' palette index
