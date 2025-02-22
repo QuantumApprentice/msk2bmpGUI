@@ -364,20 +364,9 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
 
     int alignment = 1;      //FRM & MSK
     int pxl_type  = GL_RED; //FRM & MSK
-
-    //assign texture back into edit_data
-    // if (type == FRM) {
-    //     // edit_data->FRM_texture = texture;
-    // }
-    // if (type == MSK) {
-    //     // edit_data->MSK_texture = texture;
-    // }
-    if (type == OTHER) {
+    if (type == OTHER) {    //everything else
         alignment = 4;
         pxl_type  = GL_RGBA;
-        //TODO: not sure what I'm doing here yet
-        //      probably don't want to point to PAL_texture?
-        // edit_data->PAL_texture = texture;
     }
 
     GLuint texture = 0;
@@ -402,7 +391,7 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-    //control alignment of the image (FRM data needs 1-byte) when converted to texture
+    //control alignment of the image (FRM/MSK are 1-byte aligned) when converted to texture
     glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
     //bind FRM_data to FRM_texture for "indirect" editing
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, pxl_type, GL_UNSIGNED_BYTE, src->pxls);

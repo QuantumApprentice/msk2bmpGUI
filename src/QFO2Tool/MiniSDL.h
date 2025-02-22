@@ -34,7 +34,7 @@ typedef struct Surface {
 } Surface;
 
 
-struct Edit_Surface{
+struct Edit_Dir{
     Surface** edit_frame;
 };
 

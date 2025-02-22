@@ -8,6 +8,7 @@
 #include "src/QFO2Tool/FRM_Convert.cpp"
 #include "src/QFO2Tool/Image2Texture.cpp"
 #include "src/QFO2Tool/Image_Render.cpp"
+#include "src/QFO2Tool/ImGui_Warning.cpp"
 #include "src/QFO2Tool/Load_Animation.cpp"
 #include "src/QFO2Tool/Load_Files.cpp"
 #include "src/QFO2Tool/load_FRM_OpenGL.cpp"

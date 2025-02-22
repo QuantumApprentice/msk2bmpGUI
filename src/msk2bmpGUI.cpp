@@ -754,7 +754,48 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
 
 //TODO: need to add direct MSK file editing
 //      probably in a different function?
-void init_edit_struct(Edit_Surface* edit_struct, image_data* edit_data, Palette* palette)
+void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette* palette)
+{
+    //this is for editing MSK files when loading them solo
+    if (!edit_data->ANM_dir) {
+        // edit_data->display_orient_num = 0;
+        // edit_data->FRM_hdr
+        edit_struct[0].edit_frame = (Surface**)malloc(sizeof(Surface*));
+        edit_struct[0].edit_frame[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
+        edit_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir*));
+        edit_data->ANM_dir[0].orientation = NE;
+
+        return;
+    }
+
+    for (int dir = 0; dir < 6; dir++) {
+        int num_frames = edit_data->ANM_dir[dir].num_frames;
+        edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
+        
+
+        for (int frame = 0; frame < num_frames; frame++) {
+            if (edit_data->ANM_dir[dir].frame_data == NULL) {
+                break;
+            }
+
+            //TODO: maybe this needs to be "edit_data->FRM_dir[0].bounding_box.x1" etc?
+            //      doing this might make it easier to edit a frame (maybe fewer crashes?)
+            //      but doing this and painting outside the official Frame_Width/_Height would
+            //      have to be dealt with by expanding the _Width/_Height whenever this happens
+            //      AND give the user some feedback that this is happening
+            Surface* src = edit_data->ANM_dir[dir].frame_data[frame].frame_start;
+            Surface* dst = Create_8Bit_Surface(src->w, src->h, palette);
+
+            memcpy(dst->pxls, src->pxls, src->w*src->h);
+
+            edit_struct[dir].edit_frame[frame] = dst;
+        }
+    }
+}
+
+//TODO: need to add direct MSK file editing
+//      probably in a different function?
+void init_edit_struct(Edit_Dir* edit_struct, image_data* edit_data, Palette* palette)
 {
     //this is for editing MSK files when loading them solo
     if (!edit_data->FRM_dir) {
@@ -783,12 +824,13 @@ void init_edit_struct(Edit_Surface* edit_struct, image_data* edit_data, Palette*
             //      but doing this and painting outside the official Frame_Width/_Height would
             //      have to be dealt with by expanding the _Width/_Height whenever this happens
             //      AND give the user some feedback that this is happening
-            FRM_Frame* frame_data = edit_data->FRM_dir[dir].frame_data[frame];
-            int w = frame_data->Frame_Width;
-            int h = frame_data->Frame_Height;
+            FRM_Frame* src = edit_data->FRM_dir[dir].frame_data[frame];
+            Surface* dst = edit_struct[dir].edit_frame[frame];
+            int w = src->Frame_Width;
+            int h = src->Frame_Height;
 
             edit_struct[dir].edit_frame[frame] = Create_8Bit_Surface(w, h, palette);
-            memcpy(edit_struct[dir].edit_frame[frame]->pxls, frame_data->frame_start, w*h);
+            memcpy(dst->pxls, src->frame_start, w*h);
         }
     }
 }
@@ -825,9 +867,10 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     std::string name = a + " Edit Window...###edit" + b;
 
     image_data* edit_data = &F_Prop->edit_data;
-    static Edit_Surface edit_struct[6];
+    static Edit_Dir edit_struct[6];
     if (!edit_struct[0].edit_frame) {// && F_Prop->img_data.type != MSK) {
-        init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
+        // init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
+        init_edit_struct_ANM(edit_struct, edit_data, My_Variables->FO_Palette);
     }
     static Surface edit_MSK_srfc;
     if (!edit_MSK_srfc.pxls) {
@@ -846,7 +889,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     {
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
         if (F_Prop->show_stats) {
-            show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
+            // show_image_stats_FRM(&F_Prop->edit_data, My_Variables->Font);
+            show_image_stats_FRM_SURFACE(&F_Prop->edit_data, My_Variables->Font);
         }
 
         if (ImGui::IsWindowFocused()) {

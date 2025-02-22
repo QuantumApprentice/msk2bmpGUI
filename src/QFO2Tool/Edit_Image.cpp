@@ -25,8 +25,10 @@ void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
     //shortcuts
     int orient    = edit_data->display_orient_num;
     float scale = edit_data->scale;
-    int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
-    int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
+    // int width   = edit_data->FRM_bounding_box[orient].x2 - edit_data->FRM_bounding_box[orient].x1;
+    // int height  = edit_data->FRM_bounding_box[orient].y2 - edit_data->FRM_bounding_box[orient].y1;
+    int width   = edit_data->ANM_bounding_box[orient].x2 - edit_data->ANM_bounding_box[orient].x1;
+    int height  = edit_data->ANM_bounding_box[orient].y2 - edit_data->ANM_bounding_box[orient].y1;
     ImVec2 size   = ImVec2((float)(width * scale), (float)(height * scale));
 
     //image I'm trying to pan with
@@ -40,7 +42,7 @@ void display_img_ImGUI(variables* My_Variables, image_data* edit_data)
 
 //TODO: maybe pass the dithering choice through?
 void Edit_Image(variables* My_Variables,
-                image_data* edit_data, Edit_Surface* edit_struct,
+                image_data* edit_data, Edit_Dir* edit_struct,
                 Surface* edit_MSK_srfc, bool edit_MSK,
                 bool Palette_Update, uint8_t* Color_Pick) {
     shader_info* shaders  = &My_Variables->shaders;
@@ -77,12 +79,14 @@ void Edit_Image(variables* My_Variables,
 
 
 
-    Surface* edit_FRM_srfc;// = edit_struct[orient].edit_frame[frame_num];
+    Surface* edit_srfc;// = edit_struct[orient].edit_frame[frame_num];
     if (edit_struct) {
-        edit_FRM_srfc = edit_struct[orient].edit_frame[frame_num];
+        edit_srfc = edit_struct[orient].edit_frame[frame_num];
     } else {
         
     }
+
+
 
     if (!edit_data->ANM_dir) {
         ImGui::Text("No FRM_dir");
@@ -116,7 +120,7 @@ void Edit_Image(variables* My_Variables,
             //     shaders->palette,
             //     shaders->render_FRM_shader,
             //     shaders->giant_triangle,
-            //     edit_data, edit_FRM_srfc,
+            //     edit_data, edit_srfc,
             //     My_Variables->CurrentTime_ms,
             //     My_Variables->Palette_Update
             // );
@@ -134,17 +138,17 @@ void Edit_Image(variables* My_Variables,
         x = (My_Variables->new_mouse_pos.x - top_corner(edit_data).x)/scale;
         y = (My_Variables->new_mouse_pos.y - top_corner(edit_data).y)/scale;
 
-        if ((0 <= x && x <= img_size.x) || (0 <= y && y <= img_size.y)) {
+        if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
             image_edited = true;
 
-            Surface* srfc_ptr = edit_FRM_srfc;
-            GLuint texture = edit_data->FRM_texture;
+            Surface* srfc_ptr = edit_srfc;
+            GLuint texture    = edit_data->FRM_texture;
             if (edit_MSK) {
                 srfc_ptr = edit_MSK_srfc;
                 texture  = edit_data->MSK_texture;
             }
             //paint MSK surface
-            // texture_paint(My_Variables, edit_data, edit_FRM_srfc, edit_MSK);
+            // texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
             surface_paint(My_Variables, edit_data, srfc_ptr);
             //MSK & FRM are aligned to 1-byte
             SURFACE_to_texture(srfc_ptr, texture,
@@ -161,15 +165,17 @@ void Edit_Image(variables* My_Variables,
         //TODO: this is a rough fix
         //      need to check if FRMs are loaded in as surfaces
         //      and where they are stored and blit from there instead
-        ClearSurface(edit_FRM_srfc);
-        FRM_Frame* frame_data = edit_data->FRM_dir[orient].frame_data[frame_num];
-        int w = frame_data->Frame_Width;
-        int h = frame_data->Frame_Height;
-        memcpy(edit_FRM_srfc->pxls, frame_data->frame_start, w*h);
+        ClearSurface(edit_srfc);
+        // FRM_Frame* frame_data = edit_data->FRM_dir[orient].frame_data[frame_num];
+        // int w = frame_data->Frame_Width;
+        // int h = frame_data->Frame_Height;
+        // memcpy(edit_srfc->pxls, frame_data->frame_start, w*h);
+        Surface* src = edit_data->ANM_dir[orient].frame_data[frame_num].frame_start;
+        memcpy(edit_srfc->pxls, src->pxls, src->w*src->h);
 
         // BlitSurface(edit_data->FRM_dir[orient].frame_data[frame_num])
-        SURFACE_to_texture(edit_FRM_srfc, edit_data->FRM_texture,
-                            edit_FRM_srfc->w, edit_FRM_srfc->h, 1);
+        SURFACE_to_texture(edit_srfc, edit_data->FRM_texture,
+                            edit_srfc->w, edit_srfc->h, 1);
     }
 
     //Converts unpalettized image to texture for display
@@ -185,7 +191,7 @@ void Edit_Image(variables* My_Variables,
             shaders->palette,
             shaders->render_FRM_shader,
             shaders->giant_triangle,
-            edit_data, edit_FRM_srfc,
+            edit_data, edit_srfc,
             My_Variables->CurrentTime_ms,
             My_Variables->Palette_Update
         );
@@ -193,8 +199,8 @@ void Edit_Image(variables* My_Variables,
         //      this takes 3 textures and draws them into 1 framebuffer
         draw_PAL_to_framebuffer(shaders->palette,
                                 shaders->render_PAL_shader,
-                               &shaders->giant_triangle,
-                               edit_data);
+                                &shaders->giant_triangle,
+                                edit_data);
     }
 
 }
@@ -513,11 +519,13 @@ void surface_paint(variables* My_Variables, image_data* edit_data, Surface* edit
     float brush_h  = My_Variables->brush_size.y;
     int brush_size = brush_h * brush_w;
 
-    int orient = edit_data->display_orient_num;
-    int frame  = edit_data->display_frame_num;
+    int dir = edit_data->display_orient_num;
+    int num = edit_data->display_frame_num;
 
-    int offset_x = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_x;
-    int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
+    // int offset_x = edit_data->FRM_dir[dir].frame_data[num]->Shift_Offset_x;
+    // int offset_y = edit_data->FRM_dir[dir].frame_data[num]->Shift_Offset_y;
+    int offset_x = edit_data->ANM_dir[dir].frame_data[num].Shift_Offset_x;
+    int offset_y = edit_data->ANM_dir[dir].frame_data[num].Shift_Offset_y;
 
 
 

@@ -188,14 +188,24 @@ void SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int frm_width, int frm_height,
                         int total_width, int total_height)
 {
+    GLuint alignment = 1;
+    // if (type == OTHER) {
+    //     alignment = 4;
+    // }
+
+    int pxl_type = GL_RED;
+    // if (type == OTHER) {
+    //     pxl_type = GL_RGBA;
+    // }
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-    //FRM's are aligned to 1-byte
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //FRM/MSK are aligned to 1-byte
+    glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
     //bind blank background to FRM_texture for display, then paint data onto texture
     uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, pxl_type, GL_UNSIGNED_BYTE, blank);
     glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, pxls);
     free(blank);
 }

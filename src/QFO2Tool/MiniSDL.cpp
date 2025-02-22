@@ -36,7 +36,7 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
     surface->channels = 1;
     surface->pitch    = width;
     surface->palette  = palette;
-    surface->pxls     = ((uint8_t*)surface) + sizeof(Surface); 
+    surface->pxls     = ((uint8_t*)surface) + sizeof(Surface);
 
     return surface;
 }
