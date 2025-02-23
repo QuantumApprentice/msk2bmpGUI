@@ -132,11 +132,12 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
     ANM_Dir* src_dir = src->ANM_dir;
     ANM_Dir* dst_dir = dst->ANM_dir;
     for (int i = 0; i < num_orients; i++) {
-        dst_dir[i].orientation = (Direction)i;
-        dst_dir[i].num_frames  = num_frames;
         if (num_orients < 6) {
             i = dst->display_orient_num;
         }
+        dst_dir[i].orientation = (Direction)i;
+        dst_dir[i].num_frames  = num_frames;
+
         if (src->ANM_dir[i].frame_data == NULL) {
             break;
         }
@@ -532,6 +533,7 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
     return texture;
 }
 
+//TODO: delete bind_NULL_texture() - replaced by 
 // binds the image information to FRM_texture
 // and sets up PAL_texture with a NULL texture of appropriate size for editing
 bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type type)

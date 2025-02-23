@@ -256,6 +256,10 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
             i = dir;
         }
 
+        anm_dir[i].num_frames  = num_frames;
+        anm_dir[i].orientation = (Direction)i;
+        int frame_size         = sizeof(FRM_Frame);
+
         //TODO: change to ptr assignment after malloc-ing entire memory above ^^
         anm_dir[i].frame_data  = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
         if (!anm_dir[i].frame_data) {
@@ -270,10 +274,6 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 
         rectangle frame_box         = {};
         rectangle FRM_bounding_box  = {};
-
-        anm_dir[i].num_frames  = num_frames;
-        anm_dir[i].orientation = (Direction)i;
-        int frame_size         = sizeof(FRM_Frame);
 
         for (int j = 0; j < num_frames; j++) {
             FRM_Frame* frame_start   = (FRM_Frame*)(buffer + buff_offset);
@@ -314,6 +314,7 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
     return true;
 }
 
+//TODO: delete, replaced by load_FRM_to_SURFACE()
 bool load_FRM_img_data(const char* file_name, image_data* img_data)
 {
     uint8_t* buffer = load_entire_file(file_name, &img_data->FRM_size);
@@ -401,6 +402,7 @@ bool load_FRM_img_data(const char* file_name, image_data* img_data)
     return true;
 }
 
+//TODO: delete, or maybe repurpose
 bool Render_FRM0_OpenGL(image_data* img_data, int dir)
 {
 
