@@ -763,8 +763,38 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
         // edit_data->display_orient_num = 0;
         // edit_data->FRM_hdr
         edit_struct[0].edit_frame = (Surface**)malloc(sizeof(Surface*));
+        if (!edit_struct[0].edit_frame) {
+            //TODO: log out to txt file
+            set_popup_warning(
+                "[ERROR] init_edit_struct_ANM()"
+                "Unable to allocate memory for edit_frame.\n"
+            );
+            printf("Unable to allocate memory for edit_frame: %d\n", __LINE__);
+            return;
+        }
         edit_struct[0].edit_frame[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
+        if (!edit_struct[0].edit_frame[0]) {
+            free(edit_struct[0].edit_frame);
+            //TODO: log out to txt file
+            set_popup_warning(
+                "[ERROR] init_edit_struct_ANM()"
+                "Unable to create 8bit surface.\n"
+            );
+            printf("Unable to create 8bit surface: %d\n", __LINE__);
+            return;
+        }
         edit_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir*));
+        if (!edit_data->ANM_dir) {
+            free(edit_struct[0].edit_frame);
+            FreeSurface(edit_struct[0].edit_frame[0]);
+            //TODO: log out to txt file
+            set_popup_warning(
+                "[ERROR] init_edit_struct_ANM()"
+                "Unable to create 8bit surface.\n"
+            );
+            printf("Unable to create 8bit surface: %d\n", __LINE__);
+            return;
+        }
         edit_data->ANM_dir[0].orientation = NE;
 
         return;
@@ -795,6 +825,7 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
     }
 }
 
+//TODO: delete, replaced with init_edit_struct_ANM()
 //TODO: need to add direct MSK file editing
 //      probably in a different function?
 void init_edit_struct(Edit_Dir* edit_struct, image_data* edit_data, Palette* palette)

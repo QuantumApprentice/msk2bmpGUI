@@ -83,10 +83,10 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
 
 
     Surface* edit_srfc;
-    if (edit_struct) {
+    if (edit_data->type == FRM) {
         edit_srfc = edit_struct[dir].edit_frame[num];
     } else {
-        
+        edit_srfc = edit_MSK_srfc;
     }
 
 
@@ -154,20 +154,23 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
     ImGui::PushItemWidth(100);
     ImGui::DragFloat("##Zoom", &edit_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
     ImGui::PopItemWidth();
-    if (ImGui::Button("Clear All Changes")) {
-        //TODO: this is a rough fix
-        //      need to check if FRMs are loaded in as surfaces
-        //      and where they are stored and blit from there instead
+    if (ImGui::Button("Reset Image")) {
         ClearSurface(edit_srfc);
-        // FRM_Frame* frame_data = edit_data->FRM_dir[dir].frame_data[num];
-        // int w = frame_data->Frame_Width;
-        // int h = frame_data->Frame_Height;
-        // memcpy(edit_srfc->pxls, frame_data->frame_start, w*h);
-        Surface* src = edit_data->ANM_dir[dir].frame_data[num].frame_start;
+        Surface* src;
+        GLuint texture;
+        if (edit_data->type == FRM) {
+            src     = edit_data->ANM_dir[dir].frame_data[num].frame_start;
+            texture = edit_data->FRM_texture;
+        }
+        if (edit_data->type == MSK) {
+            src     = edit_data->MSK_srfc;
+            texture = edit_data->MSK_texture;
+        }
         memcpy(edit_srfc->pxls, src->pxls, src->w*src->h);
 
+
         // BlitSurface(edit_data->FRM_dir[dir].frame_data[num])
-        SURFACE_to_texture(edit_srfc, edit_data->FRM_texture,
+        SURFACE_to_texture(edit_srfc, texture,
                             edit_srfc->w, edit_srfc->h, 1);
     }
 
