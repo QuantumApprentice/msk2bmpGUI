@@ -25,6 +25,44 @@ void draw_red_tiles(image_data *img_data, bool show_squares);
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
+void preview_WMAP_tiles_SURFACE(variables* My_Variables, image_data* img_data)
+{
+    zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
+    shader_info* shaders = &My_Variables->shaders;
+
+    int dir = img_data->display_orient_num;
+    if (!img_data->ANM_dir) {
+        ImGui::Text("No ANM_dir");
+        return;
+    }
+    if (img_data->ANM_dir[dir].frame_data == NULL) {
+        ImGui::Text("No frame_data");
+        return;
+    }
+
+    animate_SURFACE_to_sub_texture(
+        shaders->palette,
+        shaders->render_FRM_shader,
+        shaders->giant_triangle,
+        img_data, img_data->ANM_dir[dir].frame_data[0].frame_start,
+        My_Variables->CurrentTime_ms, My_Variables->Palette_Update
+    );
+
+    float scale    = img_data->scale;
+    int img_width  = img_data->width;
+    int img_height = img_data->height;
+
+    //TODO: rename?
+    //      this takes 3 textures and draws them into 1 framebuffer
+    draw_PAL_to_framebuffer(shaders->palette,
+                            shaders->render_PAL_shader,
+                            &shaders->giant_triangle,
+                            img_data);
+
+    crop_WMAP_tile(MTILE_W, MTILE_H, img_width, img_height, scale, img_data);
+
+}
+
 void Preview_WMAP_Tiles(variables *My_Variables, image_data *img_data)
 {
     // handle zoom and panning for the image
@@ -52,13 +90,6 @@ void Preview_WMAP_Tiles(variables *My_Variables, image_data *img_data)
                             img_data,
                             My_Variables->CurrentTime_ms,
                             My_Variables->Palette_Update);
-    // animate_SURFACE_to_sub_texture(
-    //     shaders->palette,
-    //     shaders->render_FRM_shader,
-    //     shaders->giant_triangle,
-    //     img_data,
-    //     img_data->FRM_dir[0])
-
 
     float scale = img_data->scale;
     int img_width = img_data->width;
@@ -180,11 +211,11 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     ImGui::SliderInt("Image Offset X", &offset_x, -400, 400, NULL);
     ImGui::SliderInt("Image Offset Y", &offset_y, -400, 400, NULL);
 
-    // read pixels into buffer
-    uint8_t *temp_buffer = (uint8_t *)malloc(img_data->width * img_data->height);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, temp_buffer);
+    // // read pixels into buffer
+    // uint8_t *temp_buffer = (uint8_t *)malloc(img_data->width * img_data->height);
+    // glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    // glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+    // glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, temp_buffer);
 
     static int spacing_x;
     static int spacing_y;
@@ -274,10 +305,67 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
         }
     }
 
-    free(temp_buffer);
+    // free(temp_buffer);
 }
 
+void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image_data *img_data)
+{
+    zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
+    shader_info *shaders = &My_Variables->shaders;
+    ImGui::PushItemWidth(100);
+    ImGui::DragFloat("##Zoom", &img_data->scale, 0.1f, 0.0f, 10.0f, "Zoom: %%%.2fx", 0);
+    ImGui::PopItemWidth();
 
+    int dir = img_data->display_orient_num;
+    if (!img_data->ANM_dir) {
+        ImGui::Text("No ANM_dir");
+        return;
+    }
+    if (img_data->ANM_dir[dir].frame_data == NULL) {
+        ImGui::Text("No frame_data");
+        return;
+    }
+
+    animate_SURFACE_to_sub_texture(
+        shaders->palette,
+        shaders->render_FRM_shader,
+        shaders->giant_triangle,
+        img_data, img_data->ANM_dir[dir].frame_data[0].frame_start,
+        My_Variables->CurrentTime_ms, My_Variables->Palette_Update
+    );
+
+    //TODO: rename?
+    //      this takes 3 textures and draws them into 1 framebuffer
+    draw_PAL_to_framebuffer(shaders->palette,
+                            shaders->render_PAL_shader,
+                            &shaders->giant_triangle,
+                            img_data);
+
+    static bool image_toggle = false;
+    checkbox_handler("toggle image", &image_toggle);
+    if (image_toggle)
+    {
+        ImVec2 uv_min = {0, 0};
+        ImVec2 uv_max = {1.0, 1.0};
+        int width   = img_data->width;
+        int height  = img_data->height;
+        float scale = img_data->scale;
+        ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
+
+        ImGuiWindow *window = ImGui::GetCurrentWindow();
+    //TODO: change top_corner() for img_pos passed in from outside
+        window->DrawList->AddImage(
+            (ImTextureID)(uintptr_t)img_data->render_texture,
+            top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
+            uv_min, uv_max,
+            ImGui::GetColorU32(My_Variables->tint_col));
+    }
+
+    draw_TMAP_tiles(usr_info, img_data, shaders,
+                    My_Variables->tile_texture_rend);
+}
+
+//TODO: delete, replaced by prev_TMAP_tiles_SURFACE()
 void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *img_data)
 {
     // handle zoom and panning for the image, plus update image position every frame

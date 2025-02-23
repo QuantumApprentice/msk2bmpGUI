@@ -717,10 +717,12 @@ void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
         }
 
         if (F_Prop->show_squares) {
-            Preview_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
+            // Preview_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
+            preview_WMAP_tiles_SURFACE(My_Variables, &F_Prop->edit_data);
         }
         else {
-            Prev_TMAP_Tiles(&usr_info, My_Variables, &F_Prop->edit_data);
+            // Prev_TMAP_Tiles(&usr_info, My_Variables, &F_Prop->edit_data);
+            prev_TMAP_tiles_SURFACE(&usr_info, My_Variables, &F_Prop->edit_data);
         }
     }
     ImGui::End();
@@ -1134,26 +1136,34 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off
                 );
+            }
+            if (ImGui::Button("Color Match & Preview as Image")) {
+                prep_image_SURFACE(
+                    F_Prop,
+                    pxlFMT_FO_Pal,
+                    My_Variables->color_match_algo,
+                    &F_Prop->show_image_render, alpha_off
+                );
                 // Prep_Image(F_Prop,
                 //     pxlFMT_FO_Pal,
                 //     My_Variables->color_match_algo,
-                //     &F_Prop->edit_image_window, alpha_off);
-            }
-            if (ImGui::Button("Color Match & Preview as Image")) {
-                Prep_Image(F_Prop,
-                    pxlFMT_FO_Pal,
-                    My_Variables->color_match_algo,
-                    &F_Prop->show_image_render, alpha_off);
+                //     &F_Prop->show_image_render, alpha_off);
                 F_Prop->preview_tiles_window = false;
             }
             //TODO: manage some sort of contextual menu for tileable images?
             if (F_Prop->image_is_tileable) {
                 //Tileable image Buttons
                 if (ImGui::Button("Color Match & Preview Tiles")) {
-                    Prep_Image(F_Prop,
+                    prep_image_SURFACE(
+                        F_Prop,
                         pxlFMT_FO_Pal,
                         My_Variables->color_match_algo,
-                        &F_Prop->preview_tiles_window, alpha_off);
+                        &F_Prop->preview_tiles_window, alpha_off
+                    );
+                    // Prep_Image(F_Prop,
+                    //     pxlFMT_FO_Pal,
+                    //     My_Variables->color_match_algo,
+                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
@@ -1180,10 +1190,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off
                 );
-                // Prep_Image(F_Prop,
-                //     pxlFMT_FO_Pal,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->edit_image_window, alpha_off);
             }
             if (ImGui::Button("Preview FRM as image (not tiles)")) {
                 Prep_Image(F_Prop,
@@ -1223,19 +1229,21 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     &F_Prop->edit_image_window, alpha_off
                 );
                 F_Prop->edit_MSK = true;
-                // Prep_Image(F_Prop,
-                //     pxlFMT_FO_Pal,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->edit_image_window, alpha_off);
             }
             //TODO: manage some sort of contextual menu for tileable images?
             if (F_Prop->image_is_tileable) {
                 //Tileable image Buttons
                 if (ImGui::Button("Color Match & Preview Tiles")) {
-                    Prep_Image(F_Prop,
+                    prep_image_SURFACE(
+                        F_Prop,
                         pxlFMT_FO_Pal,
                         My_Variables->color_match_algo,
-                        &F_Prop->preview_tiles_window, alpha_off);
+                        &F_Prop->preview_tiles_window, alpha_off
+                    );
+                    // Prep_Image(F_Prop,
+                    //     pxlFMT_FO_Pal,
+                    //     My_Variables->color_match_algo,
+                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
