@@ -154,16 +154,13 @@ void SURFACE_to_texture(Surface* src, GLuint texture,
         return;
     }
 
-    // for (int i = 0; i < src->h; i++)
-    // {
-    //     for (int j = 0; j < src->w; j++)
-    //     {
+    // //prints surface out as ascii hex
+    // for (int i = 0; i < src->h; i++) {
+    //     for (int j = 0; j < src->w; j++) {
     //         printf("%02x", src->pxls[i*src->pitch + j]);
     //     }
     //     printf("\n");
     // }
-
-
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);

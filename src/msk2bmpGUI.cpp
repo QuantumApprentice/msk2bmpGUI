@@ -899,9 +899,9 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
         }
 
         //TODO: check this against image_render()
-        display_img_ImGUI(My_Variables, edit_data);
+        ImVec2 img_pos = display_img_ImGUI(My_Variables, edit_data);
 
-        Edit_Image(My_Variables,
+        Edit_Image(My_Variables, img_pos,
                     &F_Prop->edit_data, edit_struct,
                     &edit_MSK_srfc, F_Prop->edit_MSK,
                     My_Variables->Palette_Update,
@@ -910,6 +910,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 
         Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
     }
+
+    show_popup_warnings();
 
     ImGui::End();
 
@@ -1126,10 +1128,16 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         if (F_Prop->img_data.type == OTHER) {
             if (ImGui::Button("Color Match and Edit")) {
-                Prep_Image(F_Prop,
+                prep_image_SURFACE(
+                    F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->edit_image_window, alpha_off);
+                    &F_Prop->edit_image_window, alpha_off
+                );
+                // Prep_Image(F_Prop,
+                //     pxlFMT_FO_Pal,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->edit_image_window, alpha_off);
             }
             if (ImGui::Button("Color Match & Preview as Image")) {
                 Prep_Image(F_Prop,
@@ -1166,10 +1174,16 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
         else if (F_Prop->img_data.type == FRM) {
             if (ImGui::Button("Edit this FRM")) {
-                Prep_Image(F_Prop,
+                prep_image_SURFACE(
+                    F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->edit_image_window, alpha_off);
+                    &F_Prop->edit_image_window, alpha_off
+                );
+                // Prep_Image(F_Prop,
+                //     pxlFMT_FO_Pal,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->edit_image_window, alpha_off);
             }
             if (ImGui::Button("Preview FRM as image (not tiles)")) {
                 Prep_Image(F_Prop,
@@ -1202,10 +1216,17 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
         else if (F_Prop->img_data.type == MSK) {
             if (ImGui::Button("Edit MSK file")) {
-                Prep_Image(F_Prop,
+                prep_image_SURFACE(
+                    F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->edit_image_window, alpha_off);
+                    &F_Prop->edit_image_window, alpha_off
+                );
+                F_Prop->edit_MSK = true;
+                // Prep_Image(F_Prop,
+                //     pxlFMT_FO_Pal,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->edit_image_window, alpha_off);
             }
             //TODO: manage some sort of contextual menu for tileable images?
             if (F_Prop->image_is_tileable) {

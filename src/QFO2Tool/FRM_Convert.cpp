@@ -2,6 +2,7 @@
 #include "B_Endian.h"
 #include "tinyfiledialogs.h"
 #include "Load_Files.h"
+#include "ImGui_Warning.h"
 
 #include <cstdint>
 #include <vector>
@@ -92,19 +93,69 @@ Palette* load_palette_from_path(const char* path)
 }
 
 // Converts the color space to Fallout's paletted format
+Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
+{
+    // Convert input surface to 32bit format for easy palettization
+    Surface* Surface_32 = Convert_Surface_to_RGBA(src);
+    if (!Surface_32) {
+        //TODO: log out to file
+        set_popup_warning(
+            "[ERROR] FRM_Color_Convert()"
+            "Unable to allocate 32-bit surface."
+        );
+        printf("Error: Unable to allocate 32-bit surface: %d\n", __LINE__);
+        return nullptr;
+    }
+
+    // Setup for palettizing image
+    Surface* Surface_8 = Create_8Bit_Surface(src->w, src->h, pal);
+    if (!Surface_8) {
+        //TODO: log out to file
+        set_popup_warning(
+            "[ERROR] FRM_Color_Convert()"
+            "Unable to allocate 8-bit surface."
+        );
+        printf("Error: Unable to allocate 8-bit surface: %d\n", __LINE__);
+        return nullptr;
+    }
+    //switch to change between euclidian and sdl color match algorithms
+    if (color_match_algo == 0) {
+        //TODO: test difference between SDL_Color_Match() and Euclidian w/optimizations
+        // SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
+        Euclidian_Distance_Color_Match(Surface_32, Surface_8);
+    } else if (color_match_algo == 1) {
+        //TODO: get a new color match algorithm
+        Euclidian_Distance_Color_Match(Surface_32, Surface_8);
+    }
+    FreeSurface(Surface_32);
+
+    return Surface_8;
+}
+
+// Converts the color space to Fallout's paletted format
 uint8_t* FRM_Color_Convert(Surface *src, Palette* pxlFMT, int color_match_algo)
 {
     // Convert input surface to 32bit format for easy palettization
     Surface* Surface_32 = Convert_Surface_to_RGBA(src);
     if (!Surface_32) {
-        printf("Error: Unable to allocate 32-bit surface\n");
+        //TODO: log out to file
+        set_popup_warning(
+            "[ERROR] FRM_Color_Convert()"
+            "Unable to allocate 32-bit surface."
+        );
+        printf("Error: Unable to allocate 32-bit surface: %d\n", __LINE__);
         return nullptr;
     }
 
     // Setup for palettizing image
     Surface* Surface_8 = Create_8Bit_Surface(src->w, src->h, pxlFMT);
     if (!Surface_8) {
-        printf("Error: Unable to allocate 8-bit surface\n");
+        //TODO: log out to file
+        set_popup_warning(
+            "[ERROR] FRM_Color_Convert()"
+            "Unable to allocate 8-bit surface."
+        );
+        printf("Error: Unable to allocate 8-bit surface: %d\n", __LINE__);
         return nullptr;
     }
     //switch to change between euclidian and sdl color match algorithms

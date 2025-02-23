@@ -139,10 +139,12 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
-    constexpr const static wchar_t supported[7][6]{
-                    L".FRM", L".MSK", L".PNG",
-                    L".JPG", L".JPEG", L".BMP",
-                    L".GIF"};
+    constexpr const static wchar_t supported[13][6]{
+        L".FRM", L".MSK", L".PNG",
+        L".JPG", L".JPEG", L".BMP",
+        L".GIF",
+        L".FR0", L".FR1", L".FR2", L".FR3", L".FR4", L".FR5"
+        };
     int k = sizeof(supported) / (6 * sizeof(wchar_t));
 
 
@@ -166,10 +168,12 @@ bool Supported_Format(const std::filesystem::path &file)
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
-    constexpr const static char supported[7][6]{
+    constexpr const static char supported[13][6]{
         ".FRM", ".MSK", ".PNG",
         ".BMP", ".JPG", ".JPEG",
-        ".GIF"};
+        ".GIF",
+        ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
+        };
     int k = sizeof(supported) / (6 * sizeof(char));
 
     // actual extension check
@@ -721,7 +725,11 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
 {
     char load_path[MAX_PATH];
     snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
-    const char *FilterPattern1[7] = {"*.bmp", "*.png", "*.frm", "*.msk", "*.jpg", "*.jpeg", "*.gif"};
+    const char *FilterPattern1[9] = {
+        "*.bmp", "*.png", "*.frm",
+        "*.msk", "*.jpg", "*.jpeg",
+        "*.gif", "*.fr0", "-.fr5",
+        };
 
     char *FileName = tinyfd_openFileDialog(
         "Open files...",
@@ -872,7 +880,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     // if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
     if (F_Prop->img_data.ANM_dir != NULL)
     {
-        if ((F_Prop->img_data.ANM_dir->frame_data->frame_start == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
+        if ((F_Prop->img_data.ANM_dir[img_data->display_orient_num].frame_data->frame_start == NULL)
+            && F_Prop->img_data.type != FRM
+            && F_Prop->img_data.type != MSK)
         {
             //TODO: log to file
             set_popup_warning(

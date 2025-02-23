@@ -3,11 +3,16 @@
 
 #include "Zoom_Pan.h"
 
-ImVec2 top_corner(image_data* img_data)
+// ImVec2 top_corner(image_data* img_data)
+//TODO: refactor this to not use GetCursorScreenPos()?
+// returns the origin of the current cursor position
+// plus the drag offset set by the user
+// (used to initialize draggable image positions in a window)
+ImVec2 top_corner(ImVec2 offset)
 {
     ImVec2 corner_pos;
-    corner_pos.x = img_data->offset.x + ImGui::GetCursorScreenPos().x;
-    corner_pos.y = img_data->offset.y + ImGui::GetCursorScreenPos().y;
+    corner_pos.x = offset.x + ImGui::GetCursorScreenPos().x;
+    corner_pos.y = offset.y + ImGui::GetCursorScreenPos().y;
 
     return corner_pos;
 }
@@ -26,8 +31,11 @@ void viewport_boundary(image_data* img_data, ImVec2 size)
 {
 
     ImVec2 image_offset;
-    image_offset.x = ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
-    image_offset.y = ImGui::GetCursorScreenPos().y - ImGui::GetWindowPos().y;
+    // image_offset.x = ImGui::GetCursorScreenPos().x - ImGui::GetWindowPos().x;
+    // image_offset.y = ImGui::GetCursorScreenPos().y - ImGui::GetWindowPos().y;
+
+    image_offset.x = ImGui::GetCursorStartPos().x;
+    image_offset.y = ImGui::GetCursorStartPos().y;
 
     img_data->offset.x += image_offset.x;
     img_data->offset.y += image_offset.y;
@@ -87,7 +95,7 @@ void zoom(float zoom_level, ImVec2 focus_point, image_data* img_data)
     float* scale = &img_data->scale;
     ImVec2* offset = &img_data->offset;
 
-    ImVec2 corner_pos = top_corner(img_data);
+    ImVec2 corner_pos = top_corner(img_data->offset);
 
     float old_zoom = *scale;
     *scale *= zoom_level;

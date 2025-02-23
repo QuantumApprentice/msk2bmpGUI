@@ -89,31 +89,36 @@ void init_FRM(image_data* edit_data)
 
 }
 
-bool copy_it_all_ANM(image_data* img_data, image_data* edit_data)
+bool copy_it_all_ANM(image_data* src, image_data* dst)
 {
-    edit_data->FRM_data = (uint8_t*)malloc(img_data->FRM_size);
-    if (!edit_data->FRM_data) {
+    ////////////////////////////////////////////////////////
+    //copy the FRM_data pointer and all data
+    //  (legacy right now, not sure if I want to)
+    //  (keep this or do something with it)
+    //  (right now it does nothing)
+    dst->FRM_data = (uint8_t*)malloc(src->FRM_size);
+    if (!dst->FRM_data) {
         //TODO: log out to file
         set_popup_warning(
             "[ERROR] copy_it_all_ANM()\n\n"
-            "Unable to allocate memory for edit_data->FRM_data."
+            "Unable to allocate memory for dst->FRM_data."
         );
-        printf("Unable to allocate memory for edit_data->FRM_data: %d", __LINE__);
+        printf("Unable to allocate memory for dst->FRM_data: %d", __LINE__);
         return false;
     }
-    memcpy(edit_data->FRM_data, img_data->FRM_data, img_data->FRM_size);
-    FRM_Header* header = (FRM_Header*)edit_data->FRM_data;
-
-    // init_FRM(edit_data);
+    memcpy(dst->FRM_data, src->FRM_data, src->FRM_size);
+    FRM_Header* header = (FRM_Header*)dst->FRM_data;
+    ////////////////////////////////////////////////////////
+    // init_FRM(dst);
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
     if (num_orients < 6) {
-        edit_data->display_orient_num = img_data->display_orient_num;
+        dst->display_orient_num = src->display_orient_num;
     }
 
-    edit_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
-    if (!edit_data->ANM_dir) {
+    dst->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
+    if (!dst->ANM_dir) {
         //TODO: log out to file
         set_popup_warning(
             "[ERROR] copy_it_all_ANM()\n\n"
@@ -122,17 +127,17 @@ bool copy_it_all_ANM(image_data* img_data, image_data* edit_data)
         printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
         return false;
     }
-    new(edit_data->ANM_dir) ANM_Dir[6];
+    new(dst->ANM_dir) ANM_Dir[6];
 
-    ANM_Dir* src_dir = img_data->ANM_dir;
-    ANM_Dir* dst_dir = edit_data->ANM_dir;
+    ANM_Dir* src_dir = src->ANM_dir;
+    ANM_Dir* dst_dir = dst->ANM_dir;
     for (int i = 0; i < num_orients; i++) {
         dst_dir[i].orientation = (Direction)i;
         dst_dir[i].num_frames  = num_frames;
         if (num_orients < 6) {
-            i = edit_data->display_orient_num;
+            i = dst->display_orient_num;
         }
-        if (img_data->ANM_dir[i].frame_data == NULL) {
+        if (src->ANM_dir[i].frame_data == NULL) {
             break;
         }
 
@@ -147,7 +152,7 @@ bool copy_it_all_ANM(image_data* img_data, image_data* edit_data)
         }
         memcpy(dst_dir[i].frame_box, src_dir[i].frame_box, sizeof(rectangle)*num_frames);
 
-        // allocate frame space on edit_data, copy from image_data to edit_data
+        // allocate frame space on dst, copy from image_data to dst
         dst_dir[i].frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame)*num_frames);
         if (!dst_dir[i].frame_data) {
             //TODO: log out to file
@@ -160,7 +165,7 @@ bool copy_it_all_ANM(image_data* img_data, image_data* edit_data)
         }
         memcpy(dst_dir[i].frame_data, src_dir[i].frame_data, sizeof(ANM_Frame)*num_frames);
         for (int j = 0; j < num_frames; j++) {
-            // duplicate surface and assign to edit_data
+            // duplicate surface and assign to dst
             Surface* src_srfc = src_dir[i].frame_data[j].frame_start;
             Surface* dst_srfc = Copy8BitSurface(src_srfc);
             if (dst_srfc == NULL) {
@@ -176,11 +181,8 @@ bool copy_it_all_ANM(image_data* img_data, image_data* edit_data)
         }
     }
 
-    memcpy(edit_data->ANM_bounding_box, img_data->ANM_bounding_box, sizeof(rectangle[6]));
-    // int this_dir = img_data->display_orient_num;
-    // edit_data->width  = edit_data->FRM_bounding_box[this_dir].x2 - edit_data->FRM_bounding_box[this_dir].x1;
-    // edit_data->height = edit_data->FRM_bounding_box[this_dir].y2 - edit_data->FRM_bounding_box[this_dir].y1;
-    edit_data->FRM_hdr = (FRM_Header*)edit_data->FRM_data;
+    memcpy(dst->ANM_bounding_box, src->ANM_bounding_box, sizeof(rectangle[6]));
+    dst->FRM_hdr = (FRM_Header*)dst->FRM_data;
 
     return true;
 }
@@ -246,6 +248,139 @@ void copy_it_all(image_data* img_data, image_data* edit_data)
     edit_data->FRM_hdr = (FRM_Header*)edit_data->FRM_data;
 }
 
+void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* window, bool alpha)
+{
+    image_data* src = &F_Prop->img_data;
+    image_data* dst = &F_Prop->edit_data;
+
+    dst->width  = src->width;
+    dst->height = src->height;
+    dst->scale  = src->scale;
+    dst->offset = src->offset;
+    
+    int dir = src->display_orient_num = dst->display_orient_num = src->display_orient_num;
+
+#pragma region copy_it_all
+    if (src->type == FRM || src->type == MSK) {
+        dst->type = src->type;
+
+        if (src->type == FRM) {
+            //FRM needs full tree copy
+            //uses dst.FRM_texture
+            dst->FRM_size = src->FRM_size;
+            copy_it_all_ANM(src, dst);
+            dst->FRM_texture = init_texture(
+                dst->ANM_dir[src->display_orient_num].frame_data[0].frame_start,
+                dst->width,
+                dst->height,
+                dst->type);
+        }
+        if (src->type == MSK) {
+            //MSK just needs a surface copy,
+            //uses dst.MSK_texture
+            dst->MSK_data = src->MSK_data;
+            dst->MSK_srfc = Copy8BitSurface(src->MSK_srfc);
+            dst->MSK_texture = init_texture(
+                dst->MSK_srfc,
+                dst->width,
+                dst->height,
+                dst->type);
+            dst->ANM_bounding_box[dir].x1;
+            dst->ANM_bounding_box[dir].y1;
+            dst->ANM_bounding_box[dir].x2 = src->width;
+            dst->ANM_bounding_box[dir].y2 = src->height;
+        }
+    }
+    if (src->type == OTHER) {
+        dst->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
+        if (!dst->ANM_dir) {
+            //TODO: log out to file
+            set_popup_warning(
+                "[ERROR] prep_image_SURFACE()\n\n"
+                "Unable to allocate memory for ANM_dir."
+            );
+            printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+            return;
+        }
+        new(dst->ANM_dir) ANM_Dir[6];
+
+        dst->ANM_dir[dir].frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
+
+        dst->ANM_dir[dir].frame_data[0].frame_start = PAL_Color_Convert(
+            src->ANM_dir->frame_data->frame_start,
+            pal, color_match_algo);
+
+        if (!dst->ANM_dir[dir].frame_data[0].frame_start) {
+            //TODO: log out to file
+            // set_popup_warning(
+            //     "[ERROR] prep_image_SURFACE()\n\n"
+            //     "Unable to allocate memory for ANM_dir."
+            // );
+            // printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+            return;
+        }
+
+        dst->ANM_dir[dir].frame_box = (rectangle*)calloc(1, sizeof(rectangle));
+        if (!dst->ANM_dir[dir].frame_box) {
+            set_popup_warning(
+                "[ERROR] prep_image_SURFACE()\n\n"
+                "Unable to allocate memory for ANM_dir[dir].frame_box."
+            );
+            printf("Unable to allocate memory for ANM_dir[%d].frame_box: %d", dir, __LINE__);
+            return;
+        }
+        dst->ANM_dir[dir].frame_box->x2 = dst->width;
+        dst->ANM_dir[dir].frame_box->y2 = dst->height;
+        dst->ANM_bounding_box[dir].x2   = dst->width;
+        dst->ANM_bounding_box[dir].y2   = dst->height;
+
+        dst->ANM_dir[dir].frame_data[0].Frame_Width  = src->width;
+        dst->ANM_dir[dir].frame_data[0].Frame_Height = src->height;
+        dst->ANM_dir[dir].frame_data[0].Frame_Size   = src->width*src->height;
+        dst->ANM_dir[dir].orientation = NE;
+
+        dst->FRM_hdr = (FRM_Header*)calloc(1, sizeof(FRM_Header));
+        dst->type = FRM;
+
+        dst->FRM_texture = init_texture(
+            dst->ANM_dir[dir].frame_data[0].frame_start,
+            dst->width,
+            dst->height,
+            dst->type);
+
+        int size = dst->width * dst->height;
+
+        dst->ANM_dir[dir].num_frames = 1;
+
+        //TODO: this needs to work with ANM_dir[]
+        if (alpha) {
+            for (int i = 0; i < size; i++) {
+                if (dst->FRM_dir->frame_data[0]->frame_start[i] == 0) {
+                    dst->FRM_dir->frame_data[0]->frame_start[i] = 1;
+                }
+            }
+        }
+    }
+
+    bool success = framebuffer_init(
+        &dst->render_texture,
+        &dst->framebuffer,
+        dst->width, dst->height);
+    if (!success) {
+        //TODO: log out to file
+        set_popup_warning(
+            "[ERROR] prep_image_SURFACE()\n\n"
+            "Framebuffer failed to attach correctly."
+        );
+        printf("[ERROR] Image framebuffer failed to attach correctly?\n");
+        printf("glError: %d\n", glGetError());
+        return;
+    }
+    //open edit window
+    *window = true;
+}
+
+//TODO: delete Prep_Image(), replaced by prep_image_SURFACE()
 //Palettize to 8-bit FO pallet, and dither
 // void Prep_Image(LF* F_Prop, SDL_PixelFormat* pxlFMT_FO_Pal, int color_match, bool* window, bool alpha_off) {
 void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window, bool alpha_off) {
@@ -311,10 +446,8 @@ void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window
             return;
         }
 
-        if (edit_data->FRM_texture) {
-            //set edit window bool to true, opens edit window
-            *window = true;
-        }
+        //set edit window bool to true, opens edit window
+        *window = true;
 
     }
     else {

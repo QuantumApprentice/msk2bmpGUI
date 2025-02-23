@@ -67,9 +67,11 @@ void Preview_WMAP_Tiles(variables *My_Variables, image_data *img_data)
     crop_WMAP_tile(MTILE_W, MTILE_H, img_width, img_height, scale, img_data);
 }
 
+//TODO: refactor this
 void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data)
 {
-    ImVec2 base_top_corner = top_corner(img_data);
+    //TODO: change top_corner() for img_pos passed in from outside
+    ImVec2 base_top_corner = top_corner(img_data->offset);
     ImVec4 tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 
     ImGuiWindow *window = ImGui::GetCurrentWindow();
@@ -316,9 +318,10 @@ void Prev_TMAP_Tiles(user_info* usr_info, variables *My_Variables, image_data *i
         ImVec2 size = ImVec2((float)(width * scale), (float)(height * scale));
 
         ImGuiWindow *window = ImGui::GetCurrentWindow();
+    //TODO: change top_corner() for img_pos passed in from outside
         window->DrawList->AddImage(
             (ImTextureID)(uintptr_t)img_data->render_texture,
-            top_corner(img_data), bottom_corner(size, top_corner(img_data)),
+            top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
             uv_min, uv_max,
             ImGui::GetColorU32(My_Variables->tint_col));
     }

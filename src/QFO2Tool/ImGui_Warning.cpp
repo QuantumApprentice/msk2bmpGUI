@@ -27,7 +27,8 @@ void set_popup_warning(const char* str)//, const char* name)
     ImGui::OpenPopup("Warning");
     // Always center this window when appearing
     //  hopefully the next window opened is the popup one
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    // ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImVec2 center = ImGui::GetWindowViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 }
 

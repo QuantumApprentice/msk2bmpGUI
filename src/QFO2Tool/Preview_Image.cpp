@@ -58,9 +58,10 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
+    //TODO: change top_corner() for img_pos passed in from outside
     window->DrawList->AddImage(
         (ImTextureID)(uintptr_t)img_data->render_texture,
-        top_corner(img_data), bottom_corner(size, top_corner(img_data)),
+        top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
@@ -119,7 +120,7 @@ void Preview_FRM_Image(variables* My_Variables, struct image_data* img_data, boo
     //image I'm trying to pan and zoom with
     window->DrawList->AddImage(
         (ImTextureID)(uintptr_t)img_data->render_texture,
-        top_corner(img_data), bottom_corner(size, top_corner(img_data)),
+        top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
@@ -157,9 +158,10 @@ void Preview_MSK_Image(variables* My_Variables, struct image_data* img_data, boo
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
+    //TODO: change top_corner() for img_pos passed in from outside
     window->DrawList->AddImage(
         (ImTextureID)(uintptr_t)img_data->render_texture,
-        top_corner(img_data), bottom_corner(size, top_corner(img_data)),
+        top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
@@ -176,7 +178,7 @@ void Preview_MSK_Image(variables* My_Variables, struct image_data* img_data, boo
 #define tile_grid_w         (128.0)
 #define tile_grid_h         (96.0)
 
-
+//TODO: refactor this
 void Preview_Image(variables* My_Variables, struct image_data* img_data, bool show_stats)
 {
     ImVec2 top_of_window = ImGui::GetCursorPos();
@@ -206,9 +208,10 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
 
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     //image I'm trying to pan and zoom with
+    //TODO: change top_corner() for img_pos passed in from outside
     window->DrawList->AddImage(
         (ImTextureID)(uintptr_t)img_data->render_texture,
-        top_corner(img_data), bottom_corner(size, top_corner(img_data)),
+        top_corner(img_data->offset), bottom_corner(size, top_corner(img_data->offset)),
         uv_min, uv_max,
         ImGui::GetColorU32(My_Variables->tint_col));
 
