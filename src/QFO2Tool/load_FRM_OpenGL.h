@@ -79,5 +79,8 @@ struct image_data {
 bool framebuffer_init(GLuint* texture, GLuint* framebuffer, int w, int h);
 bool init_framebuffer(struct image_data* img_data);
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* shaders);
+
 void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box, FRM_Frame* frame_start, rectangle* box);//, FRM_Dir* frm_dir, int i, int j);
+void calculate_bounding_box_SURFACE(rectangle* bounding_box, rectangle* FRM_bounding_box, ANM_Frame* anm_frame, rectangle* box);
+
 bool Render_FRM0_OpenGL(image_data* img_data, int dir);

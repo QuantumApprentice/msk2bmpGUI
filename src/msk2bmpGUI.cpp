@@ -83,7 +83,10 @@ void Show_Palette_Window(struct variables *My_Variables);
 static void ShowMainMenuBar(int* counter, struct variables* My_Variables);
 void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables);
 
+void main_window_bttns(variables* My_Variables, int index, int* counter);
 void contextual_buttons(variables* My_Variables, int window_number_focus);
+
+
 void Show_MSK_Palette_Window(variables* My_Variables);
 void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 
@@ -359,9 +362,6 @@ int main(int argc, char** argv)
         {
             ImGui::Begin("File Info###file");  // Create a window and append into it.
                 //load files
-                if (ImGui::Button("Load Files...")) {
-                    Open_Files(&usr_info, &counter, My_Variables.FO_Palette, &My_Variables);
-                }
                 //used this to create an frm from palette LUT
                 // if (ImGui::Button("Save palette animation...")) {
                 //     char path_buffer[MAX_PATH];
@@ -401,6 +401,8 @@ int main(int argc, char** argv)
                 ImGui::Text("Number Windows = %d", counter);
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+#pragma region buttons
+                main_window_bttns(&My_Variables, My_Variables.window_number_focus, &counter);
                 //contextual buttons for each image slot
                 if (My_Variables.window_number_focus >= 0)
                 {
@@ -462,6 +464,10 @@ int main(int argc, char** argv)
             for (int i = 0; i < counter; i++) {
                 if (My_Variables.F_Prop[i].file_open_window) {
                     Show_Preview_Window(&My_Variables, &My_Variables.F_Prop[i], i);
+                }
+                // Edit full image
+                if (My_Variables.F_Prop[i].edit_image_window) {
+                    Edit_Image_Window(&My_Variables, &My_Variables.F_Prop[i], &usr_info, counter);
                 }
             }
         }
@@ -635,10 +641,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
     if (F_Prop->show_image_render) {
         Show_Image_Render(My_Variables, F_Prop, &usr_info, counter);
     }
-    // Edit full image
-    if (F_Prop->edit_image_window) {
-        Edit_Image_Window(My_Variables, F_Prop, &usr_info, counter);
-    }
+
 }
 
 void Show_Palette_Window(variables* My_Variables) {
@@ -747,7 +750,9 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
 
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
-        Preview_FRM_Image(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
+        // Preview_FRM_Image(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
+        preview_FRM_SURFACE(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
+
 
         Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
     }
@@ -896,7 +901,10 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 {
     char b[3];
     sprintf(b, "%02d", counter);
-    std::string a = F_Prop->c_name;
+    std::string a = "";
+    if (F_Prop->c_name) {
+        std::string a = F_Prop->c_name;
+    }
     std::string name = a + " Edit Window...###edit" + b;
 
     image_data* edit_data = &F_Prop->edit_data;
@@ -1055,6 +1063,30 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
     }
 }
 
+void main_window_bttns(variables* My_Variables, int index, int* counter)
+{
+    if (index < 0) {
+        index = 0;
+    }
+    LF* F_Prop   = &My_Variables->F_Prop[index];
+    Palette* pal =  My_Variables->FO_Palette;
+    static bool open_window     = false;
+    static bool single_dir      = false;
+    static int  save_type       = UNK;
+    static image_data* src      = &F_Prop->img_data;
+
+    if (ImGui::Button("Load Files...")) {
+        Open_Files(&usr_info, counter, pal, My_Variables);
+        // if (My_Variables->F_Prop[*counter].c_name) {
+        //     (*counter)++;
+        // }
+    }
+    if (ImGui::Button("Open Edit Window")) {
+        F_Prop->edit_image_window = true;
+        (*counter)++;
+    }
+}
+
 void contextual_buttons(variables* My_Variables, int window_number_focus)
 {
     //shortcuts, need to replace with direct calls?
@@ -1107,24 +1139,24 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         //edit mask window
         else {
             if (ImGui::Button("Clear all changes...")) {
-                if (F_Prop->edit_data.MSK_data) {
-                    glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                        width, height, 0,
-                        GL_RED, GL_UNSIGNED_BYTE, F_Prop->edit_data.MSK_data);
-                }
-                else {
-                    int texture_size = width * height;
-                    uint8_t* clear = (uint8_t*)malloc(texture_size);
-                    memset(clear, 0, texture_size);
-                    glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
-                        width, height,
-                        0, GL_RED, GL_UNSIGNED_BYTE, clear);
-                    free(clear);
-                }
+                // if (F_Prop->edit_data.MSK_data) {
+                //     glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
+                //     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                //         width, height, 0,
+                //         GL_RED, GL_UNSIGNED_BYTE, F_Prop->edit_data.MSK_data);
+                // }
+                // else {
+                //     int texture_size = width * height;
+                //     uint8_t* clear = (uint8_t*)malloc(texture_size);
+                //     memset(clear, 0, texture_size);
+                //     glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
+                //     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+                //     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+                //         width, height,
+                //         0, GL_RED, GL_UNSIGNED_BYTE, clear);
+                //     free(clear);
+                // }
             }
             if (ImGui::Button("Export Mask Tiles...")) {
                 //export mask tiles
@@ -1295,8 +1327,9 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         if (F_Prop->img_data.type == OTHER && F_Prop->img_data.ANM_dir[F_Prop->img_data.display_orient_num].num_frames > 1) {
             if (ImGui::Button("Convert Animation to FRM for Editing")) {
-                //F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
-                F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->FO_Palette);
+                // F_Prop->edit_image_window = Crop_Animation(&F_Prop->img_data);
+                // F_Prop->show_image_render = Crop_Animation(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->FO_Palette);
+                F_Prop->show_image_render = crop_animation_SURFACE(&F_Prop->img_data, &F_Prop->edit_data, My_Variables->FO_Palette, 0, &My_Variables->shaders);
             }
         }
         if (My_Variables->tile_window_focused) {

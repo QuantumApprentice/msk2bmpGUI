@@ -9,7 +9,6 @@
 
 bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* shaders);
 
-
 bool framebuffer_init(GLuint* texture, GLuint* framebuffer, int w, int h)
 {
     glDeleteFramebuffers(1, framebuffer);
@@ -162,6 +161,33 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 //
 //    return result;
 //}
+
+void calculate_bounding_box_SURFACE(
+        rectangle* bounding_box, rectangle* FRM_bounding_box,
+        ANM_Frame* anm_frame, rectangle* box)
+{
+    bounding_box->x1 += anm_frame->Shift_Offset_x - anm_frame->Frame_Width/2;
+    bounding_box->y1 += anm_frame->Shift_Offset_y - anm_frame->Frame_Height;
+    bounding_box->x2  = bounding_box->x1 + anm_frame->Frame_Width;
+    bounding_box->y2  = bounding_box->y1 + anm_frame->Frame_Height;
+
+    *box = *bounding_box;
+    if (bounding_box->x1 < FRM_bounding_box->x1) {
+        FRM_bounding_box->x1 = bounding_box->x1;
+    }
+    if (bounding_box->y1 < FRM_bounding_box->y1) {
+        FRM_bounding_box->y1 = bounding_box->y1;
+    }
+    if (bounding_box->x2 > FRM_bounding_box->x2) {
+        FRM_bounding_box->x2 = bounding_box->x2;
+    }
+    if (bounding_box->y2 > FRM_bounding_box->y2) {
+        FRM_bounding_box->y2 = bounding_box->y2;
+    }
+
+    bounding_box->x1 += anm_frame->Frame_Width / 2;
+    bounding_box->y1 += anm_frame->Frame_Height;
+}
 
 void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box,
                             FRM_Frame* frame_start, rectangle* box)

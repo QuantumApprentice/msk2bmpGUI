@@ -7,7 +7,7 @@
 #include "MiniSDL.h"
 #include "ImGui_Warning.h"
 
-//create blank 4-byte per pixel surface (RGBA?)
+//create blank surface, 4-bytes per pixel (RGBA)
 Surface* Create_RGBA_Surface(int width, int height)
 {
     int size = sizeof(Surface) + width*height*4;

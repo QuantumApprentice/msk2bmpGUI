@@ -95,8 +95,11 @@ Palette* load_palette_from_path(const char* path)
 // Converts the color space to Fallout's paletted format
 Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
 {
-    // Convert input surface to 32bit format for easy palettization
-    Surface* Surface_32 = Convert_Surface_to_RGBA(src);
+    Surface* Surface_32 = src;
+    if (src->channels < 4) {
+        // Convert input surface to 32bit format for easy palettization
+        Surface_32 = Convert_Surface_to_RGBA(src);
+    }
     if (!Surface_32) {
         //TODO: log out to file
         set_popup_warning(
@@ -127,7 +130,9 @@ Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
         //TODO: get a new color match algorithm
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     }
-    FreeSurface(Surface_32);
+    if (Surface_32 != src) {
+        FreeSurface(Surface_32);
+    }
 
     return Surface_8;
 }
