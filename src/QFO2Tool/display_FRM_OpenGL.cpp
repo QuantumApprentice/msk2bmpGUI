@@ -260,7 +260,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     int orient  = img_data->display_orient_num;
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height  = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
- 
+
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
     float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 

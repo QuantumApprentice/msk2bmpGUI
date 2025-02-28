@@ -908,7 +908,6 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     }
     std::string name = a + " Edit Window...###edit" + b;
 
-
     image_data* edit_data = &F_Prop->edit_data;
     static Edit_Dir edit_struct[6];
     if (!edit_struct[0].edit_frame) {// && F_Prop->img_data.type != MSK) {

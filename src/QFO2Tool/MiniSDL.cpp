@@ -26,7 +26,6 @@ Surface* Create_RGBA_Surface(int width, int height)
 
 Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
 {
-    int ss = sizeof(Surface);
     int size = sizeof(Surface) + width*height;
     Surface* surface = (Surface*)malloc(size);
     if (!surface) {

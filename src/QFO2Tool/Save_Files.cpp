@@ -249,7 +249,6 @@ char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* usr_info)
 
     FILE *File_ptr = NULL;
     char *Save_File_Name;
-
     const char *lFilterPatterns[2] = {"", "*.FRM"};
     //TODO: replace all tinyfd_ file dialogs with imGui version
     Save_File_Name = tinyfd_saveFileDialog(

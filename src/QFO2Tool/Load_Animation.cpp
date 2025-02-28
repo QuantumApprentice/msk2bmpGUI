@@ -80,10 +80,6 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         //handle image bit depth less than 32bpp
         // frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
 
-        // frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
-        // frame_data[i].Frame_Height = frame_data[i].frame_start->h;
-        // frame_data[i].Shift_Offset_x = 0;
-        // frame_data[i].Shift_Offset_y = 0;
         i++;
     }
 

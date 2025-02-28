@@ -341,9 +341,6 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
         dst->ANM_bounding_box[dir].x2   = dst->width;
         dst->ANM_bounding_box[dir].y2   = dst->height;
 
-        // dst->ANM_dir[dir].frame_data[0].Frame_Width  = src->width;
-        // dst->ANM_dir[dir].frame_data[0].Frame_Height = src->height;
-        // dst->ANM_dir[dir].frame_data[0].Frame_Size   = src->width*src->height;
         dst->ANM_dir[dir].orientation = NE;
 
         dst->FRM_hdr = (FRM_Header*)calloc(1, sizeof(FRM_Header));

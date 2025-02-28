@@ -331,11 +331,8 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
             memcpy(img->pxls, frame_start->frame_start, w*h);
 
             anm_dir[i].frame_data[j] = img;
-            // anm_dir[i].frame_data[j].w   = w;
-            // anm_dir[i].frame_data[j].h   = h;
             anm_dir[i].frame_data[j]->x = frame_start->Shift_Offset_x;
             anm_dir[i].frame_data[j]->y = frame_start->Shift_Offset_y;
-            // anm_dir[i].frame_data[j].Frame_Size     = frame_start->Frame_Size;
 
             buff_offset += frame_start->Frame_Size + sizeof(FRM_Frame);
         }
