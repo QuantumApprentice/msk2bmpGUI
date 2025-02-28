@@ -78,4 +78,5 @@ target_include_directories(
   ../dependencies/imgui-1.90.8-docking
   ../dependencies/GLFW/glfw-3.4/include/
   ../dependencies/stb
+  ../dependencies/ImFileDialog
 )

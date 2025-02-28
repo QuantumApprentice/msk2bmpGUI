@@ -23,7 +23,7 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
         return;
     }
 
-    Surface* sfc = img_data->ANM_dir[img_data->display_orient_num].frame_data[img_data->display_frame_num].frame_start;
+    Surface* sfc = img_data->ANM_dir[img_data->display_orient_num].frame_data[img_data->display_frame_num];
     animate_SURFACE_to_sub_texture(
         shaders->palette,
         shaders->render_FRM_shader,
@@ -261,18 +261,18 @@ void show_image_stats_FRM_SURFACE(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "framerate: %d",       img_data->FRM_hdr->FPS);
     ImGui::Text(buff);
 
-    snprintf(buff, 256, "orient_shift_x: %d",  img_data->FRM_hdr->Shift_Orient_x[dir]);
+    snprintf(buff, 256, "Shift_Orient_x: %d",  img_data->FRM_hdr->Shift_Orient_x[dir]);
     ImGui::Text(buff);
-    snprintf(buff, 256, "orient_shift_y: %d",  img_data->FRM_hdr->Shift_Orient_y[dir]);
+    snprintf(buff, 256, "Shift_Orient_y: %d",  img_data->FRM_hdr->Shift_Orient_y[dir]);
     ImGui::Text(buff);
 
     snprintf(buff, 256, "bounding_x1: %d\t",   img_data->ANM_dir[dir].frame_box[num].x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",         img_data->ANM_dir[dir].frame_data[num].Frame_Width);
+    snprintf(buff, 256, "width: %d\t",         img_data->ANM_dir[dir].frame_data[num]->w);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",        img_data->ANM_dir[dir].frame_data[num].Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",        img_data->ANM_dir[dir].frame_data[num]->x);
     ImGui::Text(buff);
     snprintf(buff, 256, "bounding_x2: %d",     img_data->ANM_dir[dir].frame_box[num].x2);
     ImGui::Text(buff);
@@ -280,10 +280,10 @@ void show_image_stats_FRM_SURFACE(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "bounding_y1: %d\t",   img_data->ANM_dir[dir].frame_box[num].y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",        img_data->ANM_dir[dir].frame_data[num].Frame_Height);
+    snprintf(buff, 256, "height: %d\t",        img_data->ANM_dir[dir].frame_data[num]->h);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",        img_data->ANM_dir[dir].frame_data[num].Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",        img_data->ANM_dir[dir].frame_data[num]->y);
     ImGui::Text(buff);
     snprintf(buff, 256, "bounding_y2: %d",     img_data->ANM_dir[dir].frame_box[num].y2);
     ImGui::Text(buff);
@@ -313,9 +313,9 @@ void show_image_stats_FRM(image_data* img_data, ImFont* font)
         snprintf(buff, 256, "framerate: %d",       img_data->FRM_hdr->FPS);
         ImGui::Text(buff);
 
-        snprintf(buff, 256, "orient_shift_x: %d",  img_data->FRM_hdr->Shift_Orient_x[dir]);
+        snprintf(buff, 256, "Shift_Orient_x: %d",  img_data->FRM_hdr->Shift_Orient_x[dir]);
         ImGui::Text(buff);
-        snprintf(buff, 256, "orient_shift_y: %d",  img_data->FRM_hdr->Shift_Orient_y[dir]);
+        snprintf(buff, 256, "Shift_Orient_y: %d",  img_data->FRM_hdr->Shift_Orient_y[dir]);
         ImGui::Text(buff);
 
         snprintf(buff, 256, "bounding_x1: %d\t",   img_data->FRM_dir[dir].bounding_box[num].x1);
@@ -373,10 +373,10 @@ void show_image_stats_ANM(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "bounding_x1: %d\t",    img_data->ANM_dir[dir].bounding_box.x1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "width: %d\t",          img_data->ANM_dir[dir].frame_data[num].Frame_Width);
+    snprintf(buff, 256, "width: %d\t",          img_data->ANM_dir[dir].frame_data[num]->w);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_dir[dir].frame_data[num].Shift_Offset_x);
+    snprintf(buff, 256, "x_offset: %d",         img_data->ANM_dir[dir].frame_data[num]->x);
     ImGui::Text(buff);
     snprintf(buff, 256, "bounding_x2: %d",      img_data->ANM_dir[dir].bounding_box.x2);
     ImGui::Text(buff);
@@ -384,10 +384,10 @@ void show_image_stats_ANM(image_data* img_data, ImFont* font)
     snprintf(buff, 256, "bounding_y1: %d\t",    img_data->ANM_dir[dir].bounding_box.y1);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "height: %d\t",         img_data->ANM_dir[dir].frame_data[num].Frame_Height);
+    snprintf(buff, 256, "height: %d\t",         img_data->ANM_dir[dir].frame_data[num]->h);
     ImGui::Text(buff);
     ImGui::SameLine();
-    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_dir[dir].frame_data[num].Shift_Offset_y);
+    snprintf(buff, 256, "y_offset: %d",         img_data->ANM_dir[dir].frame_data[num]->y);
     ImGui::Text(buff);
     snprintf(buff, 256, "bounding_y2: %d",      img_data->ANM_dir[dir].bounding_box.y2);
     ImGui::Text(buff);

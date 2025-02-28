@@ -47,7 +47,7 @@ enum Direction
 struct ANM_Dir {
     int num_frames = 0;
     Direction orientation = no_data;
-    ANM_Frame* frame_data = NULL;
+    Surface** frame_data    = NULL;
     rectangle bounding_box = {};    //TODO: remove this
     rectangle* frame_box = {};
 };

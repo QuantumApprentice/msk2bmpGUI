@@ -58,6 +58,7 @@ target_sources(
 add_subdirectory(src/dependencies/GLAD            SYSTEM)
 add_subdirectory(src/dependencies/GLFW/glfw-3.4   SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
+add_subdirectory(src/dependencies/ImFileDialog    SYSTEM)
 
 #is this what allows <> around local #includes?
 target_include_directories(
@@ -71,6 +72,11 @@ target_include_directories(
 add_library(tinyfiledialogs
   src/dependencies/tinyfiledialogs/tinyfiledialogs.c
   src/dependencies/tinyfiledialogs/tinyfiledialogs.h
+)
+
+add_library(ImFileDialog
+  src/dependencies/ImFileDialog/ImFileDialog.cpp
+  src/dependencies/ImFileDialog/ImFileDialog.h
 )
 
 add_library(STB
@@ -127,6 +133,11 @@ target_include_directories(
   src/dependencies/stb/
 )
 
+target_include_directories(
+  ImFileDialog PUBLIC
+  src/dependencies/ImFileDialog
+)
+
 # finally we link these libraries to our executable
 # PRIVATE because nothing (target) will depend on our executable
 target_link_libraries(
@@ -137,6 +148,7 @@ target_link_libraries(
   tinyfiledialogs
   STB
   glfw
+  ImFileDialog
 )
 
 #this custom command copies the contents of src/resources

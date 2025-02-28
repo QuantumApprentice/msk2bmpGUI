@@ -60,6 +60,7 @@ void render_FRM_OpenGL(image_data* img_data, int width, int height)
     free(blank);
 }
 
+//TODO: delete this function (not used?)
 void render_NULL_OpenGL(image_data* img_data, mesh* triangle, Shader* shader, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -81,7 +82,7 @@ void render_NULL_OpenGL(image_data* img_data, mesh* triangle, Shader* shader, in
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-
+//TODO: this is still being used for regular images, refactor
 void render_OTHER_OpenGL(image_data* img_data, int width, int height)
 {
     int orient = img_data->display_orient_num; //(img_data->ANIM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
@@ -91,7 +92,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int x_offset = img_data->ANM_dir[frame_num].bounding_box.x1 - img_data->FRM_bounding_box[orient].x1;
     int y_offset = img_data->ANM_dir[frame_num].bounding_box.y1 - img_data->FRM_bounding_box[orient].y1;
 
-    Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
+    Surface* data = img_data->ANM_dir[orient].frame_data[frame_num];
     // SDL_Surface* data = img_data->ANM_dir[orient].frame_data[frame_num].frame_start;
 
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
@@ -102,6 +103,7 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 }
 
+//TODO: this is still being used, maybe refactor?
 void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_data, uint64_t current_time)
 {
     float constexpr static playback_speeds[5] = { 0.0f, .25f, 0.5f, 1.0f, 2.0f };
@@ -110,8 +112,8 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 
     int orient = img_data->display_orient_num;
 
-    int img_width  = img_data->ANM_dir[orient].frame_data[0].frame_start->w;
-    int img_height = img_data->ANM_dir[orient].frame_data[0].frame_start->h;
+    int img_width  = img_data->ANM_dir[orient].frame_data[0]->w;
+    int img_height = img_data->ANM_dir[orient].frame_data[0]->h;
 
     glViewport(0, 0, img_width, img_height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
@@ -220,13 +222,13 @@ void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triang
     //TODO: maybe handle single image FRM's slightly differently with dropdown?
     //int orient = (img_data->FRM_hdr->Frame_0_Offset[1] > 0) ? img_data->display_orient_num : 0;
     int frame_num = img_data->display_frame_num;
-    int dir = img_data->display_orient_num;
+    int dir     = img_data->display_orient_num;
 
     int total_w = img_data->ANM_bounding_box[dir].x2 - img_data->ANM_bounding_box[dir].x1;
     int total_h = img_data->ANM_bounding_box[dir].y2 - img_data->ANM_bounding_box[dir].y1;
 
-    int frame_w = img_data->ANM_dir[dir].frame_data[frame_num].Frame_Width;
-    int frame_h = img_data->ANM_dir[dir].frame_data[frame_num].Frame_Height;
+    int frame_w = img_data->ANM_dir[dir].frame_data[frame_num]->w;
+    int frame_h = img_data->ANM_dir[dir].frame_data[frame_num]->h;
 
     int x_offset = img_data->ANM_dir[dir].frame_box[frame_num].x1 - img_data->ANM_bounding_box[dir].x1;
     int y_offset = img_data->ANM_dir[dir].frame_box[frame_num].y1 - img_data->ANM_bounding_box[dir].y1;
@@ -258,7 +260,7 @@ void animate_FRM_to_framebuff(float* palette, Shader* shader, mesh& triangle,
     int orient  = img_data->display_orient_num;
     int width   = img_data->FRM_bounding_box[orient].x2 - img_data->FRM_bounding_box[orient].x1;
     int height  = img_data->FRM_bounding_box[orient].y2 - img_data->FRM_bounding_box[orient].y1;
-
+ 
     int FRM_fps = (img_data->FRM_hdr->FPS == 0 && img_data->FRM_dir[orient].num_frames > 1) ? 10 : img_data->FRM_hdr->FPS;
     float fps   = FRM_fps * playback_speeds[img_data->playback_speed];
 

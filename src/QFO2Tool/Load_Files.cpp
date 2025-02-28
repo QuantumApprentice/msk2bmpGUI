@@ -94,6 +94,7 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
              (*path_vec.begin()).parent_path().u8string().c_str());
 // #endif
     int type;
+    //TODO: replace tinyfd_ stuff with ImFileDialog
     if (!(*multiple_files)) {   //false=ask question, true=automatic
         // returns 1 for yes, 2 for no, 0 for cancel
         type = tinyfd_messageBox("Animation? or Single Images?",
@@ -791,11 +792,12 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         bool success = false;
         success = framebuffer_init(&F_Prop->img_data.render_texture, &F_Prop->img_data.framebuffer, 350, 300);
         if (!success) {
+            //TODO: log to file
             set_popup_warning(
                 "[ERROR] Load_MSK_File_SURFACE\n\n"
                 "Image framebuffer failed to attach correctly?"
             );
-            printf("image framebuffer failed to attach correctly?\n");
+            printf("Image framebuffer failed to attach correctly?\n");
             return false;
         }
         SURFACE_to_texture(
@@ -808,11 +810,6 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             &shaders->giant_triangle,
             img_data->framebuffer,
             img_data->MSK_texture, 350, 300);
-        // draw_MSK_to_framebuffer(
-        //     shaders->palette,
-        //     shaders->render_FRM_shader,
-        //     &shaders->giant_triangle,
-        //     img_data);
     }
     // do this for all other more common (generic) image types
     // TODO: add another type for known generic image types?
@@ -842,7 +839,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         //initialize allocated memory
         new (img_data->ANM_dir) ANM_Dir[6];
 
-        F_Prop->img_data.ANM_dir->frame_data = (ANM_Frame *)malloc(sizeof(ANM_Frame));
+        //TODO: refactor this to correctly point to ANM_dir[dir]->frame_data[0?];
+        F_Prop->img_data.ANM_dir[0].frame_data = (Surface**)malloc(sizeof(Surface*));
         if (!F_Prop->img_data.ANM_dir->frame_data) {
             //TODO: log to file
             set_popup_warning(
@@ -856,31 +854,32 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             new (img_data->ANM_dir->frame_data) ANM_Frame;
         }
 
-        F_Prop->img_data.ANM_dir->frame_data->frame_start = temp_surface;
+        //TODO: refactor this to correctly point to ANM_dir[dir]->frame_data[0].frame_start;
+        img_data->ANM_dir[0].frame_data[0] = temp_surface;
+        if (img_data->ANM_dir->frame_data) {
+            img_data->width  = F_Prop->img_data.ANM_dir[0].frame_data[0]->w;
+            img_data->height = F_Prop->img_data.ANM_dir[0].frame_data[0]->h;
+            img_data->ANM_dir[0].num_frames = 1;
 
-        if (F_Prop->img_data.ANM_dir->frame_data->frame_start) {
-            F_Prop->img_data.width = F_Prop->img_data.ANM_dir->frame_data->frame_start->w;
-            F_Prop->img_data.height = F_Prop->img_data.ANM_dir->frame_data->frame_start->h;
-            F_Prop->img_data.ANM_dir->num_frames = 1;
-
-            F_Prop->img_data.type = OTHER;
+            img_data->type = OTHER;
 
             // TODO: rewrite this function
             F_Prop->file_open_window 
-                = Image2Texture(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                = Image2Texture(F_Prop->img_data.ANM_dir[0].frame_data[0],
                                 &F_Prop->img_data.FRM_texture);
 
             init_framebuffer(img_data);
             //assign display direction to same as image slot
             //so we can see the image on load
             img_data->display_orient_num = NE;
+            img_data->display_frame_num  = 0;
         }
     }
 
     // if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
     if (F_Prop->img_data.ANM_dir != NULL)
     {
-        if ((F_Prop->img_data.ANM_dir[img_data->display_orient_num].frame_data->frame_start == NULL)
+        if ((F_Prop->img_data.ANM_dir[img_data->display_orient_num].frame_data == NULL)
             && F_Prop->img_data.type != FRM
             && F_Prop->img_data.type != MSK)
         {

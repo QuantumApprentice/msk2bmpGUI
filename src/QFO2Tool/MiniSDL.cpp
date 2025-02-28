@@ -26,6 +26,7 @@ Surface* Create_RGBA_Surface(int width, int height)
 
 Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
 {
+    int ss = sizeof(Surface);
     int size = sizeof(Surface) + width*height;
     Surface* surface = (Surface*)malloc(size);
     if (!surface) {
@@ -33,6 +34,8 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
     }
     surface->w        = width;
     surface->h        = height;
+    surface->x        = 0;
+    surface->y        = 0;
     surface->channels = 1;
     surface->pitch    = width;
     surface->palette  = palette;
@@ -43,7 +46,7 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
 
 void FreeSurface(Surface* src)
 {
-    uint8_t* pxls_ptr = (uint8_t*)src + sizeof(Surface);
+    uint8_t* pxls_ptr = ((uint8_t*)src) + sizeof(Surface);
     if (src->pxls != pxls_ptr) {
         free(src->pxls);
     }
@@ -106,6 +109,8 @@ Surface* Load_File_to_RGBA(const char* filename)
     }
     surface->w        = w;
     surface->h        = h;
+    surface->x        = 0;
+    surface->y        = 0;
     surface->channels = 4;
     surface->pitch    = w*4;
     surface->pxls     = pxls;
@@ -146,6 +151,8 @@ Surface* Copy8BitSurface(Surface* src)
     dst->channels = src->channels;
     dst->palette  = src->palette;
     dst->pitch    = src->pitch;
+    dst->x        = src->x;
+    dst->y        = src->y;
     dst->w        = src->w;
     dst->h        = src->h;
 

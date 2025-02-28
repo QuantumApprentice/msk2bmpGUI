@@ -159,7 +159,7 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
         Surface* src;
         GLuint texture;
         if (edit_data->type == FRM) {
-            src     = edit_data->ANM_dir[dir].frame_data[num].frame_start;
+            src     = edit_data->ANM_dir[dir].frame_data[num];
             texture = edit_data->FRM_texture;
         }
         if (edit_data->type == MSK) {

@@ -421,7 +421,7 @@ bool Load_MSK_File_SURFACE(char* FileName, image_data* img_data, int width, int 
     return true;
 }
 
-void Convert_Surface_to_MSK(Surface* surface, image_data* img_data)
+void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data)
 {
     int width  = surface->w;
     int height = surface->h;
@@ -431,7 +431,7 @@ void Convert_Surface_to_MSK(Surface* surface, image_data* img_data)
     Surface* Surface_32 = Convert_Surface_to_RGBA(surface);
     if (!Surface_32) {
         set_popup_warning(
-            "[ERROR] Convert_Surface_to_MSK()\n\n"
+            "[ERROR] Convert_SURFACE_to_MSK()\n\n"
             "Unable to allocate surface for MSK"
         );
         printf("[ERROR] Unable to allocate surface for MSK\n");

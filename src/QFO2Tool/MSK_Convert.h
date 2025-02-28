@@ -19,4 +19,4 @@ bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int h
 
 Surface* Load_MSK_Tile_STB(char* FileName);
 Surface* Convert_Surface_to_RGBA(Surface* surface);
-void Convert_Surface_to_MSK(Surface* surface, image_data* img_data);
+void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data);

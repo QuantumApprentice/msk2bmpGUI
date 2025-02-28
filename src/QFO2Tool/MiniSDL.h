@@ -25,8 +25,10 @@ typedef struct Palette {
 } Palette;
 
 typedef struct Surface {
-    int w;
-    int h;
+    uint16_t w;
+    uint16_t h;
+    int16_t  x;
+    int16_t  y;
     int channels;       //number of color channels, 1 for indexed/palletized, 3/4 for RGB/RGBA
     int pitch;          //== w*channels
     Palette* palette;   //store a palette per image?

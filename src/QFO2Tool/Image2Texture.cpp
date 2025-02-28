@@ -154,7 +154,7 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
         memcpy(dst_dir[i].frame_box, src_dir[i].frame_box, sizeof(rectangle)*num_frames);
 
         // allocate frame space on dst, copy from image_data to dst
-        dst_dir[i].frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame)*num_frames);
+        dst_dir[i].frame_data = (Surface**)malloc(sizeof(Surface*)*num_frames);
         if (!dst_dir[i].frame_data) {
             //TODO: log out to file
             set_popup_warning(
@@ -164,10 +164,10 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
             printf("Unable to allocate memory for dst_dir[%d].frame_data: %d", i, __LINE__);
             return false;
         }
-        memcpy(dst_dir[i].frame_data, src_dir[i].frame_data, sizeof(ANM_Frame)*num_frames);
+
         for (int j = 0; j < num_frames; j++) {
             // duplicate surface and assign to dst
-            Surface* src_srfc = src_dir[i].frame_data[j].frame_start;
+            Surface* src_srfc = src_dir[i].frame_data[j];
             Surface* dst_srfc = Copy8BitSurface(src_srfc);
             if (dst_srfc == NULL) {
                 //TODO: log out to file
@@ -178,7 +178,7 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
                 printf("Unable to allocate memory for Surface* dst: %d", __LINE__);
                 return false;
             }
-            dst_dir[i].frame_data[j].frame_start = dst_srfc;
+            dst_dir[i].frame_data[j] = dst_srfc;
         }
     }
 
@@ -258,7 +258,7 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
     dst->height = src->height;
     dst->scale  = src->scale;
     dst->offset = src->offset;
-    
+
     int dir = src->display_orient_num = dst->display_orient_num = src->display_orient_num;
 
 #pragma region copy_it_all
@@ -271,7 +271,7 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
             dst->FRM_size = src->FRM_size;
             copy_it_all_ANM(src, dst);
             dst->FRM_texture = init_texture(
-                dst->ANM_dir[src->display_orient_num].frame_data[0].frame_start,
+                dst->ANM_dir[src->display_orient_num].frame_data[0],
                 dst->width,
                 dst->height,
                 dst->type);
@@ -305,18 +305,24 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
         }
         new(dst->ANM_dir) ANM_Dir[6];
 
-        dst->ANM_dir[dir].frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame));
+        dst->ANM_dir[dir].frame_data = (Surface**)malloc(sizeof(Surface*));
+        if (!dst->ANM_dir[dir].frame_data) {
+            //TODO: log out to file
+            set_popup_warning(
+                "[ERROR] prep_image_SURFACE()\n\n"
+                "Unable to allocate memory for frame_data."
+            );
+            printf("Unable to allocate memory for frame_data: %d", __LINE__);
+            return;
+        }
 
-        dst->ANM_dir[dir].frame_data[0].frame_start = PAL_Color_Convert(
-            src->ANM_dir->frame_data->frame_start,
+        dst->ANM_dir[dir].frame_data[0] = PAL_Color_Convert(
+            src->ANM_dir[dir].frame_data[0],
             pal, color_match_algo);
 
-        if (!dst->ANM_dir[dir].frame_data[0].frame_start) {
+        if (!dst->ANM_dir[dir].frame_data[0]) {
             //TODO: log out to file
-            // set_popup_warning(
-            //     "[ERROR] prep_image_SURFACE()\n\n"
-            //     "Unable to allocate memory for ANM_dir."
-            // );
+            //PAL_Color_Convert() has its own warning popup
             // printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
             return;
         }
@@ -335,16 +341,16 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
         dst->ANM_bounding_box[dir].x2   = dst->width;
         dst->ANM_bounding_box[dir].y2   = dst->height;
 
-        dst->ANM_dir[dir].frame_data[0].Frame_Width  = src->width;
-        dst->ANM_dir[dir].frame_data[0].Frame_Height = src->height;
-        dst->ANM_dir[dir].frame_data[0].Frame_Size   = src->width*src->height;
+        // dst->ANM_dir[dir].frame_data[0].Frame_Width  = src->width;
+        // dst->ANM_dir[dir].frame_data[0].Frame_Height = src->height;
+        // dst->ANM_dir[dir].frame_data[0].Frame_Size   = src->width*src->height;
         dst->ANM_dir[dir].orientation = NE;
 
         dst->FRM_hdr = (FRM_Header*)calloc(1, sizeof(FRM_Header));
         dst->type = FRM;
 
         dst->FRM_texture = init_texture(
-            dst->ANM_dir[dir].frame_data[0].frame_start,
+            dst->ANM_dir[dir].frame_data[0],
             dst->width,
             dst->height,
             dst->type);
@@ -452,12 +458,12 @@ void Prep_Image(LF* F_Prop, Palette* palette, int color_match_algo, bool* window
 
     }
     else {
-        edit_data->FRM_data
-            = FRM_Color_Convert(img_data->ANM_dir->frame_data->frame_start,
-                                palette, color_match_algo);
+        // edit_data->FRM_data
+        //     = FRM_Color_Convert(&img_data->ANM_dir[0]frame_data[0],
+        //                         palette, color_match_algo);
         edit_data->type = FRM;
-        int width  = img_data->ANM_dir->frame_data->frame_start->w;
-        int height = img_data->ANM_dir->frame_data->frame_start->h;
+        int width  = img_data->ANM_dir[0].frame_data[0]->w;
+        int height = img_data->ANM_dir[0].frame_data[0]->h;
         int size   = width * height;
 
         edit_data->scale  = img_data->scale;
@@ -568,7 +574,7 @@ bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type t
         }
 
         int dir = img_data->display_orient_num;
-        Surface* srfc = img_data->ANM_dir[dir].frame_data[0].frame_start;
+        Surface* srfc = img_data->ANM_dir[dir].frame_data[0];
         glGenTextures(1, &img_data->FRM_texture);
         glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
         //texture settings

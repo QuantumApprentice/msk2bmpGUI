@@ -65,8 +65,8 @@ bool init_framebuffer(struct image_data* img_data)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    int width   = img_data->width;
-    int height  = img_data->height;
+    int width  = img_data->width;
+    int height = img_data->height;
 
     //allocate video memory for texture
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -164,12 +164,12 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 
 void calculate_bounding_box_SURFACE(
         rectangle* bounding_box, rectangle* FRM_bounding_box,
-        ANM_Frame* anm_frame, rectangle* box)
+        Surface* anm_frame, rectangle* box)
 {
-    bounding_box->x1 += anm_frame->Shift_Offset_x - anm_frame->Frame_Width/2;
-    bounding_box->y1 += anm_frame->Shift_Offset_y - anm_frame->Frame_Height;
-    bounding_box->x2  = bounding_box->x1 + anm_frame->Frame_Width;
-    bounding_box->y2  = bounding_box->y1 + anm_frame->Frame_Height;
+    bounding_box->x1 += anm_frame->x - anm_frame->w/2;
+    bounding_box->y1 += anm_frame->y - anm_frame->h;
+    bounding_box->x2  = bounding_box->x1 + anm_frame->w;
+    bounding_box->y2  = bounding_box->y1 + anm_frame->h;
 
     *box = *bounding_box;
     if (bounding_box->x1 < FRM_bounding_box->x1) {
@@ -185,10 +185,11 @@ void calculate_bounding_box_SURFACE(
         FRM_bounding_box->y2 = bounding_box->y2;
     }
 
-    bounding_box->x1 += anm_frame->Frame_Width / 2;
-    bounding_box->y1 += anm_frame->Frame_Height;
+    bounding_box->x1 += anm_frame->w / 2;
+    bounding_box->y1 += anm_frame->h;
 }
 
+//TODO: delete, replaced with calculate_bounding_box_SURFACE()
 void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box,
                             FRM_Frame* frame_start, rectangle* box)
 {
@@ -275,7 +276,7 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 
 
     ANM_Dir* anm_dir = img_data->ANM_dir;
-    int buff_offset = sizeof(FRM_Header);
+    int buff_offset  = sizeof(FRM_Header);
     for (int i = 0; i < num_orients; i++)
     {
         if (num_orients < 6) {
@@ -284,17 +285,26 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 
         anm_dir[i].num_frames  = num_frames;
         anm_dir[i].orientation = (Direction)i;
-        int frame_size         = sizeof(FRM_Frame);
 
         //TODO: change to ptr assignment after malloc-ing entire memory above ^^
-        anm_dir[i].frame_data  = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
+        anm_dir[i].frame_data  = (Surface**)malloc(sizeof(Surface*) * num_frames);
         if (!anm_dir[i].frame_data) {
-            printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
+            //TODO: log out to file
+            set_popup_warning(
+                "[ERROR] load_FRM_to_SURFACE()\n\n"
+                "Unable to allocate memory for anm_dir[i].frame_data"
+            );
+            printf("Unable to allocate memory for anm_dir[%d].frame_data: %d", i, __LINE__);
             return false;
         }
         anm_dir[i].frame_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
         if (!anm_dir[i].frame_box) {
-            printf("Unable to allocate memory for frm_dir[%d].bounding_box: %d", i, __LINE__);
+            //TODO: log out to file
+            set_popup_warning(
+                "[ERROR] load_FRM_to_SURFACE()\n\n"
+                "Unable to allocate memory for anm_dir[i].frame_data"
+            );
+            printf("Unable to allocate memory for anm_dir[%d].bounding_box: %d", i, __LINE__);
             return false;
         }
 
@@ -302,9 +312,9 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
         rectangle FRM_bounding_box  = {};
 
         for (int j = 0; j < num_frames; j++) {
-            FRM_Frame* frame_start   = (FRM_Frame*)(buffer + buff_offset);
+            FRM_Frame* frame_start = (FRM_Frame*)(buffer + buff_offset);
             B_Endian::flip_frame_endian(frame_start);
-            calculate_bounding_box(&frame_box, &FRM_bounding_box, frame_start, &anm_dir[i].frame_box[j]); // anm_dir, i, j);
+            calculate_bounding_box(&frame_box, &FRM_bounding_box, frame_start, &anm_dir[i].frame_box[j]);
 
             int w = frame_start->Frame_Width;
             int h = frame_start->Frame_Height;
@@ -320,14 +330,14 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 
             memcpy(img->pxls, frame_start->frame_start, w*h);
 
-            anm_dir[i].frame_data[j].frame_start    = img;
-            anm_dir[i].frame_data[j].Frame_Width    = w;
-            anm_dir[i].frame_data[j].Frame_Height   = h;
-            anm_dir[i].frame_data[j].Shift_Offset_x = frame_start->Shift_Offset_x;
-            anm_dir[i].frame_data[j].Shift_Offset_y = frame_start->Shift_Offset_y;
-            anm_dir[i].frame_data[j].Frame_Size     = frame_start->Frame_Size;
+            anm_dir[i].frame_data[j] = img;
+            // anm_dir[i].frame_data[j].w   = w;
+            // anm_dir[i].frame_data[j].h   = h;
+            anm_dir[i].frame_data[j]->x = frame_start->Shift_Offset_x;
+            anm_dir[i].frame_data[j]->y = frame_start->Shift_Offset_y;
+            // anm_dir[i].frame_data[j].Frame_Size     = frame_start->Frame_Size;
 
-            buff_offset += frame_start->Frame_Size + frame_size;
+            buff_offset += frame_start->Frame_Size + sizeof(FRM_Frame);
         }
         img_data->ANM_bounding_box[i] = FRM_bounding_box;
     }
@@ -472,6 +482,7 @@ bool Render_FRM0_OpenGL(image_data* img_data, int dir)
     return true;
 }
 
+//TODO: replace with surface equivalent?
 //load FRM image from char* file_name
 //stores GLuint and size info to img_data
 //returns true on success, else false
@@ -495,7 +506,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
 
 
     img_data->FRM_texture = init_texture(
-        img_data->ANM_dir[dir].frame_data[0].frame_start,
+        img_data->ANM_dir[dir].frame_data[0],
         img_data->width,
         img_data->height,
         img_data->type);
@@ -521,7 +532,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
     }
 
     SURFACE_to_texture(
-        img_data->ANM_dir[img_data->display_orient_num].frame_data[0].frame_start,
+        img_data->ANM_dir[img_data->display_orient_num].frame_data[0],
         img_data->FRM_texture, img_data->width, img_data->height, 1);
 
     draw_texture_to_framebuffer(

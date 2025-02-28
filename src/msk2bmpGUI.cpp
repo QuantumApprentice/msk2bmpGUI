@@ -169,6 +169,7 @@ int main(int argc, char** argv)
     My_Variables.shaders.render_OTHER_shader = new Shader(vbuffer, fbuffer);
 
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/grid-texture.png");
+    //TODO: am I using tile_texture_prev or tile_texture_rend anymore?
     load_tile_texture(&My_Variables.tile_texture_prev, vbuffer);
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/blue_tile_mask.png");
     load_tile_texture(&My_Variables.tile_texture_rend, vbuffer);
@@ -448,7 +449,7 @@ int main(int argc, char** argv)
             }
 
             //contextual palette window for MSK vs FRM editing
-            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK && My_Variables.window_number_focus>-1) {
+            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK && My_Variables.window_number_focus > -1) {
                 Show_MSK_Palette_Window(&My_Variables);
             } else {
                 Show_Palette_Window(&My_Variables);
@@ -582,8 +583,8 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
             if (dir->frame_data == NULL) {
                 wrong_size = false;
             } else {
-                wrong_size = ((dir->frame_data->frame_start->w != 350)
-                           || (dir->frame_data->frame_start->h != 300));
+                wrong_size = ((dir->frame_data[0]->w != 350)
+                           || (dir->frame_data[0]->h != 300));
             }
         }
     }
@@ -599,7 +600,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         //warn if wrong size for map tile
         if (wrong_size) {
             ImGui::Text("This image is the wrong size to make a tile...");
-            ImGui::Text("Size is %dx%d", dir->frame_data->frame_start->w, dir->frame_data->frame_start->h);
+            ImGui::Text("Size is %dx%d", dir->frame_data[0]->w, dir->frame_data[0]->h);
             ImGui::Text("Tileable Map images need to be a multiple of 350x300 pixels");
             F_Prop->image_is_tileable = true;
         }
@@ -820,7 +821,7 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
             //      but doing this and painting outside the official Frame_Width/_Height would
             //      have to be dealt with by expanding the _Width/_Height whenever this happens
             //      AND give the user some feedback that this is happening
-            Surface* src = edit_data->ANM_dir[dir].frame_data[frame].frame_start;
+            Surface* src = edit_data->ANM_dir[dir].frame_data[frame];
             Surface* dst = Create_8Bit_Surface(src->w, src->h, palette);
 
             memcpy(dst->pxls, src->pxls, src->w*src->h);
@@ -907,6 +908,7 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     }
     std::string name = a + " Edit Window...###edit" + b;
 
+
     image_data* edit_data = &F_Prop->edit_data;
     static Edit_Dir edit_struct[6];
     if (!edit_struct[0].edit_frame) {// && F_Prop->img_data.type != MSK) {
@@ -935,7 +937,7 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
         }
 
         if (ImGui::IsWindowFocused()) {
-            My_Variables->window_number_focus = counter;
+            My_Variables->window_number_focus = counter-1;
             My_Variables->edit_image_focused  = true;
         }
 
@@ -1085,6 +1087,13 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         F_Prop->edit_image_window = true;
         (*counter)++;
     }
+
+    static bool disabled = true;
+    if (disabled) ImGui::BeginDisabled();
+    if (ImGui::Button("Save")) {
+
+    }
+    if (disabled) ImGui::EndDisabled();
 }
 
 void contextual_buttons(variables* My_Variables, int window_number_focus)
@@ -1095,7 +1104,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     //      specifically need to save as GIF at least
     static bool open_window     = false;
-    static bool single_dir      = false;
+    static bool single_dir_b      = false;
     static int  save_type       = UNK;
     static image_data* data_ptr = NULL;
 
@@ -1108,9 +1117,16 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         //regular edit image window with animated color pallete painting
         if (!F_Prop->edit_MSK) {
             //TODO: add frame editing functions/frame saving functions
-            if (ImGui::Button("Export Image...")) {
-                Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
-            }
+            // if (ImGui::Button("Export Image...")) {
+                Save_Info sv_info;
+                sv_info.s_type = all_dirs;
+                char* temp = save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
+                if (temp) {
+                    F_Prop->c_name = temp;
+                }
+                
+                // Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
+            // }
             if (ImGui::Button("Save as Overworld Map Tiles...")) {
                 //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
                 Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
@@ -1236,13 +1252,19 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
             }
             if (ImGui::Button("Convert Regular Image to MSK")) {
-                Convert_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                Convert_SURFACE_to_MSK(F_Prop->img_data.ANM_dir[0].frame_data[0],
                                           &F_Prop->img_data);
-                Prep_Image(F_Prop,
-                    NULL,
+                prep_image_SURFACE(
+                    F_Prop,
+                    pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->edit_image_window, alpha_off);
-                F_Prop->edit_MSK = true;
+                    &F_Prop->edit_image_window, alpha_off
+                );
+                // Prep_Image(F_Prop,
+                //     NULL,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->edit_image_window, alpha_off);
+                // F_Prop->edit_MSK = true;
             }
         }
         else if (F_Prop->img_data.type == FRM) {
@@ -1255,31 +1277,49 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 );
             }
             if (ImGui::Button("Preview FRM as image (not tiles)")) {
-                Prep_Image(F_Prop,
+                prep_image_SURFACE(
+                    F_Prop,
                     pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->show_image_render, alpha_off);
-                F_Prop->preview_tiles_window = false;
+                    &F_Prop->preview_tiles_window, alpha_off
+                );
+                // Prep_Image(F_Prop,
+                //     pxlFMT_FO_Pal,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->show_image_render, alpha_off);
+                // F_Prop->preview_tiles_window = false;
             }
             //TODO: manage some sort of contextual menu for tileable images?
             if (F_Prop->image_is_tileable) {
                 //Tileable image Buttons
                 if (ImGui::Button("Convert FRM to Tiles")) {
-                    Prep_Image(F_Prop,
+                    prep_image_SURFACE(
+                        F_Prop,
                         pxlFMT_FO_Pal,
                         My_Variables->color_match_algo,
-                        &F_Prop->preview_tiles_window, alpha_off);
+                        &F_Prop->preview_tiles_window, alpha_off
+                    );
+                    // Prep_Image(F_Prop,
+                    //     pxlFMT_FO_Pal,
+                    //     My_Variables->color_match_algo,
+                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
             }
             if (ImGui::Button("Convert FRM Image to MSK")) {
-                Convert_Surface_to_MSK(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                Convert_SURFACE_to_MSK(F_Prop->img_data.ANM_dir[0].frame_data[0],
                                           &F_Prop->img_data);
-                Prep_Image(F_Prop,
-                    NULL,
+                prep_image_SURFACE(
+                    F_Prop,
+                    pxlFMT_FO_Pal,
                     My_Variables->color_match_algo,
-                    &F_Prop->edit_image_window, alpha_off);
+                    &F_Prop->preview_tiles_window, alpha_off
+                );
+                // Prep_Image(F_Prop,
+                //     NULL,
+                //     My_Variables->color_match_algo,
+                //     &F_Prop->edit_image_window, alpha_off);
                 F_Prop->edit_MSK = true;
             }
         }
@@ -1335,7 +1375,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         if (My_Variables->tile_window_focused) {
             if (ImGui::Button("Save as Map Tiles...")) {
                 if (strcmp(F_Prop->extension, "FRM") == 0) {
-                    Save_IMG_STB(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_STB(F_Prop->img_data.ANM_dir[0].frame_data[0],
                                 &usr_info);
                 }
                 else {
@@ -1360,7 +1400,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 open_window = true;
 
                 if (save_type == OTHER) {
-                    Save_IMG_STB(F_Prop->img_data.ANM_dir->frame_data->frame_start,
+                    Save_IMG_STB(F_Prop->img_data.ANM_dir[0].frame_data[0],
                                 &usr_info);
                 }
                 if (save_type == FRM) {
@@ -1374,32 +1414,32 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
 
     if (open_window) {
-        popup_save_menu(&open_window, &save_type, &single_dir);
+        popup_save_menu(&open_window, &save_type, &single_dir_b);
         if (save_type == OTHER) {
             //TODO: save as GIF
         }
         if (save_type == FRM) {
             Save_FRM_Animation_OpenGL(data_ptr, &usr_info, F_Prop->c_name);
             open_window = false;
-            single_dir  = false;
+            single_dir_b  = false;
             save_type   = UNK;
             data_ptr    = NULL;
         }
-        if (save_type == FRx && !single_dir) {
+        if (save_type == FRx && !single_dir_b) {
             Save_FRx_Animation_OpenGL(data_ptr, usr_info.default_save_path, F_Prop->c_name);
             open_window = false;
-            single_dir  = false;
+            single_dir_b  = false;
             save_type   = UNK;
             data_ptr    = NULL;
         }
-        if (save_type == FRx && single_dir) {
+        if (save_type == FRx && single_dir_b) {
             if (data_ptr->FRM_dir[data_ptr->display_orient_num].orientation < 0) {
                 tinyfd_messageBox(
                     "You done effed up!",
                     "The selected direction has no data.",
                     "ok", "error", 1);
                 open_window = false;
-                single_dir  = false;
+                single_dir_b  = false;
                 save_type   = UNK;
                 data_ptr    = NULL;
             }
@@ -1407,13 +1447,13 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 bool success = Save_Single_FRx_Animation_OpenGL(data_ptr, F_Prop->c_name, data_ptr->display_orient_num);
                 if (!success) {
                         open_window = false;
-                        single_dir  = false;
+                        single_dir_b  = false;
                         save_type   = UNK;
                         data_ptr    = NULL;
                 }
             }
             open_window = false;
-            single_dir  = false;
+            single_dir_b  = false;
             save_type   = UNK;
             data_ptr    = NULL;
         }

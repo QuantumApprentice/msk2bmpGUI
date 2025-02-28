@@ -122,12 +122,10 @@ Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
         return nullptr;
     }
     //switch to change between euclidian and sdl color match algorithms
+    //TODO: get a new color match algorithm
     if (color_match_algo == 0) {
-        //TODO: test difference between SDL_Color_Match() and Euclidian w/optimizations
-        // SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     } else if (color_match_algo == 1) {
-        //TODO: get a new color match algorithm
         Euclidian_Distance_Color_Match(Surface_32, Surface_8);
     }
     if (Surface_32 != src) {

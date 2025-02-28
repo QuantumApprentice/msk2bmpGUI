@@ -51,7 +51,7 @@ Surface* crop_frame_SURFACE(pxl_pos* curr_pos, Surface* src, Palette* pal, int a
 
 //calls FRM_color_convert()
 //returns pointer to FRM header, including frame info
-uint8_t* Crop_Frame(pxl_pos* pos_data, ANM_Frame* anm_frame, Palette* FO_Palette)
+uint8_t* Crop_Frame(pxl_pos* pos_data, Surface* anm_frame, Palette* FO_Palette)
 {
     int Frame_Width  = pos_data->w;
     int Frame_Height = pos_data->h;
@@ -70,7 +70,7 @@ uint8_t* Crop_Frame(pxl_pos* pos_data, ANM_Frame* anm_frame, Palette* FO_Palette
 
     Surface* out_surface = Create_RGBA_Surface(Frame_Width, Frame_Height);
 
-    BlitSurface(anm_frame->frame_start, src_rectangle, out_surface, dst_rectangle);
+    BlitSurface(anm_frame, src_rectangle, out_surface, dst_rectangle);
 
     uint8_t* out_data = FRM_Color_Convert(out_surface, FO_Palette, 0);
 
@@ -102,7 +102,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
         }
 
         num_frms = dst->ANM_dir[i].num_frames = src->ANM_dir[i].num_frames;
-        dst->ANM_dir[i].frame_data  = (ANM_Frame*)malloc(sizeof(ANM_Frame)*num_frms);
+        dst->ANM_dir[i].frame_data = (Surface**)calloc(1,sizeof(Surface*)*num_frms);
         if (!dst->ANM_dir[dir].frame_data) {
             //TODO: log out to file
             set_popup_warning(
@@ -135,7 +135,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
         // loop over all frames in each direction
         for (int j = 0; j < num_frms; j++)
         {
-            Surface* src_surface = src->ANM_dir[i].frame_data[j].frame_start;
+            Surface* src_surface = src->ANM_dir[i].frame_data[j];
             int src_width  = src_surface->w;
             int src_height = src_surface->h;
             int src_pitch  = src_surface->pitch;
@@ -154,11 +154,11 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
                     "Unable to allocate Surface_32."
                 );
                 printf("Error: unable to allocate Surface_32: %d\n", __LINE__);
-                free(dst->ANM_dir);
                 for (int i = 0; i < 6; i++) {
                     free(dst->ANM_dir[i].frame_data);
                 }
                 free(dst->ANM_dir[i].frame_box);
+                free(dst->ANM_dir);
                 return false;
             }
 
@@ -197,37 +197,33 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             curr_pos.w = curr_pos.r_pxl - curr_pos.l_pxl;
             curr_pos.h = curr_pos.b_pxl - curr_pos.t_pxl;
 
-            ANM_Frame* src_frame = &src->ANM_dir[i].frame_data[j];
-            ANM_Frame* dst_frame = &dst->ANM_dir[i].frame_data[j];
-            dst_frame->Frame_Width  = curr_pos.w;
-            dst_frame->Frame_Height = curr_pos.h;
-            dst_frame->Frame_Size   = curr_pos.w*curr_pos.h;
-            if (j > 0) {
-                dst_frame->Shift_Offset_x = (curr_pos.l_pxl + curr_pos.r_pxl) / 2 - (prev_pos.l_pxl + prev_pos.r_pxl) / 2;
-                dst_frame->Shift_Offset_y =  curr_pos.b_pxl - prev_pos.b_pxl;
-            } else {
-                //set frame 0 offset
-                dst_frame->Shift_Offset_x = 0;
-                dst_frame->Shift_Offset_y = 0;
-            }
-
-            Surface* surface_8 = crop_frame_SURFACE(&curr_pos, src_frame->frame_start, pal, algo);
-            if (!surface_8) {
+            Surface* src_frame = src->ANM_dir[i].frame_data[j];
+            dst->ANM_dir[i].frame_data[j] = crop_frame_SURFACE(&curr_pos, src_frame, pal, algo);
+            Surface* dst_frame = dst->ANM_dir[i].frame_data[j];
+            if (!dst_frame) {
                 //TODO: log out to file
                 printf("Error: Unable to allocate for surface_8: %d\n", __LINE__);
-                free(dst->ANM_dir);
                 for (int i = 0; i < 6; i++) {
                     free(dst->ANM_dir[i].frame_data);
                 }
                 free(dst->ANM_dir[i].frame_box);
+                free(dst->ANM_dir);
                 return false;
+            }
+
+            if (j > 0) {
+                dst_frame->x = (curr_pos.l_pxl + curr_pos.r_pxl) / 2 - (prev_pos.l_pxl + prev_pos.r_pxl) / 2;
+                dst_frame->y =  curr_pos.b_pxl - prev_pos.b_pxl;
+            } else {
+                //set frame 0 offset
+                dst_frame->x = 0;
+                dst_frame->y = 0;
             }
 
             calculate_bounding_box_SURFACE(
                 &bounding_box, &FRM_bounding_box,
                 dst_frame, &dst->ANM_dir[i].frame_box[j]);
 
-            dst_frame->frame_start = surface_8;
             prev_pos = curr_pos;
         }
 
@@ -266,7 +262,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
     }
 
     dst->FRM_texture = init_texture(
-        dst->ANM_dir[dir].frame_data[0].frame_start,
+        dst->ANM_dir[dir].frame_data[0],
         dst->width,
         dst->height,
         dst->type);
@@ -294,6 +290,8 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
 
 }
 
+
+//TODO: delete, replaced by crop_animation_SURFACE()
 bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Palette)
 {
     // int FRM_frame_size = sizeof(FRM_Frame);
@@ -354,7 +352,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
             // loop over all frames in one direction
             for (int j = 0; j < num_frames; j++)
             {
-                Surface* surface = img_data->ANM_dir[i].frame_data[j].frame_start;
+                Surface* surface = img_data->ANM_dir[i].frame_data[j];
                 int width  = surface->w;
                 int height = surface->h;
                 int pitch  = surface->pitch;
@@ -423,7 +421,7 @@ bool Crop_Animation(image_data* img_data, image_data* edit_data, Palette* FO_Pal
                 }
 
                 //convert each frame to 8-bit paletted, copy to FRM_frame_ptrs at correct position
-                uint8_t* data = Crop_Frame(&pos_data[j], &img_data->ANM_dir[i].frame_data[j], FO_Palette);
+                uint8_t* data = Crop_Frame(&pos_data[j], img_data->ANM_dir[i].frame_data[j], FO_Palette);
                 memcpy(frame_data->frame_start, data + sizeof(FRM_Header) + sizeof(FRM_Frame), image_size);
                 // memcpy((uint8_t*)frame_data + FRM_frame_size, data, data_frame_size);
                 frm_frame_ptrs[j] = frame_data;

@@ -54,19 +54,19 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         img_data->ANM_dir[temp_orient].num_frames  = num_frames;
     }
 
-    ANM_Frame* frame_data = img_data->ANM_dir[temp_orient].frame_data;
+    Surface** frame_data = img_data->ANM_dir[temp_orient].frame_data;
     if (frame_data != NULL) {
         memset(frame_data, 0, sizeof(ANM_Frame));
         free(frame_data);
     }
-    frame_data = (ANM_Frame*)malloc(sizeof(ANM_Frame) * num_frames);
+    frame_data = (Surface**)malloc(sizeof(Surface*) * num_frames);
     if (!frame_data) {
         //TODO: log out to txt file
         set_popup_warning(
             "[ERROR] Drag_Drop_Load_Animation()\n\n"
-            "Unable to allocate enough memory"
+            "Unable to allocate enough memory for frame_data"
         );
-        printf("Unable to allocate enough memory L%d\n", __LINE__);
+        printf("Unable to allocate enough memory for frame_data: L%d\n", __LINE__);
         return false;
     }
     img_data->ANM_dir[temp_orient].frame_data = frame_data;
@@ -75,22 +75,22 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     int i = 0;
     for (const std::filesystem::path& path : path_set) {
 
-        frame_data[i].frame_start  = Load_File_to_RGBA(path.u8string().c_str());
+        frame_data[i]  = Load_File_to_RGBA(path.u8string().c_str());
         // frame_data[i].frame_start  = IMG_Load(path.u8string().c_str());
         //handle image bit depth less than 32bpp
         // frame_data[i].frame_start  = Surface_32_Check(frame_data[i].frame_start);
 
-        frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
-        frame_data[i].Frame_Height = frame_data[i].frame_start->h;
-        frame_data[i].Shift_Offset_x = 0;
-        frame_data[i].Shift_Offset_y = 0;
+        // frame_data[i].Frame_Width  = frame_data[i].frame_start->w;
+        // frame_data[i].Frame_Height = frame_data[i].frame_start->h;
+        // frame_data[i].Shift_Offset_x = 0;
+        // frame_data[i].Shift_Offset_y = 0;
         i++;
     }
 
     F_Prop->img_data.type = OTHER;
     //TODO: refactor img_data.width/height out in favor of FRM_boundary_box?
-    img_data->width  = frame_data[0].frame_start->w;
-    img_data->height = frame_data[0].frame_start->h;
+    img_data->width  = frame_data[0]->w;
+    img_data->height = frame_data[0]->h;
     img_data->display_orient_num = temp_orient;
 
     //load & gen texture
@@ -103,7 +103,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     if (img_data->ANM_dir[temp_orient].frame_data) {
-        Surface* data = img_data->ANM_dir[temp_orient].frame_data[0].frame_start;
+        Surface* data = img_data->ANM_dir[temp_orient].frame_data[0];
         //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
         //FRM's are aligned to 1-byte
         glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -221,7 +221,7 @@ void Clear_img_data(image_data* img_data)
                 //TODO: check if number of frames are set for individual images
                 for (int j = 0; j < img_data->ANM_dir[i].num_frames; j++)
                 {
-                    FreeSurface(img_data->ANM_dir[i].frame_data[j].frame_start);
+                    FreeSurface(img_data->ANM_dir[i].frame_data[j]);
                 }
                 free(img_data->ANM_dir[i].frame_data);
                 img_data->ANM_dir[i].frame_data = NULL;
