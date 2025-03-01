@@ -225,6 +225,9 @@
     <ClCompile Include="src\QFO2Tool\ImGui_Warning.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\dependencies\ImFileDialog\ImFileDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\backends\imgui_impl_opengl3.h">
@@ -384,6 +387,9 @@
       <Filter>Header Files\glfw</Filter>
     </ClInclude>
     <ClInclude Include="src\QFO2Tool\ImGui_Warning.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\dependencies\ImFileDialog\ImFileDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -74,7 +74,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(ProjectDir)\src\QFO2Tool;$(ProjectDir)\src\dependencies\tinyfiledialogs;$(ProjectDir)\src\dependencies\imgui-1.90.8-docking\backends;$(ProjectDir)\src\dependencies\imgui-1.90.8-docking;$(ProjectDir)\src\dependencies\GLFW\glfw-3.4\include;$(ProjectDir)\src\dependencies\GLAD\include;$(ProjectDir)\src\dependencies\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)\src\QFO2Tool;$(ProjectDir)\src\dependencies\tinyfiledialogs;$(ProjectDir)\src\dependencies\imgui-1.90.8-docking\backends;$(ProjectDir)\src\dependencies\imgui-1.90.8-docking;$(ProjectDir)\src\dependencies\GLFW\glfw-3.4\include;$(ProjectDir)\src\dependencies\GLAD\include;$(ProjectDir)\src\dependencies\stb;$(ProjectDir)\src\dependencies\ImFileDialog;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -148,6 +148,7 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClInclude Include="src\dependencies\GLFW\glfw-3.4\src\win32_time.h" />
     <ClInclude Include="src\dependencies\GLFW\glfw-3.4\src\wl_platform.h" />
     <ClInclude Include="src\dependencies\GLFW\glfw-3.4\src\xkb_unicode.h" />
+    <ClInclude Include="src\dependencies\ImFileDialog\ImFileDialog.h" />
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\backends\imgui_impl_glfw.h" />
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\imconfig.h" />
@@ -217,6 +218,7 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClCompile Include="src\dependencies\GLFW\glfw-3.4\src\wl_monitor.c" />
     <ClCompile Include="src\dependencies\GLFW\glfw-3.4\src\wl_window.c" />
     <ClCompile Include="src\dependencies\GLFW\glfw-3.4\src\xkb_unicode.c" />
+    <ClCompile Include="src\dependencies\ImFileDialog\ImFileDialog.cpp" />
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\imgui.cpp" />
