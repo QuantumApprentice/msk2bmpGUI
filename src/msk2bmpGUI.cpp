@@ -88,7 +88,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus);
 
 
 void Show_MSK_Palette_Window(variables* My_Variables);
-void popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
+bool popup_save_menu(bool* open_window, int* save_type, bool* single_dir);
 
 void dropped_files_callback(GLFWwindow* window, int count, const char** paths);
 
@@ -1064,6 +1064,32 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
     }
 }
 
+bool save_popup(LF* F_Prop)
+{
+    image_data* img_data = &F_Prop->img_data;
+
+    Save_Info sv_info;
+    sv_info.s_type = all_dirs;
+    bool open_window = true;
+    ImGui::Begin("File type?", &open_window);
+        static int e;
+        // ImGui::RadioButton("Single", true);
+        ImGui::RadioButton("Single Frame", &e, 0);
+        ImGui::RadioButton("Single Direction", &e, 1);
+        ImGui::RadioButton("All Directions", &e, 2);
+        sv_info.s_type = (Save_Type)e;
+
+        char* temp = popup_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
+
+    ImGui::End();
+
+    // char* temp = save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
+    if (temp) {
+        F_Prop->c_name = temp;
+    }
+    return open_window;
+}
+
 void main_window_bttns(variables* My_Variables, int index, int* counter)
 {
     if (index < 0) {
@@ -1072,7 +1098,7 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
     LF* F_Prop   = &My_Variables->F_Prop[index];
     Palette* pal =  My_Variables->FO_Palette;
     static bool open_window     = false;
-    static bool single_dir      = false;
+    static bool single_dir_b    = false;
     static int  save_type       = UNK;
     static image_data* src      = &F_Prop->img_data;
 
@@ -1087,11 +1113,18 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         (*counter)++;
     }
 
-    static bool disabled = true;
+    // bool disabled = (F_Prop->img_data.ANM_dir || F_Prop->edit_data.ANM_dir) ? false : true;
+    static bool open_save;
+    bool disabled = (F_Prop->edit_data.ANM_dir) ? false : true;
     if (disabled) ImGui::BeginDisabled();
     if (ImGui::Button("Save")) {
-
+        open_save = true;
     }
+    if (open_save) {
+        open_save = save_popup(F_Prop);
+        // open_save = popup_save_menu(&disabled, &save_type, &single_dir_b);
+    }
+
     if (disabled) ImGui::EndDisabled();
 }
 
@@ -1103,7 +1136,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     //TODO: save as animated image, needs more work
     //      specifically need to save as GIF at least
     static bool open_window     = false;
-    static bool single_dir_b      = false;
+    static bool single_dir_b    = false;
     static int  save_type       = UNK;
     static image_data* data_ptr = NULL;
 
@@ -1119,11 +1152,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             // if (ImGui::Button("Export Image...")) {
                 Save_Info sv_info;
                 sv_info.s_type = all_dirs;
-                char* temp = save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
+                char* temp = popup_save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
                 if (temp) {
                     F_Prop->c_name = temp;
                 }
-                
                 // Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             // }
             if (ImGui::Button("Save as Overworld Map Tiles...")) {
@@ -1222,10 +1254,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->show_image_render, alpha_off
                 );
-                // Prep_Image(F_Prop,
-                //     pxlFMT_FO_Pal,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->show_image_render, alpha_off);
                 F_Prop->preview_tiles_window = false;
             }
             //TODO: manage some sort of contextual menu for tileable images?
@@ -1238,10 +1266,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                         My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off
                     );
-                    // Prep_Image(F_Prop,
-                    //     pxlFMT_FO_Pal,
-                    //     My_Variables->color_match_algo,
-                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
@@ -1259,11 +1283,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->edit_image_window, alpha_off
                 );
-                // Prep_Image(F_Prop,
-                //     NULL,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->edit_image_window, alpha_off);
-                // F_Prop->edit_MSK = true;
             }
         }
         else if (F_Prop->img_data.type == FRM) {
@@ -1282,11 +1301,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->preview_tiles_window, alpha_off
                 );
-                // Prep_Image(F_Prop,
-                //     pxlFMT_FO_Pal,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->show_image_render, alpha_off);
-                // F_Prop->preview_tiles_window = false;
             }
             //TODO: manage some sort of contextual menu for tileable images?
             if (F_Prop->image_is_tileable) {
@@ -1298,10 +1312,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                         My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off
                     );
-                    // Prep_Image(F_Prop,
-                    //     pxlFMT_FO_Pal,
-                    //     My_Variables->color_match_algo,
-                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
@@ -1315,10 +1325,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                     My_Variables->color_match_algo,
                     &F_Prop->preview_tiles_window, alpha_off
                 );
-                // Prep_Image(F_Prop,
-                //     NULL,
-                //     My_Variables->color_match_algo,
-                //     &F_Prop->edit_image_window, alpha_off);
                 F_Prop->edit_MSK = true;
             }
         }
@@ -1342,10 +1348,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                         My_Variables->color_match_algo,
                         &F_Prop->preview_tiles_window, alpha_off
                     );
-                    // Prep_Image(F_Prop,
-                    //     pxlFMT_FO_Pal,
-                    //     My_Variables->color_match_algo,
-                    //     &F_Prop->preview_tiles_window, alpha_off);
                     //TODO: if image already palettized, need to just feed the texture in
                     F_Prop->show_image_render = false;
                 }
@@ -1445,10 +1447,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             else {
                 bool success = Save_Single_FRx_Animation_OpenGL(data_ptr, F_Prop->c_name, data_ptr->display_orient_num);
                 if (!success) {
-                        open_window = false;
-                        single_dir_b  = false;
-                        save_type   = UNK;
-                        data_ptr    = NULL;
+                    open_window = false;
+                    single_dir_b  = false;
+                    save_type   = UNK;
+                    data_ptr    = NULL;
                 }
             }
             open_window = false;
@@ -1463,28 +1465,34 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 }
 
 //TODO: make this menu nicer
-void popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
+bool popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
 {
+    bool window = true;
     ImGui::Begin("File type?", open_window);
     if (ImGui::Button("Save as FRM...")) {
         *save_type = FRM;
         *open_window = false;
+        window = false;
     }
     if (ImGui::Button("Save selected direction as FRx...")) {
         *save_type = FRx;
         *single_dir = true;
         *open_window = false;
+        window = false;
     }
     if (ImGui::Button("Save all available directions as FRx...")) {
         *save_type = FRx;
         *single_dir = false;
         *open_window = false;
+        window = false;
     }
     if (ImGui::Button("Save as BMP...")) {
         *save_type = OTHER;
         *open_window = false;
+        window = false;
     }
     ImGui::End();
+    return window;
 }
 
 #ifdef QFO2_WINDOWS

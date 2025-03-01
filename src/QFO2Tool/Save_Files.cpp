@@ -57,7 +57,7 @@ bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
     return true;
 }
 
-char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+char* popup_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
 {
     ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
         GLuint tex;
@@ -81,10 +81,18 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
 
 
     char* save_name = NULL;
+    const char* save_type;
+    if (sv_info->s_type == single_frm) {
+        save_type = "Export just the selected frame as FRM.";
+    }
+    else if (sv_info->s_type == single_dir) {
+        save_type = "Export all frames in selected direction as FR%d.", img_data->display_orient_num;
+    }
+    else if (sv_info->s_type == all_dirs) {
+        save_type = "Export all frames in all directions as FRM.";
+    }
 
-
-
-    if (ImGui::Button("Export Current Frame")) {
+    if (ImGui::Button(save_type)) {
         const char* ext_filter;
         if (sv_info->s_type == single_dir) {
             ext_filter = "FRx file (single direction only)"
@@ -100,12 +108,10 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
                 "},.*";
         }
 
-
         char* folder = usr_info->default_save_path;
         // ifd::FileDialog::Instance().Open("FileOpenDialog", "Open File", ext_filter);
         ifd::FileDialog::Instance().Save("FileSaveDialog", "Save File", ext_filter, folder);
     }
-
 
     if (ifd::FileDialog::Instance().IsDone("FileSaveDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
@@ -117,6 +123,11 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
         ifd::FileDialog::Instance().Close();
     }
 
+    return save_FRM_SURFACE(save_name, img_data, usr_info, sv_info);
+}
+
+char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+{
     if (!save_name) {
         return NULL;
     }
@@ -158,7 +169,7 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
     FRM_Header header;
     header.version           = 4;
     header.Frames_Per_Orient = fpo;
-    header.Action_Frame      = sv_info->action_frm;   //TODO: this needs user input
+    header.Action_Frame      = sv_info->action_frame;   //TODO: this needs user input
     //Frame_Area = total size of all frames + frame headers (does not include FRM header)
     //           = (total size of all pxls) + (12*num_frames*num_dirs)
     //Oddly, it seems FRx images store the total for all 6 directions
@@ -167,10 +178,6 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
     int count   = 1;
     int num_dir = 1;
     header.Frame_0_Offset[0] = sizeof(FRM_Header);
-    // if (sv_info->s_type == single_frm) {
-    //     num_dir = 1;
-    //     count   = 1;
-    // } else
 
 //TODO: need to figure out what in the world
 //      header.Shift_Orient_x/y does
@@ -202,8 +209,6 @@ char* save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_
             }
         }
     }
-
-
 
     header.Frame_Area = s;
     B_Endian::flip_header_endian(&header);

@@ -250,7 +250,11 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
     int row_cnt = ceil( row_lft + row_rgt );
     int col_cnt = col_lft + col_rgt;
 
-    uint8_t *frm_pxls     = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+    int dir = img_data->display_orient_num;
+    int num = img_data->display_frame_num;
+
+    // uint8_t *frm_pxls     = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
+    uint8_t* frm_pxls     = img_data->ANM_dir[dir].frame_data[num]->pxls;
     tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
     tt_arr* towntiles     = handle->tile;
     tt_arr* tile          = towntiles;
@@ -324,7 +328,6 @@ void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
     frame.Frame_Width  = 80;
     frame.Frame_Size   = 80 * 36;
     B_Endian::flip_frame_endian(&frame);
-
 
     snprintf(full_file_path, MAX_PATH, "%s/%s", save_path, name);
 
