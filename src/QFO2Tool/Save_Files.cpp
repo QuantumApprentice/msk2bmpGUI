@@ -144,7 +144,7 @@ char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_inf
     std::filesystem::path p(w_save_name);
     strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
-    _wfopen_s(&File_ptr, w_save_name, L"wb");
+    _wfopen_s(&file_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
     // parse Save_File_Name to isolate the directory and save in default_save_path for Linux
     std::filesystem::path p(save_name);
