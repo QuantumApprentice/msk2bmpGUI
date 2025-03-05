@@ -31,6 +31,7 @@
 
 #include "timer_functions.h"
 #include "ImGui_Warning.h"
+#include <ImFileDialog.h>
 
 char *Program_Directory()
 {
@@ -722,6 +723,68 @@ bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_dat
     return File_Type_Check(F_Prop, shaders, img_data, file_name);
 }
 
+void init_IFD()
+{
+    //TODO: move this to some initializing function
+    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
+        GLuint tex;
+        // https://github.com/dfranx/ImFileDialog
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return (void*)(uint64_t)tex;
+    };
+    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+        GLuint texID = (uint64_t)tex;
+        glDeleteTextures(1, &texID);
+    };
+}
+
+bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
+{
+    init_IFD();
+
+    // char load_path[MAX_PATH];
+    // snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
+
+    char* load_name;
+    if (ImGui::Button("Load File")) {
+        const char* ext_filter;
+            ext_filter = "FRM/MSK and image files"
+            "(*.png;"
+            // "*.apng;"
+            "*.jpg;*.jpeg;*.frm;*.fr0-5;*.msk;)"
+            "{.fr0,.FR0,.fr1,.FR1,.fr2,.FR2,.fr3,.FR3,.fr4,.FR4,.fr5,.FR5,"
+                ".png,.jpg,.jpeg,"
+                ".frm,.FRM,"
+                ".msk,.MSK,"
+            "}";
+
+        char* folder = usr_info->default_save_path;
+        ifd::FileDialog::Instance().Save("FileLoadDialog", "Load File", ext_filter, folder);
+    }
+
+    if (ifd::FileDialog::Instance().IsDone("FileLoadDialog")) {
+        if (ifd::FileDialog::Instance().HasResult()) {
+            std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
+            load_name = (char*)malloc(sizeof(char) * temp.length()+1);
+            strncpy(load_name, temp.c_str(), temp.length()+1);
+        }
+        ifd::FileDialog::Instance().Close();
+    }
+    if (!load_name) {
+        return false;
+    }
+    return File_Type_Check(F_Prop, shaders, img_data, load_name);
+}
+
 bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
 {
     char load_path[MAX_PATH];
@@ -740,12 +803,10 @@ bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, sh
         NULL,
         1);
 
-    if (FileName) {
-        return File_Type_Check(F_Prop, shaders, img_data, FileName);
-    }
-    else {
+    if (!FileName) {
         return false;
     }
+    return File_Type_Check(F_Prop, shaders, img_data, FileName);
 }
 
 //Check file extension to make sure it's one of the varieties of FRM
@@ -763,10 +824,7 @@ bool FRx_check(char *ext)
     {
         return true;
     }
-    else
-    {
-        return false;
-    }
+    return false;
 }
 
 //TODO: maybe combine with Supported_Format()?
@@ -780,17 +838,17 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data, shaders);
-        F_Prop->img_data.type = FRM;
+        img_data->type = FRM;
 
         // draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
         //                         img_data->framebuffer, img_data->FRM_texture);
     }
     else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
         F_Prop->file_open_window = Load_MSK_Tile_Surface(F_Prop->Opened_File, img_data);
-        F_Prop->img_data.type = MSK;
+        img_data->type = MSK;
         init_framebuffer(img_data);
         bool success = false;
-        success = framebuffer_init(&F_Prop->img_data.render_texture, &F_Prop->img_data.framebuffer, 350, 300);
+        success = framebuffer_init(&img_data->render_texture, &F_Prop->img_data.framebuffer, 350, 300);
         if (!success) {
             //TODO: log to file
             set_popup_warning(
@@ -826,8 +884,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             return false;
         }
 
-        F_Prop->img_data.ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
-        if (!F_Prop->img_data.ANM_dir) {
+        img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir) * 6);
+        if (!img_data->ANM_dir) {
             //TODO: log to file
             set_popup_warning(
                 "[ERROR] File_Type_Check()\n\n"
@@ -840,15 +898,15 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         new (img_data->ANM_dir) ANM_Dir[6];
 
         //TODO: refactor this to correctly point to ANM_dir[dir]->frame_data[0?];
-        F_Prop->img_data.ANM_dir[0].frame_data = (Surface**)malloc(sizeof(Surface*));
-        if (!F_Prop->img_data.ANM_dir->frame_data) {
+        img_data->ANM_dir[0].frame_data = (Surface**)malloc(sizeof(Surface*));
+        if (!img_data->ANM_dir->frame_data) {
             //TODO: log to file
             set_popup_warning(
                 "[ERROR] File_Type_Check()\n\n"
                 "Unable to allocate memory for ANM_Frame."
             );
             printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
-            free(F_Prop->img_data.ANM_dir);
+            free(img_data->ANM_dir);
             return false;
         } else {
             new (img_data->ANM_dir->frame_data) ANM_Frame;
@@ -865,8 +923,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
 
             // TODO: rewrite this function
             F_Prop->file_open_window 
-                = Image2Texture(F_Prop->img_data.ANM_dir[0].frame_data[0],
-                                &F_Prop->img_data.FRM_texture);
+                = Image2Texture(img_data->ANM_dir[0].frame_data[0],
+                                &img_data->FRM_texture);
 
             init_framebuffer(img_data);
             //assign display direction to same as image slot
@@ -877,11 +935,11 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     }
 
     // if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
-    if (F_Prop->img_data.ANM_dir != NULL)
+    if (img_data->ANM_dir != NULL)
     {
-        if ((F_Prop->img_data.ANM_dir[img_data->display_orient_num].frame_data == NULL)
-            && F_Prop->img_data.type != FRM
-            && F_Prop->img_data.type != MSK)
+        if ((img_data->ANM_dir[img_data->display_orient_num].frame_data == NULL)
+            && img_data->type != FRM
+            && img_data->type != MSK)
         {
             //TODO: log to file
             set_popup_warning(
@@ -896,6 +954,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     return true;
 }
 
+//TODO: am I using load_tile_texture() anymore?
 void load_tile_texture(GLuint *texture, char *file_name)
 {
     Surface *surface = Load_File_to_RGBA(file_name);

@@ -7,7 +7,7 @@
 
 
 
-
+//TODO: delete this? (no longer used?)
 //Used to convert generic image surfaces to textures
 bool Image2Texture(Surface* src, GLuint* texture)
 {
@@ -56,6 +56,8 @@ void Surface_to_OpenGl(Surface *src, GLuint *texture)
 
 }
 
+//TODO: delete, replaced by init_texture() and init_framebuffer()
+//this is still called in Prep_Image(), which itself has been replaced by prep_image_SURFACE()
 void init_FRM(image_data* edit_data)
 {
     int width  = edit_data->width;
@@ -188,6 +190,7 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
     return true;
 }
 
+//TODO: delete, replaced by copy_it_all_ANM()
 void copy_it_all(image_data* img_data, image_data* edit_data)
 {
     edit_data->FRM_data = (uint8_t*)malloc(img_data->FRM_size);
@@ -536,7 +539,7 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
     return texture;
 }
 
-//TODO: delete bind_NULL_texture() - replaced by 
+//TODO: delete bind_NULL_texture() - replaced by init_texture() and 
 // binds the image information to FRM_texture
 // and sets up PAL_texture with a NULL texture of appropriate size for editing
 bool bind_NULL_texture(struct image_data* img_data, Surface* surface, img_type type)

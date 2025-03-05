@@ -144,17 +144,12 @@ bool io_make_dir(char* dir_path)
     if (error == 0) {
         return true;
     }
-    else {
-        if (errno == 2) {
+    if (errno == 2) {
         char* ptr = strrchr(dir_path, '/');
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
             *ptr = '/';
             return io_make_dir(dir_path);
-            }
-        }
-        else {
-            printf("You may ask yourself, how did I get here?\n");
         }
     }
     printf("Error making directory, errno:\t%d:\t%s\n", errno, strerror(errno));

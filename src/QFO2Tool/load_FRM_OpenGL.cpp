@@ -122,7 +122,6 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 #elif defined(QFO2_LINUX)
         printf("error, can't open FRM file, error: %d\t%s : L%d\n", errno, strerror(errno), __LINE__);
 #endif
-
         return NULL;
     }
 
@@ -262,7 +261,6 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
     }
 
     img_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
-    // img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
     if (!img_data->ANM_dir) {
         //TODO: log out to file
         set_popup_warning(
@@ -270,6 +268,8 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
             "Unable to allocate memory for ANM_dir."
         );
         printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+        free(buffer);
+        img_data->FRM_hdr = NULL;
         return false;
     }
     new(img_data->ANM_dir) ANM_Dir[6];
@@ -295,6 +295,9 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
                 "Unable to allocate memory for anm_dir[i].frame_data"
             );
             printf("Unable to allocate memory for anm_dir[%d].frame_data: %d", i, __LINE__);
+            free(anm_dir);
+            free(buffer);
+            img_data->FRM_hdr = NULL;
             return false;
         }
         anm_dir[i].frame_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
@@ -305,6 +308,12 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
                 "Unable to allocate memory for anm_dir[i].frame_data"
             );
             printf("Unable to allocate memory for anm_dir[%d].bounding_box: %d", i, __LINE__);
+            for (int i = 0; i < 6; i++) {
+                free(anm_dir[i].frame_data);
+            }
+            free(anm_dir);
+            free(buffer);
+            img_data->FRM_hdr = NULL;
             return false;
         }
 
@@ -326,6 +335,14 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
                     "Unable to allocate memory for Surface."
                 );
                 printf("Unable to allocate memory for Surface: %d", __LINE__);
+                for (int i = 0; i < 6; i++) {
+                    free(anm_dir[i].frame_data);
+                    free(anm_dir[i].frame_box);
+                }
+                free(anm_dir);
+                free(buffer);
+                img_data->FRM_hdr = NULL;
+                return false;
             }
 
             memcpy(img->pxls, frame_start->frame_start, w*h);
@@ -510,6 +527,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
 
     if (!img_data->FRM_texture) {
         //TODO: log out to file
+        //init_texture() has its own popup warning
         printf("init_texture failed: %d", __LINE__);
         return false;
     }
@@ -538,6 +556,4 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
         img_data->FRM_texture, img_data->width, img_data->height);
 
     return success;
-
-    // return Render_FRM0_OpenGL(img_data, img_data->display_orient_num);
 }

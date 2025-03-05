@@ -973,13 +973,12 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
 }
 
 //TODO: Need to test wide character support
-//TODO: fix the pxlFMT_FO_Pal loading part
 void Open_Files(struct user_info* usr_info, int* counter, Palette* pxlFMT, struct variables* My_Variables) {
+    LF* F_Prop = &My_Variables->F_Prop[*counter];
     // Assigns image to Load_Files.image and loads palette for the image
     // TODO: image needs to be less than 1 million pixels (1000x1000)
     // to be viewable in Titanium FRM viewer, what's the limit in the game?
-    // (limit is greater than 1600x1200 for Hi-Res menus at least - tested on MR f2_res.dat)
-    LF* F_Prop = &My_Variables->F_Prop[*counter];
+    // (limit is greater than 1600x1200 for Hi-Res mod - tested on MR f2_res.dat)
     F_Prop->file_open_window = Load_Files(F_Prop, &F_Prop->img_data, usr_info, &My_Variables->shaders);
 
     if (My_Variables->F_Prop[*counter].c_name) {
@@ -1064,30 +1063,68 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
     }
 }
 
-bool save_popup(LF* F_Prop)
+bool save_FRM_popup(LF* F_Prop)
 {
     image_data* img_data = &F_Prop->img_data;
 
     Save_Info sv_info;
-    sv_info.s_type = all_dirs;
+    // sv_info.s_type = single_frm;
     bool open_window = true;
-    ImGui::Begin("File type?", &open_window);
+    ImGui::Begin("Export FRM", &open_window);
         static int e;
-        // ImGui::RadioButton("Single", true);
-        ImGui::RadioButton("Single Frame", &e, 0);
+        ImGui::RadioButton("Single Frame",     &e, 0);
         ImGui::RadioButton("Single Direction", &e, 1);
-        ImGui::RadioButton("All Directions", &e, 2);
+        ImGui::RadioButton("All Directions",   &e, 2);
         sv_info.s_type = (Save_Type)e;
 
-        char* temp = popup_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
+        char dup_name[MAX_PATH];
+        static int overwrite;
+        if (ImGui::BeginPopupModal("Match found", &open_window))
+        {
+            ImGui::Text(
+                "%s already exists,\n\n", dup_name
+            );
+            if (ImGui::Button("Overwrite?")) {
+                overwrite = 1;
+                ImGui::CloseCurrentPopup();
+            }
+            if (ImGui::Button("Select a different folder?")) {
+                overwrite = 2;
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::Button("Cancel") || open_window == false) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+            return NULL;
+        }
+
+        char* temp = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
 
     ImGui::End();
 
-    // char* temp = save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
     if (temp) {
         F_Prop->c_name = temp;
     }
     return open_window;
+}
+
+bool save_MSK_popup(LF* F_Prop)
+{
+    image_data* img_data = &F_Prop->img_data;
+    Save_Info* sv_info;
+
+
+    bool open_window = true;
+    ImGui::Begin("Export MSK", &open_window);
+        open_window = ImDialog_save_MSK_SURFACE(img_data, &usr_info, sv_info);
+    ImGui::End();
+
+
+    return open_window;
+
 }
 
 void main_window_bttns(variables* My_Variables, int index, int* counter)
@@ -1096,18 +1133,18 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         index = 0;
     }
     LF* F_Prop   = &My_Variables->F_Prop[index];
+    image_data* img_data = &F_Prop->img_data;
     Palette* pal =  My_Variables->FO_Palette;
     static bool open_window     = false;
     static bool single_dir_b    = false;
     static int  save_type       = UNK;
     static image_data* src      = &F_Prop->img_data;
 
-    if (ImGui::Button("Load Files...")) {
-        Open_Files(&usr_info, counter, pal, My_Variables);
-        // if (My_Variables->F_Prop[*counter].c_name) {
-        //     (*counter)++;
-        // }
+    bool success = ImDialog_load_files(F_Prop, img_data, &usr_info, &My_Variables->shaders);
+    if (success) {
+        (*counter)++;
     }
+
     if (ImGui::Button("Open Edit Window")) {
         F_Prop->edit_image_window = true;
         (*counter)++;
@@ -1121,7 +1158,12 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         open_save = true;
     }
     if (open_save) {
-        open_save = save_popup(F_Prop);
+        if (img_data->type == FRM) {
+            open_save = save_FRM_popup(F_Prop);
+        }
+        else if (img_data->type == MSK) {
+            open_save = save_MSK_popup(F_Prop);
+        }
         // open_save = popup_save_menu(&disabled, &save_type, &single_dir_b);
     }
 
@@ -1152,7 +1194,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
             // if (ImGui::Button("Export Image...")) {
                 Save_Info sv_info;
                 sv_info.s_type = all_dirs;
-                char* temp = popup_save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
+                // save_FRM_popup(F_Prop);
+                char* temp = ImDialog_save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
                 if (temp) {
                     F_Prop->c_name = temp;
                 }

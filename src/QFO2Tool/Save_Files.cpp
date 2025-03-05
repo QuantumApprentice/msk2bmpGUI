@@ -31,6 +31,30 @@
 void write_cfg_file(user_info* user_info, char* exe_path);
 uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h);
 
+void init_IFD()
+{
+    //TODO: move this to some initializing function
+    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
+        GLuint tex;
+        // https://github.com/dfranx/ImFileDialog
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return (void*)(uint64_t)tex;
+    };
+    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+        GLuint texID = (uint64_t)tex;
+        glDeleteTextures(1, &texID);
+    };
+}
+
 bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
 {
     int w = src->w;
@@ -57,39 +81,20 @@ bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
     return true;
 }
 
-char* popup_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+char* ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
 {
-    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
-        GLuint tex;
-        // https://github.com/dfranx/ImFileDialog
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        return (void*)(uint64_t)tex;
-    };
-    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
-        GLuint texID = (uint64_t)tex;
-        glDeleteTextures(1, &texID);
-    };
-
+    init_IFD();
 
     char* save_name = NULL;
     const char* save_type;
     if (sv_info->s_type == single_frm) {
-        save_type = "Export just the selected frame as FRM.";
+        save_type = "Export only selected \nframe as FRM.";
     }
     else if (sv_info->s_type == single_dir) {
-        save_type = "Export all frames in selected direction as FR%d.", img_data->display_orient_num;
+        save_type = "Export all frames in \nselected direction as FRx.";
     }
     else if (sv_info->s_type == all_dirs) {
-        save_type = "Export all frames in all directions as FRM.";
+        save_type = "Export all frames in \nall directions as FRM.";
     }
 
     if (ImGui::Button(save_type)) {
@@ -109,7 +114,6 @@ char* popup_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Inf
         }
 
         char* folder = usr_info->default_save_path;
-        // ifd::FileDialog::Instance().Open("FileOpenDialog", "Open File", ext_filter);
         ifd::FileDialog::Instance().Save("FileSaveDialog", "Save File", ext_filter, folder);
     }
 
@@ -351,18 +355,19 @@ int Set_Save_Patterns(const char*** filter, image_data* img_data)
     }
     if (num_dirs < 6)
     {
-        static const char *temp[7] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
+        static const char* temp[7] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
         *filter = temp;
         return 6;
     }
     else
     {
-        static const char *temp[1] = {"*.FRM"};
+        static const char* temp[1] = {"*.FRM"};
         *filter = temp;
         return 1;
     }
 }
 
+//TODO: delete, replaced by ImDialog_save_FRM_SURFACE()/save_FRM_SURFACE()
 bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir)
 {
     FILE* File_ptr = NULL;
@@ -403,6 +408,7 @@ bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int di
     }
 }
 
+//TODO: delete, replaced by ImDialog_save_FRM_SURFACE()/save_FRM_SURFACE()
 bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir)
 {
     int size = 0;
@@ -459,6 +465,7 @@ char* Set_Save_File_Name(image_data* img_data, char* name)
     return Save_File_Name;
 }
 
+//TODO: delete, replaced by ImDialog_save_FRM_SURFACE()/save_FRM_SURFACE()
 char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name)
 {
     char* Save_File_Name = Set_Save_File_Name(img_data, name);
@@ -515,6 +522,7 @@ char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, c
     return Save_File_Name;
 }
 
+//TODO: delete, replaced by ImDialog_save_FRM_SURFACE()/save_FRM_SURFACE()
 char* save_FRM_animation_SURFACE(image_data* src, user_info* info, char* name)
 {
     FILE* file_ptr = NULL;
@@ -522,18 +530,20 @@ char* save_FRM_animation_SURFACE(image_data* src, user_info* info, char* name)
     return nullptr;
 }
 
+//TODO: delete, replaced by ImDialog_save_FRM_SURFACE()/save_FRM_SURFACE()
 char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char* name)
 {
-    FILE *File_ptr = NULL;
-    char *Save_File_Name;
-    const char ** lFilterPatterns = NULL;
+    FILE* File_ptr = NULL;
+    char* Save_File_Name;
+    const char** lFilterPatterns = NULL;
     int num_patterns = Set_Save_Patterns(&lFilterPatterns, img_data);
-    const char *ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
+    const char* ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
     int buffsize = strlen(name) + 5;
 
-    char *temp_name = (char *)malloc(sizeof(char) * buffsize);
+    char* temp_name = (char *)malloc(sizeof(char) * buffsize);
     snprintf(temp_name, buffsize, "%s%s", name, ext);
 
+    //TODO: replace with ImFileDialog()
     Save_File_Name = tinyfd_saveFileDialog(
         "default_name",
         temp_name,
@@ -544,8 +554,7 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
 
     if (Save_File_Name != NULL)
     {
-        if (num_patterns > 1)
-        {
+        if (num_patterns > 1) {
             Save_File_Name[strlen(Save_File_Name) - 1] = '0';
         }
 
@@ -562,12 +571,8 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
         std::filesystem::path p(Save_File_Name);
         File_ptr = fopen(Save_File_Name, "wb");
 #endif
-
-        strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
-        fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
-
-        if (!File_ptr)
-        {
+        if (!File_ptr) {
+            //TODO: replace with set_popup_warning()
             tinyfd_messageBox(
                 "Error",
                 "Can not open this file in write mode",
@@ -576,96 +581,88 @@ char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* usr_info, char*
                 1);
             return NULL;
         }
-        else
-        {
 
-            FRM_Frame frame_data;
-            memset(&frame_data, 0, sizeof(FRM_Frame));
-            int size = 0;
-            uint32_t total_frame_size = 0;
+        strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
+        fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
 
-            for (int i = 0; i < 6; i++)
-            {
-                // Check if current direction contains valid data
-                Direction dir = img_data->FRM_dir[i].orientation;
-                if (dir < 0)
-                {
-                    continue;
-                }
-                // If directions are split up then open new file for each direction
-                if (num_patterns > 1)
-                {
-                    Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
+        FRM_Frame frame_data;
+        memset(&frame_data, 0, sizeof(FRM_Frame));
+        int size = 0;
+        uint32_t total_frame_size = 0;
 
-                    if (!File_ptr)
-                    {
-#ifdef QFO2_WINDOWS
-                        // Windows w/wide character support
-                        w_save_name = tinyfd_utf8to16(Save_File_Name);
-                        _wfopen_s(&File_ptr, w_save_name, L"wb");
-#elif defined(QFO2_LINUX)
-                        File_ptr = fopen(Save_File_Name, "wb");
-#endif
-
-                        if (!File_ptr)
-                        {
-                            tinyfd_messageBox(
-                                "Error",
-                                "Unable to open this file in write mode",
-                                "ok",
-                                "error",
-                                1);
-                            return NULL;
-                        }
-                        else
-                        {
-                            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
-                        }
-                    }
-                }
-                else
-                {
-                    img_data->FRM_hdr->Frame_0_Offset[i] = total_frame_size;
-                }
-
-                // Write out all the frame data
-                for (int frame_num = 0; frame_num < img_data->FRM_dir[i].num_frames; frame_num++)
-                {
-                    size = img_data->FRM_dir[i].frame_data[frame_num]->Frame_Size;
-                    total_frame_size += size + sizeof(FRM_Frame);
-
-                    memcpy(&frame_data, img_data->FRM_dir[i].frame_data[frame_num], sizeof(FRM_Frame));
-                    B_Endian::flip_frame_endian(&frame_data);
-
-                    // write to file
-                    fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
-                    fwrite(&img_data->FRM_dir[i].frame_data[frame_num]->frame_start, size, 1, File_ptr);
-                }
-
-                // If directions are split up then write to header for each one and close file
-                if (num_patterns > 1)
-                {
-                    img_data->FRM_hdr->Frame_Area = total_frame_size;
-                    memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
-                    B_Endian::flip_header_endian(&header);
-                    fseek(File_ptr, 0, SEEK_SET);
-                    fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
-                    fclose(File_ptr);
-
-                    File_ptr = nullptr;
-                    total_frame_size = 0;
-                }
+        for (int i = 0; i < 6; i++) {
+            // Check if current direction contains valid data
+            Direction dir = img_data->FRM_dir[i].orientation;
+            if (dir < 0) {
+                continue;
             }
-            // If full FRM then write header this way instead
-            if (num_patterns == 1)
+            // If directions are split up then open new file for each direction
+            if (num_patterns > 1) {
+                Save_File_Name[strlen(Save_File_Name) - 1] = '0' + dir;
+
+                if (!File_ptr)
+                {
+#ifdef QFO2_WINDOWS
+                    // Windows w/wide character support
+                    w_save_name = tinyfd_utf8to16(Save_File_Name);
+                    _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+                    File_ptr = fopen(Save_File_Name, "wb");
+#endif
+                    if (!File_ptr) {
+                        //TODO: replace with set_popup_warning()
+                        tinyfd_messageBox(
+                            "Error",
+                            "Unable to open this file in write mode",
+                            "ok",
+                            "error",
+                            1);
+                        return NULL;
+                    }
+                            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+                            fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+                    fseek(File_ptr, sizeof(FRM_Header), SEEK_SET);
+                }
+            } else {
+                img_data->FRM_hdr->Frame_0_Offset[i] = total_frame_size;
+            }
+
+            // Write out all the frame data
+            for (int frame_num = 0; frame_num < img_data->FRM_dir[i].num_frames; frame_num++)
             {
+                size = img_data->FRM_dir[i].frame_data[frame_num]->Frame_Size;
+                total_frame_size += size + sizeof(FRM_Frame);
+
+                memcpy(&frame_data, img_data->FRM_dir[i].frame_data[frame_num], sizeof(FRM_Frame));
+                B_Endian::flip_frame_endian(&frame_data);
+
+                // write to file
+                fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+                fwrite(&img_data->FRM_dir[i].frame_data[frame_num]->frame_start, size, 1, File_ptr);
+            }
+
+            // If directions are split up then write to header for each one and close file
+            if (num_patterns > 1) {
                 img_data->FRM_hdr->Frame_Area = total_frame_size;
                 memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
                 B_Endian::flip_header_endian(&header);
                 fseek(File_ptr, 0, SEEK_SET);
                 fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
                 fclose(File_ptr);
+
+                File_ptr = nullptr;
+                total_frame_size = 0;
             }
+        }
+        // If full FRM then write header this way instead
+        if (num_patterns == 1)
+        {
+            img_data->FRM_hdr->Frame_Area = total_frame_size;
+            memcpy(&header, img_data->FRM_hdr, sizeof(FRM_Header));
+            B_Endian::flip_header_endian(&header);
+            fseek(File_ptr, 0, SEEK_SET);
+            fwrite(&header, sizeof(FRM_Header), 1, File_ptr);
+            fclose(File_ptr);
         }
     }
     return Save_File_Name;
@@ -789,6 +786,266 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
     //TODO: replace with imgui popup
     tinyfd_messageBox("Save Map Tiles", "Tiles Exported Successfully", "Ok", "info", 1);
 }
+
+
+// Create a filename based on the directory and export file type
+//TODO: clean up this function, buff_size is not used
+// img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
+void create_tile_name(char* dst, char* name, img_type save_type, char* path, int tile_num)
+{
+    char ext[2][4] = {
+        {"MSK"},
+        {"FRM"}};
+
+    //-------create file path string based on path, tile_num, save_type
+    snprintf(dst, MAX_PATH, "%s/%s%02d.%s", path, name, tile_num, ext[save_type]);
+
+    // printf("%s\n%s\n", dst, ext[save_type]);
+}
+
+
+//called 2nd
+bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struct user_info* usr_info, Save_Info* sv_info, bool overwrite, char* save_path)
+{
+    // if (!base_path) {
+    if (strlen(base_path) < 1) {
+        return false;
+    }
+    // if (!save_name) {
+    if (strlen(save_name) < 1) {
+        return false;
+    }
+
+    int img_w    = src->width;
+    int img_h    = src->height;
+    int img_size = img_w * img_h;
+
+    int num_tiles_x = img_w / MAP_TILE_W;
+    int num_tiles_y = img_h / MAP_TILE_H;
+    int tile_num    = 0;
+
+
+
+
+
+
+    // create basic frame information for saving
+    // every tile has the same width/height/size
+    FRM_Frame frame_data;
+    memset(&frame_data, 0, sizeof(FRM_Frame));
+    frame_data.Frame_Width  = (MAP_TILE_W);
+    frame_data.Frame_Height = (MAP_TILE_H);
+    frame_data.Frame_Size   = (MAP_TILE_SIZE);
+    B_Endian::flip_frame_endian(&frame_data);
+
+
+
+    uint8_t* pxls = src->MSK_srfc->pxls;
+
+
+
+    // char base_path[MAX_PATH];
+    FILE* File_ptr = NULL;
+    // uint8_t* tile_buffer = (uint8_t*)malloc(MAP_TILE_SIZE);
+    uint8_t tile_buffer[MAP_TILE_SIZE];
+    // split buffer into tiles and write to files
+    for (int y = 0; y < num_tiles_y; y++)
+    {
+        for (int x = 0; x < num_tiles_x; x++)
+        {
+            // create the filename for the current tile
+            // assigns final save path string to Full_Save_File_Path
+            create_tile_name(save_path, save_name, MSK, base_path, tile_num);
+            if (strlen(save_path) < 1) {
+                return false;
+            }
+
+            // check for existing file first unless "Auto" selected?
+            ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
+            if (!overwrite) {
+                if (io_file_exists(save_path)) {
+                    ImGui::OpenPopup("Match found");
+                    return false;
+                }
+            }
+
+#ifdef QFO2_WINDOWS
+            wchar_t* w_save_name = tinyfd_utf8to16(save_path);
+            _wfopen_s(&File_ptr, w_save_name, L"wb");
+#elif defined(QFO2_LINUX)
+            File_ptr = fopen(save_path, "wb");
+#endif
+
+            if (!File_ptr) {
+                //TODO: replace with set_popup_warning()
+                set_popup_warning(
+                    "[ERROR] save_MSK_tiles_SURFACE()\n\n"
+                    "Can not open this file in write mode.\n"
+                    // "Make sure the default game path is set."
+                );
+                printf("Error: Unable to open file in Write Mode: %s : %d", save_path, __LINE__);
+                return false;
+            }
+            // FRM = 1, MSK = 0
+            // if (sv_info->s_type == FRM) {
+            //     // Split buffer into 350x300 pixel tiles and write to file
+            //     // save header
+            //     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
+            //     fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
+            //     int tile_pointer = (y * img_width * MAP_TILE_H) + (x * MAP_TILE_W);
+            //     int row_pointer = 0;
+            //     for (int i = 0; i < MAP_TILE_H; i++) {
+            //         // write out one row of pixels in each loop
+            //         fwrite(blend_buffer + tile_pointer + row_pointer, MAP_TILE_W, 1, File_ptr);
+            //         row_pointer += img_width;
+            //     }
+            // }
+            ///////////////////////////////////////////////////////////////////////////
+            if (src->type == MSK) {
+                // Split the surface up into 350x300 pixel buffer
+                //       and pass them to Save_MSK_Image_OpenGL()
+                int tile_pointer  = (y * src->width * MAP_TILE_H) + (x * MAP_TILE_W);
+                int img_row_pntr  = 0;
+                int tile_row_pntr = 0;
+
+                for (int i = 0; i < MAP_TILE_H; i++) {
+                    // copy out one row of pixels in each loop to the buffer
+                    memcpy(tile_buffer + tile_row_pntr, pxls + tile_pointer + img_row_pntr, MAP_TILE_W);
+
+                    img_row_pntr  += src->width;
+                    tile_row_pntr += MAP_TILE_W;
+                }
+
+                Save_MSK_Image_OpenGL(tile_buffer, File_ptr, MAP_TILE_W, MAP_TILE_H);
+            }
+            fclose(File_ptr);
+            tile_num++;
+        }
+    }
+    // free(tile_buffer);
+
+    return true;
+}
+
+
+//called 1st
+bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+{
+    //TODO: move this to initialize at program start?
+    init_IFD();
+
+    // ImGui::Text(
+    //     "Tiles (map/town/msk) are only located\n"
+    //     "in specific places in the game files.\n\n"
+    //     "For rapid testing in game, you can export tiles\n"
+    //     "automatically and bypass this screen.\n"
+    //     "by setting the modded Fallout 2 directory.\n\n"
+    //     "Yes --- Auto:   (set Fallout 2 directory)\n"
+    //     "No  --- Manual: (select a folder)\n\n"
+    //     "You can change this setting in the config menu."
+    // );
+
+
+    static int e;
+    ImGui::RadioButton("Single Tile", &e, 0);
+    ImGui::RadioButton("Tile Range",  &e, 1);
+    ImGui::RadioButton("All Tiles",   &e, 2);
+    if (e == 0) {
+        // ImGui::
+    }
+
+    ImGui::Text(
+        "World map tiles (FRM) and mask tiles (MSK)\n"
+        "can technically have any name you choose.\n"
+        "The only restriction is the total length\n"
+        "of the name must be less than 8 characters.\n"
+        "This includes any sequential numbers\n"
+        "attached to the base-name.\n\n"
+        "This program automatically appends 2 digits\n"
+        "to the end of the base-name defined here.\n"
+    );
+    static char save_name[23] = "WRLDMP";
+    ImGui::InputText(
+        "Name\n(max 6 characters)",
+        save_name, 7);
+
+    char* folder = usr_info->default_save_path;
+    if (ImGui::Button("Save MSK tiles")) {
+        ifd::FileDialog::Instance().Open("FileSaveDialog", "Save Folder", "", false, folder);
+    }
+
+    static bool success = false;
+    static bool overwrite;
+    static char save_folder[MAX_PATH];
+    static char save_path[MAX_PATH];
+    if (ImGui::BeginPopupModal("Match found"))
+    {
+        char* dup_name = strrchr(save_path, '\\/')+1;
+        ImGui::Text(
+            "%s already exists,\n\n", dup_name
+        );
+        if (ImGui::Button("Overwrite?")) {
+            ImGui::CloseCurrentPopup();
+            overwrite = true;
+            success = true;
+        }
+        if (ImGui::Button("Select a different folder?")) {
+            ImGui::CloseCurrentPopup();
+            overwrite = false;
+            save_folder[0] = '\0';
+            ifd::FileDialog::Instance().Open("FileSaveDialog", "Save File", "", false, folder);
+            success = false;
+        }
+
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            save_folder[0] = '\0';
+            overwrite = false;
+            success = false;
+            return false;
+        }
+
+        ImGui::EndPopup();
+        return true;
+    }
+
+    if (ifd::FileDialog::Instance().IsDone("FileSaveDialog")) {
+        if (ifd::FileDialog::Instance().HasResult()) {
+            std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
+            int l1 = temp.length();
+            strncpy(save_folder, temp.c_str(), temp.length()+1);
+            int l2 = strlen(save_folder);
+            strncpy(usr_info->default_save_path, temp.c_str(), temp.length()+1);
+            success = true;
+        }
+        ifd::FileDialog::Instance().Close();
+    }
+
+    if (strlen(save_folder) > 0 && success) {
+        success = save_MSK_tiles_SURFACE(save_folder, save_name, img_data, usr_info, sv_info, overwrite, save_path);
+    }
+    if (success) {
+        save_folder[0] = '\0';
+        overwrite = false;
+        success = false;
+        return false;
+    }
+
+    return true;
+}
+
+char* split_to_tiles_SURFACE(user_info* usr_info)
+{
+
+}
+
+
+
+
+
+
+
 
 // wrapper to save MSK tiles
 void Save_MSK_Tiles_OpenGL(image_data* img_data, struct user_info* user_info, char* exe_path)
@@ -1105,6 +1362,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* usr_info,
 
             if (!File_ptr)
             {
+                //TODO: replace with set_popup_warning()
                 tinyfd_messageBox(
                     "Error",
                     "Can not open this file in write mode.\n"
@@ -1168,9 +1426,7 @@ void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* usr_info,
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
 // town_tile* export_TMAP_tiles(user_info* usr_info,
-tt_arr_handle* export_TMAP_tiles(user_info* usr_info,
-                       image_data* img_data,
-                       int x, int y)
+tt_arr_handle* export_TMAP_tiles(user_info* usr_info, image_data* img_data, int x, int y)
 {
     char save_path[MAX_PATH];
     int tile_num = 0;
