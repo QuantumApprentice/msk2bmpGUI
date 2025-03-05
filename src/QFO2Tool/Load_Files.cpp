@@ -723,7 +723,8 @@ bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_dat
     return File_Type_Check(F_Prop, shaders, img_data, file_name);
 }
 
-void init_IFD()
+
+bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
 {
     //TODO: move this to some initializing function
     ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
@@ -745,11 +746,6 @@ void init_IFD()
         GLuint texID = (uint64_t)tex;
         glDeleteTextures(1, &texID);
     };
-}
-
-bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
-{
-    init_IFD();
 
     // char load_path[MAX_PATH];
     // snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
