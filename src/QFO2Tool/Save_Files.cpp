@@ -25,7 +25,7 @@
 
 #include "tinyfiledialogs.h"    //TODO: remove/delete
 #include <ImFileDialog.h>
-
+#include <imgui_internal.h>
 
 
 void write_cfg_file(user_info* user_info, char* exe_path);
@@ -81,59 +81,47 @@ bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
     return true;
 }
 
-char* ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+const char* FRM_extension(Direction dir)
 {
-    init_IFD();
-
-    char* save_name = NULL;
-    const char* save_type;
-    if (sv_info->s_type == single_frm) {
-        save_type = "Export only selected \nframe as FRM.";
+    switch (dir)
+    {
+    case NE:
+        return "FR0";
+    case E:
+        return "FR1";
+    case SE:
+        return "FR2";
+    case SW:
+        return "FR3";
+    case W:
+        return "FR4";
+    case NW:
+        return "FR5";
     }
-    else if (sv_info->s_type == single_dir) {
-        save_type = "Export all frames in \nselected direction as FRx.";
-    }
-    else if (sv_info->s_type == all_dirs) {
-        save_type = "Export all frames in \nall directions as FRM.";
-    }
-
-    if (ImGui::Button(save_type)) {
-        const char* ext_filter;
-        if (sv_info->s_type == single_dir) {
-            ext_filter = "FRx file (single direction only)"
-            "(*.fr0;*.fr1;*.fr2;.fr3;*.fr4;*.fr5;)";
-            "{.fr0,.FR0,.fr1,.FR1,.fr2,.FR2,.fr3,.FR3,.fr4,.FR4,.fr5,.FR5,}";
-        } else {
-            ext_filter = "FRM file (single image or all 6 directions)"
-                // "(*.png;*.apng;*.jpg;*.jpeg;*.frm;*.fr0-5;*.msk;)"
-                "(*.frm;){"
-                // ".png,.jpg,.jpeg,"
-                ".frm,.FRM,"
-                // ".msk,.MSK,"
-                "},.*";
-        }
-
-        char* folder = usr_info->default_save_path;
-        ifd::FileDialog::Instance().Save("FileSaveDialog", "Save File", ext_filter, folder);
-    }
-
-    if (ifd::FileDialog::Instance().IsDone("FileSaveDialog")) {
-        if (ifd::FileDialog::Instance().HasResult()) {
-            std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
-            save_name = (char*)malloc(sizeof(char) * temp.length()+1);
-            strncpy(save_name, temp.c_str(), temp.length());
-            save_name[temp.length()] = '\0';
-        }
-        ifd::FileDialog::Instance().Close();
-    }
-
-    return save_FRM_SURFACE(save_name, img_data, usr_info, sv_info);
+    //default
+    return "FRM";
 }
 
-char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+
+bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info, Save_Info* sv_info, bool overwrite)
 {
-    if (!save_name) {
-        return NULL;
+    if (strlen(save_name) < 1) {
+        return false;
+    }
+
+    if (!strrchr(save_name, '.')) {
+        Direction dir = (Direction)img_data->display_orient_num;
+        const char* ext = FRM_extension(dir);
+        char buff[MAX_PATH];
+        strncpy(buff, save_name, MAX_PATH);
+        snprintf(save_name, MAX_PATH, "%s.%s", buff, ext);
+    }
+
+    if (!overwrite) {
+        if (io_file_exists(save_name)) {
+            ImGui::OpenPopup("Match found");
+            return false;
+        }
     }
 
     FILE* file_ptr = NULL;
@@ -141,14 +129,9 @@ char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_inf
 #ifdef QFO2_WINDOWS
     // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
     wchar_t *w_save_name = tinyfd_utf8to16(save_name);
-    std::filesystem::path p(w_save_name);
-    strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
     _wfopen_s(&file_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
-    // parse Save_File_Name to isolate the directory and save in default_save_path for Linux
-    std::filesystem::path p(save_name);
-    strncpy(usr_info->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
 
     file_ptr = fopen(save_name, "wb");
 #endif
@@ -160,7 +143,7 @@ char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_inf
             "Unable to open file in write mode.\n"
         );
         printf("Error: Unable to open file in write mode: %s: %d", save_name, __LINE__);
-        return NULL;
+        return false;
     }
 
     int dir = img_data->display_orient_num;
@@ -198,7 +181,6 @@ char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_inf
         for (int i = 0; i < count; i++) {
             s += 12;
             s += w*h;
-            // header.Shift_Orient_x[i] = img_data->ANM_dir[dir].bounding_box.x1;
         }
     } else
     if (sv_info->s_type == all_dirs) {
@@ -237,6 +219,104 @@ char* save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_inf
 
     return save_name;
 }
+
+bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info, bool overwrite)
+{
+    init_IFD();
+
+    static char save_name[MAX_PATH];
+    const char* save_type;
+    if (sv_info->s_type == single_frm) {
+        save_type = "Export only selected \nframe as FRM.";
+    }
+    else if (sv_info->s_type == single_dir) {
+        save_type = "Export all frames in \nselected direction as FRx.";
+    }
+    else if (sv_info->s_type == all_dirs) {
+        save_type = "Export all frames in \nall directions as FRM.";
+    }
+
+    const char* ext_filter;
+    if (ImGui::Button(save_type)) {
+        if (sv_info->s_type == single_dir) {
+            ext_filter = "FRx file (single direction only)"
+            "(*.fr0;*.fr1;*.fr2;.fr3;*.fr4;*.fr5;)";
+            "{.fr0,.FR0,.fr1,.FR1,.fr2,.FR2,.fr3,.FR3,.fr4,.FR4,.fr5,.FR5,}";
+        } else {
+            ext_filter = "FRM file (single image or all 6 directions)"
+                // "(*.png;*.apng;*.jpg;*.jpeg;*.frm;*.fr0-5;*.msk;)"
+                "(*.frm;){"
+                // ".png,.jpg,.jpeg,"
+                ".frm,.FRM,"
+                // ".msk,.MSK,"
+                "},.*";
+        }
+
+        char* folder = usr_info->default_save_path;
+        ifd::FileDialog::Instance().Save("FRMSaveDialog", "Save File", ext_filter, folder);
+    }
+
+
+    static bool success = false;
+    if (ImGui::BeginPopupModal("Match found"))
+    {
+        char* dup_name = strrchr(save_name, PLATFORM_SLASH)+1;
+        ImGui::Text(
+            "%s already exists,\n\n", dup_name
+        );
+        if (ImGui::Button("Overwrite?")) {
+            overwrite = true;
+            success   = true;
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Select a different filename?")) {
+            ImGui::CloseCurrentPopup();
+            success      = false;
+            overwrite    = false;
+            save_name[0] = '\0';
+            char* folder = usr_info->default_save_path;
+            ifd::FileDialog::Instance().Save("FRMSaveDialog", "Save File", ext_filter, folder);
+        }
+
+        if (ImGui::Button("Cancel") ){
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            save_name[0] = '\0';
+            success      = false;
+            overwrite    = false;
+            return false;
+        }
+
+        ImGui::EndPopup();
+    }
+
+
+    if (ifd::FileDialog::Instance().IsDone("FRMSaveDialog")) {
+        if (ifd::FileDialog::Instance().HasResult()) {
+            std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
+            strncpy(save_name, temp.c_str(), temp.length()+1);
+            strncpy(usr_info->default_save_path, temp.c_str(), temp.length()+1);
+            char* ptr = strrchr(usr_info->default_save_path, PLATFORM_SLASH);
+            *ptr = '\0';
+            success = true;
+        }
+        ifd::FileDialog::Instance().Close();
+    }
+
+    if (strlen(save_name) > 0 && success) {
+        success = save_FRM_SURFACE(save_name, img_data, usr_info, sv_info, overwrite);
+    }
+
+    if (success) {
+        save_name[0] = '\0';
+        overwrite = false;
+        success = false;
+        return false;
+    }
+
+    return true;
+}
+
 
 //TODO: delete (replaced by save_FRM_SURFACE())
 char* Save_FRM_Image_OpenGL(image_data* img_data, user_info* usr_info)
@@ -769,6 +849,7 @@ void Set_Default_Game_Path(user_info* usr_info, char* exe_path)
 #define MAP_TILE_H (300)
 #define MAP_TILE_SIZE (350 * 300)
 
+//TODO: delete? only used in the contextual_buttons()
 void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 {
     FRM_Header FRM_Header = {};
@@ -789,7 +870,6 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 
 
 // Create a filename based on the directory and export file type
-//TODO: clean up this function, buff_size is not used
 // img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
 void create_tile_name(char* dst, char* name, img_type save_type, char* path, int tile_num)
 {
@@ -805,13 +885,11 @@ void create_tile_name(char* dst, char* name, img_type save_type, char* path, int
 
 
 //called 2nd
-bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struct user_info* usr_info, Save_Info* sv_info, bool overwrite, char* save_path)
+bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struct user_info* usr_info, Save_Info* sv_info, bool overwrite, char* save_path)
 {
-    // if (!base_path) {
     if (strlen(base_path) < 1) {
         return false;
     }
-    // if (!save_name) {
     if (strlen(save_name) < 1) {
         return false;
     }
@@ -830,7 +908,7 @@ bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, s
 
 
     // create basic frame information for saving
-    // every tile has the same width/height/size
+    // every Map TILE has the same width/height/size
     FRM_Frame frame_data;
     memset(&frame_data, 0, sizeof(FRM_Frame));
     frame_data.Frame_Width  = (MAP_TILE_W);
@@ -844,9 +922,7 @@ bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, s
 
 
 
-    // char base_path[MAX_PATH];
     FILE* File_ptr = NULL;
-    // uint8_t* tile_buffer = (uint8_t*)malloc(MAP_TILE_SIZE);
     uint8_t tile_buffer[MAP_TILE_SIZE];
     // split buffer into tiles and write to files
     for (int y = 0; y < num_tiles_y; y++)
@@ -855,7 +931,7 @@ bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, s
         {
             // create the filename for the current tile
             // assigns final save path string to Full_Save_File_Path
-            create_tile_name(save_path, save_name, MSK, base_path, tile_num);
+            create_tile_name(save_path, save_name, src->type, base_path, tile_num);
             if (strlen(save_path) < 1) {
                 return false;
             }
@@ -879,7 +955,7 @@ bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, s
             if (!File_ptr) {
                 //TODO: replace with set_popup_warning()
                 set_popup_warning(
-                    "[ERROR] save_MSK_tiles_SURFACE()\n\n"
+                    "[ERROR] save_tiles_SURFACE()\n\n"
                     "Can not open this file in write mode.\n"
                     // "Make sure the default game path is set."
                 );
@@ -922,14 +998,42 @@ bool save_MSK_tiles_SURFACE(char* base_path, char* save_name, image_data* src, s
             tile_num++;
         }
     }
-    // free(tile_buffer);
 
     return true;
 }
 
 
+void tile_grid(Surface* src, uint8_t* selected)
+{
+    int tile_w = src->w / MAP_TILE_W;
+    int tile_h = src->h / MAP_TILE_H;
+    int total  = tile_w*tile_h;
+    if (!selected) {
+        selected = (uint8_t*)calloc(1, total*sizeof(uint8_t));
+    }
+
+    for (int y = 0; y < tile_h; y++) {
+        for (int x = 0; x < tile_w; x++) {
+            if (x > 0) {ImGui::SameLine();}
+            int cur_tile = y*tile_w + x;
+            ImGui::PushID(cur_tile);
+            char num[3];
+            snprintf(num, 2, "%02d", cur_tile);
+            if (ImGui::Selectable(num, selected[cur_tile] != 0, 0, ImVec2(50, 50)))
+            {
+                // Toggle clicked cell
+                memset(selected,0,total);
+                selected[cur_tile] ^= 1;
+            }
+            ImGui::PopID();
+        }
+    }
+
+}
+
+
 //called 1st
-bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
+bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
 {
     //TODO: move this to initialize at program start?
     init_IFD();
@@ -950,15 +1054,36 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     ImGui::RadioButton("Single Tile", &e, 0);
     ImGui::RadioButton("Tile Range",  &e, 1);
     ImGui::RadioButton("All Tiles",   &e, 2);
+
+    ImVec2 img_pos = ImGui::GetCursorScreenPos();
+    static uint8_t* selected;
+    Surface* src;
     if (e == 0) {
-        // ImGui::
+        if (img_data->type == MSK) {
+            src = img_data->MSK_srfc;
+        }
+        tile_grid(src, selected);
     }
+    else if (e == 1) {}
+    else if (e == 2) {}
+
+
+    ImVec2 scaled = {MAP_TILE_W/7, MAP_TILE_H/6};
+
+    //image split into selectable tiles here?
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
+    window->DrawList->AddImage(
+        (ImTextureID)(uintptr_t)img_data->render_texture,
+        img_pos, {img_pos.x + scaled.x, img_pos.y + scaled.y},
+        ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
+        ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
+
 
     ImGui::Text(
         "World map tiles (FRM) and mask tiles (MSK)\n"
         "can technically have any name you choose.\n"
         "The only restriction is the total length\n"
-        "of the name must be less than 8 characters.\n"
+        "of the name can't be more than 8 characters.\n"
         "This includes any sequential numbers\n"
         "attached to the base-name.\n\n"
         "This program automatically appends 2 digits\n"
@@ -980,7 +1105,7 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     static char save_path[MAX_PATH];
     if (ImGui::BeginPopupModal("Match found"))
     {
-        char* dup_name = strrchr(save_path, '\\/')+1;
+        char* dup_name = strrchr(save_path, PLATFORM_SLASH)+1;
         ImGui::Text(
             "%s already exists,\n\n", dup_name
         );
@@ -1003,6 +1128,7 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
             save_folder[0] = '\0';
             overwrite = false;
             success = false;
+            free(selected);
             return false;
         }
 
@@ -1013,9 +1139,7 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     if (ifd::FileDialog::Instance().IsDone("FileSaveDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
             std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
-            int l1 = temp.length();
             strncpy(save_folder, temp.c_str(), temp.length()+1);
-            int l2 = strlen(save_folder);
             strncpy(usr_info->default_save_path, temp.c_str(), temp.length()+1);
             success = true;
         }
@@ -1023,9 +1147,10 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     }
 
     if (strlen(save_folder) > 0 && success) {
-        success = save_MSK_tiles_SURFACE(save_folder, save_name, img_data, usr_info, sv_info, overwrite, save_path);
+        success = save_tiles_SURFACE(save_folder, save_name, img_data, usr_info, sv_info, overwrite, save_path);
     }
     if (success) {
+        free(selected);
         save_folder[0] = '\0';
         overwrite = false;
         success = false;
@@ -1035,10 +1160,6 @@ bool ImDialog_save_MSK_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     return true;
 }
 
-char* split_to_tiles_SURFACE(user_info* usr_info)
-{
-
-}
 
 
 
@@ -1494,7 +1615,7 @@ void check_file(char* save_path, char* save_path_name, const char* name, int til
     {
         fclose(File_ptr);
         // handles the case where the file exists
-        char* ptr = strrchr(save_path_name, '\\/');
+        char* ptr = strrchr(save_path_name, PLATFORM_SLASH);
         char buff[MAX_PATH + 72];
         snprintf(buff, MAX_PATH + 72, "%s%s",
                 ptr+1, " already exists,\n\n"

@@ -6,6 +6,7 @@
 #include "Load_Files.h"
 #include "display_FRM_OpenGL.h"
 #include "Image2Texture.h"
+#include "platform_io.h"
 
 bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* shaders);
 
@@ -219,22 +220,22 @@ void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box
 
 Direction assign_direction_FRM(const char* direction)
 {
-    if (!strncmp(direction, "FR0\n", sizeof("FR0\n"))) {
+    if (!io_strncmp(direction, "FR0\n", sizeof("FR0\n"))) {
         return NE;
     }
-    if (!strncmp(direction, "FR1\0", sizeof("FR1\0"))) {
+    if (!io_strncmp(direction, "FR1\0", sizeof("FR1\0"))) {
         return E;
     }
-    if (!strncmp(direction, "FR2\0", sizeof("FR2\0"))) {
+    if (!io_strncmp(direction, "FR2\0", sizeof("FR2\0"))) {
         return SE;
     }
-    if (!strncmp(direction, "FR3\0", sizeof("FR3\0"))) {
+    if (!io_strncmp(direction, "FR3\0", sizeof("FR3\0"))) {
         return SW;
     }
-    if (!strncmp(direction, "FR4\0", sizeof("FR4\0"))) {
+    if (!io_strncmp(direction, "FR4\0", sizeof("FR4\0"))) {
         return W;
     }
-    if (!strncmp(direction, "FR5\0", sizeof("FR5\0"))) {
+    if (!io_strncmp(direction, "FR5\0", sizeof("FR5\0"))) {
         return NW;
     }
     //default

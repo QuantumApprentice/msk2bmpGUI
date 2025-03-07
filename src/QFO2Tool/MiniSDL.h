@@ -36,9 +36,6 @@ typedef struct Surface {
 } Surface;
 
 
-struct Edit_Dir{
-    Surface** edit_frame;
-};
 
 
 void FreeSurface(Surface* src);

@@ -52,6 +52,8 @@ struct image_data {
     ANM_Dir*    ANM_dir = NULL;
     rectangle ANM_bounding_box[6];
 
+    ANM_Dir* save_ptr = NULL;
+
     img_type type     = UNK;
     uint8_t* FRM_data = NULL;       //duplicate of FRM_hdr?
     uint8_t* MSK_data = NULL;

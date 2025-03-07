@@ -45,7 +45,7 @@ ImVec2 display_img_ImGUI(variables* My_Variables, image_data* edit_data)
 
 //TODO: maybe pass the dithering choice through?
 void Edit_Image(variables* My_Variables, ImVec2 img_pos,
-                image_data* edit_data, Edit_Dir* edit_struct,
+                image_data* edit_data, ANM_Dir* edit_struct,
                 Surface* edit_MSK_srfc, bool edit_MSK,
                 bool Palette_Update, uint8_t* Color_Pick) {
     shader_info* shaders  = &My_Variables->shaders;
@@ -77,14 +77,14 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
 
     //handle frame display by orientation and number
     int num = edit_data->display_frame_num;
-    int dir    = edit_data->display_orient_num;
+    int dir = edit_data->display_orient_num;
 
 
 
 
     Surface* edit_srfc;
     if (edit_data->type == FRM) {
-        edit_srfc = edit_struct[dir].edit_frame[num];
+        edit_srfc = edit_struct[dir].frame_data[num];
     } else {
         edit_srfc = edit_MSK_srfc;
     }

@@ -734,7 +734,6 @@ void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
 
 void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
-    // LF* F_Prop = &My_Variables->F_Prop[counter];
     char b[3];
     sprintf(b, "%02d", counter);
     std::string a = F_Prop->c_name;
@@ -751,9 +750,7 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
 
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
 
-        // Preview_FRM_Image(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
         preview_FRM_SURFACE(My_Variables, &F_Prop->edit_data, (F_Prop->show_stats || usr_info->show_image_stats));
-
 
         Gui_Video_Controls(&F_Prop->edit_data, F_Prop->edit_data.type);
     }
@@ -762,14 +759,14 @@ void Show_Image_Render(variables* My_Variables, LF* F_Prop, struct user_info* us
 
 //TODO: need to add direct MSK file editing
 //      probably in a different function?
-void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette* palette)
+void init_edit_struct_ANM(ANM_Dir* edit_struct, image_data* edit_data, Palette* palette)
 {
     //this is for editing MSK files when loading them solo
     if (!edit_data->ANM_dir) {
         // edit_data->display_orient_num = 0;
         // edit_data->FRM_hdr
-        edit_struct[0].edit_frame = (Surface**)malloc(sizeof(Surface*));
-        if (!edit_struct[0].edit_frame) {
+        edit_struct[0].frame_data = (Surface**)malloc(sizeof(Surface*));
+        if (!edit_struct[0].frame_data) {
             //TODO: log out to txt file
             set_popup_warning(
                 "[ERROR] init_edit_struct_ANM()"
@@ -778,9 +775,9 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
             printf("Unable to allocate memory for edit_frame: %d\n", __LINE__);
             return;
         }
-        edit_struct[0].edit_frame[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
-        if (!edit_struct[0].edit_frame[0]) {
-            free(edit_struct[0].edit_frame);
+        edit_struct[0].frame_data[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
+        if (!edit_struct[0].frame_data[0]) {
+            free(edit_struct[0].frame_data);
             //TODO: log out to txt file
             set_popup_warning(
                 "[ERROR] init_edit_struct_ANM()"
@@ -791,8 +788,8 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
         }
         edit_data->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir*));
         if (!edit_data->ANM_dir) {
-            free(edit_struct[0].edit_frame);
-            FreeSurface(edit_struct[0].edit_frame[0]);
+            free(edit_struct[0].frame_data);
+            FreeSurface(edit_struct[0].frame_data[0]);
             //TODO: log out to txt file
             set_popup_warning(
                 "[ERROR] init_edit_struct_ANM()"
@@ -802,14 +799,13 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
             return;
         }
         edit_data->ANM_dir[0].orientation = NE;
-
+        edit_data->save_ptr = edit_struct;
         return;
     }
 
     for (int dir = 0; dir < 6; dir++) {
         int num_frames = edit_data->ANM_dir[dir].num_frames;
-        edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
-        
+        edit_struct[dir].frame_data = (Surface**)malloc(num_frames*sizeof(Surface*));
 
         for (int frame = 0; frame < num_frames; frame++) {
             if (edit_data->ANM_dir[dir].frame_data == NULL) {
@@ -826,22 +822,22 @@ void init_edit_struct_ANM(Edit_Dir* edit_struct, image_data* edit_data, Palette*
 
             memcpy(dst->pxls, src->pxls, src->w*src->h);
 
-            edit_struct[dir].edit_frame[frame] = dst;
+            edit_struct[dir].frame_data[frame] = dst;
         }
     }
+    edit_data->save_ptr = edit_struct;
+
 }
 
 //TODO: delete, replaced with init_edit_struct_ANM()
-//TODO: need to add direct MSK file editing
-//      probably in a different function?
-void init_edit_struct(Edit_Dir* edit_struct, image_data* edit_data, Palette* palette)
+void init_edit_struct(ANM_Dir* edit_struct, image_data* edit_data, Palette* palette)
 {
     //this is for editing MSK files when loading them solo
     if (!edit_data->FRM_dir) {
         // edit_data->display_orient_num = 0;
         // edit_data->FRM_hdr
-        edit_struct[0].edit_frame = (Surface**)malloc(sizeof(Surface*));
-        edit_struct[0].edit_frame[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
+        edit_struct[0].frame_data = (Surface**)malloc(sizeof(Surface*));
+        edit_struct[0].frame_data[0] = Create_8Bit_Surface(edit_data->width, edit_data->height, palette);
         edit_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir*));
         edit_data->FRM_dir[0].orientation = NE;
 
@@ -850,7 +846,7 @@ void init_edit_struct(Edit_Dir* edit_struct, image_data* edit_data, Palette* pal
 
     for (int dir = 0; dir < 6; dir++) {
         int num_frames = edit_data->FRM_dir[dir].num_frames;
-        edit_struct[dir].edit_frame = (Surface**)malloc(num_frames*sizeof(Surface*));
+        edit_struct[dir].frame_data = (Surface**)malloc(num_frames*sizeof(Surface*));
 
         for (int frame = 0; frame < num_frames; frame++) {
             //create 8bit surface and copy FRM image to it
@@ -864,11 +860,11 @@ void init_edit_struct(Edit_Dir* edit_struct, image_data* edit_data, Palette* pal
             //      have to be dealt with by expanding the _Width/_Height whenever this happens
             //      AND give the user some feedback that this is happening
             FRM_Frame* src = edit_data->FRM_dir[dir].frame_data[frame];
-            Surface* dst = edit_struct[dir].edit_frame[frame];
+            Surface* dst = edit_struct[dir].frame_data[frame];
             int w = src->Frame_Width;
             int h = src->Frame_Height;
 
-            edit_struct[dir].edit_frame[frame] = Create_8Bit_Surface(w, h, palette);
+            edit_struct[dir].frame_data[frame] = Create_8Bit_Surface(w, h, palette);
             memcpy(dst->pxls, src->frame_start, w*h);
         }
     }
@@ -881,18 +877,22 @@ void init_MSK_surface(Surface* edit_MSK_srfc)
     // edit_MSK_srfc.pxls = (uint8_t*)(edit_MSK_srfc+1);
 
     //TODO: replace 350*300 with something that works for different sized MSK files?
+    //      needs to match attached FRM?
     edit_MSK_srfc->pxls = (uint8_t*)calloc(1, 350*300);
 
-    if (edit_MSK_srfc->pxls) {
-        edit_MSK_srfc->channels = 1;
-        edit_MSK_srfc->w        = 350;
-        edit_MSK_srfc->h        = 300;
-        edit_MSK_srfc->pitch    = 350;
-
-    } else {
+    if (!edit_MSK_srfc->pxls) {
+        //TODO: log out to txt file
+        set_popup_warning(
+            "[ERROR] init_MSK_surface()\n\n"
+            "Unable to allocate edit_MSK_srfc->pxls.\n"
+        );
         printf("[Error] unable to allocate MSK surface pixels.\n");
         return;
     }
+    edit_MSK_srfc->channels = 1;
+    edit_MSK_srfc->w        = 350;
+    edit_MSK_srfc->h        = 300;
+    edit_MSK_srfc->pitch    = 350;
 }
 
 //TODO: remove this runOnce variable
@@ -909,9 +909,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     std::string name = a + " Edit Window...###edit" + b;
 
     image_data* edit_data = &F_Prop->edit_data;
-    static Edit_Dir edit_struct[6];
-    if (!edit_struct[0].edit_frame) {// && F_Prop->img_data.type != MSK) {
-        // init_edit_struct(edit_struct, edit_data, My_Variables->FO_Palette);
+    static ANM_Dir edit_struct[6];
+    if (!edit_struct[0].frame_data) {
         init_edit_struct_ANM(edit_struct, edit_data, My_Variables->FO_Palette);
     }
     static Surface edit_MSK_srfc;
@@ -963,8 +962,8 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
         edit_MSK_srfc.pxls = NULL;
         for (int i = 0; i < 6; i++)
         {
-            free(edit_struct[i].edit_frame);
-            edit_struct[i].edit_frame = NULL;
+            free(edit_struct[i].frame_data);
+            edit_struct[i].frame_data = NULL;
         }
 
         My_Variables->window_number_focus = -1;
@@ -1065,10 +1064,9 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
 
 bool save_FRM_popup(LF* F_Prop)
 {
-    image_data* img_data = &F_Prop->img_data;
+    image_data* img_data = &F_Prop->edit_data;
 
     Save_Info sv_info;
-    // sv_info.s_type = single_frm;
     bool open_window = true;
     ImGui::Begin("Export FRM", &open_window);
         static int e;
@@ -1078,36 +1076,12 @@ bool save_FRM_popup(LF* F_Prop)
         sv_info.s_type = (Save_Type)e;
 
         char dup_name[MAX_PATH];
-        static int overwrite;
-        if (ImGui::BeginPopupModal("Match found", &open_window))
-        {
-            ImGui::Text(
-                "%s already exists,\n\n", dup_name
-            );
-            if (ImGui::Button("Overwrite?")) {
-                overwrite = 1;
-                ImGui::CloseCurrentPopup();
-            }
-            if (ImGui::Button("Select a different folder?")) {
-                overwrite = 2;
-                ImGui::CloseCurrentPopup();
-            }
+        static bool overwrite;
 
-            if (ImGui::Button("Cancel") || open_window == false) {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-            return NULL;
-        }
-
-        char* temp = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
+        open_window = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info, overwrite);
 
     ImGui::End();
 
-    if (temp) {
-        F_Prop->c_name = temp;
-    }
     return open_window;
 }
 
@@ -1119,12 +1093,28 @@ bool save_MSK_popup(LF* F_Prop)
 
     bool open_window = true;
     ImGui::Begin("Export MSK", &open_window);
-        open_window = ImDialog_save_MSK_SURFACE(img_data, &usr_info, sv_info);
+        if (open_window) {
+            open_window = ImDialog_save_TILE_SURFACE(img_data, &usr_info, sv_info);
+        }
     ImGui::End();
 
 
     return open_window;
 
+}
+
+bool save_TILE_popup(LF* F_Prop)
+{
+    image_data* img_data = &F_Prop->img_data;
+    Save_Info* sv_info;
+
+    bool open_window = true;
+    ImGui::Begin("Export FRM Tile", &open_window);
+        if (open_window) {
+            open_window = ImDialog_save_TILE_SURFACE(img_data, &usr_info, sv_info);
+        }ImGui::End();
+
+    return open_window;
 }
 
 void main_window_bttns(variables* My_Variables, int index, int* counter)
@@ -1133,21 +1123,25 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         index = 0;
     }
     LF* F_Prop   = &My_Variables->F_Prop[index];
-    image_data* img_data = &F_Prop->img_data;
     Palette* pal =  My_Variables->FO_Palette;
-    static bool open_window     = false;
-    static bool single_dir_b    = false;
-    static int  save_type       = UNK;
-    static image_data* src      = &F_Prop->img_data;
+    static image_data* img_data = &F_Prop->img_data;
+    static image_data* edt_data = &F_Prop->edit_data;
 
     bool success = ImDialog_load_files(F_Prop, img_data, &usr_info, &My_Variables->shaders);
     if (success) {
         (*counter)++;
     }
 
-    if (ImGui::Button("Open Edit Window")) {
-        F_Prop->edit_image_window = true;
-        (*counter)++;
+    if (F_Prop->edit_image_window) {
+        if (ImGui::Button("Close Edit Window")) {
+            F_Prop->edit_image_window = false;
+            (*counter)--;
+        }
+    } else {
+        if (ImGui::Button("Open Edit Window")) {
+            F_Prop->edit_image_window = true;
+            (*counter)++;
+        }
     }
 
     // bool disabled = (F_Prop->img_data.ANM_dir || F_Prop->edit_data.ANM_dir) ? false : true;
@@ -1158,11 +1152,14 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         open_save = true;
     }
     if (open_save) {
-        if (img_data->type == FRM) {
+        if (edt_data->type == FRM) {
             open_save = save_FRM_popup(F_Prop);
         }
-        else if (img_data->type == MSK) {
+        else if (edt_data->type == MSK) {
             open_save = save_MSK_popup(F_Prop);
+        }
+        else if (edt_data->type == TILE) {
+            open_save = save_TILE_popup(F_Prop);
         }
         // open_save = popup_save_menu(&disabled, &save_type, &single_dir_b);
     }
@@ -1195,10 +1192,11 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 Save_Info sv_info;
                 sv_info.s_type = all_dirs;
                 // save_FRM_popup(F_Prop);
-                char* temp = ImDialog_save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
-                if (temp) {
-                    F_Prop->c_name = temp;
-                }
+            //have to comment this out to prevent weird behavior
+                // char* temp = ImDialog_save_FRM_SURFACE(&F_Prop->edit_data, &usr_info, &sv_info);
+                // if (temp) {
+                //     F_Prop->c_name = temp;
+                // }
                 // Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             // }
             if (ImGui::Button("Save as Overworld Map Tiles...")) {

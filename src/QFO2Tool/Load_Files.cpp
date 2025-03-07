@@ -696,10 +696,13 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
 
 }
 
-void prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
+bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
 {
     snprintf(F_Prop->Opened_File, MAX_PATH, "%s", file_name);
     F_Prop->c_name = strrchr(F_Prop->Opened_File, PLATFORM_SLASH) + 1;
+    if (!strrchr(F_Prop->Opened_File, '.')) {
+        return false;
+    }
     F_Prop->extension = strrchr(F_Prop->Opened_File, '.') + 1;
 
     // store filepaths in this directory for navigating through
@@ -716,6 +719,7 @@ void prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
     }
     // TODO: remove this printf 8==D
     printf("\nextension: %s\n", F_Prop->extension);
+    return true;
 }
 
 bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_data, shader_info *shaders)
@@ -750,7 +754,8 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr
     // char load_path[MAX_PATH];
     // snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
 
-    char* load_name;
+    // char* load_name;
+    static char load_name[MAX_PATH];
     if (ImGui::Button("Load File")) {
         const char* ext_filter;
             ext_filter = "FRM/MSK and image files"
@@ -763,19 +768,21 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr
                 ".msk,.MSK,"
             "}";
 
-        char* folder = usr_info->default_save_path;
-        ifd::FileDialog::Instance().Save("FileLoadDialog", "Load File", ext_filter, folder);
+        char* folder = usr_info->default_load_path;
+        ifd::FileDialog::Instance().Open("FileLoadDialog", "Load File", ext_filter, folder);
     }
 
     if (ifd::FileDialog::Instance().IsDone("FileLoadDialog")) {
         if (ifd::FileDialog::Instance().HasResult()) {
             std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
-            load_name = (char*)malloc(sizeof(char) * temp.length()+1);
             strncpy(load_name, temp.c_str(), temp.length()+1);
+            strncpy(usr_info->default_load_path, temp.c_str(), temp.length()+1);
+            char* ptr = strrchr(usr_info->default_load_path, PLATFORM_SLASH);
+            *ptr = '\0';
         }
         ifd::FileDialog::Instance().Close();
     }
-    if (!load_name) {
+    if (strlen(load_name) < 1) {
         return false;
     }
     return File_Type_Check(F_Prop, shaders, img_data, load_name);
@@ -829,7 +836,10 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     //TODO: make a function that checks if image has a different palette
     //      besides the default Fallout 1/2 palette
     //      also need to convert all float* palettes to Palette*
-    prep_extension(F_Prop, NULL, file_name);
+    bool success = prep_extension(F_Prop, NULL, file_name);
+    if (!success) {
+        return false;
+    }
     // FRx_check checks extension to make sure it's one of the FRM variants (FRM, FR0, FR1...FR5)
     if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL

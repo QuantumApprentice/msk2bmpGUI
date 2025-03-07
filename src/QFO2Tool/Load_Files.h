@@ -70,6 +70,6 @@ bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data, con
 bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
 std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
 void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
-void prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name);
+bool prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
 void load_tile_texture(GLuint* texture, char* file_name);

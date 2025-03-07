@@ -3,7 +3,7 @@
 #include "Image2Texture.h"
 
 
-void Edit_Image(variables* My_Variables, ImVec2 img_pos, image_data* edit_data, Edit_Dir* edit_srfc, Surface* edit_MSK_srfc, bool edit_MSK, bool Palette_Update, uint8_t* Color_Pick);
+void Edit_Image(variables* My_Variables, ImVec2 img_pos, image_data* edit_data, ANM_Dir* edit_srfc, Surface* edit_MSK_srfc, bool edit_MSK, bool Palette_Update, uint8_t* Color_Pick);
 //void Edit_MSK_SDL(LF* F_Prop, bool* Palette_Update, ImVec2 Origin);
 
 bool Create_MSK_OpenGL(image_data* img_data);
