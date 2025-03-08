@@ -63,6 +63,7 @@ void preview_WMAP_tiles_SURFACE(variables* My_Variables, image_data* img_data)
 
 }
 
+//TODO: delete, replaced by preview_WMAP_tiles_SURFACE()
 void Preview_WMAP_Tiles(variables *My_Variables, image_data *img_data)
 {
     // handle zoom and panning for the image

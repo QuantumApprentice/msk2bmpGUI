@@ -705,11 +705,14 @@ void Show_MSK_Palette_Window(variables* My_Variables)
 
 void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
 {
-    // LF* F_Prop = &My_Variables->F_Prop[counter];
     std::string image_name = F_Prop->c_name;
     char window_id[3];
     sprintf(window_id, "%02d", counter);
     std::string name = image_name + " Preview...###render" + window_id;
+
+    if (F_Prop->edit_data.type != TILE) {
+        F_Prop->edit_data.type = TILE;
+    }
 
     //shortcuts
     if (ImGui::Begin(name.c_str(), &F_Prop->preview_tiles_window, 0)) {
@@ -721,11 +724,9 @@ void Preview_Tiles_Window(variables* My_Variables, LF* F_Prop, int counter)
         }
 
         if (F_Prop->show_squares) {
-            // Preview_WMAP_Tiles(My_Variables, &F_Prop->edit_data);
             preview_WMAP_tiles_SURFACE(My_Variables, &F_Prop->edit_data);
         }
         else {
-            // Prev_TMAP_Tiles(&usr_info, My_Variables, &F_Prop->edit_data);
             prev_TMAP_tiles_SURFACE(&usr_info, My_Variables, &F_Prop->edit_data);
         }
     }
@@ -1076,10 +1077,9 @@ bool save_FRM_popup(LF* F_Prop)
         sv_info.s_type = (Save_Type)e;
 
         char dup_name[MAX_PATH];
-        static bool overwrite;
 
         if (open_window) {
-            open_window = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info, overwrite);
+            open_window = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
         }
 
     ImGui::End();
@@ -1229,7 +1229,8 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
         }
         //edit mask window
         else {
-            if (ImGui::Button("Clear all changes...")) {
+            //TODO: delete this commented out button
+            // if (ImGui::Button("Clear all changes...")) {
                 // if (F_Prop->edit_data.MSK_data) {
                 //     glBindTexture(GL_TEXTURE_2D, F_Prop->edit_data.MSK_texture);
                 //     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -1248,7 +1249,7 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //         0, GL_RED, GL_UNSIGNED_BYTE, clear);
                 //     free(clear);
                 // }
-            }
+            // }
             if (ImGui::Button("Export Mask Tiles...")) {
                 //export mask tiles
                 Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->exe_directory);

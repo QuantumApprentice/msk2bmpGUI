@@ -347,6 +347,16 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
         dst->ANM_dir[dir].orientation = NE;
 
         dst->FRM_hdr = (FRM_Header*)calloc(1, sizeof(FRM_Header));
+        if (!dst->FRM_hdr) {
+            //TODO: log out to file
+            set_popup_warning(
+                "[ERROR] prep_image_SURFACE()\n\n"
+                "Unable to allocate memory for FRM_hdr."
+            );
+            printf("Unable to allocate memory for FRM_hdr: %d", __LINE__);
+            return;
+        }
+
         dst->type = FRM;
 
         dst->FRM_texture = init_texture(
@@ -360,6 +370,7 @@ void prep_image_SURFACE(LF* F_Prop, Palette* pal, int color_match_algo, bool* wi
         dst->ANM_dir[dir].num_frames = 1;
 
         //TODO: this needs to work with ANM_dir[]
+        //disable/enable alpha channel?
         if (alpha) {
             for (int i = 0; i < size; i++) {
                 if (dst->FRM_dir->frame_data[0]->frame_start[i] == 0) {

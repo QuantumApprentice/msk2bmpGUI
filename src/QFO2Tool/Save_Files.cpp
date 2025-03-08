@@ -220,7 +220,7 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
     return save_name;
 }
 
-bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info, bool overwrite)
+bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
 {
     init_IFD();
 
@@ -257,6 +257,7 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     }
 
 
+    static bool overwrite;
     static bool success = false;
     if (ImGui::BeginPopupModal("Match found"))
     {
@@ -885,7 +886,9 @@ void create_tile_name(char* dst, char* name, img_type save_type, char* path, int
 
 
 //called 2nd
-bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struct user_info* usr_info, Save_Info* sv_info, bool overwrite, char* save_path)
+bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
+    uint8_t* selected, Surface* src, img_type type,
+    struct user_info* usr_info, Save_Info* sv_info, bool overwrite)
 {
     if (strlen(base_path) < 1) {
         return false;
@@ -894,32 +897,35 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struc
         return false;
     }
 
-    int img_w    = src->width;
-    int img_h    = src->height;
+    int img_w    = src->w;
+    int img_h    = src->h;
     int img_size = img_w * img_h;
 
     int num_tiles_x = img_w / MAP_TILE_W;
     int num_tiles_y = img_h / MAP_TILE_H;
     int tile_num    = 0;
+    uint8_t* pxls   = src->pxls;
 
+    if (type == TILE) {
+        type = FRM;
+    }
 
-
-
+    FRM_Header header        = {};
+    header.version           = 4;
+    header.FPS               = 1;
+    header.Frames_Per_Orient = 1;
+    header.Frame_Area        = MAP_TILE_SIZE;
+    B_Endian::flip_header_endian(&header);
 
 
     // create basic frame information for saving
     // every Map TILE has the same width/height/size
-    FRM_Frame frame_data;
-    memset(&frame_data, 0, sizeof(FRM_Frame));
-    frame_data.Frame_Width  = (MAP_TILE_W);
-    frame_data.Frame_Height = (MAP_TILE_H);
-    frame_data.Frame_Size   = (MAP_TILE_SIZE);
+    FRM_Frame frame_data = {};
+    // memset(&frame_data, 0, sizeof(FRM_Frame));
+    frame_data.Frame_Width  = MAP_TILE_W;
+    frame_data.Frame_Height = MAP_TILE_H;
+    frame_data.Frame_Size   = MAP_TILE_SIZE;
     B_Endian::flip_frame_endian(&frame_data);
-
-
-
-    uint8_t* pxls = src->MSK_srfc->pxls;
-
 
 
     FILE* File_ptr = NULL;
@@ -931,7 +937,7 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struc
         {
             // create the filename for the current tile
             // assigns final save path string to Full_Save_File_Path
-            create_tile_name(save_path, save_name, src->type, base_path, tile_num);
+            create_tile_name(save_path, save_name, type, base_path, tile_num);
             if (strlen(save_path) < 1) {
                 return false;
             }
@@ -962,33 +968,37 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struc
                 printf("Error: Unable to open file in Write Mode: %s : %d", save_path, __LINE__);
                 return false;
             }
+
+            int tile_pointer  = (y * img_w * MAP_TILE_H) + (x * MAP_TILE_W);
+            int img_row_pntr  = 0;
+            int tile_row_pntr = 0;
             // FRM = 1, MSK = 0
-            // if (sv_info->s_type == FRM) {
-            //     // Split buffer into 350x300 pixel tiles and write to file
-            //     // save header
-            //     fwrite(frm_header, sizeof(FRM_Header), 1, File_ptr);
-            //     fwrite(&frame_data, sizeof(FRM_Frame), 1, File_ptr);
-            //     int tile_pointer = (y * img_width * MAP_TILE_H) + (x * MAP_TILE_W);
-            //     int row_pointer = 0;
-            //     for (int i = 0; i < MAP_TILE_H; i++) {
-            //         // write out one row of pixels in each loop
-            //         fwrite(blend_buffer + tile_pointer + row_pointer, MAP_TILE_W, 1, File_ptr);
-            //         row_pointer += img_width;
-            //     }
-            // }
+            if (type == FRM) {
+                // Split buffer into 350x300 pixel tiles and write to file
+                // int row_pointer = 0;
+                for (int i = 0; i < MAP_TILE_H; i++) {
+                    // copy out one row of pixels in each loop
+                    // fwrite(tile_buffer + tile_pointer + row_pointer, MAP_TILE_W, 1, File_ptr);
+                    memcpy(&tile_buffer[tile_row_pntr], &src->pxls[tile_pointer + img_row_pntr], MAP_TILE_W);
+                    img_row_pntr  += img_w;
+                    tile_row_pntr += MAP_TILE_W;
+                }
+                // save header
+                fwrite(&header,     sizeof(FRM_Header), 1, File_ptr);
+                fwrite(&frame_data, sizeof(FRM_Frame),  1, File_ptr);
+                fwrite(&tile_buffer, MAP_TILE_SIZE,     1, File_ptr);
+            }
             ///////////////////////////////////////////////////////////////////////////
-            if (src->type == MSK) {
+            if (type == MSK) {
                 // Split the surface up into 350x300 pixel buffer
                 //       and pass them to Save_MSK_Image_OpenGL()
-                int tile_pointer  = (y * src->width * MAP_TILE_H) + (x * MAP_TILE_W);
-                int img_row_pntr  = 0;
-                int tile_row_pntr = 0;
+
 
                 for (int i = 0; i < MAP_TILE_H; i++) {
                     // copy out one row of pixels in each loop to the buffer
                     memcpy(tile_buffer + tile_row_pntr, pxls + tile_pointer + img_row_pntr, MAP_TILE_W);
 
-                    img_row_pntr  += src->width;
+                    img_row_pntr  += img_w;
                     tile_row_pntr += MAP_TILE_W;
                 }
 
@@ -1003,7 +1013,7 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, image_data* src, struc
 }
 
 
-void tile_grid(Surface* src, uint8_t* selected)
+uint8_t* tile_grid(Surface* src, uint8_t* selected, int e)
 {
     int tile_w = src->w / MAP_TILE_W;
     int tile_h = src->h / MAP_TILE_H;
@@ -1011,24 +1021,29 @@ void tile_grid(Surface* src, uint8_t* selected)
     if (!selected) {
         selected = (uint8_t*)calloc(1, total*sizeof(uint8_t));
     }
-
+    if (e == 0) {
+        memset(selected,1,total);
+    }
     for (int y = 0; y < tile_h; y++) {
         for (int x = 0; x < tile_w; x++) {
             if (x > 0) {ImGui::SameLine();}
             int cur_tile = y*tile_w + x;
-            ImGui::PushID(cur_tile);
             char num[3];
-            snprintf(num, 2, "%02d", cur_tile);
+            snprintf(num, 3, "%02d", cur_tile);
+            ImGui::PushID(cur_tile);
             if (ImGui::Selectable(num, selected[cur_tile] != 0, 0, ImVec2(50, 50)))
             {
                 // Toggle clicked cell
-                memset(selected,0,total);
-                selected[cur_tile] ^= 1;
+                if (e == 2) {
+                    memset(selected,0,total);
+                    selected[cur_tile] ^= 1;
+                }
             }
             ImGui::PopID();
         }
     }
 
+    return selected;
 }
 
 
@@ -1049,26 +1064,32 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     //     "You can change this setting in the config menu."
     // );
 
+    Surface* src;
+    img_type type;
+    const char* output_type;
+    if (img_data->type == MSK) {
+        src = img_data->MSK_srfc;
+        type = MSK;
+        output_type = "Save worldmap MSK tiles";
+    } else {
+        src = img_data->ANM_dir[0].frame_data[0];
+        type = FRM;
+        output_type = "Save worldmap FRM tiles";
+    }
 
     static int e;
-    ImGui::RadioButton("Single Tile", &e, 0);
-    ImGui::RadioButton("Tile Range",  &e, 1);
-    ImGui::RadioButton("All Tiles",   &e, 2);
+    ImGui::RadioButton("All Tiles",   &e, 0);
+    // ImGui::RadioButton("Tile Range",  &e, 1);
+    ImGui::RadioButton("Single Tile", &e, 2);
+    // if (e == 0) {}
+    // else if (e == 1) {}
+    // else if (e == 2) {}
 
+    ImVec2 scaled = {
+        src->w / 7,
+        src->h / 6
+    };
     ImVec2 img_pos = ImGui::GetCursorScreenPos();
-    static uint8_t* selected;
-    Surface* src;
-    if (e == 0) {
-        if (img_data->type == MSK) {
-            src = img_data->MSK_srfc;
-        }
-        tile_grid(src, selected);
-    }
-    else if (e == 1) {}
-    else if (e == 2) {}
-
-
-    ImVec2 scaled = {MAP_TILE_W/7, MAP_TILE_H/6};
 
     //image split into selectable tiles here?
     ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -1078,6 +1099,8 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
         ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f),
         ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
 
+    static uint8_t* selected;
+    selected = tile_grid(src, selected, e);
 
     ImGui::Text(
         "World map tiles (FRM) and mask tiles (MSK)\n"
@@ -1095,7 +1118,7 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
         save_name, 7);
 
     char* folder = usr_info->default_save_path;
-    if (ImGui::Button("Save MSK tiles")) {
+    if (ImGui::Button(output_type)) {
         ifd::FileDialog::Instance().Open("FileSaveDialog", "Save Folder", "", false, folder);
     }
 
@@ -1112,23 +1135,26 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
         if (ImGui::Button("Overwrite?")) {
             ImGui::CloseCurrentPopup();
             overwrite = true;
-            success = true;
+            success   = true;
         }
         if (ImGui::Button("Select a different folder?")) {
             ImGui::CloseCurrentPopup();
-            overwrite = false;
             save_folder[0] = '\0';
+            save_path[0]   = '\0';
+            overwrite      = false;
+            success        = false;
             ifd::FileDialog::Instance().Open("FileSaveDialog", "Save File", "", false, folder);
-            success = false;
         }
 
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
-            ImGui::EndPopup();
             save_folder[0] = '\0';
-            overwrite = false;
-            success = false;
+            save_path[0]   = '\0';
+            overwrite      = false;
+            success        = false;
             free(selected);
+            selected = NULL;
+            ImGui::EndPopup();
             return false;
         }
 
@@ -1147,13 +1173,16 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     }
 
     if (strlen(save_folder) > 0 && success) {
-        success = save_tiles_SURFACE(save_folder, save_name, img_data, usr_info, sv_info, overwrite, save_path);
+        success = save_tiles_SURFACE(save_folder, save_name, save_path,
+                    selected, src, type, usr_info, sv_info, overwrite);
     }
     if (success) {
         free(selected);
+        selected = NULL;
         save_folder[0] = '\0';
-        overwrite = false;
-        success = false;
+        save_path[0]   = '\0';
+        overwrite      = false;
+        success        = false;
         return false;
     }
 
@@ -1791,6 +1820,7 @@ void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int 
     int buff_size = (width + 7) / 8 * height;
 
     // final output buffer
+    //TODO: replace with stack buffer[]
     uint8_t *out_buffer = (uint8_t *)malloc(buff_size);
 
     int shift = 0;
