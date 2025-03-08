@@ -861,8 +861,6 @@ void Save_FRM_Tiles_OpenGL(LF* F_Prop, user_info* user_info, char* exe_path)
 
     B_Endian::flip_header_endian(&FRM_Header);
 
-    // TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
-    // TODO: need to color pick for transparency and maybe use index 255 for white instead (depending on if it works or not)
     Split_to_Tiles_OpenGL(&F_Prop->edit_data, user_info, FRM, &FRM_Header, exe_path);
 
     //TODO: replace with imgui popup
@@ -921,7 +919,6 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
     // create basic frame information for saving
     // every Map TILE has the same width/height/size
     FRM_Frame frame_data = {};
-    // memset(&frame_data, 0, sizeof(FRM_Frame));
     frame_data.Frame_Width  = MAP_TILE_W;
     frame_data.Frame_Height = MAP_TILE_H;
     frame_data.Frame_Size   = MAP_TILE_SIZE;
@@ -935,6 +932,10 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
     {
         for (int x = 0; x < num_tiles_x; x++)
         {
+            if (selected[tile_num] == 0) {
+                tile_num++;
+                continue;
+            }
             // create the filename for the current tile
             // assigns final save path string to Full_Save_File_Path
             create_tile_name(save_path, save_name, type, base_path, tile_num);
@@ -972,36 +973,21 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
             int tile_pointer  = (y * img_w * MAP_TILE_H) + (x * MAP_TILE_W);
             int img_row_pntr  = 0;
             int tile_row_pntr = 0;
+            // Split buffer into 350x300 pixel tiles and write to file
+            for (int i = 0; i < MAP_TILE_H; i++) {
+                // copy out one row of pixels in each loop
+                memcpy(&tile_buffer[tile_row_pntr], &src->pxls[tile_pointer + img_row_pntr], MAP_TILE_W);
+                img_row_pntr  += img_w;
+                tile_row_pntr += MAP_TILE_W;
+            }
             // FRM = 1, MSK = 0
             if (type == FRM) {
-                // Split buffer into 350x300 pixel tiles and write to file
-                // int row_pointer = 0;
-                for (int i = 0; i < MAP_TILE_H; i++) {
-                    // copy out one row of pixels in each loop
-                    // fwrite(tile_buffer + tile_pointer + row_pointer, MAP_TILE_W, 1, File_ptr);
-                    memcpy(&tile_buffer[tile_row_pntr], &src->pxls[tile_pointer + img_row_pntr], MAP_TILE_W);
-                    img_row_pntr  += img_w;
-                    tile_row_pntr += MAP_TILE_W;
-                }
-                // save header
                 fwrite(&header,     sizeof(FRM_Header), 1, File_ptr);
                 fwrite(&frame_data, sizeof(FRM_Frame),  1, File_ptr);
                 fwrite(&tile_buffer, MAP_TILE_SIZE,     1, File_ptr);
             }
             ///////////////////////////////////////////////////////////////////////////
             if (type == MSK) {
-                // Split the surface up into 350x300 pixel buffer
-                //       and pass them to Save_MSK_Image_OpenGL()
-
-
-                for (int i = 0; i < MAP_TILE_H; i++) {
-                    // copy out one row of pixels in each loop to the buffer
-                    memcpy(tile_buffer + tile_row_pntr, pxls + tile_pointer + img_row_pntr, MAP_TILE_W);
-
-                    img_row_pntr  += img_w;
-                    tile_row_pntr += MAP_TILE_W;
-                }
-
                 Save_MSK_Image_OpenGL(tile_buffer, File_ptr, MAP_TILE_W, MAP_TILE_H);
             }
             fclose(File_ptr);
@@ -1437,6 +1423,8 @@ bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, 
     return false; // again, shouldn't be able to reach this line
 }
 
+// TODO: need to color pick for transparency and maybe use index 255 for white instead (depending on if it works or not)
+// TODO: also need to test index 255 to see what color it shows in the engine (appears to be black on the menu)
 // save_type is the file type being saved to (not the img_type coming in from img_data)
 // img_type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
 void Split_to_Tiles_OpenGL(image_data* img_data, struct user_info* usr_info,

@@ -1115,7 +1115,8 @@ bool save_TILE_popup(LF* F_Prop)
     ImGui::Begin("Export FRM Tile", &open_window);
         if (open_window) {
             open_window = ImDialog_save_TILE_SURFACE(img_data, &usr_info, sv_info);
-        }ImGui::End();
+        }
+    ImGui::End();
 
     return open_window;
 }
@@ -1202,10 +1203,10 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 // }
                 // Save_FRM_Image_OpenGL(&F_Prop->edit_data, &usr_info);
             // }
-            if (ImGui::Button("Save as Overworld Map Tiles...")) {
-                //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
-                Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
-            }
+            // if (ImGui::Button("Save as Overworld Map Tiles...")) {
+            //     //Save_FRM_tiles(F_Prop->PAL_Surface, &user_info);
+            //     Save_FRM_Tiles_OpenGL(F_Prop, &usr_info, My_Variables->exe_directory);
+            // }
             if (ImGui::Button("Save image as Town Map Tiles...(not yet implemented)")) {
                 // save_TMAP_tiles();
                 // My_Variables.
@@ -1250,16 +1251,16 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
                 //     free(clear);
                 // }
             // }
-            if (ImGui::Button("Export Mask Tiles...")) {
-                //export mask tiles
-                Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->exe_directory);
-            }
+            // if (ImGui::Button("Export Mask Tiles...")) {
+            //     //export mask tiles
+            //     Save_MSK_Tiles_OpenGL(&F_Prop->edit_data, &usr_info, My_Variables->exe_directory);
+            // }
             if (ImGui::Button("Load MSK to this slot...")) {
                 Load_Files(F_Prop, &F_Prop->edit_data, &usr_info, &My_Variables->shaders);
             }
-            if (ImGui::Button("Export Full MSK...")) {
-                Save_Full_MSK_OpenGL(&F_Prop->edit_data, &usr_info);
-            }
+            // if (ImGui::Button("Export Full MSK...")) {
+            //     Save_Full_MSK_OpenGL(&F_Prop->edit_data, &usr_info);
+            // }
             if (ImGui::Button("Cancel Editing Mask...")) {
                 F_Prop->edit_MSK = false;
             }
