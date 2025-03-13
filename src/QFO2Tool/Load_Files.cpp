@@ -788,6 +788,7 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr
     return File_Type_Check(F_Prop, shaders, img_data, load_name);
 }
 
+//TODO: delete, should be replaced by ImDialog_load_files()
 bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
 {
     char load_path[MAX_PATH];
@@ -845,15 +846,12 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         // The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data, shaders);
         img_data->type = FRM;
-
-        // draw_FRM_to_framebuffer(shaders, img_data->width, img_data->height,
-        //                         img_data->framebuffer, img_data->FRM_texture);
     }
     else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
         F_Prop->file_open_window = Load_MSK_Tile_Surface(F_Prop->Opened_File, img_data);
+        bool success   = false;
         img_data->type = MSK;
-        init_framebuffer(img_data);
-        bool success = false;
+        // init_framebuffer(img_data);
         success = framebuffer_init(&img_data->render_texture, &F_Prop->img_data.framebuffer, 350, 300);
         if (!success) {
             //TODO: log to file
@@ -903,9 +901,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         //initialize allocated memory
         new (img_data->ANM_dir) ANM_Dir[6];
 
-        //TODO: refactor this to correctly point to ANM_dir[dir]->frame_data[0?];
         img_data->ANM_dir[0].frame_data = (Surface**)malloc(sizeof(Surface*));
-        if (!img_data->ANM_dir->frame_data) {
+        if (!img_data->ANM_dir[0].frame_data) {
             //TODO: log to file
             set_popup_warning(
                 "[ERROR] File_Type_Check()\n\n"
@@ -914,11 +911,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
             free(img_data->ANM_dir);
             return false;
-        } else {
-            new (img_data->ANM_dir->frame_data) ANM_Frame;
         }
+        new (img_data->ANM_dir->frame_data) ANM_Frame;
 
-        //TODO: refactor this to correctly point to ANM_dir[dir]->frame_data[0].frame_start;
         img_data->ANM_dir[0].frame_data[0] = temp_surface;
         if (img_data->ANM_dir->frame_data) {
             img_data->width  = F_Prop->img_data.ANM_dir[0].frame_data[0]->w;
@@ -937,6 +932,20 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             //so we can see the image on load
             img_data->display_orient_num = NE;
             img_data->display_frame_num  = 0;
+        }
+
+        if (!img_data->ANM_dir[0].frame_box) {
+            img_data->ANM_dir[0].frame_box = (rectangle*)calloc(1,sizeof(rectangle));
+        }
+        if (!img_data->ANM_dir[0].frame_box) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to allocate memory for ANM_dir[0].frame_box."
+            );
+            printf("Unable to allocate memory for ANM_dir[0].frame_box: %d", __LINE__);
+            free(img_data->ANM_dir);
+            return false;
         }
     }
 

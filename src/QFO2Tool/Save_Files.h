@@ -18,12 +18,12 @@ struct Save_Info {
 
 uint8_t* blend_PAL_texture(image_data* img_data);
 
-char* Save_FRM_Image_OpenGL(image_data* img_data, struct user_info* user_info);
-char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char* name);
-char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name);
-bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir);
-bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir);
-char* Set_Save_File_Name(image_data* img_data, char* name);
+// char* Save_FRM_Image_OpenGL(image_data* img_data, struct user_info* user_info);
+// char* Save_FRM_Animation_OpenGL(image_data* img_data, user_info* user_info, char* name);
+// char* Save_FRx_Animation_OpenGL(image_data* img_data, char* default_save_path, char* name);
+// bool Save_Single_Dir_Animation_OpenGL(image_data* img_data, FILE* File_ptr, int dir);
+// bool Save_Single_FRx_Animation_OpenGL(image_data* img_data, char* c_name, int dir);
+// char* Set_Save_File_Name(image_data* img_data, char* name);
 
 char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo);
 void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
@@ -53,3 +53,5 @@ void Save_to_GIF(image_data* img_data, struct user_info* usr_nfo);
 // bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info, Save_Info* sv_info, bool overwrite);
 bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info);
 bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info);
+
+tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data, Rect* offset);

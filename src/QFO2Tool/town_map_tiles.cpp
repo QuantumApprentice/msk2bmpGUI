@@ -8,21 +8,21 @@
 #include "Edit_TILES_LST.h"
 #include "town_map_tiles.h"
 
+#include "ImGui_Warning.h"
+
 
 
 
 #define TMAP_W          (80)    //width of a town-map tile
 #define TMAP_H          (36)    //height of a town-map tile
 
-void save_TMAP_tile(char *save_path, uint8_t *data, char* name);
+void save_TMAP_tile(char *save_path, uint8_t *pxls, char* name);
 
 
 //crop town map tiles into linked list structs
 //single tile crop using memcpy
-void crop_single_tile(uint8_t* tile_buff,
-                    uint8_t* frm_pxls,
-                    int frm_w, int frm_h,
-                    int x, int y)
+void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls,
+                    int frm_w, int frm_h, int x, int y)
 {
     for (int row = 0; row < 36; row++)
     {
@@ -31,7 +31,7 @@ void crop_single_tile(uint8_t* tile_buff,
         int offset  = rgt-lft;
         int buf_pos = ((row)*80)   + lft;
         int pxl_pos = ((row)*frm_w + lft)
-                      + y*frm_w + x;
+                        + y *frm_w + x;
 
     //prevent TOP & BOTTOM pixels outside image from copying over
         if (row+y < 0 || row+y >= frm_h) {
@@ -134,7 +134,7 @@ void crop_single_tileB(uint8_t *dst,
             // however for thin source images it's possible
             if (src_row_right > src_width) {
                 int trimmed = src_row_right - src_width;
-                row_right -= trimmed;
+                row_right  -= trimmed;
                 // technically this could set more than
                 // row_right - row_left bytes, but that's okay, as it
                 // won't go past the end of the row in the destination
@@ -151,8 +151,8 @@ void crop_single_tileB(uint8_t *dst,
             // entirely being in a trimmed area
             if (row_right - row_left > 0) {
                 memcpy(dst_row_ptr + row_left,
-                    src + src_offset + row_left,
-                    row_right - row_left);
+                  src + src_offset + row_left,
+                  row_right - row_left);
             }
         }
     }
@@ -221,7 +221,6 @@ int crop_single_tile_vector_clear(
     return copied_pixels;
 }
 
-//explicitly floats so result can be rounded up
 #define pxl_per_row_x       (128)   //  ((80+80-32)    /1) tile per repeat
 #define pxl_per_row_y        (32)   //  ((36+36+36-12) /3) tiles per repeat
 #define pxl_per_col_x        (64)   //  ((80+80-32)    /2) tiles per repeat
@@ -233,7 +232,99 @@ int crop_single_tile_vector_clear(
 #define row_offset_y         (24)   //  move one row down
 
 //array version (stores tile position)
-tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name)
+tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite)
+{
+    uint8_t tile_buff[TMAP_W * TMAP_H] = {0};
+    int img_w = src->w;
+    int img_h = src->h;
+
+    //rows/columns to the right and left
+    //  of image origin corner
+    float row_lft =      (float)img_h / (float)pxl_per_row_y;   //maybe use ceil() here?
+    float row_rgt =      (float)img_w / (float)pxl_per_row_x;   //maybe use ceil() here?
+    int   col_lft = ceil((float)img_h / (float)pxl_per_col_y);
+    int   col_rgt = ceil((float)img_w / (float)pxl_per_col_x);
+
+    //total number of rows/columns
+    int row_cnt = ceil( row_lft + row_rgt );
+    int col_cnt = col_lft + col_rgt;
+
+
+    uint8_t* frm_pxls     = src->pxls;
+    tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
+    tt_arr* towntiles     = handle->tile;
+    tt_arr* tile          = towntiles;
+    int tile_num          = 0;
+
+    for (int row = 0; row < row_cnt; row++) {
+        for (int col = 0; col < col_cnt; col++) {
+
+            snprintf(tile->name_ptr, 14, "%s%03d.FRM", name, tile_num);
+            snprintf(save_path, MAX_PATH, "%s/%s", save_fldr, tile->name_ptr);
+
+            if (!overwrite) {
+                if (io_file_exists(save_path)) {
+                    ImGui::OpenPopup("Match found");
+                    return NULL;
+                }
+            }
+
+            int origin_x =   -col_offset_x * col_lft    //initial origin position x
+                            + col_offset_x * col        //individual tile position x_col
+                            + row_offset_x * row        //individual tile position x_row
+                            + offset->x;
+            int origin_y =   -col_offset_y * col_lft    //initial origin position y
+                            + col_offset_y * col        //individual tile position y_col
+                            + row_offset_y * row        //individual tile position y_row
+                            + offset->y;
+            tile = &towntiles[row*col_cnt + col];
+
+            //TODO: remove col/row assignment?
+            tile->col     = col;
+            tile->row     = row;
+
+            if (   (origin_x <= -TMAP_W)
+                || (origin_y <= -TMAP_H)
+                || (origin_x >= img_w)
+                || (origin_y >= img_h)
+                ) {
+                tile->tile_id = 1;
+                continue;
+            }
+
+            //TODO: clean this up, was used for testing different methods
+            // crop_single_tileB(tile_buff, frm_pxls, img_w, img_h, origin_y, origin_x);
+            crop_single_tile(tile_buff, frm_pxls, img_w, img_h, origin_x, origin_y);
+            // crop_single_tile_vector_clear(tile_buff, frm_pxls, img_w, img_h,
+            //         origin.y, origin.x);
+
+            //TODO: check if blank tile before memcpy
+            //      if blank, tile[row*col_cnt + col].tileID = 1;
+            //      then move to next tile
+
+            memcpy(tile->frm_data, tile_buff, TMAP_W*TMAP_H);
+            tile->tile_id = 0;
+
+            //TODO: make this a separate process
+            //      tiles should be in memory first
+            //      then saved at button press
+            save_TMAP_tile(save_path, tile_buff, tile->name_ptr);
+            tile_num++;
+        }
+    }
+
+    tile_num        = 0;
+    handle->size    = col_cnt*row_cnt;
+    handle->col_cnt = col_cnt;
+    handle->row_cnt = row_cnt;
+
+    return handle;
+}
+
+
+//array version (stores tile position)
+//TODO: delete, replaced with crop_TMAP_tile_arr_POPUP()
+tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data* img_data, char* save_path, char* name)
 {
     uint8_t tile_buff[TMAP_W * TMAP_H] = {0};
     int img_w = img_data->width;
@@ -253,7 +344,6 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
     int dir = img_data->display_orient_num;
     int num = img_data->display_frame_num;
 
-    // uint8_t *frm_pxls     = img_data->FRM_data + sizeof(FRM_Header) + sizeof(FRM_Frame);
     uint8_t* frm_pxls     = img_data->ANM_dir[dir].frame_data[num]->pxls;
     tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
     tt_arr* towntiles     = handle->tile;
@@ -314,9 +404,9 @@ tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_da
     return handle;
 }
 
-void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
+//TODO: replace this with the other save FRM function?
+void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
 {
-    char full_file_path[MAX_PATH];
     FRM_Header header = {};
     header.version = 4; // not sure why 4? but vanilla game frm tiles have this
     header.FPS = 1;
@@ -329,7 +419,6 @@ void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
     frame.Frame_Size   = 80 * 36;
     B_Endian::flip_frame_endian(&frame);
 
-    snprintf(full_file_path, MAX_PATH, "%s/%s", save_path, name);
 
     //TODO: make backups of the original tiles
     // if (io_file_exists(full_file_path)) {
@@ -346,17 +435,19 @@ void save_TMAP_tile(char *save_path, uint8_t *data, char* name)
     //     io_move_file(full_file_path, backup_path);
     // }
 
-    FILE *file_ptr = fopen(full_file_path, "wb");
+    // FILE *file_ptr = fopen(full_file_path, "wb");
+    FILE *file_ptr = fopen(save_path, "wb");
     if (!file_ptr) {
-        tinyfd_messageBox(
-            "Error",
-            "Can not open this file in write mode.\n"
-            "Make sure the default game path is set.",
-            "ok", "error", 1);
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] save_TMAP_tile()\n\n"
+            "Unable to open file in write mode.\n"
+        );
+        printf("Error: save_TMAP_tile() Unable to open file in write mode: %s: %d\n", name, __LINE__);
         return;
     }
     fwrite(&header, sizeof(FRM_Header), 1, file_ptr);
     fwrite(&frame,  sizeof(FRM_Frame),  1, file_ptr);
-    fwrite(data, 80 * 36, 1, file_ptr);
+    fwrite(pxls, 80 * 36, 1, file_ptr);
     fclose(file_ptr);
 }

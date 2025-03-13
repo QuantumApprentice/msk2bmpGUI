@@ -91,5 +91,6 @@ static int tile_mask[] = {
     32, 35,     //row 36
 };
 
-tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name);
+// tt_arr_handle* crop_TMAP_tile_arr(int offset_x, int offset_y, image_data *img_data, char* save_path, char* name);
+tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite);
 void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls, int img_w, int img_h, int x, int y);

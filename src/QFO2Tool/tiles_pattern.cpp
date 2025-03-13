@@ -10,6 +10,8 @@
 #include "platform_io.h"
 #include "tiles_pattern.h"
 
+#include "ImGui_Warning.h"
+
 //need to check if mapper can access above 4096
 //need to check pattern file can access above 4096
 
@@ -112,31 +114,41 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
             usr_info->game_files.FRM_TILES_LST = load_tiles_lst_game(usr_info->default_game_path);
         }
         if (tiles_lst == nullptr) {
-            choice = tinyfd_messageBox(
-                "TILES.LST missing...",
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] TMAP_tiles_pattern_arr()\n\n"
                 "Unable to find TILES.LST.\n\n"
-
                 "TILES.LST is needed to match up\n"       // data/art/tiles/TILES.LST
                 "the tile-name to a line number,\n"
                 "then that line number is used\n"
                 "in the pattern file to indicate\n"
                 "which tile is in what position.\n\n"
-
-                "",
-                "cancel", "warning", 1
             );
-
-            if (choice == YES) {
-                //TODO:
-                //point to TILES.LST?
-            }
-            if (choice == NO) {
+            printf("Error: TMAP_tiles_pattern_arr() Unable to find TILES.LST: %d\n", __LINE__);
+            return;
                 //TODO:
                 //create new TILES.LST?
-            }
-            if (choice == CANCEL) {
-                return;
-            }
+                //point to TILES.LST?
+
+            // choice = tinyfd_messageBox(
+            //     "TILES.LST missing...",
+            //     "Unable to find TILES.LST.\n\n"
+            //     "TILES.LST is needed to match up\n"       // data/art/tiles/TILES.LST
+            //     "the tile-name to a line number,\n"
+            //     "then that line number is used\n"
+            //     "in the pattern file to indicate\n"
+            //     "which tile is in what position.\n\n"
+            //     "",
+            //     "cancel", "warning", 1
+            // );
+            // if (choice == YES) {
+            //     //TODO:
+            // }
+            // if (choice == NO) {
+            // }
+            // if (choice == CANCEL) {
+            //     return;
+            // }
         }
     }
 

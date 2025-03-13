@@ -45,6 +45,8 @@ material: Glass             //material type == enum
 #include "Edit_TILES_LST.h"
 #include "tiles_pattern.h"
 
+#include "ImGui_Warning.h"
+
 enum material {
     Glass   = 0,
     Metal   = 1,
@@ -202,7 +204,6 @@ void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
     //append to pro_tile.msg if either a name
     //or a description has been provided
     if (strlen(info->name) > 1 || strlen(info->description) > 1) {
-
         //append to pro_tile.msg
         char msg_line[512+32];
         snprintf(msg_line, 512+32,
@@ -234,7 +235,11 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         "to give the tile a name and description in the\n"
         "Fallout 2 mapper (Mapper2.exe).\n\n"
         "For this to work, please provide the path to\n"
-        "fallout2.exe in your modded Fallout 2 folder.\n"
+        "fallout2.exe in your modded Fallout 2 folder,\n"
+        "and have these files extracted to their\n"
+        "appropriate locations.\n"
+        "(I plan on adding a feature to extract these)\n"
+        "(automatically, but currently can't do this.)\n"
         );
     static char FObuf[MAX_PATH] = "";
     strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
@@ -251,6 +256,7 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
     if (ImGui::Button("Add to Fallout 2...")) {
         if (handle == nullptr) {
         //TODO: place a warning here, this needs tile_arr*head to work
+        //TODO: maybe implement this?
             return;
         }
 
@@ -258,7 +264,13 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         if (fallout2exe_exists(FObuf)) {
             strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
         } else {
-            //TODO: popup warning - can't find fallout2.exe
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] export_tile_proto_arr_start()\n\n"
+                "Fallout executable not found.\n"
+            );
+            printf("Error: export_tile_proto_arr_start() Fallout executable not found:\n %s: %d\n", FObuf, __LINE__);
+            return;
         }
         info.name        = buf1;
         info.description = buf2;

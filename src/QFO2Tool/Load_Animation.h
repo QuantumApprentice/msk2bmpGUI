@@ -48,7 +48,7 @@ struct ANM_Dir {
     int num_frames = 0;
     Direction orientation  = no_data;
     Surface** frame_data   = NULL;
-    rectangle bounding_box = {};    //TODO: remove this
+    // rectangle bounding_box = {};    //TODO: remove this
     rectangle* frame_box   = {};
 };
 

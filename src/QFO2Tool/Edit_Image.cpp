@@ -133,6 +133,7 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
         y = (sub_image_offset.y);
 
         if ((0 <= x && x < edit_srfc->w) && (0 <= y && y < edit_srfc->h)) {
+
             image_edited = true;
 
             Surface* srfc_ptr = edit_srfc;
@@ -142,7 +143,6 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
                 texture  = edit_data->MSK_texture;
             }
             //paint MSK surface
-            // texture_paint(My_Variables, edit_data, edit_srfc, edit_MSK);
             surface_paint(My_Variables, edit_data, srfc_ptr, x, y);
             //MSK & FRM are aligned to 1-byte
             SURFACE_to_texture(srfc_ptr, texture, srfc_ptr->w, srfc_ptr->h, 1);
@@ -412,85 +412,85 @@ bool Create_MSK_OpenGL(image_data* img_data)
 //    }
 //}
 
-//TODO: archive & DELETE
-//      surface_paint() is used now
-//void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
-void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc, bool edit_MSK)
-{
-    int color_pick = My_Variables->Color_Pick;
-    float brush_w  = My_Variables->brush_size.x;
-    float brush_h  = My_Variables->brush_size.y;
-    int brush_size = brush_h * brush_w;
-    uint8_t* color = (uint8_t*)malloc(brush_size);
-    memset(color, color_pick, brush_size);
+// //TODO: archive & DELETE
+// //      surface_paint() is used now
+// //void texture_paint(int x, int y, int brush_w, int brush_h, int value, unsigned int texture)
+// void texture_paint(variables* My_Variables, image_data* edit_data, Surface* edit_srfc, bool edit_MSK)
+// {
+//     int color_pick = My_Variables->Color_Pick;
+//     float brush_w  = My_Variables->brush_size.x;
+//     float brush_h  = My_Variables->brush_size.y;
+//     int brush_size = brush_h * brush_w;
+//     uint8_t* color = (uint8_t*)malloc(brush_size);
+//     memset(color, color_pick, brush_size);
 
-    int orient = edit_data->display_orient_num;
-    int frame  = edit_data->display_frame_num;
+//     int orient = edit_data->display_orient_num;
+//     int frame  = edit_data->display_frame_num;
 
-    int offset_x = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_x;
-    int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
-
-
-    float scale = edit_data->scale;
-    int width   = edit_data->width;
-    int height  = edit_data->height;
-    ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
+//     int offset_x = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_x;
+//     int offset_y = edit_data->FRM_dir[orient].frame_data[frame]->Shift_Offset_y;
 
 
-    float x, y;
-    x = (My_Variables->new_mouse_pos.x - top_corner(edit_data->offset).x)/scale;
-    y = (My_Variables->new_mouse_pos.y - top_corner(edit_data->offset).y)/scale;
+//     float scale = edit_data->scale;
+//     int width   = edit_data->width;
+//     int height  = edit_data->height;
+//     ImVec2 img_size = ImVec2((float)(width * scale), (float)(height * scale));
 
-    GLuint* texture = NULL;
-    if (edit_MSK) {
-        texture = &edit_data->MSK_texture;
-    }
-    else {
-        texture = &edit_data->PAL_texture;
-    }
 
-    if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
-        //clamp brush to edge when close enough
-        if ((x + brush_w / 2) > width) {
-            x = width - brush_w / 2;
-        }
-        if ((x - brush_w / 2) < 0) {
-            x = brush_w /2;
-        }
-        if ((y + brush_h / 2) > height) {
-            y = height - brush_h / 2;
-        }
-        if ((y - brush_h / 2) < 0) {
-            y = brush_h / 2;
-        }
+//     float x, y;
+//     x = (My_Variables->new_mouse_pos.x - top_corner(edit_data->offset).x)/scale;
+//     y = (My_Variables->new_mouse_pos.y - top_corner(edit_data->offset).y)/scale;
 
-        //TODO: switch to editing the both MSK & FRM surface directly
-        //TODO: implement undo tree
-        if (!edit_MSK) {
-            x -= brush_w/2;
-            y -= brush_h/2;
-            x -= offset_x;
-            y -= offset_y;
-            Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
-            PaintSurface(edit_srfc, dst_rect, My_Variables->Color_Pick);
-        } else {
-            //TODO: edit MSK surface here?
-            //...no, I should move this check outside of this function
-            // and just use this to edit both MSK and FRM as Surface*
-        }
+//     GLuint* texture = NULL;
+//     if (edit_MSK) {
+//         texture = &edit_data->MSK_texture;
+//     }
+//     else {
+//         texture = &edit_data->PAL_texture;
+//     }
 
-    //old code showing how to paint a brush sized square
-    //onto an openGL bound texture
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_2D, *texture);
-        // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        // glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
-        //     GL_RED, GL_UNSIGNED_BYTE,
-        //     color);
-    }
+//     if ((0 <= x && x <= img_size.x) && (0 <= y && y <= img_size.y)) {
+//         //clamp brush to edge when close enough
+//         if ((x + brush_w / 2) > width) {
+//             x = width - brush_w / 2;
+//         }
+//         if ((x - brush_w / 2) < 0) {
+//             x = brush_w /2;
+//         }
+//         if ((y + brush_h / 2) > height) {
+//             y = height - brush_h / 2;
+//         }
+//         if ((y - brush_h / 2) < 0) {
+//             y = brush_h / 2;
+//         }
 
-    free(color);
-}
+//         //TODO: switch to editing the both MSK & FRM surface directly
+//         //TODO: implement undo tree
+//         if (!edit_MSK) {
+//             x -= brush_w/2;
+//             y -= brush_h/2;
+//             x -= offset_x;
+//             y -= offset_y;
+//             Rect dst_rect = {(int)x, (int)y, (int)brush_w, (int)brush_h};
+//             PaintSurface(edit_srfc, dst_rect, My_Variables->Color_Pick);
+//         } else {
+//             //TODO: edit MSK surface here?
+//             //...no, I should move this check outside of this function
+//             // and just use this to edit both MSK and FRM as Surface*
+//         }
+
+//     //old code showing how to paint a brush sized square
+//     //onto an openGL bound texture
+//         // glActiveTexture(GL_TEXTURE0);
+//         // glBindTexture(GL_TEXTURE_2D, *texture);
+//         // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//         // glTexSubImage2D(GL_TEXTURE_2D, 0, x-(brush_w/2), y-(brush_h/2), brush_w, brush_h,
+//         //     GL_RED, GL_UNSIGNED_BYTE,
+//         //     color);
+//     }
+
+//     free(color);
+// }
 
 //paint surfaces for both MSK and FRM items (possibly also PAL? or other 32bit surfaces?)
 //TODO: need to have a brush shape in place of (or on top of) the mouse cursor when painting

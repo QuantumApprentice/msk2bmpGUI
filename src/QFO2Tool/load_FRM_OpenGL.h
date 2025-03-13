@@ -45,8 +45,8 @@ struct FRM_Dir {
 
 struct image_data {
     FRM_Header* FRM_hdr = NULL;     //same as FRM_data
-    FRM_Dir*    FRM_dir = NULL;     //TODO: remove
-    rectangle FRM_bounding_box[6];  //TODO: remove
+    // FRM_Dir*    FRM_dir = NULL;     //TODO: remove
+    // rectangle FRM_bounding_box[6];  //TODO: remove
 
     ANM_Header* ANM_hdr = NULL;     //TODO: remove? leave FRM_hdr?
     ANM_Dir*    ANM_dir = NULL;

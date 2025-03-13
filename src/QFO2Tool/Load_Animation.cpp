@@ -205,12 +205,12 @@ void Clear_img_data(image_data* img_data)
         img_data->MSK_data = NULL;
         img_data->MSK_srfc = NULL;
     }
-    if (img_data->FRM_data) {
-        free(img_data->FRM_data);
-        img_data->FRM_data = NULL;
-        img_data->FRM_hdr  = NULL;
-        img_data->FRM_dir  = NULL;
-    }
+    // if (img_data->FRM_data) {
+    //     free(img_data->FRM_data);
+    //     img_data->FRM_data = NULL;
+    //     img_data->FRM_hdr  = NULL;
+    //     img_data->FRM_dir  = NULL;
+    // }
     if (img_data->ANM_dir) {
         for (int i = 0; i < 6; i++) {
             if (img_data->ANM_dir[i].frame_data) {

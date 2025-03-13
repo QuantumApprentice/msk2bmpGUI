@@ -365,137 +365,137 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
     return true;
 }
 
-//TODO: delete, replaced by load_FRM_to_SURFACE()
-bool load_FRM_img_data(const char* file_name, image_data* img_data)
-{
-    uint8_t* buffer = load_entire_file(file_name, &img_data->FRM_size);
-    if (!buffer) {
-        return false;
-    }
+// //TODO: delete, replaced by load_FRM_to_SURFACE()
+// bool load_FRM_img_data(const char* file_name, image_data* img_data)
+// {
+//     uint8_t* buffer = load_entire_file(file_name, &img_data->FRM_size);
+//     if (!buffer) {
+//         return false;
+//     }
 
-    FRM_Header* header = (FRM_Header*)buffer;
-    B_Endian::flip_header_endian(header);
-    img_data->FRM_hdr = header;
+//     FRM_Header* header = (FRM_Header*)buffer;
+//     B_Endian::flip_header_endian(header);
+//     img_data->FRM_hdr = header;
 
-    int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
-    int num_frames  = header->Frames_Per_Orient;
-    Direction dir   = no_data;
-    const char* ext_ptr = strrchr(file_name, '.') + 1;
-    if (num_orients < 6) {
-        dir = assign_direction_FRM(ext_ptr);
-        img_data->display_orient_num = dir;
-    }
+//     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
+//     int num_frames  = header->Frames_Per_Orient;
+//     Direction dir   = no_data;
+//     const char* ext_ptr = strrchr(file_name, '.') + 1;
+//     if (num_orients < 6) {
+//         dir = assign_direction_FRM(ext_ptr);
+//         img_data->display_orient_num = dir;
+//     }
 
-    img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
-    //TODO: malloc all the memory here
-    // img_data->FRM_dir = (FRM_Dir*)malloc(
-    //         sizeof(FRM_Dir)*6 +
-    //         sizeof(FRM_Frame*)*num_frames*6 +
-    //         sizeof(rectangle)*num_frames*6
-    //     );
+//     img_data->FRM_dir = (FRM_Dir*)malloc(sizeof(FRM_Dir) * 6);
+//     //TODO: malloc all the memory here
+//     // img_data->FRM_dir = (FRM_Dir*)malloc(
+//     //         sizeof(FRM_Dir)*6 +
+//     //         sizeof(FRM_Frame*)*num_frames*6 +
+//     //         sizeof(rectangle)*num_frames*6
+//     //     );
 
-    if (!img_data->FRM_dir) {
-        //TODO: log out to file
-        set_popup_warning(
-            "[ERROR] load_FRM_img_data()\n\n"
-            "Unable to allocate memory for FRM_dir"
-        );
-        printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
-        return false;
-    }
-    new(img_data->FRM_dir) FRM_Dir[6];
+//     if (!img_data->FRM_dir) {
+//         //TODO: log out to file
+//         set_popup_warning(
+//             "[ERROR] load_FRM_img_data()\n\n"
+//             "Unable to allocate memory for FRM_dir"
+//         );
+//         printf("Unable to allocate memory for FRM_dir: %d", __LINE__);
+//         return false;
+//     }
+//     new(img_data->FRM_dir) FRM_Dir[6];
 
 
-    FRM_Dir* frm_dir = img_data->FRM_dir;
-    int buff_offset = sizeof(FRM_Header);
+//     FRM_Dir* frm_dir = img_data->FRM_dir;
+//     int buff_offset = sizeof(FRM_Header);
 
-    for (int i = 0; i < num_orients; i++)
-    {
-        if (num_orients < 6) {
-            i = dir;
-        }
-        //TODO: change to ptr assignment after malloc-ing entire memory above ^^
-        frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
-        // frm_dir[i].frame_data = (FRM_Frame**)
-        if (!frm_dir[i].frame_data) {
-            printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
-            return false;
-        }
-        frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
-        if (!frm_dir[i].bounding_box) {
-            printf("Unable to allocate memory for frm_dir[%d].bounding_box: %d", i, __LINE__);
-            return false;
-        }
+//     for (int i = 0; i < num_orients; i++)
+//     {
+//         if (num_orients < 6) {
+//             i = dir;
+//         }
+//         //TODO: change to ptr assignment after malloc-ing entire memory above ^^
+//         frm_dir[i].frame_data  = (FRM_Frame**)malloc(sizeof(FRM_Frame*) * num_frames);
+//         // frm_dir[i].frame_data = (FRM_Frame**)
+//         if (!frm_dir[i].frame_data) {
+//             printf("Unable to allocate memory for frm_dir[%d].frame_data: %d", i, __LINE__);
+//             return false;
+//         }
+//         frm_dir[i].bounding_box = (rectangle*)malloc(sizeof(rectangle)  * num_frames);
+//         if (!frm_dir[i].bounding_box) {
+//             printf("Unable to allocate memory for frm_dir[%d].bounding_box: %d", i, __LINE__);
+//             return false;
+//         }
 
-        rectangle bounding_box     = {};
-        rectangle FRM_bounding_box = {};
+//         rectangle bounding_box     = {};
+//         rectangle FRM_bounding_box = {};
 
-        frm_dir[i].num_frames  = num_frames;
-        frm_dir[i].orientation = (Direction)i;
-        int frame_size         = sizeof(FRM_Frame);
-        for (int j = 0; j < num_frames; j++)
-        {
-            FRM_Frame* frame_start   = (FRM_Frame*)(buffer + buff_offset);
-            frm_dir[i].frame_data[j] = frame_start;
-            B_Endian::flip_frame_endian(frame_start);
-            calculate_bounding_box(&bounding_box, &FRM_bounding_box, frame_start, &frm_dir[i].bounding_box[j]);
+//         frm_dir[i].num_frames  = num_frames;
+//         frm_dir[i].orientation = (Direction)i;
+//         int frame_size         = sizeof(FRM_Frame);
+//         for (int j = 0; j < num_frames; j++)
+//         {
+//             FRM_Frame* frame_start   = (FRM_Frame*)(buffer + buff_offset);
+//             frm_dir[i].frame_data[j] = frame_start;
+//             B_Endian::flip_frame_endian(frame_start);
+//             calculate_bounding_box(&bounding_box, &FRM_bounding_box, frame_start, &frm_dir[i].bounding_box[j]);
 
-            buff_offset += frame_start->Frame_Size + frame_size;
-        }
-        img_data->FRM_bounding_box[i] = FRM_bounding_box;
-    }
-    int this_dir = (num_orients < 6) ? dir : 0;
-    img_data->width  = img_data->FRM_bounding_box[this_dir].x2 - img_data->FRM_bounding_box[this_dir].x1;
-    img_data->height = img_data->FRM_bounding_box[this_dir].y2 - img_data->FRM_bounding_box[this_dir].y1;
+//             buff_offset += frame_start->Frame_Size + frame_size;
+//         }
+//         img_data->FRM_bounding_box[i] = FRM_bounding_box;
+//     }
+//     int this_dir = (num_orients < 6) ? dir : 0;
+//     img_data->width  = img_data->FRM_bounding_box[this_dir].x2 - img_data->FRM_bounding_box[this_dir].x1;
+//     img_data->height = img_data->FRM_bounding_box[this_dir].y2 - img_data->FRM_bounding_box[this_dir].y1;
 
-    img_data->FRM_data = buffer;
+//     img_data->FRM_data = buffer;
 
-    return true;
-}
+//     return true;
+// }
 
-//TODO: delete, or maybe repurpose
-bool Render_FRM0_OpenGL(image_data* img_data, int dir)
-{
+// //TODO: delete, or maybe repurpose
+// bool Render_FRM0_OpenGL(image_data* img_data, int dir)
+// {
 
-    //load & gen texture
-    if (!glIsTexture(img_data->FRM_texture)) {
-        glGenTextures(1, &img_data->FRM_texture);
-    }
-    glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
-    //texture settings
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//     //load & gen texture
+//     if (!glIsTexture(img_data->FRM_texture)) {
+//         glGenTextures(1, &img_data->FRM_texture);
+//     }
+//     glBindTexture(GL_TEXTURE_2D, img_data->FRM_texture);
+//     //texture settings
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    int frm_width    = img_data->FRM_dir[dir].frame_data[0]->Frame_Width;
-    int frm_height   = img_data->FRM_dir[dir].frame_data[0]->Frame_Height;
-    int total_width  = img_data->FRM_bounding_box[dir].x2 - img_data->FRM_bounding_box[dir].x1;
-    int total_height = img_data->FRM_bounding_box[dir].y2 - img_data->FRM_bounding_box[dir].y1;
-    int x_offset     = img_data->FRM_dir[dir].bounding_box[0].x1 - img_data->FRM_bounding_box[dir].x1;
-    int y_offset     = img_data->FRM_dir[dir].bounding_box[0].y1 - img_data->FRM_bounding_box[dir].y1;
+//     int frm_width    = img_data->FRM_dir[dir].frame_data[0]->Frame_Width;
+//     int frm_height   = img_data->FRM_dir[dir].frame_data[0]->Frame_Height;
+//     int total_width  = img_data->FRM_bounding_box[dir].x2 - img_data->FRM_bounding_box[dir].x1;
+//     int total_height = img_data->FRM_bounding_box[dir].y2 - img_data->FRM_bounding_box[dir].y1;
+//     int x_offset     = img_data->FRM_dir[dir].bounding_box[0].x1 - img_data->FRM_bounding_box[dir].x1;
+//     int y_offset     = img_data->FRM_dir[dir].bounding_box[0].y1 - img_data->FRM_bounding_box[dir].y1;
 
-    uint8_t* data = img_data->FRM_dir[dir].frame_data[0]->frame_start;
-    //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
-    //FRM's are aligned to 1-byte
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    //bind data to FRM_texture for display
-    uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
-    if (!blank) {
-        printf("Unable to allocate memory for blank background: %d\n", __LINE__);
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
-    free(blank);
+//     uint8_t* data = img_data->FRM_dir[dir].frame_data[0]->frame_start;
+//     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
+//     //FRM's are aligned to 1-byte
+//     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//     //bind data to FRM_texture for display
+//     uint8_t * blank = (uint8_t*)calloc(1, total_width*total_height);
+//     if (!blank) {
+//         printf("Unable to allocate memory for blank background: %d\n", __LINE__);
+//     }
+//     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, total_width, total_height, 0, GL_RED, GL_UNSIGNED_BYTE, blank);
+//     glTexSubImage2D(GL_TEXTURE_2D, 0, x_offset, y_offset, frm_width, frm_height, GL_RED, GL_UNSIGNED_BYTE, data);
+//     free(blank);
 
-    bool success = false;
-    success = init_framebuffer(img_data);
-    if (!success) {
-        printf("image framebuffer failed to attach correctly?\n");
-        return false;
-    }
-    return true;
-}
+//     bool success = false;
+//     success = init_framebuffer(img_data);
+//     if (!success) {
+//         printf("image framebuffer failed to attach correctly?\n");
+//         return false;
+//     }
+//     return true;
+// }
 
 //TODO: replace with surface equivalent?
 //load FRM image from char* file_name
