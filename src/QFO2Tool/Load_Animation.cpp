@@ -47,7 +47,28 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         new(img_data->ANM_dir) ANM_Dir[6];
     }
 
-
+    for (int i = 0; i < 6; i++)
+    {
+        if (!img_data->ANM_dir[i].frame_box) {
+            img_data->ANM_dir[i].frame_box = (rectangle*)calloc(1,sizeof(rectangle));
+        }
+        if (!img_data->ANM_dir[i].frame_box) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] File_Type_Check()\n\n"
+                "Unable to allocate memory for ANM_dir[i].frame_box."
+            );
+            printf("Unable to allocate memory for ANM_dir[i].frame_box: %d", __LINE__);
+            for (int j = 0; j < 6; j++)
+            {
+                if (img_data->ANM_dir[j].frame_box) {
+                    free(img_data->ANM_dir[j].frame_box);
+                }
+            }
+            free(img_data->ANM_dir);
+            return false;
+        }
+    }
 
     img_data->ANM_dir[temp_orient].orientation = temp_orient;
     if (img_data->ANM_dir[temp_orient].num_frames != num_frames) {
@@ -121,9 +142,9 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         //TODO: log out to txt file
         set_popup_warning(
             "[ERROR] Drag_Drop_Load_Animation()\n\n"
-            "FRM image didn't load..."
+            "Animation image didn't load..."
         );
-        printf("FRM image didn't load : L%d\n", __LINE__);
+        printf("Animation image didn't load : L%d\n", __LINE__);
         return false;
     }
 

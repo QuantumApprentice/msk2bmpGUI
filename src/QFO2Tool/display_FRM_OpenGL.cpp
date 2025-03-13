@@ -91,8 +91,8 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int max_frm = img_data->ANM_dir[orient].num_frames;
     ANM_Dir* anm_dir = img_data->ANM_dir;
 
-    int x_offset = anm_dir[frame_num].frame_box->x1 - img_data->ANM_bounding_box[orient].x1;
-    int y_offset = anm_dir[frame_num].frame_box->y1 - img_data->ANM_bounding_box[orient].y1;
+    int x_offset = anm_dir[orient].frame_box->x1 - img_data->ANM_bounding_box[orient].x1;
+    int y_offset = anm_dir[orient].frame_box->y1 - img_data->ANM_bounding_box[orient].y1;
 
     uint8_t* pxls = anm_dir[orient].frame_data[frame_num]->pxls;
 
