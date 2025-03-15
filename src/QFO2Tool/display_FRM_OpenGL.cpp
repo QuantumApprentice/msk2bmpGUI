@@ -135,7 +135,7 @@ void SURFACE_to_texture(Surface* src, GLuint texture,
 
 }
 
-void SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
+void PAL_SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int x_offset, int y_offset,
                         int frm_width, int frm_height,
                         int total_width, int total_height)
@@ -196,11 +196,12 @@ void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triang
             img_data->display_frame_num  = 0;
         }
     }
-    SURFACE_to_sub_texture(edit_srfc->pxls, img_data->FRM_texture,
+    PAL_SURFACE_to_sub_texture(edit_srfc->pxls, img_data->FRM_texture,
                         x_offset, y_offset, frame_w, frame_h,
                         total_w, total_h);
 }
 
+//TODO: delete? replaced by draw_PAL_to_framebuffer()
 void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
                              GLuint framebuffer, GLuint texture)
 {
@@ -266,6 +267,7 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+//TODO: delete? this should be replaced by draw_PAL_to_framebuffer()?
 void draw_texture_to_framebuffer(
     float* palette, Shader* shader, mesh* triangle,     //TODO: change float*palette to Palette*pal
     GLuint framebuffer, GLuint texture,
@@ -288,6 +290,7 @@ void draw_texture_to_framebuffer(
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+//TODO: delete? this should be replaced by draw_PAL_to_framebuffer()
 void draw_MSK_to_framebuffer(float* palette,
                              Shader* shader, mesh* triangle,
                              struct image_data* img_data)

@@ -596,7 +596,7 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
             }
             ///////////////////////////////////////////////////////////////////////////
             if (type == MSK) {
-                Save_MSK_Image_OpenGL(tile_buffer, File_ptr, MAP_TILE_W, MAP_TILE_H);
+                save_MSK_tile(tile_buffer, File_ptr, MAP_TILE_W, MAP_TILE_H);
             }
             fclose(File_ptr);
             tile_num++;
@@ -798,6 +798,7 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
 
 //returns a buffer ripped from an openGL texture
 //bpp = bytes per pixel
+//TODO: delete? also not used anywhere
 uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h)
 {
     int size = w*h;
@@ -1036,7 +1037,7 @@ bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, 
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data, Rect* offset)
 {
 
-    //TODO: re-implement this with ImFileDialog()
+    //TODO: re-implement auto_export_question() with ImFileDialog()
     // bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     // if (!success) {
     //     return nullptr;
@@ -1120,21 +1121,6 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
     }
 
 
-    // char* name = NULL;
-    // if (name == nullptr) {
-    //     return nullptr;
-    // }
-    // check for existing file first unless "Auto" selected?
-    //TODO: need to verify "Auto" setting
-    ////////////////if (!usr_info->auto_export) {}///////////////////////////////////////////////////////////////
-    // int tile_num = 0;
-    // char Full_Save_File_Path[MAX_PATH];
-    // snprintf(Full_Save_File_Path, MAX_PATH, "%s/%s%03d.%s", save_folder, name, tile_num, "FRM");
-    // check_file(save_folder, Full_Save_File_Path, name, tile_num, FRM);
-    // if (Full_Save_File_Path[0] == '\0') {
-    //     return nullptr;
-    // }
-
     int dir = img_data->display_orient_num;
     int num = img_data->display_frame_num;
     Surface* src = img_data->ANM_dir[dir].frame_data[num];
@@ -1157,129 +1143,6 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
 
 
     return NULL;
-}
-
-// checks if the file/folder? already exists before saving
-// sets Save_File_Name[0] = '\0'; if user clicks cancel
-// when prompted to overwrite a file
-//TODO: delete? not sure I need this anymore
-void check_file(char* save_path, char* save_path_name, const char* name, int tile_num, img_type type)
-{
-    FILE* File_ptr = NULL;
-    char* alt_path;
-    const char* lFilterPatterns[3] = {"*.FRM", "*.MSK", ""};
-
-#ifdef QFO2_WINDOWS
-    // Windows w/wide character support
-    wchar_t* w_save_name = tinyfd_utf8to16(save_path_name);
-    errno_t error = _wfopen_s(&File_ptr, w_save_name, L"rb");
-    if (error == 0)
-#elif defined(QFO2_LINUX)
-    File_ptr = fopen(save_path_name, "rb");
-    if (File_ptr != NULL)
-#endif
-    {
-        fclose(File_ptr);
-        // handles the case where the file exists
-        char* ptr = strrchr(save_path_name, PLATFORM_SLASH);
-        char buff[MAX_PATH + 72];
-        snprintf(buff, MAX_PATH + 72, "%s%s",
-                ptr+1, " already exists,\n\n"
-                "YES - Overwrite?\n"
-                "NO  - Select a different folder?\n");
-
-        int choice =
-            tinyfd_messageBox(
-                "Warning",
-                buff,
-                "yesnocancel",
-                "warning",
-                2);
-        if (choice == 0) {                  // cancel
-            save_path_name[0] = '\0';
-            return;
-        }
-        else if (choice == 1) {}            // yes = overwrite
-        else if (choice == 2) {             // no  = choose new folder
-            alt_path = tinyfd_selectFolderDialog(
-                "Select directory to save to...",
-                save_path);
-
-            Create_File_Name(save_path_name, name, type, alt_path, tile_num);
-
-            strncpy(save_path, alt_path, MAX_PATH);
-            check_file(save_path, save_path_name, name, tile_num, type);
-        }
-    }
-
-    // If saving to game folder, appropriate directories are
-    // appended to the Save_File_Name string
-    // handles the case where the DIRECTORY doesn't exist
-    else
-    {
-        if (io_isdir(save_path)) {
-            return;
-        }
-
-        // create the directory?
-        int choice =
-            tinyfd_messageBox(
-                "Warning",
-                "Directory does not exist.\n\n"
-                "If exporting in Auto mode, the requisite Fallout 2\n"
-                "directories may not exist.\n\n"
-                "Create the missing directories?",
-                "yesnocancel", "warning", 2);
-        if (choice == 0) {          // Cancel =  null out buffer and return
-            save_path_name[0] = '\0';
-            return;
-        }
-        if (choice == 1) {          // Yes = Create the folders to write to
-            if (io_make_dir(save_path)) {
-                check_file(save_path, save_path_name, name, tile_num, type);
-                return;
-            }
-        }
-        if (choice == 2) {          // No = (don't overwrite) open a new saveFileDialog() and pick a new savespot
-            alt_path = tinyfd_selectFolderDialog(
-                "Select directory to save to...",
-                save_path);
-            if (alt_path == NULL) {
-                save_path_name[0] = '\0';
-                return;
-            }
-
-#ifdef QFO2_WINDOWS
-            // TODO: maybe change to strncpy because the _s version is dumb
-            strncpy_s(save_path, MAX_PATH, alt_path, MAX_PATH);
-#elif defined(QFO2_LINUX)
-            strncpy(save_path, alt_path, MAX_PATH);
-#endif
-            Create_File_Name(save_path_name, name, type, alt_path, tile_num);
-            check_file(save_path, save_path_name, name, tile_num, type);
-        }
-    }
-}
-
-// Create a filename based on the directory and export file type
-//TODO: clean up this function, buff_size is not used
-// img_type type: UNK = -1, MSK = 0, FRM = 1, FR0 = 2, FRx = 3, OTHER = 4
-void Create_File_Name(char* return_buffer, const char* name, img_type save_type, char* save_path, int tile_num)
-{
-    char ext[2][4] = {
-        {"MSK"},
-        {"FRM"}};
-
-    //-------create file path string based on save_path, tile_num, save_type
-    if (strcmp(name, "WRLDMP") == 0){
-        snprintf(return_buffer, MAX_PATH, "%s/%s%02d.%s", save_path, name, tile_num, ext[save_type]);
-    } else {
-        //TODO: may need some way to expand or contract
-        //      the number of digits in the tile name
-        snprintf(return_buffer, MAX_PATH, "%s/%s%03d.%s", save_path, name, tile_num, ext[save_type]);
-    }
-
-    // printf("%s\n%s\n", return_buffer, ext[save_type]);
 }
 
 //TODO: replace this with something that saves unique data type
@@ -1349,13 +1212,13 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
         return;
     }
 
-    Save_MSK_Image_OpenGL(texture_buffer, File_ptr, img_data->width, img_data->height);
+    save_MSK_tile(texture_buffer, File_ptr, img_data->width, img_data->height);
 
     fclose(File_ptr);
 }
 
-//TODO: rename, no longer uses OpenGL
-void Save_MSK_Image_OpenGL(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
+//used by save_tiles_SURFACE()
+void save_MSK_tile(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 {
     // int buff_size = ceil(width / 8.0f) * height;
     int buff_size = (width + 7) / 8 * height;

@@ -6,25 +6,6 @@
 #include "ImGui_Warning.h"
 
 
-void Surface_to_OpenGl(Surface *src, GLuint *texture)
-{
-    // OpenGL conversion from surface to texture
-    if (!glIsTexture(*texture)) {
-        glDeleteTextures(1, texture);
-    }
-    glGenTextures(1, texture);
-    glBindTexture(GL_TEXTURE_2D, *texture);
-    // Setup filtering parameters for display
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, src->w, src->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, src->pxls);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-}
-
 bool copy_it_all_ANM(image_data* src, image_data* dst)
 {
     ////////////////////////////////////////////////////////
@@ -45,7 +26,6 @@ bool copy_it_all_ANM(image_data* src, image_data* dst)
     memcpy(dst->FRM_data, src->FRM_data, src->FRM_size);
     FRM_Header* header = (FRM_Header*)dst->FRM_data;
     ////////////////////////////////////////////////////////
-    // init_FRM(dst);
 
     int num_orients = (header->Frame_0_Offset[1]) ? 6 : 1;
     int num_frames  = header->Frames_Per_Orient;
@@ -288,8 +268,6 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
 
     GLuint texture = 0;
 
-    // int dir = img_data->display_orient_num;
-    // uint8_t* data = img_data->FRM_dir[dir].frame_data[0]->frame_start;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     //have to glBindTexture() before glIsTexture()

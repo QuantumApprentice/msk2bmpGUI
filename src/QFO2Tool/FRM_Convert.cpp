@@ -135,60 +135,6 @@ Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
     return Surface_8;
 }
 
-// Converts the color space to Fallout's paletted format
-uint8_t* FRM_Color_Convert(Surface *src, Palette* pxlFMT, int color_match_algo)
-{
-    // Convert input surface to 32bit format for easy palettization
-    Surface* Surface_32 = Convert_Surface_to_RGBA(src);
-    if (!Surface_32) {
-        //TODO: log out to file
-        set_popup_warning(
-            "[ERROR] FRM_Color_Convert()"
-            "Unable to allocate 32-bit surface."
-        );
-        printf("Error: Unable to allocate 32-bit surface: %d\n", __LINE__);
-        return nullptr;
-    }
-
-    // Setup for palettizing image
-    Surface* Surface_8 = Create_8Bit_Surface(src->w, src->h, pxlFMT);
-    if (!Surface_8) {
-        //TODO: log out to file
-        set_popup_warning(
-            "[ERROR] FRM_Color_Convert()"
-            "Unable to allocate 8-bit surface."
-        );
-        printf("Error: Unable to allocate 8-bit surface: %d\n", __LINE__);
-        return nullptr;
-    }
-    //switch to change between euclidian and sdl color match algorithms
-    if (color_match_algo == 0) {
-        //TODO: test difference between SDL_Color_Match() and Euclidian w/optimizations
-        // SDL_Color_Match(Surface_32, pxlFMT_Temp, Surface_8);
-        Euclidian_Distance_Color_Match(Surface_32, Surface_8);
-    } else if (color_match_algo == 1) {
-        //TODO: get a new color match algorithm
-        Euclidian_Distance_Color_Match(Surface_32, Surface_8);
-    }
-    FreeSurface(Surface_32);
-
-    int width  = Surface_8->w;
-    int height = Surface_8->h;
-    int size   = width * height;
-    uint8_t* data = (uint8_t*)malloc(size + sizeof(FRM_Header) + sizeof(FRM_Frame));
-    FRM_Frame* data_ptr = (FRM_Frame*)(data + sizeof(FRM_Header));
-    int pxl_ptr = 0;
-    for (int y = 0; y < height; y++) {
-        //write out one row of pixels in each loop
-        memcpy(data_ptr->frame_start + (width*y), ((uint8_t*)Surface_8->pxls + pxl_ptr), width);
-        pxl_ptr += Surface_8->pitch;
-    }
-    //TODO: should I return the surface as well?
-    //      surface contains palette information
-    //      palette is lost if not returned here
-    FreeSurface(Surface_8);
-    return data;
-}
 
 void Euclidian_Distance_Color_Match(
                 Surface* Surface_32,

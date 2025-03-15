@@ -44,38 +44,9 @@ Surface* crop_frame_SURFACE(pxl_pos* curr_pos, Surface* src, Palette* pal, int a
     Surface* free_me = Create_RGBA_Surface(w, h);
     BlitSurface(src, src_rect, free_me, dst_rect);
     Surface* surface_8 = PAL_Color_Convert(free_me, pal, algo);
-    free(free_me); //freed
+    free(free_me); //free the Freeman
 
     return surface_8;
-}
-
-//calls FRM_color_convert()
-//returns pointer to FRM header, including frame info
-uint8_t* Crop_Frame(pxl_pos* pos_data, Surface* anm_frame, Palette* FO_Palette)
-{
-    int Frame_Width  = pos_data->w;
-    int Frame_Height = pos_data->h;
-
-    Rect src_rectangle;
-    src_rectangle.w = Frame_Width;
-    src_rectangle.h = Frame_Height;
-    src_rectangle.x = pos_data->l_pxl;
-    src_rectangle.y = pos_data->t_pxl;
-
-    Rect dst_rectangle;
-    dst_rectangle.w = Frame_Width;
-    dst_rectangle.h = Frame_Height;
-    dst_rectangle.x = 0;
-    dst_rectangle.y = 0;
-
-    Surface* out_surface = Create_RGBA_Surface(Frame_Width, Frame_Height);
-
-    BlitSurface(anm_frame, src_rectangle, out_surface, dst_rectangle);
-
-    uint8_t* out_data = FRM_Color_Convert(out_surface, FO_Palette, 0);
-
-    free(out_surface);
-    return out_data;
 }
 
 bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int algo, shader_info* shaders)
@@ -287,5 +258,4 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
     }
 
     return success;
-
 }

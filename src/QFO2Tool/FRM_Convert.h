@@ -5,7 +5,6 @@ uint8_t convert_colors(uint8_t bytes);
 
 Palette* load_palette_from_path(const char* path);
 
-uint8_t* FRM_Color_Convert(Surface *surface, Palette* pxlFMT, int color_match_algo);
 Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo);
 
 

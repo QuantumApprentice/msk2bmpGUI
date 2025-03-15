@@ -22,12 +22,10 @@ char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo);
 void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info);
 
 
-void Save_MSK_Image_OpenGL(uint8_t* texture_buffer, FILE* File_ptr, int width, int height);
+void save_MSK_tile(uint8_t* texture_buffer, FILE* File_ptr, int width, int height);
 
 bool auto_export_question(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
 bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type save_type);
-void check_file(char* path, char* path_name, const char* name, int tile_num, img_type type);
-void Create_File_Name(char* buffer, const char* name, img_type type, char* path, int tile_num);
 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);
 

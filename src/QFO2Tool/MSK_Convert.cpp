@@ -170,7 +170,7 @@ bool Load_MSK_Tile_SURFACE(char* FileName, image_data* img_data)
     //         return true;
     //     }
     // }
-    return false;   //fail condition
+    return false;
 }
 
 //load MSK FileName to uint8_t binary buffer,

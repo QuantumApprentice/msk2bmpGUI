@@ -23,12 +23,12 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
         return;
     }
 
-    Surface* sfc = img_data->ANM_dir[img_data->display_orient_num].frame_data[img_data->display_frame_num];
+    Surface* srfc = img_data->ANM_dir[img_data->display_orient_num].frame_data[img_data->display_frame_num];
     animate_SURFACE_to_sub_texture(
         shaders->palette,
         shaders->render_FRM_shader,
         shaders->giant_triangle,
-        img_data, sfc,
+        img_data, srfc,
         My_Variables->CurrentTime_ms,
         My_Variables->Palette_Update
     );
@@ -184,7 +184,6 @@ void Preview_Image(variables* My_Variables, struct image_data* img_data, bool sh
     if (show_stats) {
         show_image_stats_ANM(img_data, My_Variables->Font);
     }
-
 }
 
 

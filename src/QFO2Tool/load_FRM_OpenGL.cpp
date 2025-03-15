@@ -115,6 +115,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 //    return result;
 //}
 
+//used in crop_animation_SURFACE() in Edit_Animation.cpp
 void calculate_bounding_box_SURFACE(
         rectangle* bounding_box, rectangle* FRM_bounding_box,
         Surface* anm_frame, rectangle* box)
@@ -142,7 +143,7 @@ void calculate_bounding_box_SURFACE(
     bounding_box->y1 += anm_frame->h;
 }
 
-//TODO: delete? Used in load_FRM_to_SURFACE()
+//used in load_FRM_to_SURFACE() here
 void calculate_bounding_box(rectangle* bounding_box, rectangle* FRM_bounding_box,
                             FRM_Frame* frame_start, rectangle* box)
 {

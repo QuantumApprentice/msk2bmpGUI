@@ -9,7 +9,7 @@ void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triang
                               image_data* img_data, Surface* edit_srfc,
                               uint64_t current_time, bool palette_update);
 void SURFACE_to_texture(Surface* src, GLuint texture, int width, int height, int alignment);
-void SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
+void PAL_SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int x_offset, int y_offset,
                         int frm_width, int frm_height,
                         int total_width, int total_height);

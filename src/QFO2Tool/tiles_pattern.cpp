@@ -106,7 +106,9 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     //TODO: place a warning here, this needs tile_arr*head to work
         return;
     }
-
+    //TODO:
+    //create new TILES.LST?
+    //point to TILES.LST?
     int choice = 0;
     const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
     if (tiles_lst == nullptr) {
@@ -126,29 +128,6 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
             );
             printf("Error: TMAP_tiles_pattern_arr() Unable to find TILES.LST: %d\n", __LINE__);
             return;
-                //TODO:
-                //create new TILES.LST?
-                //point to TILES.LST?
-
-            // choice = tinyfd_messageBox(
-            //     "TILES.LST missing...",
-            //     "Unable to find TILES.LST.\n\n"
-            //     "TILES.LST is needed to match up\n"       // data/art/tiles/TILES.LST
-            //     "the tile-name to a line number,\n"
-            //     "then that line number is used\n"
-            //     "in the pattern file to indicate\n"
-            //     "which tile is in what position.\n\n"
-            //     "",
-            //     "cancel", "warning", 1
-            // );
-            // if (choice == YES) {
-            //     //TODO:
-            // }
-            // if (choice == NO) {
-            // }
-            // if (choice == CANCEL) {
-            //     return;
-            // }
         }
     }
 

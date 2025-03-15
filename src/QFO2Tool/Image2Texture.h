@@ -42,7 +42,6 @@ struct variables {
     int window_number_focus = -1;
 };
 
-void Surface_to_OpenGl(Surface* Temp_Surface, GLuint *Optimized_Texture);
 bool checkbox_handler(const char* text, bool* alpha);
 GLuint init_texture(Surface* src, int w, int h, img_type type);
 
