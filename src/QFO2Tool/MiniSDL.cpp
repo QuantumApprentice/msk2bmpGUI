@@ -19,15 +19,16 @@ Surface* Create_RGBA_Surface(int width, int height)
     surface->h = height;
     surface->channels = 4;
     surface->pitch    = 4*width;
+    surface->palette  = nullptr;
     surface->pxls     = ((uint8_t*)surface) + sizeof(Surface);
 
     return surface;
 }
 
-Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
+Surface* Create_8Bit_Surface(int width, int height, Palette* pal)
 {
     int size = sizeof(Surface) + width*height;
-    Surface* surface = (Surface*)malloc(size);
+    Surface* surface = (Surface*)calloc(1,size);
     if (!surface) {
         return NULL;
     }
@@ -37,8 +38,9 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* palette)
     surface->y        = 0;
     surface->channels = 1;
     surface->pitch    = width;
-    surface->palette  = palette;
-    surface->pxls     = ((uint8_t*)surface) + sizeof(Surface);
+    surface->palette  = pal;
+    // surface->pxls     = ((uint8_t*)surface) + sizeof(Surface);
+    surface->pxls     = (uint8_t*)(surface+1);
 
     return surface;
 }
@@ -179,9 +181,11 @@ void ClearSurface(Surface* dst)
         return;
     }
     uint8_t* pxls = dst->pxls;
-    for (int i = 0; i < dst->h; i++)
-    {
-        memset(pxls, 0, dst->pitch);
-        pxls += dst->pitch;
-    }
+    //TODO: double check this make sure it works all the time
+    // for (int i = 0; i < dst->h; i++)
+    // {
+    //     memset(pxls, 0, dst->pitch);
+    //     pxls += dst->pitch;
+    // }
+    memset(pxls, 0, dst->w*dst->h);
 }

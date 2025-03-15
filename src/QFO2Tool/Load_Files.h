@@ -63,8 +63,8 @@ struct dropped_files {
 char* Program_Directory();
 void dropped_files_callback(GLFWwindow* window, int count, const char** paths);
 
-bool Load_Files(LF* F_Prop, image_data* img_data, struct user_info* user_info, shader_info* shaders);
 bool ImDialog_load_files(LF* F_Prop, image_data *img_data, user_info *usr_info, shader_info *shader);
+bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders);
 
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data, const char* file_name);
 bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);

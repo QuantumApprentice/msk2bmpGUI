@@ -80,6 +80,61 @@ void handle_file_drop(char *file_name, LF *F_Prop, int *counter, shader_info *sh
 }
 
 
+bool open_multiple_files_POPUP(std::vector<std::filesystem::path> path_vec,
+                         LF* F_Prop, shader_info* shaders, bool* multiple_files,
+                         int* counter, int* window_number_focus)
+{
+
+    ImGui::OpenPopup("Drag & Drop Folder");
+
+    bool open;
+    bool process_animation;
+    if (ImGui::BeginPopupModal("Drag & Drop Folder", &open)) {
+        ImGui::Text(
+            "%s\n\n"
+            "Is this a group of sequential animation frames?",
+            (*path_vec.begin()).parent_path().u8string().c_str()
+        );
+
+
+        if (ImGui::Button("Yep")) {
+            open = false;
+            process_animation = true;
+            ImGui::CloseCurrentPopup();
+
+
+            *multiple_files = true;
+            bool does_window_exist = (*window_number_focus > -1);
+            int num = does_window_exist ? *window_number_focus : *counter;
+            F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vec, &F_Prop[num]);
+            if (!does_window_exist) {
+                (*window_number_focus) = (*counter);
+                (*counter)++;
+            }
+            return true;
+
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Nope")) {
+            open = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+            return false;
+        }
+
+
+        ImGui::EndPopup();
+    }
+
+
+
+}
+
 bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
                          LF *F_Prop, shader_info *shaders, bool *multiple_files,
                          int *counter, int *window_number_focus)
@@ -95,7 +150,7 @@ bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
              (*path_vec.begin()).parent_path().u8string().c_str());
 // #endif
     int type;
-    //TODO: replace tinyfd_ stuff with ImFileDialog
+    //TODO: replace with ImFileDialog
     if (!(*multiple_files)) {   //false=ask question, true=automatic
         // returns 1 for yes, 2 for no, 0 for cancel
         type = tinyfd_messageBox("Animation? or Single Images?",
@@ -673,7 +728,15 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
             std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
 
             if (!images.empty()) {
+
+
+                // open_multiple_files_POPUP(
+                //     images, F_Prop, shaders, &multiple_files, counter, window_number_focus
+                // );
                 open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
+
+
+
             }
 
             continue;
@@ -682,10 +745,10 @@ std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *wind
             animation_images.push_back(file);
         }
     }
+
     if (is_subdirectory) {
         return true;
-    }
-    else {
+    } else {
         if (animation_images.empty()) {
             return false;
         }
@@ -728,7 +791,7 @@ bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_dat
 }
 
 
-bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
+bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders)
 {
     //TODO: move this to some initializing function
     ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
@@ -751,10 +814,76 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr
         glDeleteTextures(1, &texID);
     };
 
-    // char load_path[MAX_PATH];
-    // snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
+    static bool load_MSK;
+    static char load_name[MAX_PATH];
+    if (ImGui::Button("Load MSK to this slot")) {
+        const char* ext_filter;
+            ext_filter = "MSK files"
+            "(*.msk;)"
+            "{.msk,.MSK,}";
 
-    // char* load_name;
+        char* folder = usr_info->default_load_path;
+        ifd::FileDialog::Instance().Open("MSKLoadDialog", "Load File", ext_filter, folder);
+    }
+
+    if (ifd::FileDialog::Instance().IsDone("MSKLoadDialog")) {
+        if (ifd::FileDialog::Instance().HasResult()) {
+            std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
+            strncpy(load_name, temp.c_str(), temp.length()+1);
+            strncpy(usr_info->default_load_path, temp.c_str(), temp.length()+1);
+            char* ptr = strrchr(usr_info->default_load_path, PLATFORM_SLASH);
+            *ptr = '\0';
+            load_MSK = true;
+        }
+        ifd::FileDialog::Instance().Close();
+    }
+    if (strlen(load_name) < 1) {
+        return false;
+    }
+
+    if (load_MSK) {
+        char* ext = strrchr(load_name, '.')+1;
+        if (io_strncmp(ext, "MSK", 4)) {  // 0 == match
+            load_MSK = false;
+            return false;
+        }
+
+        F_Prop->file_open_window = Load_MSK_Tile_SURFACE(load_name, img_data);
+    }
+    if (load_MSK) {
+        F_Prop->edit_MSK = true;
+        load_MSK = false;
+        load_name[0] = '\0';
+    }
+
+    return true;
+}
+
+
+bool ImDialog_load_files(LF* F_Prop, image_data *img_data, user_info *usr_info, shader_info *shaders)
+{
+    //TODO: move this to some initializing function
+    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
+        GLuint tex;
+        // https://github.com/dfranx/ImFileDialog
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return (void*)(uint64_t)tex;
+    };
+    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+        GLuint texID = (uint64_t)tex;
+        glDeleteTextures(1, &texID);
+    };
+
+    static bool load_file;
     static char load_name[MAX_PATH];
     if (ImGui::Button("Load File")) {
         const char* ext_filter;
@@ -779,38 +908,25 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, struct user_info *usr
             strncpy(usr_info->default_load_path, temp.c_str(), temp.length()+1);
             char* ptr = strrchr(usr_info->default_load_path, PLATFORM_SLASH);
             *ptr = '\0';
+            load_file = true;
         }
         ifd::FileDialog::Instance().Close();
     }
-    if (strlen(load_name) < 1) {
-        return false;
+
+    bool success;
+    if (load_file && strlen(load_name) > 1) {
+        success = File_Type_Check(F_Prop, shaders, img_data, load_name);
     }
-    return File_Type_Check(F_Prop, shaders, img_data, load_name);
-}
 
-//TODO: delete, should be replaced by ImDialog_load_files()
-bool Load_Files(LF *F_Prop, image_data *img_data, struct user_info *usr_info, shader_info *shaders)
-{
-    char load_path[MAX_PATH];
-    snprintf(load_path, MAX_PATH, "%s/", usr_info->default_load_path);
-    const char *FilterPattern1[9] = {
-        "*.bmp", "*.png", "*.frm",
-        "*.msk", "*.jpg", "*.jpeg",
-        "*.gif", "*.fr0", "-.fr5",
-        };
-
-    char *FileName = tinyfd_openFileDialog(
-        "Open files...",
-        load_path,
-        5,
-        FilterPattern1,
-        NULL,
-        1);
-
-    if (!FileName) {
-        return false;
+    if (success) {
+        load_name[0] = '\0';
+        success      = false;
+        load_file    = false;
+        return true;
     }
-    return File_Type_Check(F_Prop, shaders, img_data, FileName);
+
+
+    return false;
 }
 
 //Check file extension to make sure it's one of the varieties of FRM
@@ -848,10 +964,9 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
         img_data->type = FRM;
     }
     else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
-        F_Prop->file_open_window = Load_MSK_Tile_Surface(F_Prop->Opened_File, img_data);
+        F_Prop->file_open_window = Load_MSK_Tile_SURFACE(F_Prop->Opened_File, img_data);
         bool success   = false;
         img_data->type = MSK;
-        // init_framebuffer(img_data);
         success = framebuffer_init(&img_data->render_texture, &F_Prop->img_data.framebuffer, 350, 300);
         if (!success) {
             //TODO: log to file
@@ -873,9 +988,8 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             img_data->framebuffer,
             img_data->MSK_texture, 350, 300);
     }
-    // do this for all other more common (generic) image types
     // TODO: add another type for known generic image types?
-    else {
+    else {  //all other more common (generic) image types
         Surface* temp_surface = nullptr;
         temp_surface = Load_File_to_RGBA(F_Prop->Opened_File);
         if (!temp_surface) {
@@ -895,7 +1009,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 "[ERROR] File_Type_Check()\n\n"
                 "Unable to allocate memory for ANM_dir."
             );
-            printf("Unable to allocate memory for ANM_dir: %d", __LINE__);
+            printf("Unable to allocate memory for ANM_dir: %d\n", __LINE__);
             return false;
         }
         //initialize allocated memory
@@ -908,26 +1022,32 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 "[ERROR] File_Type_Check()\n\n"
                 "Unable to allocate memory for ANM_Frame."
             );
-            printf("Unable to allocate memory for ANM_Frame: %d", __LINE__);
+            printf("Unable to allocate memory for ANM_Frame: %d\n", __LINE__);
             free(img_data->ANM_dir);
             return false;
         }
         new (img_data->ANM_dir->frame_data) ANM_Frame;
 
-        img_data->ANM_dir[0].frame_data[0] = temp_surface;
+        Surface* srfc = img_data->ANM_dir[0].frame_data[0] = temp_surface;
         if (img_data->ANM_dir->frame_data) {
-            img_data->width  = F_Prop->img_data.ANM_dir[0].frame_data[0]->w;
-            img_data->height = F_Prop->img_data.ANM_dir[0].frame_data[0]->h;
+            img_data->width  = srfc->w;
+            img_data->height = srfc->h;
             img_data->ANM_dir[0].num_frames = 1;
 
             img_data->type = OTHER;
 
-            // TODO: rewrite this function
-            F_Prop->file_open_window 
-                = Image2Texture(img_data->ANM_dir[0].frame_data[0],
-                                &img_data->FRM_texture);
+            img_data->FRM_texture = init_texture(
+                srfc,
+                srfc->w,
+                srfc->h,
+                img_data->type);
 
-            init_framebuffer(img_data);
+            framebuffer_init(
+                &img_data->render_texture,
+                &img_data->framebuffer,
+                srfc->w,
+                srfc->h);
+
             //assign display direction to same as image slot
             //so we can see the image on load
             img_data->display_orient_num = NE;
@@ -943,13 +1063,12 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
                 "[ERROR] File_Type_Check()\n\n"
                 "Unable to allocate memory for ANM_dir[0].frame_box."
             );
-            printf("Unable to allocate memory for ANM_dir[0].frame_box: %d", __LINE__);
+            printf("Unable to allocate memory for ANM_dir[0].frame_box: %d\n", __LINE__);
             free(img_data->ANM_dir);
             return false;
         }
     }
 
-    // if ((F_Prop->IMG_Surface == NULL) && F_Prop->img_data.type != FRM && F_Prop->img_data.type != MSK)
     if (img_data->ANM_dir != NULL)
     {
         if ((img_data->ANM_dir[img_data->display_orient_num].frame_data == NULL)

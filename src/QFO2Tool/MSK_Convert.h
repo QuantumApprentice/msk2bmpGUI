@@ -13,10 +13,7 @@ bool ReadBmpLines(FILE *file, line_array_t vOutput);            // same as below
 void Read_MSK_Tile(FILE *file, uint8_t vOutput[MAX_LINES][44]);
 int BytesToInt(char *C, int numBytes);
 
-bool Load_MSK_Tile_OpenGL(char* FileName, image_data* img_data);
-bool Load_MSK_Tile_Surface(char* FileName, image_data* img_data);
-bool Load_MSK_File_OpenGL(char* FileName, image_data* img_data, int width, int height);
+bool Load_MSK_Tile_SURFACE(char* FileName, image_data* img_data);
 
-Surface* Load_MSK_Tile_STB(char* FileName);
 Surface* Convert_Surface_to_RGBA(Surface* surface);
-void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data);
+void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data, int cutoff);
