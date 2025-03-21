@@ -113,6 +113,7 @@ int main(int argc, char** argv)
     LPWSTR* my_argv = CommandLineToArgvW(GetCommandLineW(), &my_argc);
 #elif defined(QFO2_LINUX)
     char** my_argv = argv;
+    my_argc = argc;
 #endif
 
     glfwSetErrorCallback(glfw_error_callback);
@@ -251,21 +252,29 @@ int main(int argc, char** argv)
             "Something went wrong?",
             "argv is NULL?",
             MB_ABORTRETRYIGNORE);
-    }
-    else {
+    } else {
         if (my_argc > 1) {
-            handle_file_drop(tinyfd_utf16to8(my_argv[1]),
-                &My_Variables.F_Prop[counter],
-                &counter,
-                &My_Variables.shaders);
+            LF* F_Prop = &My_Variables.F_Prop[counter];
+            F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, tinyfd_utf16to8(my_argv[1]));
+            if (F_Prop->file_open_window)
+            {
+                counter++;
+            }
         }
     }
 #elif defined(QFO2_LINUX)
     if (my_argc > 1) {
-        handle_file_drop(my_argv[1],
-            &My_Variables.F_Prop[counter],
-            &counter,
-            &My_Variables.shaders);
+        //TODO: this currently requires full path from my_argv,
+        //      need to somehow implement relative pathing to load relative files
+        //      (for instance, in the same folder)
+        //TODO: actually, I should probably exand this to parse the string for
+        //      automated stuff
+        LF* F_Prop = &My_Variables.F_Prop[counter];
+        F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, my_argv[1]);
+        if (F_Prop->file_open_window)
+        {
+            counter++;
+        }
     }
 #endif
 
@@ -275,10 +284,7 @@ int main(int argc, char** argv)
     // used to reset the default layout back to original
     bool firstframe = true;
 
-    // std::vector<std::string> dropped_file_path;
     // Main loop
-    // bool done = false;
-    // while (!done)
     while (!glfwWindowShouldClose(window))
     {
         //handling dropped files in different windows
@@ -359,116 +365,133 @@ int main(int argc, char** argv)
         }
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            ImGui::Begin("File Info###file");  // Create a window and append into it.
-                //load files
-                //used this to create an frm from palette LUT
-                // if (ImGui::Button("Save palette animation...")) {
-                //     char path_buffer[MAX_PATH];
-                //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/fo_color.pal");
-                //     //file management
-                //     uint8_t* palette_animation = (uint8_t*)malloc(1024*32);
-                //     FILE *File_ptr = fopen(path_buffer, "rb");
-                //     fseek(File_ptr, 768, SEEK_SET);
-                //     fread(palette_animation, 1024*32, 1, File_ptr);
-                //     fclose(File_ptr);
-                //     FRM_Header header;
-                //     header.version = 4;
-                //     header.FPS = 10;
-                //     header.Frames_Per_Orient = 32;
-                //     header.Frame_Area = 32*32 + sizeof(FRM_Frame);
-                //     B_Endian::flip_header_endian(&header);
-                //     FRM_Frame frame;
-                //     frame.Frame_Height = 32;
-                //     frame.Frame_Width  = 32;
-                //     frame.Frame_Size   = 32*32;
-                //     B_Endian::flip_frame_endian(&frame);
-                //     uint8_t* ptr = palette_animation;
-                //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/palette_animation.FRM");
-                //     FILE* file = fopen(path_buffer, "wb");
-                //     fwrite(&header, sizeof(FRM_Header), 1, file);
-                //     for (int i = 0; i < 32; i++)
-                //     {
-                //         fwrite(&frame, sizeof(FRM_Frame), 1, file);
-                //         fwrite(ptr, 1024, 1, file);
-                //         ptr += 1024;
-                //     }
-                //     fclose(file);
-                //     free(palette_animation);
-                // }
+        ImGui::Begin("File Info###file");  // Create a window and append into it.
+            //load files
+            //used this to create an frm from palette LUT
+            // if (ImGui::Button("Save palette animation...")) {
+            //     char path_buffer[MAX_PATH];
+            //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/fo_color.pal");
+            //     //file management
+            //     uint8_t* palette_animation = (uint8_t*)malloc(1024*32);
+            //     FILE *File_ptr = fopen(path_buffer, "rb");
+            //     fseek(File_ptr, 768, SEEK_SET);
+            //     fread(palette_animation, 1024*32, 1, File_ptr);
+            //     fclose(File_ptr);
+            //     FRM_Header header;
+            //     header.version = 4;
+            //     header.FPS = 10;
+            //     header.Frames_Per_Orient = 32;
+            //     header.Frame_Area = 32*32 + sizeof(FRM_Frame);
+            //     B_Endian::flip_header_endian(&header);
+            //     FRM_Frame frame;
+            //     frame.Frame_Height = 32;
+            //     frame.Frame_Width  = 32;
+            //     frame.Frame_Size   = 32*32;
+            //     B_Endian::flip_frame_endian(&frame);
+            //     uint8_t* ptr = palette_animation;
+            //     snprintf(path_buffer, sizeof(path_buffer), "%s%s", usr_info.exe_directory, "/resources/palette/palette_animation.FRM");
+            //     FILE* file = fopen(path_buffer, "wb");
+            //     fwrite(&header, sizeof(FRM_Header), 1, file);
+            //     for (int i = 0; i < 32; i++)
+            //     {
+            //         fwrite(&frame, sizeof(FRM_Frame), 1, file);
+            //         fwrite(ptr, 1024, 1, file);
+            //         ptr += 1024;
+            //     }
+            //     fclose(file);
+            //     free(palette_animation);
+            // }
 
-                ImGui::SameLine();
-                ImGui::Text("Number Windows = %d", counter);
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::SameLine();
+            ImGui::Text("Number Windows = %d", counter);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
 #pragma region buttons
-                main_window_bttns(&My_Variables, My_Variables.window_number_focus, &counter);
-                //contextual buttons for each image slot
-                if (My_Variables.window_number_focus >= 0)
-                {
-                    contextual_buttons(&My_Variables, My_Variables.window_number_focus);
-                }
+            main_window_bttns(&My_Variables, My_Variables.window_number_focus, &counter);
+            //contextual buttons for each image slot
+            if (My_Variables.window_number_focus >= 0)
+            {
+                contextual_buttons(&My_Variables, My_Variables.window_number_focus);
+            }
 
-                //set contextual menu for main window
-                //when file is dropped on window
-                if (ImGui::IsWindowHovered() && file_drop_frame) {
-                    My_Variables.window_number_focus = -1;
-                    My_Variables.edit_image_focused = false;
-                }
-                show_popup_warnings();
+            //set contextual menu for main window
+            //when file is dropped on window
+            if (ImGui::IsWindowHovered() && file_drop_frame) {
+                My_Variables.window_number_focus = -1;
+                My_Variables.edit_image_focused = false;
+            }
 
-            ImGui::End();
+            static image_paths images_arr[6];
+            bool does_window_exist = (My_Variables.window_number_focus > -1);
+            int num = does_window_exist ? My_Variables.window_number_focus : counter;
+            //popup for handling drag and drop animation sequences
+            bool clear_images_arr = drag_drop_POPUP(
+                &My_Variables,
+                &My_Variables.F_Prop[num],
+                images_arr,
+                &counter
+            );
+
+            if (!does_window_exist) {
+                My_Variables.window_number_focus = counter;
+                counter++;
+            }
+            if (clear_images_arr) {
+                clear_images_arr = false;
+                for (int i = 0; i < 6; i++) {
+                    images_arr[i].animation_images.clear();
+                }
+            }
 
             //handle opening dropped files
             if (file_drop_frame) {
+                file_drop_frame = false;
                 char* path = all_dropped_files.first_path;
+
                 for (int i = 0; i < all_dropped_files.count; i++)
                 {
-                    // std::optional<bool> directory = handle_directory_drop(path.data(),
-                    std::optional<bool> directory = handle_directory_drop(path,
-                                                        My_Variables.F_Prop,
-                                                        &My_Variables.window_number_focus,
-                                                        &counter,
-                                                        &My_Variables.shaders);
-                    //TODO: maybe I should handle these as an enum
-                    //      instead of std::optional<>
-                    if (directory.has_value()) {
-                        if (!directory.operator*()) {
-                            handle_file_drop(path,
-                                &My_Variables.F_Prop[counter],
-                                &counter,
-                                &My_Variables.shaders);
+                    bool is_directory = handle_directory_drop_POPUP(path, images_arr);
+                    if (!is_directory) {
+                        LF* F_Prop = &My_Variables.F_Prop[counter];
+
+                        F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, path);
+                        if (F_Prop->file_open_window) {
+                            counter++;
                         }
                     }
                     path += strlen(path)+1;
                 }
+
                 free(all_dropped_files.first_path);
                 memset(&all_dropped_files, 0, sizeof(dropped_files));
-                file_drop_frame = false;
             }
 
-            //contextual palette window for MSK vs FRM editing
-            if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK && My_Variables.window_number_focus > -1) {
-                Show_MSK_Palette_Window(&My_Variables);
-            } else {
-                Show_Palette_Window(&My_Variables);
-            }
+            show_popup_warnings();
 
-            //update palette at regular intervals
-            {
-                update_palette_array(My_Variables.shaders.palette,
-                                     My_Variables.CurrentTime_ms,
-                                    &My_Variables.Palette_Update);
-            }
+        ImGui::End();
 
-            for (int i = 0; i < counter; i++) {
-                if (My_Variables.F_Prop[i].file_open_window) {
-                    Show_Preview_Window(&My_Variables, &My_Variables.F_Prop[i], i);
-                }
-                // Edit full image
-                if (My_Variables.F_Prop[i].edit_image_window) {
-                    Edit_Image_Window(&My_Variables, &My_Variables.F_Prop[i], &usr_info, counter);
-                }
+
+        //contextual palette window for MSK vs FRM editing
+        if (My_Variables.F_Prop[My_Variables.window_number_focus].edit_MSK && My_Variables.window_number_focus > -1) {
+            Show_MSK_Palette_Window(&My_Variables);
+        } else {
+            Show_Palette_Window(&My_Variables);
+        }
+
+        //update palette at regular intervals
+        {
+            update_palette_array(My_Variables.shaders.palette,
+                                    My_Variables.CurrentTime_ms,
+                                &My_Variables.Palette_Update);
+        }
+
+        for (int i = 0; i < counter; i++) {
+            if (My_Variables.F_Prop[i].file_open_window) {
+                Show_Preview_Window(&My_Variables, &My_Variables.F_Prop[i], i);
+            }
+            // Edit full image
+            if (My_Variables.F_Prop[i].edit_image_window) {
+                Edit_Image_Window(&My_Variables, &My_Variables.F_Prop[i], &usr_info, counter);
             }
         }
 
@@ -623,6 +646,7 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
 
     }
     show_popup_warnings();
+
     ImGui::End();
 
     // Preview tiles from red boxes
@@ -947,9 +971,9 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             ImGui::MenuItem("(demo menu)", NULL, false, false);
             if (ImGui::MenuItem("New (not yet implemented)", "", false, false)) {
                 /*TODO: add a new file option w/blank surfaces*/ }
-            if (ImGui::MenuItem("Open", "Ctrl+O")) { 
+            // if (ImGui::MenuItem("Open", "Ctrl+O")) { 
                 Open_Files(&usr_info, counter, My_Variables->FO_Palette, My_Variables);
-            }
+            // }
             if (ImGui::MenuItem("Default Fallout Path")) {
                 Set_Default_Game_Path(&usr_info, My_Variables->exe_directory);
             }

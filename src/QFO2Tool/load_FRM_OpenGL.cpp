@@ -74,7 +74,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
             printf("file opened by another program? : L%d", __LINE__);
         }
 #elif defined(QFO2_LINUX)
-        printf("error, can't open FRM file, error: %d\t%s : L%d\n", errno, strerror(errno), __LINE__);
+        printf("Error: load_entire_file(), Can't open FRM file, error: %d\t%s : L%d\n", errno, strerror(errno), __LINE__);
 #endif
         return NULL;
     }
@@ -326,7 +326,6 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* shaders)
 {
     //read in FRM data including animation frames
-    // bool success = load_FRM_img_data(file_name, img_data);
     bool success = load_FRM_to_SURFACE(file_name, img_data, shaders);
     if (!success) {
         //TODO: log out to file
@@ -337,7 +336,6 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
         printf("Couldn't load FRM image data: %d", __LINE__);
         return false;
     }
-    //TODO: need to handle .FR0 thru .FR5 file formats for different directions
     img_data->display_frame_num = 0;
     int dir = img_data->display_orient_num;
 

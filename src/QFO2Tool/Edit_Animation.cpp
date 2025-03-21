@@ -55,7 +55,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
     bool free_surface = false;
 
     int dir = dst->display_orient_num = src->display_orient_num;
-    dst->ANM_dir = (ANM_Dir*)malloc(sizeof(ANM_Dir)*6);
+    dst->ANM_dir = (ANM_Dir*)calloc(1,sizeof(ANM_Dir)*6);
     if (!dst->ANM_dir) {
         //TODO: log out to file
         set_popup_warning(
@@ -69,8 +69,10 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
     for (int i = 0; i < 6; i++)
     {
         if (src->ANM_dir[i].orientation < 0) {
-            break;
+            dst->ANM_dir[i].orientation = no_data;
+            continue;
         }
+        dst->ANM_dir[i].orientation = src->ANM_dir[i].orientation;
 
         num_frms = dst->ANM_dir[i].num_frames = src->ANM_dir[i].num_frames;
         dst->ANM_dir[i].frame_data = (Surface**)calloc(1,sizeof(Surface*)*num_frms);
@@ -84,7 +86,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             free(dst->ANM_dir);
             return false;
         }
-        dst->ANM_dir[i].frame_box   = (rectangle*)malloc(sizeof(rectangle)*num_frms);
+        dst->ANM_dir[i].frame_box = (rectangle*)malloc(sizeof(rectangle)*num_frms);
         if (!dst->ANM_dir[i].frame_box) {
             //TODO: log out to file
             set_popup_warning(
@@ -97,7 +99,6 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             }
             return false;
         }
-        dst->ANM_dir[i].orientation = (Direction)i;
 
         rectangle bounding_box = {};
         rectangle FRM_bounding_box = {};
@@ -210,11 +211,11 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             "Failed to allocate FRM_hdr."
         );
         printf("Error: Failed to allocate FRM_hdr: %d\n", __LINE__);
-        free(dst->ANM_dir);
         for (int i = 0; i < 6; i++) {
             free(dst->ANM_dir[i].frame_data);
             free(dst->ANM_dir[i].frame_box);
         }
+        free(dst->ANM_dir);
         return false;
     }
 

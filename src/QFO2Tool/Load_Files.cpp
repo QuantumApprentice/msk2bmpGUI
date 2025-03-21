@@ -69,125 +69,77 @@ char *Program_Directory()
     return utf8_buff;
 }
 
-void handle_file_drop(char *file_name, LF *F_Prop, int *counter, shader_info *shaders)
+bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_arr, int* counter)
 {
-    F_Prop->file_open_window = Drag_Drop_Load_Files(file_name, F_Prop, &F_Prop->img_data, shaders);
-
-    if (F_Prop->c_name)
-    {
-        (*counter)++;
-    }
-}
-
-
-bool open_multiple_files_POPUP(std::vector<std::filesystem::path> path_vec,
-                         LF* F_Prop, shader_info* shaders, bool* multiple_files,
-                         int* counter, int* window_number_focus)
-{
-
-    ImGui::OpenPopup("Drag & Drop Folder");
-
-    bool open;
+    bool open = true;
     bool process_animation;
-    if (ImGui::BeginPopupModal("Drag & Drop Folder", &open)) {
+    if (ImGui::BeginPopupModal("Drag_Drop_Folder", &open)) {
+        const char* name_ptr;
+        for (int i = 0; i < 6; i++)
+        {
+            if (!images_arr[i].animation_images.empty()) {
+                // name_ptr = (char*)images_arr[i].animation_images[0].c_str();
+                name_ptr = images_arr[i].animation_images[0].u8string().c_str();
+                break;
+            }
+        }
+        
         ImGui::Text(
             "%s\n\n"
             "Is this a group of sequential animation frames?",
-            (*path_vec.begin()).parent_path().u8string().c_str()
+            name_ptr
         );
 
-
-        if (ImGui::Button("Yep")) {
+        if (ImGui::Button("Yep, everything in this folder \nis part of an animation.")) {
             open = false;
             process_animation = true;
             ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
 
-
-            *multiple_files = true;
-            bool does_window_exist = (*window_number_focus > -1);
-            int num = does_window_exist ? *window_number_focus : *counter;
-            F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vec, &F_Prop[num]);
-            if (!does_window_exist) {
-                (*window_number_focus) = (*counter);
-                (*counter)++;
+            for (int i = 0; i < 6; i++) {
+                if (images_arr[i].animation_images.empty()) {
+                    continue;
+                }
+                F_Prop->file_open_window = Drag_Drop_Load_Animation(images_arr[i].animation_images, F_Prop);
             }
-            return true;
 
+            return true;
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Nope")) {
+
+        //TODO: remove individual image opening?
+        //      seems like it might be a bit silly and not useful
+        if (ImGui::Button("Nope, open all images up \nindividually.")) {
             open = false;
             ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+
+            for (int i = 0; i < 6; i++) {
+                for (int j = 0; j < images_arr[i].animation_images.size(); j++) {
+                    LF* F_Prop = &My_Variables->F_Prop[*counter];
+                    const char* path = images_arr[i].animation_images[j].c_str();
+                    F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables->shaders, &F_Prop->img_data, path);
+                    if (F_Prop->file_open_window) {
+                        (*counter)++;
+                    }
+                }
+            }
+
+            return true;
         }
 
 
         if (ImGui::Button("Cancel")) {
+            open = false;
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
-            return false;
+            return true;
         }
 
 
         ImGui::EndPopup();
     }
 
-
-
-}
-
-bool open_multiple_files(std::vector<std::filesystem::path> path_vec,
-                         LF *F_Prop, shader_info *shaders, bool *multiple_files,
-                         int *counter, int *window_number_focus)
-{
-    char question[MAX_PATH + 50] = {};
-
-//TODO: get rid of this garbage if u8string() works for windows
-// #ifdef QFO2_WINDOWS
-//     snprintf(buffer, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
-//              tinyfd_utf16to8((*path_vec.begin()).parent_path().c_str()));
-// #elif defined(QFO2_LINUX)
-    snprintf(question, MAX_PATH + 50, "%s\nIs this a group of sequential animation frames?",
-             (*path_vec.begin()).parent_path().u8string().c_str());
-// #endif
-    int type;
-    //TODO: replace with ImFileDialog
-    if (!(*multiple_files)) {   //false=ask question, true=automatic
-        // returns 1 for yes, 2 for no, 0 for cancel
-        type = tinyfd_messageBox("Animation? or Single Images?",
-                                 question, "yesnocancel", "question", 2);
-    }   //TODO: wtf is going on here? where's cancel button?
-    else {
-        type = 1;               //yes, animation, open automatically?
-    }
-
-    if (type == 2) {            //no, open each image individually
-        for (const std::filesystem::path &path : path_vec) {
-            F_Prop[*counter].file_open_window =
-                Drag_Drop_Load_Files(path.u8string().c_str(),
-                                     &F_Prop[*counter],
-                                     &F_Prop[*counter].img_data,
-                                     shaders);
-            (*counter)++;
-        }
-        return true;
-    }
-    else if (type == 1) {       //yes it is "a group of sequential animation frames"
-        *multiple_files = true;
-        bool does_window_exist = (*window_number_focus > -1);
-        int num = does_window_exist ? *window_number_focus : *counter;
-
-        F_Prop[num].file_open_window = Drag_Drop_Load_Animation(path_vec, &F_Prop[num]);
-
-        if (!does_window_exist) {
-            (*window_number_focus) = (*counter);
-            (*counter)++;
-        }
-        return true;
-    }
-    else if (type == 0) {
-        return false;
-    }
-    return false;   //shouldn't have to do this, shouldn't be able to reach this line
+    return false;
 }
 
 #ifdef QFO2_WINDOWS
@@ -220,14 +172,15 @@ bool Supported_Format(const std::filesystem::path &file)
     return false;
 }
 #elif defined(QFO2_LINUX)
+
 // Checks the file extension against known working extensions
 // Returns true if any extension matches, else return false
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
     constexpr const static char supported[13][6]{
-        ".FRM", ".MSK", ".PNG",
-        ".BMP", ".JPG", ".JPEG",
+        ".FRM", ".MSK",
+        ".PNG", ".BMP", ".JPG", ".JPEG",
         ".GIF",
         ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
         };
@@ -291,10 +244,12 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     {
         bool is_subdirectory = file.is_directory(error);
         if (error) {
-            printf("error when checking if file_name is directory when loading file: %d", __LINE__);
+            //TODO: log to file
             set_popup_warning(
-                "[ERROR] When checking if file_name is directory when loading file"
+                "[ERROR] handle_subdirectory_vec()\n\n"
+                "When checking if file_name is directory when loading file."
             );
+            printf("Error: %s\nWhen checking if file_name is directory when loading file: %d", error.message(), __LINE__);
             return animation_images;
         }
         if (is_subdirectory) {
@@ -307,7 +262,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
         }
     }
 
-    uint64_t start_time = start_timer();
+    // uint64_t start_time = start_timer();
 
     // std::sort(animation_images.begin(), animation_images.end());                                        // ~50ms
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end());                   // ~50ms
@@ -391,7 +346,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     //                  return (a_v < b_v);
     //              });                                                                                    // ~3ms
 
-    print_timer(start_time);
+    // print_timer(start_time);
 
     return animation_images;
 }
@@ -674,90 +629,148 @@ std::set<std::filesystem::path> handle_subdirectory_set(const std::filesystem::p
     return animation_images;
 }
 
-// TODO: make a define switch for linux when I move to there
-std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *window_number_focus, int *counter,
-                                          shader_info *shaders)
+#include <dirent.h>
+bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
 {
-    char buffer[MAX_PATH];
-#ifdef QFO2_WINDOWS
-    //TODO: which method am I using?
-    std::filesystem::path path(tinyfd_utf8to16(file_name));
-    //std::filesystem::path path(file_name).u8string().c_str();
-
-#elif defined(QFO2_LINUX)
-    std::filesystem::path path(file_name);
-#endif
-    std::vector<std::filesystem::path> animation_images;
-
-    std::error_code error;
-    bool is_directory = std::filesystem::is_directory(path, error);
-    if (error)
-    {
-        //TODO: log to file
-        set_popup_warning(
-            "[ERROR] handle_directory_drop()\n\n"
-            "Error checking if dropped file is a directory.\n"
-            "This usually happens when the text encoding is not UTF8/16."
-        );
-        // tinyfd_notifyPopup("Error checking if dropped file is a directory",
-        //                    "This usually happens when the text encoding is not UTF8/16.",
-        //                    "info");
-        printf("error checking if file_name is directory");
-        return std::nullopt;
-    }
-
-    if (!is_directory) {
+    bool is_dir = io_isdir(dir_name);
+    if (!is_dir) {
         return false;
     }
-    bool is_subdirectory = false;
-    bool multiple_files  = false;
-    for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
-    {
-        is_subdirectory = file.is_directory(error);
-        if (error) {
-            //TODO: log to file
-            set_popup_warning(
-                "[ERROR] handle_directory_drop()\n\n"
-                "Error when checking if file_name is directory."
-            );
-            printf("error when checking if file_name is directory");
-            return std::nullopt;
-        }
-        if (is_subdirectory) {
-            // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
-            std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
 
-            if (!images.empty()) {
+    Direction dir;
+    struct dirent* iterator;
+    DIR* directory = opendir(dir_name);
+    if (directory == NULL) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] handle_directory_drop_POPUP()\n\n"
+            "Error occurred when opening directory\n"
+        );
+        printf("Error: Unable to open directory? %s\n L%d\n", dir_name, __LINE__);
+    }
 
+    //handle the case with subfolders storing each directions animations
+    while ((iterator = readdir(directory)) != NULL) {
+        char buffer[MAX_PATH];
+        snprintf(buffer, MAX_PATH, "%s/%s", dir_name, iterator->d_name);
+        // printf("d_name:   %s\n", iterator->d_name);
 
-                // open_multiple_files_POPUP(
-                //     images, F_Prop, shaders, &multiple_files, counter, window_number_focus
-                // );
-                open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-
-
-
-            }
-
+        if (iterator->d_name[0] == '.') {
+            //this also skips hidden directories in Linux (possibly also windows?)
+            //need to change if I want to scan those
             continue;
         }
-        else {
-            animation_images.push_back(file);
+
+        if (io_isdir(buffer)) {
+            char* sub_dir = strrchr(buffer, PLATFORM_SLASH)+1;
+            dir = assign_direction(sub_dir);
+            std::filesystem::path path(buffer);
+            image_arr[dir].animation_images = handle_subdirectory_vec(path);
+        }
+    }
+    int error = closedir(directory);
+    if (error == -1) {
+        //TODO: log to file
+        set_popup_warning(
+            "[ERROR] handle_directory_drop_POPUP()\n\n"
+            "Error occurred when closing directory\n"
+        );
+        printf("Error: Unable to close directory? %s\n L%d\n", dir_name, __LINE__);
+    }
+
+    for (int i = 0; i < 6; i++) {
+        if (!image_arr[i].animation_images.empty()) {
+            // printf("popping\n");
+            ImGui::OpenPopup("Drag_Drop_Folder");
+            return true;
         }
     }
 
-    if (is_subdirectory) {
+    //handle the case where the dropped directory has images directly in it
+    //  but no subdirectories
+    char* sub_dir = strrchr(dir_name, PLATFORM_SLASH)+1;
+    dir = assign_direction(sub_dir);
+    std::filesystem::path path(dir_name);
+    image_arr[dir].animation_images = handle_subdirectory_vec(path);
+    if (!image_arr[dir].animation_images.empty()) {
+        ImGui::OpenPopup("Drag_Drop_Folder");
         return true;
-    } else {
-        if (animation_images.empty()) {
-            return false;
-        }
-        else {
-            return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-        }
     }
 
+    return false;
 }
+
+// //TODO: delete? example of C++ filesystem::path handling
+// std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *window_number_focus, int *counter,
+//                                           shader_info *shaders)
+// {
+// #ifdef QFO2_WINDOWS
+//     //TODO: which method am I using?
+//     std::filesystem::path path(tinyfd_utf8to16(file_name));
+//     //std::filesystem::path path(file_name).u8string().c_str();
+// #elif defined(QFO2_LINUX)
+//     std::filesystem::path path(file_name);
+// #endif
+//     std::vector<std::filesystem::path> animation_images;
+//     std::error_code error;
+//     bool is_directory = std::filesystem::is_directory(path, error);
+//     if (error)
+//     {
+//         //TODO: log to file
+//         set_popup_warning(
+//             "[ERROR] handle_directory_drop()\n\n"
+//             "Error checking if dropped file is a directory.\n"
+//             "This usually happens when the text encoding is not UTF8/16."
+//         );
+//         // tinyfd_notifyPopup("Error checking if dropped file is a directory",
+//         //                    "This usually happens when the text encoding is not UTF8/16.",
+//         //                    "info");
+//         printf("error checking if file_name is directory");
+//         return std::nullopt;
+//     }
+//     if (!is_directory) {
+//         return false;
+//     }
+//     bool is_subdirectory = false;
+//     bool multiple_files  = false;
+//     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
+//     {
+//         is_subdirectory = file.is_directory(error);
+//         if (error) {
+//             //TODO: log to file
+//             set_popup_warning(
+//                 "[ERROR] handle_directory_drop()\n\n"
+//                 "Error when checking if file_name is directory."
+//             );
+//             printf("error when checking if file_name is directory");
+//             return std::nullopt;
+//         }
+//         if (is_subdirectory) {
+//             // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
+//             std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
+//             if (!images.empty()) {
+//                 // open_multiple_files_POPUP(
+//                 //     images, F_Prop, shaders, &multiple_files, counter, window_number_focus
+//                 // );
+//                 open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
+//             }
+//             continue;
+//         }
+//         else {
+//             animation_images.push_back(file);
+//         }
+//     }
+//     if (is_subdirectory) {
+//         return true;
+//     } else {
+//         if (animation_images.empty()) {
+//             return false;
+//         }
+//         else {
+//             return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
+//         }
+//     }
+// }
 
 bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
 {
@@ -784,12 +797,6 @@ bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
     printf("\nextension: %s\n", F_Prop->extension);
     return true;
 }
-
-bool Drag_Drop_Load_Files(const char *file_name, LF *F_Prop, image_data *img_data, shader_info *shaders)
-{
-    return File_Type_Check(F_Prop, shaders, img_data, file_name);
-}
-
 
 bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders)
 {
@@ -961,10 +968,16 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL
         F_Prop->file_open_window = load_FRM_OpenGL(F_Prop->Opened_File, img_data, shaders);
+        if (F_Prop->file_open_window == false) {
+            return false;
+        }
         img_data->type = FRM;
     }
     else if (io_strncmp(F_Prop->extension, "MSK", 4) == 0) {  // 0 == match
         F_Prop->file_open_window = Load_MSK_Tile_SURFACE(F_Prop->Opened_File, img_data);
+        if (F_Prop->file_open_window == false) {
+            return false;
+        }
         bool success   = false;
         img_data->type = MSK;
         success = framebuffer_init(&img_data->render_texture, &F_Prop->img_data.framebuffer, 350, 300);
@@ -1024,6 +1037,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             );
             printf("Unable to allocate memory for ANM_Frame: %d\n", __LINE__);
             free(img_data->ANM_dir);
+            img_data->ANM_dir = NULL;
             return false;
         }
         new (img_data->ANM_dir->frame_data) ANM_Frame;
@@ -1065,6 +1079,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             );
             printf("Unable to allocate memory for ANM_dir[0].frame_box: %d\n", __LINE__);
             free(img_data->ANM_dir);
+            img_data->ANM_dir = NULL;
             return false;
         }
     }

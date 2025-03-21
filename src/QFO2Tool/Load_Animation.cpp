@@ -135,6 +135,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     // return true;
 }
 
+//If folder name is not matched, default NE is assigned
 Direction assign_direction(char* direction)
 {
     if (!strncmp(direction, "NE\0", sizeof("NE\0"))) {

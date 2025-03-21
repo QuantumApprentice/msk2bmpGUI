@@ -338,10 +338,10 @@ void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
 
 
     //TODO: make backups of the original tiles
-    // if (io_file_exists(full_file_path)) {
+    // if (io_file_exists(save_path)) {
     //     static char backup_path[MAX_PATH] = {'\0'};
     //     if (backup_path[0] == '\0') {
-    //         strcpy(backup_path, full_file_path);
+    //         strcpy(backup_path, save_path);
     //         *strrchr(backup_path, '/\\') = '\0';
     //         bool success = io_create_backup_dir(backup_path);
     //         if (success == false) {
@@ -349,10 +349,9 @@ void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
     //             return;
     //         }
     //     }
-    //     io_move_file(full_file_path, backup_path);
+    //     io_move_file(save_path, backup_path);
     // }
 
-    // FILE *file_ptr = fopen(full_file_path, "wb");
     FILE *file_ptr = fopen(save_path, "wb");
     if (!file_ptr) {
         //TODO: log to file

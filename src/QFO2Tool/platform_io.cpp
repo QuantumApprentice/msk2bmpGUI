@@ -99,7 +99,7 @@ int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 }
 
 //returns true if path exists and is a directory
-//false otherwise
+//false otherwise, or if error occurs
 bool io_isdir(char* dir_path)
 {
     struct stat stat_info;
@@ -119,6 +119,7 @@ bool io_file_exists(const char* filename)
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
+        printf("Error io_file_exists(): %s\n", strerror(errno));
         return false;
     }
     return (stat_info.st_mode & S_IFREG);
@@ -129,6 +130,7 @@ int io_file_size(const char* filename)
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
+        printf("Error io_file_size() %s\n", strerror(errno));
         return 0;
     }
     return (stat_info.st_size);
@@ -142,13 +144,14 @@ bool io_make_dir(char* dir_path)
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
     if (error == 0) {
+        printf("Error io_make_dir() %s\n", strerror(errno));
         return true;
     }
     if (errno == 2) {
-        char* ptr = strrchr(dir_path, '/');
+        char* ptr = strrchr(dir_path, PLATFORM_SLASH);
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
-            *ptr = '/';
+            *ptr = PLATFORM_SLASH;
             return io_make_dir(dir_path);
         }
     }
@@ -202,6 +205,7 @@ bool io_path_check(char* file_path)
 //appends date&time in this format
 //      _yyyymmdd_hhmmss
 //appends same file extension as source
+//TODO: need windows version? rename() is linux specific?
 bool io_backup_file(char* file_path, char* dest_path)
 {
     if (dest_path == nullptr) {
@@ -218,6 +222,7 @@ bool io_backup_file(char* file_path, char* dest_path)
     int error = rename(file_path, rename_buff);
     if (error != 0) {
         perror("Error backing up file: ");
+        // perror("Error backing up file: errno:%s\n", strerror(error));
         return false;
     }
     return true;

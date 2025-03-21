@@ -105,8 +105,7 @@ uint16_t B_Endian::write_u16(int f)
     //  bytes[i] = ((uint8_t)(f) + i);
     //}
 
-    //val = bytes[1]
-    //  | (bytes[0] << 8);
+    //val = bytes[1] | (bytes[0] << 8);
 }
 uint8_t B_Endian::read_u8(std::istream& f)
 {

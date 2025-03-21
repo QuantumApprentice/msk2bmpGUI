@@ -60,6 +60,14 @@ struct dropped_files {
     char* first_path;
 };
 
+
+struct image_paths
+{
+    std::vector<std::filesystem::path> animation_images;
+};
+
+struct variables;
+
 char* Program_Directory();
 void dropped_files_callback(GLFWwindow* window, int count, const char** paths);
 
@@ -67,9 +75,11 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, user_info *usr_info, 
 bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders);
 
 bool File_Type_Check(LF* F_Prop, shader_info* shaders, image_data* img_data, const char* file_name);
-bool Drag_Drop_Load_Files(const char* file_name, LF* F_Prop, image_data* img_data, shader_info* shaders);
-std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
-void handle_file_drop(char* file_name, LF* F_Prop, int* counter, shader_info* shaders);
 bool prep_extension(LF* F_Prop, user_info* usr_info, const char* file_name);
 void Next_Prev_File(char* next, char* prev, char* frst, char* last, char* current);
 void load_tile_texture(GLuint* texture, char* file_name);
+
+bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_arr, int* counter);
+bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr);
+
+// std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
