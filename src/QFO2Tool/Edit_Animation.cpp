@@ -76,7 +76,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
 
         num_frms = dst->ANM_dir[i].num_frames = src->ANM_dir[i].num_frames;
         dst->ANM_dir[i].frame_data = (Surface**)calloc(1,sizeof(Surface*)*num_frms);
-        if (!dst->ANM_dir[dir].frame_data) {
+        if (!dst->ANM_dir[i].frame_data) {
             //TODO: log out to file
             set_popup_warning(
                 "[ERROR] crop_animation_SURFACE()\n\n"

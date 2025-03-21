@@ -432,10 +432,10 @@ int main(int argc, char** argv)
                 &counter
             );
 
-            if (!does_window_exist) {
-                My_Variables.window_number_focus = counter;
-                counter++;
-            }
+            // if (!does_window_exist) {
+            //     My_Variables.window_number_focus = counter;
+            //     counter++;
+            // }
             if (clear_images_arr) {
                 clear_images_arr = false;
                 for (int i = 0; i < 6; i++) {
@@ -1125,7 +1125,7 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         }
     }
 
-    static bool open_save;
+    static bool open_save = false;
     bool disabled = (F_Prop->edit_data.ANM_dir) ? false : true;
     if (disabled) ImGui::BeginDisabled();
     if (ImGui::Button("Save")) {

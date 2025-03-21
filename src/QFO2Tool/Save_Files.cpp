@@ -683,8 +683,8 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     // else if (e == 2) {}
 
     ImVec2 scaled = {
-        src->w / 7,
-        src->h / 6
+        src->w / 7.0f,
+        src->h / 6.0f
     };
     ImVec2 img_pos = ImGui::GetCursorScreenPos();
 

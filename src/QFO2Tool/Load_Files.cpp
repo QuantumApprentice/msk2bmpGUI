@@ -102,6 +102,9 @@ bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_ar
                 }
                 F_Prop->file_open_window = Drag_Drop_Load_Animation(images_arr[i].animation_images, F_Prop);
             }
+            if (F_Prop->file_open_window) {
+                (*counter)++;
+            }
 
             return true;
         }
