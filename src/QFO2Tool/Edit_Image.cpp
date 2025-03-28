@@ -191,8 +191,7 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
                 shaders->render_FRM_shader,
                 shaders->giant_triangle,
                 edit_data, edit_struct[dir].frame_data[num],
-                My_Variables->CurrentTime_ms,
-                My_Variables->Palette_Update
+                My_Variables->CurrentTime_ms
             );
         }
 

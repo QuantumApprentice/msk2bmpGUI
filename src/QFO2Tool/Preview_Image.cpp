@@ -29,8 +29,7 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
         shaders->render_FRM_shader,
         shaders->giant_triangle,
         img_data, srfc,
-        My_Variables->CurrentTime_ms,
-        My_Variables->Palette_Update
+        My_Variables->CurrentTime_ms
     );
 
     draw_texture_to_framebuffer(

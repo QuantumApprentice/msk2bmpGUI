@@ -29,9 +29,9 @@ struct fo2_files {
 };
 
 struct user_info {
-    char default_save_path[MAX_PATH];
+    char default_save_path[MAX_PATH];   //change to last_save_path?
     char default_game_path[MAX_PATH];
-    char default_load_path[MAX_PATH];
+    char default_load_path[MAX_PATH];   //change to last_load_path?
     char* exe_directory = NULL;
 
     fo2_files game_files;

@@ -19,8 +19,13 @@ typedef union Color {
     uint32_t rgba;
 } Color;
 
+//vanilla fallout palette only uses first 228 colors,
+//the rest are hardcoded color cycling
+//palettes can be swapped by providing a palette
+//named the same as the FRM but with .PAL extension
+//placed right next to each other
 typedef struct Palette {
-    int num_colors = 228;   //vanilla fallout palette only uses first 228 colors, rest are hardcoded color cycling
+    int num_colors = 228;
     Color colors[256];
 } Palette;
 
@@ -35,16 +40,15 @@ typedef struct Surface {
     uint8_t* pxls;      //actual pixel data
 } Surface;
 
-
-
-
 void FreeSurface(Surface* src);
 Surface* Create_8Bit_Surface(int width, int height, Palette* palette);
 Surface* Create_RGBA_Surface(int width, int height);
 Surface* Load_File_to_RGBA(const char* filename);
-Surface* Convert_Surface_to_RGBA(Surface* src);
+Surface* Convert_Surface_to_RGBA(Surface* src, float* FO_pal);
 Surface* Copy8BitSurface(Surface* src);
 
 void BlitSurface(Surface* src, Rect src_rect, Surface* dst, Rect dst_rect);
 void PaintSurface(Surface* dst, Rect dst_rect, uint8_t color);
 void ClearSurface(Surface* dst);
+
+void print_SURFACE_pxls(Surface* src);

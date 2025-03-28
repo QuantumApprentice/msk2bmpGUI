@@ -48,7 +48,8 @@ INCLUDE_ARGS=(
   -I "$src/dependencies/GLFW/glfw-3.4/include"
   -I "$src/dependencies/imgui-1.90.8-docking"
   -I "$src/dependencies/imgui-1.90.8-docking/backends"
-  -I "$src/dependencies/tinyfiledialogs"
+  -I "$src/dependencies/ImFileDialog"
+  -I "$src/dependencies/tinyfiledialogs"  #this goes byebye soon
   -I "$src/dependencies/stb"
   # -I "/usr/include/SDL2"
 )

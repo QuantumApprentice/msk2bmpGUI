@@ -31,9 +31,10 @@ void Set_Default_Game_Path(user_info* user_info, char* exe_path);
 
 
 
+void init_IFD();
 
-
-void Save_to_GIF(image_data* img_data, struct user_info* usr_nfo);
+bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info, float* FO_pal);
+void save_as_GIF(image_data* img_data, struct user_info* usr_nfo);
 
 // bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info, Save_Info* sv_info, bool overwrite);
 bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info);

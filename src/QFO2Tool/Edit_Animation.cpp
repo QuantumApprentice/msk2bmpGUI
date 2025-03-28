@@ -115,7 +115,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             Surface* surface_32 = NULL;
 
             if (src_surface->channels != 4) {
-                surface_32 = Convert_Surface_to_RGBA(src_surface);
+                surface_32 = Convert_Surface_to_RGBA(src_surface, NULL);
             } else {
                 surface_32 = src_surface;
             }

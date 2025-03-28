@@ -47,7 +47,7 @@ void preview_WMAP_tiles_SURFACE(variables* My_Variables, image_data* img_data)
         shaders->render_FRM_shader,
         shaders->giant_triangle,
         img_data, img_data->ANM_dir[dir].frame_data[0],
-        My_Variables->CurrentTime_ms, My_Variables->Palette_Update
+        My_Variables->CurrentTime_ms
     );
 
     float scale    = img_data->scale;
@@ -298,7 +298,7 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
         shaders->render_FRM_shader,
         shaders->giant_triangle,
         img_data, img_data->ANM_dir[dir].frame_data[0],
-        My_Variables->CurrentTime_ms, My_Variables->Palette_Update
+        My_Variables->CurrentTime_ms
     );
 
     //TODO: rename?

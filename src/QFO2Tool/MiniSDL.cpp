@@ -45,30 +45,37 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* pal)
     return surface;
 }
 
-void FreeSurface(Surface* src)
-{
-    uint8_t* pxls_ptr = ((uint8_t*)src) + sizeof(Surface);
-    if (src->pxls != pxls_ptr) {
-        free(src->pxls);
-    }
-    free(src);
-}
 
-Surface* Convert_Surface_to_RGBA(Surface* src)
+//converts src to RGBA surface
+//returns RGBA Surface pointer
+Surface* Convert_Surface_to_RGBA(Surface* src, float* FO_pal)
 {
     Surface* RGBA_surface = Create_RGBA_Surface(src->w, src->h);
     if (!RGBA_surface) {
         return NULL;
     }
 
-    Color* dst_pxl = (Color*)RGBA_surface->pxls;
+    Color*   dst_pxl = (Color*)RGBA_surface->pxls;
     uint8_t* src_pxl = src->pxls;
-    int total_pxls = src->w * src->h;
+    int total_pxls   = src->w * src->h;
     if (src->channels == 1) {
         //convert from paletted to 32bit
         for (int i = 0; i < total_pxls; i++)
         {
-            *dst_pxl = src->palette->colors[*src_pxl];
+            if (*src_pxl < src->palette->num_colors) {
+                *dst_pxl = src->palette->colors[*src_pxl];
+            } else {
+                // if (FO_pal) {
+                //     Color tmp;
+                //     tmp.r = FO_pal[*src_pxl * 3 +0]*255;
+                //     tmp.g = FO_pal[*src_pxl * 3 +1]*255;
+                //     tmp.b = FO_pal[*src_pxl * 3 +2]*255;
+                //     *dst_pxl = tmp;
+                // }
+            }
+            if (*src_pxl != 0) {
+                dst_pxl->a = 0xFF;
+            }
             src_pxl++;
             dst_pxl++;
         }
@@ -188,4 +195,38 @@ void ClearSurface(Surface* dst)
     //     pxls += dst->pitch;
     // }
     memset(pxls, 0, dst->w*dst->h);
+}
+
+void FreeSurface(Surface* src)
+{
+    uint8_t* pxls_ptr = ((uint8_t*)src) + sizeof(Surface);
+    if (src->pxls != pxls_ptr) {
+        free(src->pxls);
+    }
+    free(src);
+}
+
+void print_SURFACE_pxls(Surface* src)
+{
+    for (int y = 0; y < src->h; y++)
+    {
+        for (int x = 0; x < src->pitch; x+=src->channels)
+        {
+            if (src->channels == 4) {
+                Color pxl;
+                memcpy(&pxl, &src->pxls[y*src->pitch + x], sizeof(Color));
+                printf("%02x%02x%02x%02x", pxl.r, pxl.g, pxl.b, pxl.a);
+            } else
+            if (src->channels == 3) {
+                Color pxl;
+                memcpy(&pxl, &src->pxls[y*src->pitch + x], 3);
+                printf("%02x%02x%02x", pxl.r, pxl.g, pxl.b);
+            } else
+            if (src->channels == 1) {
+                printf("%02x", src->pxls[y*src->pitch + x]);
+            }
+
+        }
+        printf("\n");
+    }
 }

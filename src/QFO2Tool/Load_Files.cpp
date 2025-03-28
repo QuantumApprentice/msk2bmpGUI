@@ -380,8 +380,12 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         bool is_subdirectory = file.is_directory(error);
         if (error)
         {
-            // TODO: convert to tinyfd_filedialog() popup warning
-            printf("error when checking if file_name is directory");
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] Next_Prev_File()\n\n"
+                "Error occurred when checking if file is directory.\n"
+            );
+            printf("Error: Checking if file is directory: %s : %d", file, __LINE__);
         }
         if (is_subdirectory)
         {
@@ -517,8 +521,12 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     {
         bool is_subdirectory = file.is_directory(error);
         if (error) {
-            // TODO: convert to tinyfd_filedialog() popup warning
-            printf("error when checking if file_name is directory");
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] Next_Prev_File()\n\n"
+                "Error occurred when checking if file is directory.\n"
+            );
+            printf("Error: Checking if file is directory: %s : %d", file, __LINE__);
         }
         if (is_subdirectory) {
             // TODO: handle different directions in subdirectories?
@@ -967,6 +975,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     if (!success) {
         return false;
     }
+    img_data->display_frame_num = 0;
     // FRx_check checks extension to make sure it's one of the FRM variants (FRM, FR0, FR1...FR5)
     if (FRx_check(F_Prop->extension)) {
         // The new way to load FRM images using openGL

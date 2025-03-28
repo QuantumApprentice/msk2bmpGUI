@@ -7,7 +7,7 @@
 mesh load_giant_triangle();
 void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, Surface* edit_srfc,
-                              uint64_t current_time, bool palette_update);
+                              uint64_t current_time);
 void SURFACE_to_texture(Surface* src, GLuint texture, int width, int height, int alignment);
 void PAL_SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
                         int x_offset, int y_offset,

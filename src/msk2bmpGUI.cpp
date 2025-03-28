@@ -591,8 +591,8 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
             if (anm_dir->frame_data == NULL) {
                 wrong_size = false;
             } else {
-                wrong_size = ((anm_dir->frame_data[0]->w != 350)
-                           || (anm_dir->frame_data[0]->h != 300));
+                wrong_size = (anm_dir->frame_data[0]->w != 350)
+                           || (anm_dir->frame_data[0]->h != 300);
             }
         }
     }
@@ -791,7 +791,7 @@ void init_edit_struct_ANM(ANM_Dir* edit_struct, image_data* edit_data, Palette* 
         if (!edit_struct[0].frame_data) {
             //TODO: log out to txt file
             set_popup_warning(
-                "[ERROR] init_edit_struct_ANM()"
+                "[ERROR] init_edit_struct_ANM()\n\n"
                 "Unable to allocate memory for edit_frame.\n"
             );
             printf("Unable to allocate memory for edit_frame: %d\n", __LINE__);
@@ -802,7 +802,7 @@ void init_edit_struct_ANM(ANM_Dir* edit_struct, image_data* edit_data, Palette* 
             free(edit_struct[0].frame_data);
             //TODO: log out to txt file
             set_popup_warning(
-                "[ERROR] init_edit_struct_ANM()"
+                "[ERROR] init_edit_struct_ANM()\n\n"
                 "Unable to create 8bit surface.\n"
             );
             printf("Unable to create 8bit surface: %d\n", __LINE__);
@@ -814,7 +814,7 @@ void init_edit_struct_ANM(ANM_Dir* edit_struct, image_data* edit_data, Palette* 
             FreeSurface(edit_struct[0].frame_data[0]);
             //TODO: log out to txt file
             set_popup_warning(
-                "[ERROR] init_edit_struct_ANM()"
+                "[ERROR] init_edit_struct_ANM()\n\n"
                 "Unable to create 8bit surface.\n"
             );
             printf("Unable to create 8bit surface: %d\n", __LINE__);
@@ -1098,6 +1098,19 @@ bool save_TILE_popup(LF* F_Prop)
     return open_window;
 }
 
+
+
+bool save_PNG_popup(LF* F_Prop, float* FO_pal)// Palette* FO_pal)
+{
+    image_data* img_data = &F_Prop->img_data;
+    bool open = true;
+    if (ImGui::BeginPopupModal("save_as_PNG", &open)) {
+        open = save_PNG_popup_INTERNAL(img_data, &usr_info, FO_pal);
+        ImGui::EndPopup();
+    }
+    return true;
+}
+
 void main_window_bttns(variables* My_Variables, int index, int* counter)
 {
     if (index < 0) {
@@ -1125,6 +1138,16 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         }
     }
 
+    // static bool open_export = false;
+    if (!F_Prop->img_data.ANM_dir) ImGui::BeginDisabled();
+        if (ImGui::Button("Save as PNG")) {
+            ImGui::OpenPopup("save_as_PNG");
+        }
+        save_PNG_popup(F_Prop, My_Variables->shaders.palette);
+
+    if (!F_Prop->img_data.ANM_dir) ImGui::EndDisabled();
+
+
     static bool open_save = false;
     bool disabled = (F_Prop->edit_data.ANM_dir) ? false : true;
     if (disabled) ImGui::BeginDisabled();
@@ -1134,11 +1157,11 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
     if (open_save) {
         if (edit_data->type == FRM) {
             open_save = save_FRM_popup(F_Prop);
-        }
-        else if (edit_data->type == MSK) {
+        } else
+        if (edit_data->type == MSK) {
             open_save = save_MSK_popup(F_Prop);
-        }
-        else if (edit_data->type == TILE) {
+        } else
+        if (edit_data->type == TILE) {
             open_save = save_TILE_popup(F_Prop);
         }
         // open_save = popup_save_menu(&disabled, &save_type, &single_dir_b);

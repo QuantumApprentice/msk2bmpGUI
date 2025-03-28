@@ -164,7 +164,7 @@ void PAL_SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
 //      changing either a frame or a palette color-cycle
 void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triangle,
                               image_data* img_data, Surface* edit_srfc,
-                              uint64_t current_time, bool palette_update)
+                              uint64_t current_time)
 {
     if (!edit_srfc) {
         return;

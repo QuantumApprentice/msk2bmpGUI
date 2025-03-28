@@ -1,13 +1,14 @@
 #include <stdio.h>
 #include <cstdint>
 #include <sys/types.h>
-#include <stb_image_write.h>
 #include <filesystem>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
 #elif defined(QFO2_LINUX)
-
 #endif
 
 
@@ -31,6 +32,245 @@
 void write_cfg_file(user_info* user_info, char* exe_path);
 uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h);
 
+//wrapper for stbi_write_png()
+void write_PNG(const char* file_name, Surface* src)
+{
+    // stbiw_convert_wchar_to_utf8
+    stbi_write_png(file_name, src->w, src->h, src->channels, src->pxls, src->pitch);
+}
+
+//filename looks like "name_NE_00.png"
+char* generate_PNG_name(char* name, int src_dir, int num)
+{
+    static char buffer[MAX_PATH];
+    char* ptr = strrchr(name, '.');
+    if (ptr) {
+        *ptr = '\0';
+    }
+    const char* dir;
+    switch (src_dir)
+    {
+        case NE:
+            dir = "NE";
+            break;
+        case E:
+            dir = "E";
+            break;
+        case SE:
+            dir = "SE";
+            break;
+        case SW:
+            dir = "SW";
+            break;
+        case W:
+            dir = "W";
+            break;
+        case NW:
+            dir = "NW";
+            break;
+    }
+    snprintf(buffer, MAX_PATH, "%s_%s_%02d.%s",name,dir,num,"png");
+
+    return buffer;
+}
+
+
+struct PNG_Save_Struct
+{
+    bool overwrite      = false;
+    char  save_name[MAX_PATH];
+    char* match_name    = NULL;
+    user_info* usr_nfo  = NULL;
+    image_data* img_ptr = NULL;
+};
+
+
+char* save_PNG(PNG_Save_Struct save_nfo, int dir, int num, Surface* src, float* FO_pal)
+{
+    char* save_name = save_nfo.save_name;
+    bool overwrite  = save_nfo.overwrite;
+
+
+    char* file_name = generate_PNG_name(save_name,dir,num);
+    if (io_file_exists(file_name) && (!overwrite)) {
+        ImGui::OpenPopup("Match found");
+        return file_name;
+    }
+
+    Surface* srfc_RGBA = Convert_Surface_to_RGBA(src, FO_pal);
+    if (!srfc_RGBA) {
+        //TODO: log out to txt file
+        set_popup_warning(
+            "[ERROR] save_PNG()\n\n"
+            "Unable to allocate memory for srfc_RGBA.\n"
+        );
+        printf("Error: save_PNG() : Unable to allocate memory for srfc_RGBA: %d\n", __LINE__);
+        return NULL;
+    }
+
+    write_PNG(file_name, srfc_RGBA);
+    FreeSurface(srfc_RGBA);
+    file_name[0] = '\0';
+    return NULL;
+}
+
+
+
+bool overwrite_POPUP(PNG_Save_Struct* save_nfo, const char* ext_filter)
+{
+    if (save_nfo->match_name == NULL) {
+        return false;
+    }
+    bool overwrite = false;
+    if (ImGui::BeginPopupModal("Match found"))
+    {
+        char* dup_name = strrchr(save_nfo->match_name, PLATFORM_SLASH)+1;
+
+        ImGui::Text(
+            "%s already exists,\n\n", dup_name
+        );
+        if (ImGui::Button("Overwrite?")) {
+            ImGui::CloseCurrentPopup();
+            overwrite = true;
+        }
+        if (ImGui::Button("Select a different filename?")) {
+            ImGui::CloseCurrentPopup();
+            overwrite      = false;
+            save_nfo->match_name   = NULL;
+            save_nfo->save_name[0] = '\0';
+
+            char* folder  = save_nfo->usr_nfo->default_save_path;
+            ifd::FileDialog::Instance().Save("PNGSaveDialog", "Save File", ext_filter, folder);
+        }
+
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+            overwrite      = false;
+            save_nfo->match_name   = NULL;
+            save_nfo->save_name[0] = '\0';
+        }
+
+        ImGui::EndPopup();
+    }
+
+    return overwrite;
+}
+
+//returns pointer to static char save_name[]
+bool ImDialog_save_PNG(PNG_Save_Struct* save_nfo)
+{
+    user_info* usr_info = save_nfo->usr_nfo;
+    char* save_name     = save_nfo->save_name;
+
+
+    init_IFD();
+    if (ImGui::Button("Select a filename")) {
+        const char* ext_filter = "PNG only for now (single images only for now)"
+                                "(*.png;)"
+                                "{.png,.PNG}";
+        char* folder = usr_info->default_save_path;
+        ifd::FileDialog::Instance().Save("PNGSaveDialog", "Save PNG", ext_filter, folder);
+    }
+
+    if (!ifd::FileDialog::Instance().IsDone("PNGSaveDialog")) {
+        return false;
+    }
+    if (ifd::FileDialog::Instance().HasResult()) {
+        std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
+        strncpy(save_name,                   temp.c_str(), MAX_PATH);
+        strncpy(usr_info->default_save_path, temp.c_str(), MAX_PATH);
+        char* ptr = strrchr(usr_info->default_save_path, PLATFORM_SLASH);
+        *ptr = '\0';
+    }
+    ifd::FileDialog::Instance().Close();
+
+    if (save_name[0] != '\0') {
+        return true;
+    }
+    return false;
+}
+
+
+
+
+bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info, float* FO_pal)
+{
+    static PNG_Save_Struct save_inf;
+    save_inf.img_ptr = img_data;
+    save_inf.usr_nfo = usr_info;
+
+
+    ImGui::Text(
+        "This will export as PNG format.\n"
+        "Images are saved with a formatted name.\n"
+        "The formatting looks like this:\n\n"
+        "NAME_NE_00.png\n\n"
+        "With a direction (NE)\n"
+        "and frame index number (00).\n"
+    );
+
+    static int e;
+    ImGui::RadioButton("Current Frame", &e, 0);
+    // ImGui::RadioButton("Single Direction", &e, 1);
+    ImGui::RadioButton("All Frames",    &e, 2);
+
+
+    ImDialog_save_PNG(&save_inf);
+
+    const char* ext_filter = "Single PNG images only for now"
+                            "(*.png;)"
+                            "{.png,.PNG}";
+
+    save_inf.overwrite = overwrite_POPUP(&save_inf, ext_filter);
+
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+        save_inf.save_name[0] = '\0';
+        save_inf.match_name   = NULL;
+    }
+
+    if (save_inf.save_name[0] == '\0') {
+        return true;
+    }
+
+
+    if (save_inf.match_name && !save_inf.overwrite) {
+        return true;
+    }
+
+    Surface* srfc;
+    if (e == 0) {
+        int dir = img_data->display_orient_num;
+        int num = img_data->display_frame_num;
+
+        srfc = img_data->ANM_dir[dir].frame_data[num];
+        save_inf.match_name = save_PNG(save_inf, dir, num, srfc, FO_pal);
+        if (save_inf.match_name) {
+            return true;
+        }
+    }
+    if (e == 2) {
+        for (int dir = 0; dir < 6; dir++)
+        {
+            for (int num = 0; num < img_data->ANM_dir[dir].num_frames; num++)
+            {
+                srfc = img_data->ANM_dir[dir].frame_data[num];
+                save_inf.match_name = save_PNG(save_inf, dir, num, srfc, FO_pal);
+                if (save_inf.match_name) {
+                    return true;
+                }
+            }
+        }
+    }
+    save_inf.save_name[0] = '\0';
+    save_inf.match_name = NULL;
+    save_inf.overwrite  = false;
+    return false;
+}
+
+
+//initialize Ifd::FileDialog system
+//by setting callbacks that create and delete thumbnail textures
 void init_IFD()
 {
     //TODO: move this to some initializing function
@@ -242,7 +482,7 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     if (ImGui::Button(save_type)) {
         if (sv_info->s_type == single_dir) {
             ext_filter = "FRx file (single direction only)"
-            "(*.fr0;*.fr1;*.fr2;.fr3;*.fr4;*.fr5;)";
+            "(*.fr0;*.fr1;*.fr2;.fr3;*.fr4;*.fr5;)"
             "{.fr0,.FR0,.fr1,.FR1,.fr2,.FR2,.fr3,.FR3,.fr4,.FR4,.fr5,.FR5,}";
         } else {
             ext_filter = "FRM file (single image or all 6 directions)"
@@ -320,7 +560,7 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     return true;
 }
 
-const char *Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
+const char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
 {
     if (num_dirs > 1)
     {
@@ -348,30 +588,6 @@ const char *Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
     }
     return ".FRM";
 }
-
-
-//TODO delete?
-// char* Set_Save_File_Name(image_data* img_data, char* name)
-// {
-//     char* Save_File_Name;
-//     int num_patterns = 6;
-//     static const char* const lFilterPatterns[6] = {"*.FR0", "*.FR1", "*.FR2", "*.FR3", "*.FR4", "*.FR5"};
-//     const char* ext = Set_Save_Ext(img_data, img_data->display_orient_num, num_patterns);
-//     int buffsize = strlen(name) + 5;
-//     char* temp_name = (char *)malloc(sizeof(char) * buffsize);
-//     snprintf(temp_name, buffsize, "%s%s", name, ext);
-
-//     Save_File_Name = tinyfd_saveFileDialog(
-//         "default_name",
-//         temp_name,
-//         num_patterns,
-//         lFilterPatterns,
-//         nullptr);
-//     free(temp_name);
-
-//     return Save_File_Name;
-// }
-
 
 //TODO: delete?
 char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo)
@@ -1261,7 +1477,7 @@ void save_MSK_tile(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 }
 
 //TODO: implement
-void Save_to_GIF(image_data* img_data, struct user_info* usr_nfo)
+void save_as_GIF(image_data* img_data, struct user_info* usr_nfo)
 {
     if (img_data->FRM_data == nullptr) {
         return;

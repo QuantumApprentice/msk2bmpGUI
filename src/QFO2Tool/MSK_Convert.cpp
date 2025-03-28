@@ -285,7 +285,7 @@ void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data, int cutoff)
     int size   = width * height;
     uint8_t* data = (uint8_t*)calloc(1, size);
 
-    Surface* Surface_32 = Convert_Surface_to_RGBA(surface);
+    Surface* Surface_32 = Convert_Surface_to_RGBA(surface, NULL);
     if (!Surface_32) {
         set_popup_warning(
             "[ERROR] Convert_SURFACE_to_MSK()\n\n"

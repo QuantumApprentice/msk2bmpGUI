@@ -98,7 +98,7 @@ Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
     Surface* Surface_32 = src;
     if (src->channels < 4) {
         // Convert input surface to 32bit format for easy palettization
-        Surface_32 = Convert_Surface_to_RGBA(src);
+        Surface_32 = Convert_Surface_to_RGBA(src, NULL);
     }
     if (!Surface_32) {
         //TODO: log out to file
