@@ -51,9 +51,8 @@ INCLUDE_ARGS=(
   -I "$src/dependencies/ImFileDialog"
   -I "$src/dependencies/tinyfiledialogs"  #this goes byebye soon
   -I "$src/dependencies/stb"
-  # -I "/usr/include/SDL2"
 )
-#^^^^^^^^^^^^^^^these area all variables storing file info
+#^^^^^^^^^^^^^^^these are all variables storing file info
 
 #"-g" compiler-generate debug info
 #applies to compile step
@@ -100,8 +99,12 @@ echo "TinyFileDialogs next..."
 #is in the same folder as the .c file
 cc -g -c -o "$build/tinyfiledialogs.o" "$src/dependencies/tinyfiledialogs/tinyfiledialogs.c"
 echo "TinyFileDialogs built"
-echo
 
+echo "ImFileDialog next..."
+cc -g -c -o "$build/ImFileDialog.o" "$src/dependencies/ImFileDialog/ImFileDialog.cpp"
+echo $'ImFileDialog built\n'
+
+echo
 echo "Building Dear ImGui..."
 c++ "${CPP_ARGS[@]}" -c -o "$build/imgui_docking.o" "build_linux_dearimgui.c"
 echo $'Dear ImGui Built\n'
@@ -153,7 +156,6 @@ if [[ "${1:-}" == "test" ]];
       -o build/test                     \
       test/test_crop_single_tile.cpp    \
       test/test_assign_tile_id.cpp      \
-      # "$build"/*.o -lSDL2 -lSDL2_image
 
   echo "Running tests..."
   #() == parenthises create a subshell to run commands in
@@ -164,4 +166,3 @@ if [[ "${1:-}" == "test" ]];
 fi
 
 echo "Donesers..."
-

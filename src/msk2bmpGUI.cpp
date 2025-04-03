@@ -1058,6 +1058,7 @@ bool save_FRM_popup(LF* F_Prop)
 
     Save_Info sv_info;
     bool open_window = true;
+    //TODO: replace ImGui::Begin() with BeginPopupModal()?
     ImGui::Begin("Export FRM", &open_window);
         static int e;
         ImGui::RadioButton("Single Frame",     &e, 0);
@@ -1070,7 +1071,6 @@ bool save_FRM_popup(LF* F_Prop)
         if (open_window) {
             open_window = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
         }
-
     ImGui::End();
 
     return open_window;
@@ -1083,6 +1083,7 @@ bool save_MSK_popup(LF* F_Prop)
 
 
     bool open_window = true;
+    //TODO: replace ImGui::Begin() with BeginPopupModal()?
     ImGui::Begin("Export MSK", &open_window);
         if (open_window) {
             open_window = ImDialog_save_TILE_SURFACE(img_data, &usr_info, sv_info);
@@ -1100,6 +1101,7 @@ bool save_TILE_popup(LF* F_Prop)
     Save_Info* sv_info;
 
     bool open_window = true;
+    //TODO: replace ImGui::Begin() with BeginPopupModal()?
     ImGui::Begin("Export FRM Tile", &open_window);
         if (open_window) {
             open_window = ImDialog_save_TILE_SURFACE(img_data, &usr_info, sv_info);
@@ -1108,7 +1110,6 @@ bool save_TILE_popup(LF* F_Prop)
 
     return open_window;
 }
-
 
 
 bool save_PNG_popup(LF* F_Prop)
