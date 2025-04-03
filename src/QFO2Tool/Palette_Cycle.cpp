@@ -62,9 +62,7 @@ void color_cycle_PAL(Palette* pal, int* g_dwCurrent, int pal_index, uint8_t * cy
         pal->colors[pal_index + i].r = cycle_colors[Current_Frame * 3 + 0];
         pal->colors[pal_index + i].g = cycle_colors[Current_Frame * 3 + 1];
         pal->colors[pal_index + i].b = cycle_colors[Current_Frame * 3 + 2];
-        //TODO: if the alpha channel is assigned at load,
-        //      (in load_palette_from_path()), then pull
-        //      the alpha channel from the palette instead
+        //all cycle colors have alpha of 255
         pal->colors[pal_index + i].a = 255;
 
         if (Current_Frame == cycle_count)
