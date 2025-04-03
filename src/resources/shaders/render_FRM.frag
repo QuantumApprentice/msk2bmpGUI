@@ -9,15 +9,14 @@ uniform uint ColorPaletteINT[256];
 void main()
 {
     vec4 index = texture(Indexed_FRM, vec2(TexCoord.x, TexCoord.y));
-
     // vec4 texel = vec4(index);
 
     uint idx = uint(index.r*255.0);
     uint color = ColorPaletteINT[idx];
     vec4 texel = vec4(
-        float(int(color >>  0) & 0xFF) / 255.0,    // r
-        float(int(color >>  8) & 0xFF) / 255.0,    // g
-        float(int(color >> 16) & 0xFF) / 255.0,    // b
+        float((color >>  0) & 0xFFu) / 255.0,    // r
+        float((color >>  8) & 0xFFu) / 255.0,    // g
+        float((color >> 16) & 0xFFu) / 255.0,    // b
         1.0
     );
 

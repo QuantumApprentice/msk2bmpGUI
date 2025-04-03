@@ -640,7 +640,7 @@ std::set<std::filesystem::path> handle_subdirectory_set(const std::filesystem::p
     return animation_images;
 }
 
-#include <dirent.h>
+// #include <dirent.h>
 bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
 {
     bool is_dir = io_isdir(dir_name);
@@ -648,9 +648,7 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
         return false;
     }
 
-    Direction dir;
-    struct dirent* iterator;
-    DIR* directory = opendir(dir_name);
+    void* directory = io_open_dir(dir_name);
     if (directory == NULL) {
         //TODO: log to file
         set_popup_warning(
@@ -658,19 +656,25 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
             "Error occurred when opening directory\n"
         );
         printf("Error: Unable to open directory? %s\n L%d\n", dir_name, __LINE__);
+        return true;
     }
 
-    //handle the case with subfolders storing each directions animations
-    while ((iterator = readdir(directory)) != NULL) {
-        char buffer[MAX_PATH];
-        snprintf(buffer, MAX_PATH, "%s/%s", dir_name, iterator->d_name);
-        // printf("d_name:   %s\n", iterator->d_name);
-
-        if (iterator->d_name[0] == '.') {
+    //handle the case with appropriately named subfolders
+    //  storing each direction's animations
+    //  (NE/E/SE/SW/W/NW)
+    Direction dir;
+    char* name;
+    while ((name = io_scan_dir(directory)) != NULL) {
+        if (name[0] == '.') {
             //this also skips hidden directories in Linux (possibly also windows?)
             //need to change if I want to scan those
             continue;
         }
+
+        //get the file?/folder? name?
+        char buffer[MAX_PATH];
+        snprintf(buffer, MAX_PATH, "%s/%s", dir_name, name);
+        // printf("d_name:   %s\n", iterator->d_name);
 
         if (io_isdir(buffer)) {
             char* sub_dir = strrchr(buffer, PLATFORM_SLASH)+1;
@@ -679,8 +683,9 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
             image_arr[dir].animation_images = handle_subdirectory_vec(path);
         }
     }
-    int error = closedir(directory);
-    if (error == -1) {
+
+    bool err = io_close_dir(directory);
+    if (err) {
         //TODO: log to file
         set_popup_warning(
             "[ERROR] handle_directory_drop_POPUP()\n\n"

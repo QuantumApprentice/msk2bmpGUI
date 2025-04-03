@@ -35,11 +35,25 @@ bool io_isdir(char* dir_path)
     //return (stat_info.st_mode & S_IFDIR);
 }
 
+//returns false if dir_name not found?
+bool io_open_dir(const char* dir_name, void* dir_struct)
+{
+    // LPWIN32_FIND_DATAA
+    // dir_struct = opendir(dir_name);
+    HANDLE whut = FindFirstFileA(dir_name, dir_struct);
+    if (whut == INVALID_HANDLE_VALUE) {
+        //TODO: log to file
+        return false;
+    }
+    return true;
+}
+
 int io_file_size(const char* filename)
 {
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
+        //TODO: log to file
         return 0;
     }
     return (stat_info.st_size);
@@ -54,6 +68,7 @@ bool io_file_exists(const char* filename)
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
+        //TODO: log to file
         return false;
     }
     return (stat_info.st_mode & S_IFREG);
@@ -83,6 +98,7 @@ bool io_make_dir(char* dir_path)
             printf("You may ask yourself, how did I get here?\n");
         }
     }
+    //TODO: log to file
     printf("Error making directory, errno:\t%d:\t%s\n", errno, strerror(errno));
     return false;
 }
@@ -91,6 +107,7 @@ bool io_make_dir(char* dir_path)
 #elif defined(QFO2_LINUX)
 #include <strings.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 // return 0 == match, <0 == less than match, >0 == greater than match
 int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
@@ -105,10 +122,43 @@ bool io_isdir(char* dir_path)
     struct stat stat_info;
     int error = stat(dir_path, &stat_info);
     if (error) {
+        //TODO: log to file
         printf("Error checking directory? %s\n", strerror(errno));
         return false;
     }
     return (stat_info.st_mode & S_IFDIR);
+}
+
+//returns DIR* stream for linux
+void* io_open_dir(const char* dir_name)
+{
+    DIR* dir_stream = opendir(dir_name);
+
+    return dir_stream;
+}
+
+char* io_scan_dir(void* dir_stream)
+{
+    struct dirent* iterator;
+    iterator = readdir((DIR*)dir_stream);
+    if (iterator == NULL) {
+        return NULL;
+    }
+
+    char* file_name = iterator->d_name;
+
+    return file_name;
+}
+
+bool io_close_dir(void* dir_stream)
+{
+    int error = closedir((DIR*)dir_stream);
+    if (error) {
+        //TODO: log to file
+        printf("Error: io_close_dir() %s\n", strerror(errno));
+        return false;
+    }
+    return true;
 }
 
 //another way to check if directory exists?
@@ -120,6 +170,7 @@ bool io_file_exists(const char* filename)
     int error = stat(filename, &stat_info);
     if (error) {
         if (errno != ENOENT) {
+            //TODO: log to file
             printf("Error io_file_exists(): %s\n", strerror(errno));
         }
         return false;
@@ -132,6 +183,7 @@ int io_file_size(const char* filename)
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
+        //TODO: log to file
         printf("Error io_file_size() %s\n", strerror(errno));
         return 0;
     }
@@ -146,6 +198,7 @@ bool io_make_dir(char* dir_path)
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
     if (error == 0) {
+        //TODO: log to file
         printf("Error io_make_dir() %s\n", strerror(errno));
         return true;
     }
@@ -157,6 +210,7 @@ bool io_make_dir(char* dir_path)
             return io_make_dir(dir_path);
         }
     }
+    //TODO: log to file
     printf("Error making directory, errno:\t%d:\t%s\n", errno, strerror(errno));
     return false;
 }
@@ -164,6 +218,7 @@ bool io_make_dir(char* dir_path)
 
 #endif
 
+//TODO: delete?
 //check if path exists
 bool io_path_check(char* file_path)
 {
@@ -223,6 +278,7 @@ bool io_backup_file(char* file_path, char* dest_path)
 
     int error = rename(file_path, rename_buff);
     if (error != 0) {
+        //TODO: log to file
         perror("Error backing up file: ");
         // perror("Error backing up file: errno:%s\n", strerror(error));
         return false;
@@ -238,6 +294,7 @@ bool io_move_file(char* file_path, char* dest_dir)
 
     int error = rename(file_path, rename_buff);
     if (error != 0) {
+        //TODO: log to file
         perror("Error moving file: ");
         return false;
     }

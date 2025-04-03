@@ -10,6 +10,13 @@
 
 int io_strncmp(const char* str1, const char* str2, int num_char);
 bool io_isdir(char* dir_path);
+
+
+void* io_open_dir(const char* dir_name);
+char* io_scan_dir(void* dir_stream);
+bool io_close_dir(void* dir_stream);
+
+
 bool io_file_exists(const char* filename);
 bool io_path_check(char* file_path);
 bool io_make_dir(char* dir_path);
