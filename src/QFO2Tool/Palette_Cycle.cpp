@@ -38,84 +38,34 @@ uint8_t g_nShoreline[] = {  83,  63,  43,       // Shoreline
                             51,  43,  35 };
 int g_nBlinkingRed = { -4*4 };
 
-// Current parameters of cycle
-int g_dwSlimeCurrent = 0;
-int g_dwMonitorsCurrent = 0;
-int g_dwFireSlowCurrent = 0;
-int g_dwFireFastCurrent = 0;
-int g_dwShorelineCurrent = 0;
-uint8_t g_nBlinkingRedCurrent = 0;
+struct cycle {
+    // Current parameters of cycle
+    int g_dwSlimeCurrent = 0;
+    int g_dwMonitorsCurrent = 0;
+    int g_dwFireSlowCurrent = 0;
+    int g_dwFireFastCurrent = 0;
+    int g_dwShorelineCurrent = 0;
+    uint8_t g_nBlinkingRedCurrent = 0;
 
-// Time of last cycle
-double g_dwLastCycleSlow = 0;
-double g_dwLastCycleMedium = 0;
-double g_dwLastCycleFast = 0;
-double g_dwLastCycleVeryFast = 0;
+    // Time of last cycle
+    double g_dwLastCycleSlow = 0;
+    double g_dwLastCycleMedium = 0;
+    double g_dwLastCycleFast = 0;
+    double g_dwLastCycleVeryFast = 0;
+} cycle_vals;
 
-void update_palette_array(float* palette, double CurrentTime, bool* Palette_Update)
-{
-    uint16_t g_dwCycleSpeedFactor = 1;
-
-    if (CurrentTime - g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
-        // Slime        ///////////////////////////////////////////////////////
-        Color_Cycle(palette, &g_dwSlimeCurrent, 229, g_nSlime, 3);
-        // Fire_slow    ///////////////////////////////////////////////////////
-        Color_Cycle(palette, &g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
-        // Shoreline    ///////////////////////////////////////////////////////
-        Color_Cycle(palette, &g_dwShorelineCurrent, 248, g_nShoreline, 5);
-
-        g_dwLastCycleSlow = CurrentTime;
-        *Palette_Update = true;
-    }
-
-    if (CurrentTime - g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
-        // Fire_fast    ///////////////////////////////////////////////////////
-        Color_Cycle(palette, &g_dwFireFastCurrent, 243, g_nFireFast, 4);
-
-        g_dwLastCycleMedium = CurrentTime;
-        *Palette_Update = true;
-    }
-
-    if (CurrentTime - g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
-        // Monitors     ///////////////////////////////////////////////////////
-        Color_Cycle(palette, &g_dwMonitorsCurrent, 233, g_nMonitors, 4);
-
-        g_dwLastCycleFast = CurrentTime;
-        *Palette_Update = true;
-    }
-
-    if (CurrentTime - g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
-        // Blinking red ///////////////////////////////////////////////////////
-        //TODO: need to fix this color cycle...doesn't update in ImGui correctly yet
-        if ((g_nBlinkingRedCurrent == 0) || (g_nBlinkingRedCurrent == 60*4))
-        { g_nBlinkingRed = -g_nBlinkingRed; }
-
-        palette[254*3+0] = (g_nBlinkingRedCurrent + g_nBlinkingRed) / 255.0f;
-        palette[254*3+1] = 0;
-        palette[254*3+2] = 0;
-
-        /* color value range
-          0,  16,  32,  48,
-         64,  80,  96, 112,
-        128, 142, 160, 176,
-        192, 208, 224, 240
-        */
-
-        g_nBlinkingRedCurrent += g_nBlinkingRed;
-
-        g_dwLastCycleVeryFast = CurrentTime;
-        *Palette_Update = true;
-    }
-}
-
-void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
+void color_cycle_PAL(Palette* pal, int* g_dwCurrent, int pal_index, uint8_t * cycle_colors, int cycle_count)
 {
     uint16_t Current_Frame = *g_dwCurrent;
 
     for (int i = cycle_count; i >= 0; i--) {
-        PaletteColors[pal_index * 3 + i * 3 + 0] = cycle_colors[Current_Frame * 3 + 0] / 255.0; // Red
-        PaletteColors[pal_index * 3 + i * 3 + 1] = cycle_colors[Current_Frame * 3 + 1] / 255.0; // Green
-        PaletteColors[pal_index * 3 + i * 3 + 2] = cycle_colors[Current_Frame * 3 + 2] / 255.0; // Blue
+        pal->colors[pal_index + i].r = cycle_colors[Current_Frame * 3 + 0];
+        pal->colors[pal_index + i].g = cycle_colors[Current_Frame * 3 + 1];
+        pal->colors[pal_index + i].b = cycle_colors[Current_Frame * 3 + 2];
+        //TODO: if the alpha channel is assigned at load,
+        //      (in load_palette_from_path()), then pull
+        //      the alpha channel from the palette instead
+        pal->colors[pal_index + i].a = 255;
 
         if (Current_Frame == cycle_count)
             Current_Frame = 0;
@@ -129,69 +79,63 @@ void Color_Cycle(float* PaletteColors, int* g_dwCurrent, int pal_index, uint8_t 
         (*g_dwCurrent)++;
 }
 
-//Load Fallout's default palette to a global float array
-//Palette values are converted to 0-1.0 floats before storing
-bool load_palette_to_float_array(float* palette, char* exe_path)
+//returns true if Palette is updated
+//used to indicate the FRM needs to be re-rendered
+bool update_PAL_array(Palette* pal, double CurrentTime)//, bool* Palette_Update)
 {
-    char path_buffer[MAX_PATH];
-    snprintf(path_buffer, sizeof(path_buffer), "%s%s", exe_path, "/resources/palette/fo_color.pal");
+    bool update = false;
+    uint16_t g_dwCycleSpeedFactor = 1;
 
-    //file management
-    FILE *File_ptr;
+    if (CurrentTime - cycle_vals.g_dwLastCycleSlow >= 200 * g_dwCycleSpeedFactor) {
+        // Slime        ///////////////////////////////////////////////////////
+        color_cycle_PAL(pal, &cycle_vals.g_dwSlimeCurrent, 229, g_nSlime, 3);
+        // Fire_slow    ///////////////////////////////////////////////////////
+        color_cycle_PAL(pal, &cycle_vals.g_dwFireSlowCurrent, 238, g_nFireSlow, 4);
+        // Shoreline    ///////////////////////////////////////////////////////
+        color_cycle_PAL(pal, &cycle_vals.g_dwShorelineCurrent, 248, g_nShoreline, 5);
 
-#ifdef QFO2_WINDOWS
-    errno_t error = _wfopen_s(&File_ptr, tinyfd_utf8to16(path_buffer), L"rb");
-    if (error != 0) {
-        //TODO: log to file
-        set_popup_warning(
-            "[ERROR] load_palette_to_float_array()\n\n"
-            "Can't open palette file."
-        );
-        printf("error %d, can't open palette", error);
-        return false;
-    }
-#elif defined(QFO2_LINUX)
-    File_ptr = fopen(path_buffer, "rb");
-    if (File_ptr == NULL) {
-        //TODO: log to file
-        set_popup_warning(
-            "[ERROR] load_palette_to_float_array()\n\n"
-            "Can't open palette file."
-        );
-        printf("error %d, can't open palette\n%s", errno, strerror(errno));
-        return false;
-    }
-#endif
-
-    //TODO: store uint8_t_data[] as SDL_PixelFormat() palette
-    uint8_t uint8_t_data[256 * 3];
-
-    //read in palette info
-    size_t read_size = fread(uint8_t_data, 1, 768, File_ptr);
-    if (read_size < 768) {
-        printf("\nread_size: %I64u", read_size);
+        cycle_vals.g_dwLastCycleSlow = CurrentTime;
+        update = true;
     }
 
-    fclose(File_ptr);
-    if (!uint8_t_data) {
-        //TODO: log to file
-        set_popup_warning(
-            "[ERROR] load_palette_to_float_array()\n\n"
-            "Palette file opened, but couldn't read?"
-        );
-        printf("Palette file opened, but couldn't read?");
-        return false;
+    if (CurrentTime - cycle_vals.g_dwLastCycleMedium >= 142 * g_dwCycleSpeedFactor) {
+        // Fire_fast    ///////////////////////////////////////////////////////
+        color_cycle_PAL(pal, &cycle_vals.g_dwFireFastCurrent, 243, g_nFireFast, 4);
+
+        cycle_vals.g_dwLastCycleMedium = CurrentTime;
+        update = true;
     }
-    for (int i = 0; i < 765; i++) {
-        if (uint8_t_data[i] < 64) {
-            uint8_t_data[i] *= 4;
-        }
+
+    if (CurrentTime - cycle_vals.g_dwLastCycleFast >= 100 * g_dwCycleSpeedFactor) {
+        // Monitors     ///////////////////////////////////////////////////////
+        color_cycle_PAL(pal, &cycle_vals.g_dwMonitorsCurrent, 233, g_nMonitors, 4);
+
+        cycle_vals.g_dwLastCycleFast = CurrentTime;
+        update = true;
     }
-    for (int i = 765; i < 768; i++) {
-        uint8_t_data[i] = 0;
+
+    if (CurrentTime - cycle_vals.g_dwLastCycleVeryFast >= 33 * g_dwCycleSpeedFactor) {
+        // Blinking red ///////////////////////////////////////////////////////
+        //TODO: need to fix this color cycle...doesn't update in ImGui correctly yet
+        if ((cycle_vals.g_nBlinkingRedCurrent == 0) || (cycle_vals.g_nBlinkingRedCurrent == 60*4))
+        { g_nBlinkingRed = -g_nBlinkingRed; }
+
+        pal->colors[254].r = (cycle_vals.g_nBlinkingRedCurrent + g_nBlinkingRed);
+        pal->colors[254].g = 0;
+        pal->colors[254].b = 0;
+        pal->colors[254].a = 255;
+
+        /* color value range
+          0,  16,  32,  48,
+         64,  80,  96, 112,
+        128, 142, 160, 176,
+        192, 208, 224, 240
+        */
+
+        cycle_vals.g_nBlinkingRedCurrent += g_nBlinkingRed;
+
+        cycle_vals.g_dwLastCycleVeryFast = CurrentTime;
+        update = true;
     }
-    for (int i = 0; i < 256 * 3; i++) {
-        palette[i] = uint8_t_data[i] / 255.0;
-    }
-    return true;
+    return update;
 }

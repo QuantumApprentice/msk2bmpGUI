@@ -23,7 +23,7 @@
 //last 12 bytes (footer?) identify x/y sizes,
 //  pattern entry number?
 #include <emmintrin.h>
-#include <smmintrin.h>
+// #include <smmintrin.h>
 
 bool is_tile_blank(town_tile* tile)
 {
@@ -36,10 +36,10 @@ bool is_tile_blank(town_tile* tile)
     int64_t* ptr = (int64_t*)&ONES;
 
     for (int i = 0; i < buff_size; i++) {
-        if (_mm_test_all_zeros(_mm_loadu_si128(frm_ptr128+i), ONES) == false) {
-            not_blank = false;
-            break;
-        }
+        // if (_mm_test_all_zeros(_mm_loadu_si128(frm_ptr128+i), ONES) == false) {
+        //     not_blank = false;
+        //     break;
+        // }
     }
 
     return not_blank;

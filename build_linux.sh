@@ -114,7 +114,8 @@ c++ -DQFO2_LINUX \
 echo $'QFO2Tool Built\n'
 
 echo "Copying resources"
-cp -a "$src/resources" "$build"
+# cp -a "$src/resources" "$build"
+cp --update -R "$src/resources" "$build"
 echo $'Copying finished'
 
 echo $'Build Finished!\n\n'

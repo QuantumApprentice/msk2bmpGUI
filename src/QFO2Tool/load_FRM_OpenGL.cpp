@@ -282,7 +282,7 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 
             int w = frame_start->Frame_Width;
             int h = frame_start->Frame_Height;
-            Surface* img = Create_8Bit_Surface(w, h, shaders->pal);
+            Surface* img = Create_8Bit_Surface(w, h, shaders->FO_pal);
             if (!img) {
                 //TODO: log out to file
                 set_popup_warning(
@@ -372,7 +372,7 @@ bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* s
         img_data->FRM_texture, img_data->width, img_data->height, 1);
 
     draw_texture_to_framebuffer(
-        shaders->palette, shaders->render_FRM_shader,
+        shaders->FO_pal, shaders->render_FRM_shader,
         &shaders->giant_triangle, img_data->framebuffer,
         img_data->FRM_texture, img_data->width, img_data->height);
 

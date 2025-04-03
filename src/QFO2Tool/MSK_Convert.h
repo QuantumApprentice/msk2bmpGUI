@@ -15,5 +15,4 @@ int BytesToInt(char *C, int numBytes);
 
 bool Load_MSK_Tile_SURFACE(char* FileName, image_data* img_data);
 
-Surface* Convert_Surface_to_RGBA(Surface* surface);
 void Convert_SURFACE_to_MSK(Surface* surface, image_data* img_data, int cutoff);

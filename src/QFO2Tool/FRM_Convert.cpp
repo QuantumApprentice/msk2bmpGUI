@@ -38,7 +38,12 @@ uint8_t convert_colors(uint8_t bytes) {
     }
 }
 
-//TODO: fix this to use float palette from My_Variables?
+//TODO: rewrite this to more generically load palettes
+//TODO: index 0 might be alpha channel only
+//      need to load alternative palettes and check
+//      if the game always assigns alpha to index 0 regardless of palette info
+//  https://falloutmods.fandom.com/wiki/PAL_File_Format
+//TODO: also, move this function to load_files.h/cpp
 Palette* load_palette_from_path(const char* path)
 {
 #ifdef QFO2_WINDOWS
@@ -98,7 +103,7 @@ Surface* PAL_Color_Convert(Surface *src, Palette* pal, int color_match_algo)
     Surface* Surface_32 = src;
     if (src->channels < 4) {
         // Convert input surface to 32bit format for easy palettization
-        Surface_32 = Convert_Surface_to_RGBA(src, NULL);
+        Surface_32 = Convert_Surface_to_RGBA(src);
     }
     if (!Surface_32) {
         //TODO: log out to file

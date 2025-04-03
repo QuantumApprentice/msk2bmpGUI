@@ -43,9 +43,6 @@ void preview_WMAP_tiles_SURFACE(variables* My_Variables, image_data* img_data)
     }
 
     animate_SURFACE_to_sub_texture(
-        shaders->palette,
-        shaders->render_FRM_shader,
-        shaders->giant_triangle,
         img_data, img_data->ANM_dir[dir].frame_data[0],
         My_Variables->CurrentTime_ms
     );
@@ -56,10 +53,11 @@ void preview_WMAP_tiles_SURFACE(variables* My_Variables, image_data* img_data)
 
     //TODO: rename?
     //      this takes 3 textures and draws them into 1 framebuffer
-    draw_PAL_to_framebuffer(shaders->palette,
-                            shaders->render_PAL_shader,
-                            &shaders->giant_triangle,
-                            img_data);
+    draw_PAL_to_framebuffer(
+        shaders->FO_pal,
+        shaders->render_PAL_shader,
+        &shaders->giant_triangle,
+        img_data);
 
     crop_WMAP_tile(MTILE_W, MTILE_H, img_width, img_height, scale, img_data);
 
@@ -294,19 +292,17 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
     }
 
     animate_SURFACE_to_sub_texture(
-        shaders->palette,
-        shaders->render_FRM_shader,
-        shaders->giant_triangle,
         img_data, img_data->ANM_dir[dir].frame_data[0],
         My_Variables->CurrentTime_ms
     );
 
     //TODO: rename?
     //      this takes 3 textures and draws them into 1 framebuffer
-    draw_PAL_to_framebuffer(shaders->palette,
-                            shaders->render_PAL_shader,
-                            &shaders->giant_triangle,
-                            img_data);
+    draw_PAL_to_framebuffer(
+        shaders->FO_pal,
+        shaders->render_PAL_shader,
+        &shaders->giant_triangle,
+        img_data);
 
     static bool image_toggle = false;
     checkbox_handler("toggle image", &image_toggle);
@@ -330,10 +326,6 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
 
     show_popup_warnings();
 
-    // static int offset_x;    // = -48;
-    // static int offset_y;
-    // static int spacing_x;
-    // static int spacing_y;
     static Rect offset = {};
     static tt_arr_handle* handle = nullptr;
 

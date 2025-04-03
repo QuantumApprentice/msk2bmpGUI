@@ -162,9 +162,9 @@ void PAL_SURFACE_to_sub_texture(uint8_t* pxls, GLuint texture,
 //TODO: handle the current_time break outside this code
 //      to prevent this from being called when not directly
 //      changing either a frame or a palette color-cycle
-void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triangle,
-                              image_data* img_data, Surface* edit_srfc,
-                              uint64_t current_time)
+void animate_SURFACE_to_sub_texture(
+    image_data* img_data, Surface* edit_srfc,
+    uint64_t current_time)
 {
     if (!edit_srfc) {
         return;
@@ -201,7 +201,7 @@ void animate_SURFACE_to_sub_texture(float* palette, Shader* shader, mesh& triang
                         total_w, total_h);
 }
 
-//TODO: delete? replaced by draw_PAL_to_framebuffer()
+//TODO: delete? replaced by draw_PAL_to_framebuffer()?
 void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
                              GLuint framebuffer, GLuint texture)
 {
@@ -213,14 +213,18 @@ void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
     glBindTexture(GL_TEXTURE_2D, texture);
 
     //shader
-    //shader->use();
     shader_i->render_FRM_shader->use();
+    uint32_t ID = shader_i->render_FRM_shader->ID;
 
-    glUniform3fv(glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPalette"), 256, shader_i->palette);
+    GLint t = glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPaletteINT");
+    glUniform1uiv(t, 256, (GLuint*)shader_i->FO_pal->colors);
 
-    //shader->setInt("Indexed_FRM", 0);
     shader_i->render_FRM_shader->setInt("Indexed_FRM", 0);
 
+    int err = glGetError();
+    if (err) {
+        printf("draw_FRM_to_framebuffer() glGetError: %d\n", err);
+    }
     glDrawArrays(GL_TRIANGLES, 0, shader_i->giant_triangle.vertexCount);
 
     //bind framebuffer back to default
@@ -235,8 +239,8 @@ void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
 //TODO: maybe restructure this to take an array of textures?
 //      textures ordered by index?
 //      passed in framebuffer to draw to?
-void draw_PAL_to_framebuffer(float* palette, Shader* shader,
-                            mesh* triangle, struct image_data* img_data)
+void draw_PAL_to_framebuffer(Palette* pal, Shader* shader,
+    mesh* triangle, struct image_data* img_data)
 {
     glViewport(0, 0, img_data->width, img_data->height);
 
@@ -253,12 +257,18 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
 
     //shader
     shader->use();
-    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
+    uint32_t ID = shader->ID;
+    glUniform1uiv(glGetUniformLocation(ID, "ColorPaletteINT"), 256, (GLuint*)pal->colors);
+
     shader->setInt("Indexed_FRM", 0);
     shader->setInt("Indexed_PAL", 1);
     shader->setInt("Indexed_MSK", 2);
 
-    //printf("glGetError: %d\n", glGetError());
+    int err = glGetError();
+    if (err) {
+        printf("draw_PAL_to_framebuffer() glGetError: %d\n", err);
+    }
+
 
     //draw to framebuffer
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
@@ -267,11 +277,9 @@ void draw_PAL_to_framebuffer(float* palette, Shader* shader,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-//TODO: delete? this should be replaced by draw_PAL_to_framebuffer()?
-void draw_texture_to_framebuffer(
-    float* palette, Shader* shader, mesh* triangle,     //TODO: change float*palette to Palette*pal
-    GLuint framebuffer, GLuint texture,
-    int w, int h)
+//TODO: this should be replaced by draw_PAL_to_framebuffer()?
+void draw_texture_to_framebuffer(Palette* pal, Shader* shader, mesh* triangle,
+    GLuint framebuffer, GLuint texture, int w, int h)
 {
     glViewport(0, 0, w, h);
 
@@ -281,18 +289,25 @@ void draw_texture_to_framebuffer(
     glBindTexture(GL_TEXTURE_2D, texture);
 
     shader->use();
-    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);   //TODO: delete this
-    // glUniform3iv(glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPalette"), 256, pal);   //replace with this
+
+
+    GLint t = glGetUniformLocation(shader->ID, "ColorPaletteINT");
+    glUniform1uiv(t, 256, (GLuint*)pal->colors);
+
+    GLenum err = glGetError();
+    if (err) {
+        printf("draw_texture_to_framebuffer() glGetError: %d\n", err);
+        // GL_INVALID_OPERATION
+    }
+
     shader->setInt("Indexed_FRM", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 //TODO: delete? this should be replaced by draw_PAL_to_framebuffer()
-void draw_MSK_to_framebuffer(float* palette,
-                             Shader* shader, mesh* triangle,
+void draw_MSK_to_framebuffer(Palette* pal, Shader* shader, mesh* triangle,
                              struct image_data* img_data)
 {
     glViewport(0, 0, img_data->width, img_data->height);
@@ -304,11 +319,17 @@ void draw_MSK_to_framebuffer(float* palette,
 
     //shader
     shader->use();
-    glUniform3fv(glGetUniformLocation(shader->ID, "ColorPalette"), 256, palette);
+    glUniform1uiv(glGetUniformLocation(shader->ID, "ColorPaletteINT"), 256, (GLuint*)pal->colors);
     shader->setInt("Indexed_FRM", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
 
     //bind framebuffer back to default
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    GLenum err = glGetError();
+    if (err) {
+        printf("draw_MSK_to_framebuffer() glGetError: %d\n", err);
+        // GL_INVALID_OPERATION
+    }
 }

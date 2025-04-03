@@ -154,7 +154,7 @@ target_link_libraries(
 #this custom command copies the contents of src/resources
 #to the compilation directory
 #so the program will start without manually copying stuff
-add_custom_command(
+add_custom_command(DEPENDS
   TARGET ${EXECUTABLE_NAME} PRE_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_CURRENT_SOURCE_DIR}/src/resources

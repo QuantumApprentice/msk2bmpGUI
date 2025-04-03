@@ -1007,7 +1007,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
             img_data->MSK_texture,
             350, 300, 1);
         draw_texture_to_framebuffer(
-            shaders->palette,
+            shaders->FO_pal,
             shaders->render_FRM_shader,
             &shaders->giant_triangle,
             img_data->framebuffer,

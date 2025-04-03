@@ -178,14 +178,12 @@ int main(int argc, char** argv)
     //TODO: add user input for a user-specified palette
     snprintf(vbuffer, sizeof(vbuffer), "%s%s", My_Variables.exe_directory, "resources/palette/fo_color.pal");
     My_Variables.FO_Palette = load_palette_from_path(vbuffer);
-    My_Variables.FO_Palette->num_colors = 228;
+    My_Variables.FO_Palette->num_colors = 228;  //TODO: delete? change so palette size is passed into load call
 
 
     Load_Config(&usr_info, My_Variables.exe_directory);
 
-    bool success = load_palette_to_float_array(My_Variables.shaders.palette, My_Variables.exe_directory);
-    if (!success) { printf("failed to load palette to float array for OpenGL\n"); }
-    My_Variables.shaders.pal = My_Variables.FO_Palette;
+    My_Variables.shaders.FO_pal = My_Variables.FO_Palette;
 
     My_Variables.shaders.giant_triangle = load_giant_triangle();
 
@@ -366,6 +364,7 @@ int main(int argc, char** argv)
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         ImGui::Begin("File Info###file");  // Create a window and append into it.
+
             //load files
             //used this to create an frm from palette LUT
             // if (ImGui::Button("Save palette animation...")) {
@@ -480,9 +479,11 @@ int main(int argc, char** argv)
 
         //update palette at regular intervals
         {
-            update_palette_array(My_Variables.shaders.palette,
-                                    My_Variables.CurrentTime_ms,
-                                &My_Variables.Palette_Update);
+
+            My_Variables.Palette_Update = update_PAL_array(
+                                            My_Variables.shaders.FO_pal,
+                                            My_Variables.CurrentTime_ms);
+
         }
 
         for (int i = 0; i < counter; i++) {
@@ -658,11 +659,14 @@ void Show_Preview_Window(struct variables *My_Variables, LF* F_Prop, int counter
         Show_Image_Render(My_Variables, F_Prop, &usr_info, counter);
     }
 
+    if (!F_Prop->file_open_window) {
+        //TODO: free img_data?
+    }
 }
 
 void Show_Palette_Window(variables* My_Variables) {
 
-    shader_info* shaders = &My_Variables->shaders;
+    Palette* pal = My_Variables->shaders.FO_pal;
 
     bool palette_window = true;
     std::string name = "Default Fallout palette ###palette";
@@ -675,23 +679,30 @@ void Show_Palette_Window(variables* My_Variables) {
 
             int index = y * 16 + x;
 
-            float r = shaders->palette[index*3 + 0];
-            float g = shaders->palette[index*3 + 1];
-            float b = shaders->palette[index*3 + 2];
+            float r = pal->colors[index].r/255.0f;
+            float g = pal->colors[index].g/255.0f;
+            float b = pal->colors[index].b/255.0f;
+            // float a = pal->colors[index].a/255.0f;
+
+            //give the first button an alpha channel checkerboard
+            //TODO: if load_palette_from_path() is changed to use
+            //      the first index as alpha = 0 always, then
+            //      comment int "float a =" above and delete
+            //      the below alpha switch
+            float alpha;
+            if (x == 0 && y == 0) {
+                alpha = 0.0;
+            } else {
+                alpha = 1.0;
+            }
 
             char color_info[12];
             snprintf(color_info, 12, "%d##aa%d", index, index);
-            if (ImGui::ColorButton(color_info, ImVec4(r, g, b, 1.0f))) {
+            if (ImGui::ColorButton(color_info, ImVec4(r, g, b, alpha), ImGuiColorEditFlags_AlphaPreview)) {
                 My_Variables->Color_Pick = (uint8_t)(index);
             }
 
             if (x < 15) ImGui::SameLine();
-
-            if ((index) >= 229) {
-                update_palette_array(shaders->palette,
-                                     My_Variables->CurrentTime_ms,
-                                    &My_Variables->Palette_Update);
-            }
         }
     }
 
@@ -1100,12 +1111,12 @@ bool save_TILE_popup(LF* F_Prop)
 
 
 
-bool save_PNG_popup(LF* F_Prop, float* FO_pal)// Palette* FO_pal)
+bool save_PNG_popup(LF* F_Prop)
 {
     image_data* img_data = &F_Prop->img_data;
     bool open = true;
     if (ImGui::BeginPopupModal("save_as_PNG", &open)) {
-        open = save_PNG_popup_INTERNAL(img_data, &usr_info, FO_pal);
+        open = save_PNG_popup_INTERNAL(img_data, &usr_info);
         ImGui::EndPopup();
     }
     return true;
@@ -1143,7 +1154,7 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         if (ImGui::Button("Save as PNG")) {
             ImGui::OpenPopup("save_as_PNG");
         }
-        save_PNG_popup(F_Prop, My_Variables->shaders.palette);
+        save_PNG_popup(F_Prop);
 
     if (!F_Prop->img_data.ANM_dir) ImGui::EndDisabled();
 

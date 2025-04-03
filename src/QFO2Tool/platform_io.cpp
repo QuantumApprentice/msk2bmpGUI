@@ -119,7 +119,9 @@ bool io_file_exists(const char* filename)
     struct stat stat_info;
     int error = stat(filename, &stat_info);
     if (error) {
-        printf("Error io_file_exists(): %s\n", strerror(errno));
+        if (errno != ENOENT) {
+            printf("Error io_file_exists(): %s\n", strerror(errno));
+        }
         return false;
     }
     return (stat_info.st_mode & S_IFREG);

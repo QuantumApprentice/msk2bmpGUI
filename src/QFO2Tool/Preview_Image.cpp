@@ -25,23 +25,13 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
 
     Surface* srfc = img_data->ANM_dir[img_data->display_orient_num].frame_data[img_data->display_frame_num];
     animate_SURFACE_to_sub_texture(
-        shaders->palette,
-        shaders->render_FRM_shader,
-        shaders->giant_triangle,
         img_data, srfc,
         My_Variables->CurrentTime_ms
     );
 
     draw_texture_to_framebuffer(
-        shaders->palette, shaders->render_FRM_shader, &shaders->giant_triangle,
+        shaders->FO_pal, shaders->render_FRM_shader, &shaders->giant_triangle,
         img_data->framebuffer, img_data->FRM_texture, img_data->width, img_data->height
-    );
-
-    draw_PAL_to_framebuffer(
-        shaders->palette,
-        shaders->render_FRM_shader,
-        &shaders->giant_triangle,
-        img_data
     );
 
     //handle frame display by orientation and number
@@ -70,7 +60,6 @@ void preview_FRM_SURFACE(variables* My_Variables, struct image_data* img_data, b
     //show FRM stats over FRM
     ImGui::SetCursorPos(top_of_window);
     if (show_stats) {
-        // show_image_stats_FRM(img_data, My_Variables->Font);
         show_image_stats_FRM_SURFACE(img_data, My_Variables->Font);
     }
 }

@@ -44,8 +44,7 @@ struct LF {
 };
 
 struct shader_info {
-    float palette[768];     //TODO: remove this
-    Palette* pal = NULL;
+    Palette* FO_pal = NULL;
     Shader* render_PAL_shader;
     Shader* render_FRM_shader;
     Shader* render_OTHER_shader;

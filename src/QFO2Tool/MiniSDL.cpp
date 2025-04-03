@@ -48,7 +48,7 @@ Surface* Create_8Bit_Surface(int width, int height, Palette* pal)
 
 //converts src to RGBA surface
 //returns RGBA Surface pointer
-Surface* Convert_Surface_to_RGBA(Surface* src, float* FO_pal)
+Surface* Convert_Surface_to_RGBA(Surface* src)
 {
     Surface* RGBA_surface = Create_RGBA_Surface(src->w, src->h);
     if (!RGBA_surface) {
@@ -62,20 +62,11 @@ Surface* Convert_Surface_to_RGBA(Surface* src, float* FO_pal)
         //convert from paletted to 32bit
         for (int i = 0; i < total_pxls; i++)
         {
-            if (*src_pxl < src->palette->num_colors) {
-                *dst_pxl = src->palette->colors[*src_pxl];
-            } else {
-                // if (FO_pal) {
-                //     Color tmp;
-                //     tmp.r = FO_pal[*src_pxl * 3 +0]*255;
-                //     tmp.g = FO_pal[*src_pxl * 3 +1]*255;
-                //     tmp.b = FO_pal[*src_pxl * 3 +2]*255;
-                //     *dst_pxl = tmp;
-                // }
+            if (*src_pxl == 0) {
+                continue;
             }
-            if (*src_pxl != 0) {
-                dst_pxl->a = 0xFF;
-            }
+            *dst_pxl = src->palette->colors[*src_pxl];
+            dst_pxl->a = 0xFF;
             src_pxl++;
             dst_pxl++;
         }

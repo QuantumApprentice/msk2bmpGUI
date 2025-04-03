@@ -184,12 +184,8 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
     //      also it only does this in draw_PAL_to_framebuffer()
     //      which also needs to be renamed
     if (Palette_Update || image_edited) {
-        // if (edit_MSK != true) {
         if (edit_data->ANM_dir[dir].frame_data) {
             animate_SURFACE_to_sub_texture(
-                shaders->palette,
-                shaders->render_FRM_shader,
-                shaders->giant_triangle,
                 edit_data, edit_struct[dir].frame_data[num],
                 My_Variables->CurrentTime_ms
             );
@@ -197,7 +193,7 @@ void Edit_Image(variables* My_Variables, ImVec2 img_pos,
 
         //TODO: rename?
         //      this takes 3 textures and draws them into 1 framebuffer
-        draw_PAL_to_framebuffer(shaders->palette,
+        draw_PAL_to_framebuffer(shaders->FO_pal,
                                 shaders->render_PAL_shader,
                                 &shaders->giant_triangle,
                                 edit_data);

@@ -115,7 +115,7 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             Surface* surface_32 = NULL;
 
             if (src_surface->channels != 4) {
-                surface_32 = Convert_Surface_to_RGBA(src_surface, NULL);
+                surface_32 = Convert_Surface_to_RGBA(src_surface);
             } else {
                 surface_32 = src_surface;
             }
@@ -174,7 +174,12 @@ bool crop_animation_SURFACE(image_data* src, image_data* dst, Palette* pal, int 
             Surface* dst_frame = dst->ANM_dir[i].frame_data[j];
             if (!dst_frame) {
                 //TODO: log out to file
-                printf("Error: Unable to allocate for surface_8: %d\n", __LINE__);
+                set_popup_warning(
+                    "[ERROR] crop_animation_SURFACE()\n\n"
+                    "Failed to allocate frame_data[j] surface8."
+                );
+                printf("Error: Unable to allocate frame_data[j] surface8: %d\n", __LINE__);
+
                 for (int i = 0; i < 6; i++) {
                     free(dst->ANM_dir[i].frame_data);
                 }

@@ -85,7 +85,7 @@ struct PNG_Save_Struct
 };
 
 
-char* save_PNG(PNG_Save_Struct save_nfo, int dir, int num, Surface* src, float* FO_pal)
+char* save_PNG(PNG_Save_Struct save_nfo, int dir, int num, Surface* src)
 {
     char* save_name = save_nfo.save_name;
     bool overwrite  = save_nfo.overwrite;
@@ -97,7 +97,7 @@ char* save_PNG(PNG_Save_Struct save_nfo, int dir, int num, Surface* src, float* 
         return file_name;
     }
 
-    Surface* srfc_RGBA = Convert_Surface_to_RGBA(src, FO_pal);
+    Surface* srfc_RGBA = Convert_Surface_to_RGBA(src);
     if (!srfc_RGBA) {
         //TODO: log out to txt file
         set_popup_warning(
@@ -193,7 +193,7 @@ bool ImDialog_save_PNG(PNG_Save_Struct* save_nfo)
 
 
 
-bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info, float* FO_pal)
+bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info)
 {
     static PNG_Save_Struct save_inf;
     save_inf.img_ptr = img_data;
@@ -244,7 +244,7 @@ bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info, float* F
         int num = img_data->display_frame_num;
 
         srfc = img_data->ANM_dir[dir].frame_data[num];
-        save_inf.match_name = save_PNG(save_inf, dir, num, srfc, FO_pal);
+        save_inf.match_name = save_PNG(save_inf, dir, num, srfc);
         if (save_inf.match_name) {
             return true;
         }
@@ -255,7 +255,7 @@ bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info, float* F
             for (int num = 0; num < img_data->ANM_dir[dir].num_frames; num++)
             {
                 srfc = img_data->ANM_dir[dir].frame_data[num];
-                save_inf.match_name = save_PNG(save_inf, dir, num, srfc, FO_pal);
+                save_inf.match_name = save_PNG(save_inf, dir, num, srfc);
                 if (save_inf.match_name) {
                     return true;
                 }
