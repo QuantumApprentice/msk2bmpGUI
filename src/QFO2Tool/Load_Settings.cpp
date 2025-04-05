@@ -59,7 +59,7 @@ void Load_Config(struct user_info *usr_info, char* exe_path)
     FILE * config_file_ptr = NULL;
 
 #ifdef QFO2_WINDOWS
-    errno_t error = _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"rb");
+    errno_t error = _wfopen_s(&config_file_ptr, io_utf8_wchar(path_buffer), L"rb");
 #elif defined(QFO2_LINUX)
     config_file_ptr = fopen(path_buffer, "rb");
 #endif
@@ -317,7 +317,7 @@ void write_cfg_file(struct user_info* usr_info, char* exe_path)
     //fopen_s(&config_file_ptr, "config\\msk2bmpGUI.cfg", "wt");
 
 #ifdef QFO2_WINDOWS
-    errno_t err = _wfopen_s(&config_file_ptr, tinyfd_utf8to16(path_buffer), L"wb");
+    errno_t err = _wfopen_s(&config_file_ptr, io_utf8_wchar(path_buffer), L"wb");
 #elif defined(QFO2_LINUX)
     config_file_ptr = fopen(path_buffer, "wb");
 #endif

@@ -368,7 +368,7 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 
 #ifdef QFO2_WINDOWS
     // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
-    wchar_t *w_save_name = tinyfd_utf8to16(save_name);
+    wchar_t *w_save_name = io_utf8_wchar(save_name);
 
     _wfopen_s(&file_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
@@ -589,39 +589,6 @@ const char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
     return ".FRM";
 }
 
-//TODO: delete?
-char* Save_IMG_STB(Surface* b_surface, user_info* usr_nfo)
-{
-    char* Save_File_Name;
-    const char* lFilterPatterns[2] = {"*.BMP", ""};
-    char buffer[MAX_PATH];
-    snprintf(buffer, MAX_PATH, "%s\\temp001.bmp", usr_nfo->default_save_path);
-
-    Save_File_Name = tinyfd_saveFileDialog(
-        "default_name",
-        buffer,
-        2,
-        lFilterPatterns,
-        nullptr);
-
-    if (!Save_File_Name)
-    {
-    }
-    else
-    {
-        // TODO: check for existing file first
-        // SDL_SaveBMP(b_surface, Save_File_Name);
-
-        // TODO: add support for more file formats (GIF in particular)
-        // IMG_SavePNG();
-
-        // parse Save_File_Name to isolate the directory and store in default_save_path
-        std::filesystem::path p(Save_File_Name);
-        strncpy(usr_nfo->default_save_path, p.parent_path().string().c_str(), MAX_PATH);
-    }
-    return Save_File_Name;
-}
-
 //checks if msk2bmpGUI.cfg exists,
 //if it doesn't, creates the file (including folder)
 //then it writes current settings to cfg file
@@ -636,7 +603,7 @@ bool check_and_write_cfg_file(user_info* user_info, char* exe_path)
 
 #ifdef QFO2_WINDOWS
     // Windows w/wide character support
-    _wfopen_s(&cfg_file_ptr, tinyfd_utf8to16(cfg_filepath_buffer), L"rb");
+    _wfopen_s(&cfg_file_ptr, io_utf8_wchar(cfg_filepath_buffer), L"rb");
 #elif defined(QFO2_LINUX)
     cfg_file_ptr = fopen(cfg_filepath_buffer, "rb");
 #endif
@@ -779,7 +746,7 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
             }
 
 #ifdef QFO2_WINDOWS
-            wchar_t* w_save_name = tinyfd_utf8to16(save_path);
+            wchar_t* w_save_name = io_utf8_wchar(save_path);
             _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
             File_ptr = fopen(save_path, "wb");
@@ -1412,7 +1379,7 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
     }
 
 #ifdef QFO2_WINDOWS
-    wchar_t* w_save_name = tinyfd_utf8to16(Save_File_Name);
+    wchar_t* w_save_name = io_utf8_wchar(Save_File_Name);
     _wfopen_s(&File_ptr, w_save_name, L"wb");
 #elif defined(QFO2_LINUX)
     File_ptr = fopen(Save_File_Name, "wb");

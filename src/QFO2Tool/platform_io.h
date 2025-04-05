@@ -13,6 +13,7 @@ bool io_isdir(char* dir_path);
 
 char* io_wchar_utf8(NATIVE_STRING_TYPE* src);
 wchar_t* io_utf8_wchar(char* src);
+char* io_get_cwd();
 
 
 void* io_open_dir(char* dir_name);

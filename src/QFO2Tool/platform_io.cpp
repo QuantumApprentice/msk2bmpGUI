@@ -16,7 +16,6 @@ struct Directory {
     WIN32_FIND_DATA dir_struct;
 };
 
-
 wchar_t* io_get_err_str(DWORD err)
 {
     static wchar_t lpMsgBuf[1024];
@@ -92,6 +91,12 @@ wchar_t* io_utf8_wchar(char* src)
     return buff;
 }
 
+char* io_get_cwd()
+{
+    return _getcwd(NULL, 0);
+}
+
+
 // return 0 == match, <0 == less than match, >0 == greater than match
 bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
@@ -108,7 +113,7 @@ int io_strncmp(const char* str1, const char* str2, int num_char)
 bool io_isdir(char* dir_path)
 {
     struct __stat64 stat_info;
-    int error = _wstat64(tinyfd_utf8to16(dir_path), &stat_info);
+    int error = _wstat64(io_utf8_wchar(dir_path), &stat_info);
     if (error == 0 && (stat_info.st_mode & _S_IFDIR) != 0) {
         /* dir_path exists and is a directory */
         return true;
@@ -252,6 +257,12 @@ bool io_make_dir(char* dir_path)
 #include <strings.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <unistd.h>
+
+char* io_get_cwd()
+{
+    return getcwd(NULL, 0);
+}
 
 // return 0 == match, <0 == less than match, >0 == greater than match
 int io_strncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)

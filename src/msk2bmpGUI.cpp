@@ -253,7 +253,7 @@ int main(int argc, char** argv)
     } else {
         if (my_argc > 1) {
             LF* F_Prop = &My_Variables.F_Prop[counter];
-            F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, tinyfd_utf16to8(my_argv[1]));
+            F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, io_wchar_utf8(my_argv[1]));
             if (F_Prop->file_open_window)
             {
                 counter++;
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
         //TODO: this currently requires full path from my_argv,
         //      need to somehow implement relative pathing to load relative files
         //      (for instance, in the same folder)
-        //TODO: actually, I should probably exand this to parse the string for
+        //TODO: actually, I should probably expand this to parse the string for
         //      automated stuff
         LF* F_Prop = &My_Variables.F_Prop[counter];
         F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables.shaders, &F_Prop->img_data, my_argv[1]);
@@ -1061,9 +1061,9 @@ bool save_FRM_popup(LF* F_Prop)
     //TODO: replace ImGui::Begin() with BeginPopupModal()?
     ImGui::Begin("Export FRM", &open_window);
         static int e;
-        ImGui::RadioButton("Single Frame",     &e, 0);
-        ImGui::RadioButton("Single Direction", &e, 1);
-        ImGui::RadioButton("All Directions",   &e, 2);
+        ImGui::RadioButton("Selected Frame",     &e, 0);
+        ImGui::RadioButton("Selected Direction", &e, 1);
+        ImGui::RadioButton("All Directions",     &e, 2);
         sv_info.s_type = (Save_Type)e;
 
         char dup_name[MAX_PATH] = {};
@@ -1150,7 +1150,6 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         }
     }
 
-    // static bool open_export = false;
     if (!F_Prop->img_data.ANM_dir) ImGui::BeginDisabled();
         if (ImGui::Button("Save as PNG")) {
             ImGui::OpenPopup("save_as_PNG");
@@ -1176,7 +1175,6 @@ void main_window_bttns(variables* My_Variables, int index, int* counter)
         if (edit_data->type == TILE) {
             open_save = save_TILE_popup(F_Prop);
         }
-        // open_save = popup_save_menu(&disabled, &save_type, &single_dir_b);
     }
     if (disabled) ImGui::EndDisabled();
     ImGui::Separator();
@@ -1191,10 +1189,6 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
     image_data* edit_data  = &F_Prop->edit_data;
     //TODO: save as animated image, needs more work
     //      specifically need to save as GIF at least
-    static bool open_window     = false;
-    static bool single_dir_b    = false;
-    static int  save_type       = UNK;
-    static image_data* data_ptr = NULL;
 
     int dir = edit_data->display_orient_num;
     int num = edit_data->display_frame_num;
@@ -1318,75 +1312,15 @@ void contextual_buttons(variables* My_Variables, int window_number_focus)
 
         ImGui::Separator();
 
-        if (img_data->type == FRM && img_data->ANM_dir[img_data->display_orient_num].num_frames > 1) {
-            if (ImGui::Button("Save as Animation...")) {
-                open_window = true;
-                data_ptr = img_data;
-            }
-        }
-
         if (img_data->type == OTHER && img_data->ANM_dir[img_data->display_orient_num].num_frames > 1) {
             if (ImGui::Button("Convert Animation to FRM for Editing")) {
                 F_Prop->show_image_render = crop_animation_SURFACE(img_data, edit_data, My_Variables->FO_Palette, 0, &My_Variables->shaders);
             }
         }
     }
-
-
-
-
-    //render window buttons
-    if (My_Variables->render_wind_focused) {
-
-        if (F_Prop->edit_data.type == FRM && F_Prop->edit_data.FRM_hdr->Frames_Per_Orient > 1) {
-            if (ImGui::Button("...Save as Animation...")) {
-                open_window = true;
-                data_ptr = edit_data;
-            }
-            if (ImGui::Button("Save as Single Image...")) {
-                open_window = true;
-
-                if (save_type == OTHER) {
-                    Save_IMG_STB(img_data->ANM_dir[0].frame_data[0],
-                                &usr_info);
-                }
-                if (save_type == FRM) {
-                    ImGui::Text("replaced?");
-                    // Save_FRM_Image_OpenGL(edit_data, &usr_info);
-                }
-            }
-        }
-    }
-
-
-
-
-    if (open_window) {
-        popup_save_menu(&open_window, &save_type, &single_dir_b);
-        if (save_type == OTHER) {
-            //TODO: save as GIF
-        }
-        if (save_type == FRM) {
-            // Save_FRM_Animation_OpenGL(data_ptr, &usr_info, F_Prop->c_name);
-            open_window = false;
-            single_dir_b  = false;
-            save_type   = UNK;
-            data_ptr    = NULL;
-        }
-        if (save_type == FRx && !single_dir_b) {
-            // Save_FRx_Animation_OpenGL(data_ptr, usr_info.default_save_path, F_Prop->c_name);
-            open_window = false;
-            single_dir_b  = false;
-            save_type   = UNK;
-            data_ptr    = NULL;
-        }
-    }
-
-
-
 }
 
-//TODO: make this menu nicer
+//TODO: delete? not used anymore
 bool popup_save_menu(bool* open_window, int* save_type, bool* single_dir)
 {
     bool window = true;

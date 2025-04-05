@@ -57,7 +57,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     int file_length = 0;
 
 #ifdef QFO2_WINDOWS
-    errno_t err = _wfopen_s(&File_ptr, tinyfd_utf8to16(file_name), L"rb");
+    errno_t err = _wfopen_s(&File_ptr, io_utf8_wchar(file_name), L"rb");
 #elif defined(QFO2_LINUX)
     File_ptr = fopen(file_name, "rb");
 #endif

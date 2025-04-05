@@ -39,7 +39,7 @@ char *Program_Directory()
 #ifdef QFO2_WINDOWS
     wchar_t buff[MAX_PATH] = {};
     GetModuleFileNameW(NULL, buff, MAX_PATH);
-    char *utf8_buff = strdup(tinyfd_utf16to8(buff));
+    char *utf8_buff = strdup(io_wchar_utf8(buff));
 #elif defined(QFO2_LINUX)
     char *utf8_buff = (char *)malloc(MAX_PATH * sizeof(char));
 
@@ -83,7 +83,7 @@ bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_ar
                 break;
             }
         }
-        
+
         ImGui::Text(
             "%s\n\n"
             "Is this a group of sequential animation frames?",
@@ -462,22 +462,22 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         w_next = w_frst;
     }
 
-    char *temp = tinyfd_utf16to8(w_prev.c_str());
+    char *temp = io_wchar_utf8(w_prev.c_str());
     int temp_size = strlen(temp);
     memcpy(prev, temp, temp_size);
     prev[temp_size] = '\0';
 
-    temp = tinyfd_utf16to8(w_next.c_str());
+    temp = io_wchar_utf8(w_next.c_str());
     temp_size = strlen(temp);
     memcpy(next, temp, temp_size);
     next[temp_size] = '\0';
 
-    temp = tinyfd_utf16to8(w_frst.c_str());
+    temp = io_wchar_utf8(w_frst.c_str());
     temp_size = strlen(temp);
     memcpy(frst, temp, temp_size);
     frst[temp_size] = '\0';
 
-    temp = tinyfd_utf16to8(w_last.c_str());
+    temp = io_wchar_utf8(w_last.c_str());
     temp_size = strlen(temp);
     memcpy(last, temp, temp_size);
     last[temp_size] = '\0';
@@ -640,7 +640,6 @@ std::set<std::filesystem::path> handle_subdirectory_set(const std::filesystem::p
     return animation_images;
 }
 
-// #include <dirent.h>
 bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
 {
     bool is_dir = io_isdir(dir_name);
@@ -715,78 +714,6 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
 
     return false;
 }
-
-// //TODO: delete? example of C++ filesystem::path handling
-// std::optional<bool> handle_directory_drop(char *file_name, LF *F_Prop, int *window_number_focus, int *counter,
-//                                           shader_info *shaders)
-// {
-// #ifdef QFO2_WINDOWS
-//     //TODO: which method am I using?
-//     std::filesystem::path path(tinyfd_utf8to16(file_name));
-//     //std::filesystem::path path(file_name).u8string().c_str();
-// #elif defined(QFO2_LINUX)
-//     std::filesystem::path path(file_name);
-// #endif
-//     std::vector<std::filesystem::path> animation_images;
-//     std::error_code error;
-//     bool is_directory = std::filesystem::is_directory(path, error);
-//     if (error)
-//     {
-//         //TODO: log to file
-//         set_popup_warning(
-//             "[ERROR] handle_directory_drop()\n\n"
-//             "Error checking if dropped file is a directory.\n"
-//             "This usually happens when the text encoding is not UTF8/16."
-//         );
-//         // tinyfd_notifyPopup("Error checking if dropped file is a directory",
-//         //                    "This usually happens when the text encoding is not UTF8/16.",
-//         //                    "info");
-//         printf("error checking if file_name is directory");
-//         return std::nullopt;
-//     }
-//     if (!is_directory) {
-//         return false;
-//     }
-//     bool is_subdirectory = false;
-//     bool multiple_files  = false;
-//     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(path))
-//     {
-//         is_subdirectory = file.is_directory(error);
-//         if (error) {
-//             //TODO: log to file
-//             set_popup_warning(
-//                 "[ERROR] handle_directory_drop()\n\n"
-//                 "Error when checking if file_name is directory."
-//             );
-//             printf("error when checking if file_name is directory");
-//             return std::nullopt;
-//         }
-//         if (is_subdirectory) {
-//             // handle different directions (NE/SE/NW/SW...etc) in subdirectories (1 level so far)
-//             std::vector<std::filesystem::path> images = handle_subdirectory_vec(file.path());
-//             if (!images.empty()) {
-//                 // open_multiple_files_POPUP(
-//                 //     images, F_Prop, shaders, &multiple_files, counter, window_number_focus
-//                 // );
-//                 open_multiple_files(images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-//             }
-//             continue;
-//         }
-//         else {
-//             animation_images.push_back(file);
-//         }
-//     }
-//     if (is_subdirectory) {
-//         return true;
-//     } else {
-//         if (animation_images.empty()) {
-//             return false;
-//         }
-//         else {
-//             return open_multiple_files(animation_images, F_Prop, shaders, &multiple_files, counter, window_number_focus);
-//         }
-//     }
-// }
 
 bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
 {
