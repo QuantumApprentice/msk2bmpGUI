@@ -63,6 +63,7 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
 #endif
 
     if (!File_ptr) {
+        //TODO: log out to file
         set_popup_warning(
             "[ERROR] load_entire_file()\n\n"
             "Can't open file."

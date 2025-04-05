@@ -368,7 +368,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     const std::filesystem::path &directory = file_path.parent_path();
     size_t parent_path_size = directory.native().size();
 
-    wchar_t *w_current = tinyfd_utf8to16(current);
+    wchar_t *w_current = io_utf8_wchar(current);
     std::filesystem::path w_next;
     std::filesystem::path w_prev;
     std::filesystem::path w_frst;

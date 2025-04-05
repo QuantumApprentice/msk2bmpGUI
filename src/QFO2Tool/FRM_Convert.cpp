@@ -41,16 +41,17 @@ uint8_t convert_colors(uint8_t bytes) {
 //TODO: rewrite this to more generically load palettes
 //TODO: index 0 might be alpha channel only
 //      need to load alternative palettes and check
-//      if the game always assigns alpha to index 0 regardless of palette info
+//      if the game always assigns alpha to index 0
+//      regardless of palette info
 //  https://falloutmods.fandom.com/wiki/PAL_File_Format
 //TODO: also, move this function to load_files.h/cpp
 Palette* load_palette_from_path(const char* path)
 {
-// #ifdef QFO2_WINDOWS
     FILE* file_ptr = fopen(path, "rb");
     if (file_ptr == NULL) {
-//TODO: replace color.pal w/name
-//      (possibly modify messagebox for user provided palette)
+        //TODO: replace color.pal w/name
+        //      (possibly modify messagebox for user provided palette)
+        //TODO: log out to file
         set_popup_warning(
             "[ERROR] load_palette_from_path()\n"
             "Unable to load color.pal, the default Fallout color palette."
@@ -59,20 +60,6 @@ Palette* load_palette_from_path(const char* path)
         printf("Current Working Directory: %s\n", io_get_cwd());
         return NULL;
     }
-// #elif defined(QFO2_LINUX)
-    // int file_ptr = open(path, O_RDONLY);
-    // if (file_ptr < 0) {
-//TODO: replace color.pal w/name
-//      (possibly modify messagebox for user provided palette)
-        // set_popup_warning(
-        //     "[ERROR] load_palette_from_path()\n"
-        //     "Unable to load color.pal, the default Fallout color palette."
-        // );
-        // printf("Error opening color.pal \n%d: %s\n", errno, strerror(errno));
-        // printf("Current Working Directory: %s\n", getcwd(NULL, 0));
-        // return NULL;
-    // }
-// #endif
 
     Palette* path_palette = (Palette*)malloc(sizeof(Palette));
 
