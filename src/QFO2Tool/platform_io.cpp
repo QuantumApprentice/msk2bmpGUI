@@ -68,7 +68,7 @@ char* io_wchar_utf8(NATIVE_STRING_TYPE* src)
     return buff;
 }
 
-wchar_t* io_utf8_wchar(char* src)
+wchar_t* io_utf8_wchar(const char* src)
 {
     int len = strlen(src);
     static wchar_t buff[MAX_PATH];

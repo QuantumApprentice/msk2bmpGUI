@@ -12,7 +12,7 @@ int io_strncmp(const char* str1, const char* str2, int num_char);
 bool io_isdir(char* dir_path);
 
 char* io_wchar_utf8(NATIVE_STRING_TYPE* src);
-wchar_t* io_utf8_wchar(char* src);
+wchar_t* io_utf8_wchar(const char* src);
 char* io_get_cwd();
 
 
