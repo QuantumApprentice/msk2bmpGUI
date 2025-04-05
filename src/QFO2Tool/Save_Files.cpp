@@ -741,10 +741,12 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
 
     // create basic frame information for saving
     // every Map TILE has the same width/height/size
-    FRM_Frame frame_data = {};
-    frame_data.Frame_Width  = MAP_TILE_W;
-    frame_data.Frame_Height = MAP_TILE_H;
-    frame_data.Frame_Size   = MAP_TILE_SIZE;
+    FRM_Frame frame_data;//   = {};
+    frame_data.Frame_Width    = MAP_TILE_W;
+    frame_data.Frame_Height   = MAP_TILE_H;
+    frame_data.Frame_Size     = MAP_TILE_SIZE;
+    frame_data.Shift_Offset_x = 0;
+    frame_data.Shift_Offset_y = 0;
     B_Endian::flip_frame_endian(&frame_data);
 
 

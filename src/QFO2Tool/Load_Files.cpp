@@ -31,7 +31,7 @@
 
 #include "timer_functions.h"
 #include "ImGui_Warning.h"
-#include <ImFileDialog.h>
+#include "ImFileDialog.h"
 
 char *Program_Directory()
 {
@@ -119,7 +119,7 @@ bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_ar
             for (int i = 0; i < 6; i++) {
                 for (int j = 0; j < images_arr[i].animation_images.size(); j++) {
                     LF* F_Prop = &My_Variables->F_Prop[*counter];
-                    const char* path = images_arr[i].animation_images[j].c_str();
+                    const char* path = (char*)images_arr[i].animation_images[j].c_str();
                     F_Prop->file_open_window = File_Type_Check(F_Prop, &My_Variables->shaders, &F_Prop->img_data, path);
                     if (F_Prop->file_open_window) {
                         (*counter)++;
@@ -165,7 +165,7 @@ bool Supported_Format(const std::filesystem::path &file)
     while (i < k)
     {
         //compare extension to determine if file is viewable
-        if (io_wstrncmp(file.extension().c_str(), supported[i], 5) == 0)
+        if (io_wstrncmp(file.extension().c_str(), supported[i], 6) == 0)
         {
             return true;
         }
@@ -304,11 +304,11 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
             {
                 int a_size = a.native().size();
                 int b_size = b.native().size();
-                int larger_size = (a_size < b_size) ? a_size : b_size;
+                int larger_size = (a_size > b_size) ? a_size : b_size;
 #ifdef QFO2_WINDOWS
-                return io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+                return (io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
 #elif defined(QFO2_LINUX)
-                return io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size);
+                return (io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
 #endif
             });
 
@@ -673,7 +673,7 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
 
         //get the file?/folder? name?
         char buffer[MAX_PATH];
-        snprintf(buffer, MAX_PATH, "%s/%s", dir_name, name);
+        snprintf(buffer, MAX_PATH, "%s%c%s", dir_name, PLATFORM_SLASH, name);
         // printf("d_name:   %s\n", iterator->d_name);
 
         if (io_isdir(buffer)) {
@@ -936,7 +936,7 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, user_info *usr_info, 
         ifd::FileDialog::Instance().Close();
     }
 
-    bool success;
+    bool success = false;
     if (load_file && strlen(load_name) > 1) {
         success = File_Type_Check(F_Prop, shaders, img_data, load_name);
     }

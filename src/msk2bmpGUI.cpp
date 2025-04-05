@@ -247,8 +247,8 @@ int main(int argc, char** argv)
 #ifdef QFO2_WINDOWS
     if (my_argv == NULL) {
         MessageBox(NULL,
-            "Something went wrong?",
-            "argv is NULL?",
+            L"Something went wrong?",
+            L"argv is NULL?",
             MB_ABORTRETRYIGNORE);
     } else {
         if (my_argc > 1) {
@@ -1066,7 +1066,7 @@ bool save_FRM_popup(LF* F_Prop)
         ImGui::RadioButton("All Directions",   &e, 2);
         sv_info.s_type = (Save_Type)e;
 
-        char dup_name[MAX_PATH];
+        char dup_name[MAX_PATH] = {};
 
         if (open_window) {
             open_window = ImDialog_save_FRM_SURFACE(img_data, &usr_info, &sv_info);
@@ -1098,7 +1098,7 @@ bool save_MSK_popup(LF* F_Prop)
 bool save_TILE_popup(LF* F_Prop)
 {
     image_data* img_data = &F_Prop->edit_data;
-    Save_Info* sv_info;
+    Save_Info* sv_info = {};
 
     bool open_window = true;
     //TODO: replace ImGui::Begin() with BeginPopupModal()?

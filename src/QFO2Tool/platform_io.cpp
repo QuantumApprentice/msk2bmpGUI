@@ -4,14 +4,96 @@
 #include "platform_io.h"
 #include "Image2Texture.h"
 #include "tinyfiledialogs.h"
+#include "stb_image.h"
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
 #include <string.h>
 #include <direct.h>
 
+struct Directory {
+    HANDLE          hnd;
+    WIN32_FIND_DATA dir_struct;
+};
+
+
+wchar_t* io_get_err_str(DWORD err)
+{
+    static wchar_t lpMsgBuf[1024];
+
+    if (FormatMessage(
+        //FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        err,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        lpMsgBuf,
+        1024,
+        NULL) == 0) {
+        int wtf = GetLastError();
+        MessageBox(NULL, TEXT("FormatMessage failed"), TEXT("Error"), MB_OK);
+        ExitProcess(err);
+    }
+
+    return lpMsgBuf;
+}
+
+char* io_wchar_utf8(NATIVE_STRING_TYPE* src)
+{
+    int len = wcslen(src);
+    static char buff[MAX_PATH];
+    LPBOOL lpUsedDefaultChar = false;
+    int count = WideCharToMultiByte(
+        CP_UTF8,
+        0,
+        src,
+        -1,                 //  -1 if string is null-terminated
+        buff,
+        MAX_PATH,
+        NULL,
+        lpUsedDefaultChar
+    );
+
+    if (count == 0) {
+        int err = GetLastError();
+        printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
+        free(buff);
+        return NULL;
+    }
+
+    if (lpUsedDefaultChar) {
+        printf("io_wchar_char() : Used a default char in conversion.\n");
+    }
+
+    return buff;
+}
+
+wchar_t* io_utf8_wchar(char* src)
+{
+    int len = strlen(src);
+    static wchar_t buff[MAX_PATH];
+    int count = MultiByteToWideChar(
+        CP_UTF8,
+        0,
+        src,
+        -1,                 // -1, the function processes the entire input string, including the terminating null character
+        buff,
+        MAX_PATH
+    );
+
+    if (count == 0) {
+        int err = GetLastError();
+        printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
+        free(buff);
+        return NULL;
+    }
+
+    return buff;
+}
+
 // return 0 == match, <0 == less than match, >0 == greater than match
-int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
     return _wcsnicmp(str1, str2, num_char);
 }
@@ -35,18 +117,78 @@ bool io_isdir(char* dir_path)
     //return (stat_info.st_mode & S_IFDIR);
 }
 
+
+
 //returns false if dir_name not found?
-bool io_open_dir(const char* dir_name, void* dir_struct)
+void* io_open_dir(char* dir_name)
 {
-    // LPWIN32_FIND_DATAA
-    // dir_struct = opendir(dir_name);
-    HANDLE whut = FindFirstFileA(dir_name, dir_struct);
-    if (whut == INVALID_HANDLE_VALUE) {
+    if (strlen(dir_name) + 3 > MAX_PATH) {
         //TODO: log to file
+        printf("Directory name too long: %s\n", dir_name);
+        return NULL;
+    }
+
+    char search_buff[MAX_PATH];
+    snprintf(search_buff, MAX_PATH, "%s\\*", dir_name);
+
+    wchar_t* str = io_utf8_wchar(search_buff);
+    Directory* dir = (Directory*)calloc(1, sizeof(Directory));
+    dir->hnd = FindFirstFile(str, &dir->dir_struct);
+    if (dir->hnd == INVALID_HANDLE_VALUE) {
+        DWORD err = GetLastError();
+        if (err == ERROR_FILE_NOT_FOUND) {
+            printf("File not found\n");
+            return NULL;
+        }
+
+        //TODO: log to file
+        printf("Error: io_open_dir(): %d\n%S\n", err, io_get_err_str(err));
+        return NULL;
+    }
+
+    return (void*)dir;
+}
+
+char* io_scan_dir(void* dir_stream)
+{
+    Directory*       ptr = (Directory*)dir_stream;
+    HANDLE           hnd = ptr->hnd;
+    WIN32_FIND_DATA data = ptr->dir_struct;
+
+    int success = FindNextFile(
+        hnd,
+        &data
+    );
+    if (success == 0) {
+        //TODO: log to file
+        DWORD err = GetLastError();
+        if (err != ERROR_NO_MORE_FILES) {
+            printf("Error: io_scan_dir() : %d\n%S\n", err, io_get_err_str(err));
+        }
+        return NULL;
+    }
+
+    char* file_name = io_wchar_utf8(data.cFileName);
+
+    return file_name;
+}
+
+bool io_close_dir(void* dir_stream)
+{
+    Directory* ptr = (Directory*)dir_stream;
+    HANDLE     hnd = ptr->hnd;
+
+    int err = FindClose(hnd);
+    if (err == 0) {
+        //TODO: log to file
+        DWORD err = GetLastError();
+        printf("Error: io_close_dir() : %d\n%S\n", err, io_get_err_str(err));
         return false;
     }
+
     return true;
 }
+
 
 int io_file_size(const char* filename)
 {
@@ -54,6 +196,8 @@ int io_file_size(const char* filename)
     int error = stat(filename, &stat_info);
     if (error) {
         //TODO: log to file
+        DWORD err = GetLastError();
+        printf("Error: io_close_dir() : %d\n%S\n", err, io_get_err_str(err));
         return 0;
     }
     return (stat_info.st_size);
@@ -130,7 +274,7 @@ bool io_isdir(char* dir_path)
 }
 
 //returns DIR* stream for linux
-void* io_open_dir(const char* dir_name)
+void* io_open_dir(char* dir_name)
 {
     DIR* dir_stream = opendir(dir_name);
 

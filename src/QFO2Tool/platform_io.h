@@ -3,7 +3,7 @@
 
 #ifdef QFO2_WINDOWS
     #define NATIVE_STRING_TYPE          const wchar_t
-    int io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
+    bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
 #elif defined(QFO2_LINUX)
     #define NATIVE_STRING_TYPE          const char
 #endif
@@ -11,8 +11,11 @@
 int io_strncmp(const char* str1, const char* str2, int num_char);
 bool io_isdir(char* dir_path);
 
+char* io_wchar_utf8(NATIVE_STRING_TYPE* src);
+wchar_t* io_utf8_wchar(char* src);
 
-void* io_open_dir(const char* dir_name);
+
+void* io_open_dir(char* dir_name);
 char* io_scan_dir(void* dir_stream);
 bool io_close_dir(void* dir_stream);
 
