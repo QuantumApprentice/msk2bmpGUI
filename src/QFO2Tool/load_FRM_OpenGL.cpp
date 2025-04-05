@@ -56,11 +56,11 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
     FILE* File_ptr;
     int file_length = 0;
 
-#ifdef QFO2_WINDOWS
-    errno_t err = _wfopen_s(&File_ptr, io_utf8_wchar(file_name), L"rb");
-#elif defined(QFO2_LINUX)
+// #ifdef QFO2_WINDOWS
+//     errno_t err = _wfopen_s(&File_ptr, io_utf8_wchar(file_name), L"rb");
+// #elif defined(QFO2_LINUX)
     File_ptr = fopen(file_name, "rb");
-#endif
+// #endif
 
     if (!File_ptr) {
         //TODO: log out to file
@@ -69,14 +69,14 @@ uint8_t* load_entire_file(const char* file_name, int* file_size)
             "Can't open file."
         );
 
-#ifdef QFO2_WINDOWS
-        printf("error, can't open FRM file, error: %d : L%d", err, __LINE__);
-        if (err == 13) {
-            printf("file opened by another program? : L%d", __LINE__);
-        }
-#elif defined(QFO2_LINUX)
+// #ifdef QFO2_WINDOWS
+//         printf("error, can't open FRM file, error: %d : L%d", err, __LINE__);
+//         if (err == 13) {
+//             printf("file opened by another program? : L%d", __LINE__);
+//         }
+// #elif defined(QFO2_LINUX)
         printf("Error: load_entire_file(), Can't open FRM file, error: %d\t%s : L%d\n", errno, strerror(errno), __LINE__);
-#endif
+// #endif
         return NULL;
     }
 
