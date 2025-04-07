@@ -145,18 +145,26 @@ bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_ar
     return false;
 }
 
-#ifdef QFO2_WINDOWS
 // Checks the file extension against known working extensions
 // Returns true if any extension matches, else return false
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
+#ifdef QFO2_WINDOWS
     constexpr const static wchar_t supported[13][6]{
         L".FRM", L".MSK", L".PNG",
         L".JPG", L".JPEG", L".BMP",
         L".GIF",
         L".FR0", L".FR1", L".FR2", L".FR3", L".FR4", L".FR5"
         };
+#elif defined(QFO2_LINUX)
+    constexpr const static char supported[13][6]{
+        ".FRM", ".MSK",
+        ".PNG", ".BMP", ".JPG", ".JPEG",
+        ".GIF",
+        ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
+    };
+#endif
     int k = sizeof(supported) / (6 * sizeof(wchar_t));
 
 
@@ -165,7 +173,8 @@ bool Supported_Format(const std::filesystem::path &file)
     while (i < k)
     {
         //compare extension to determine if file is viewable
-        if (io_wstrncmp(file.extension().c_str(), supported[i], 6) == 0)
+        //if (io_wstrncmp(file.extension().c_str(), supported[i], 6) == 0)
+        if (io_strncasecmp(file.extension().c_str(), supported[i], 6) == 0)
         {
             return true;
         }
@@ -174,35 +183,35 @@ bool Supported_Format(const std::filesystem::path &file)
 
     return false;
 }
-#elif defined(QFO2_LINUX)
-
-// Checks the file extension against known working extensions
-// Returns true if any extension matches, else return false
-bool Supported_Format(const std::filesystem::path &file)
-{
-    // array of compatible filetype extensions
-    constexpr const static char supported[13][6]{
-        ".FRM", ".MSK",
-        ".PNG", ".BMP", ".JPG", ".JPEG",
-        ".GIF",
-        ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
-        };
-    int k = sizeof(supported) / (6 * sizeof(char));
-
-    // actual extension check
-    int i = 0;
-    while (i < k) {
-        //compare extension to determine if file is viewable
-        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
-        {
-            return true;
-        }
-        i++;
-    }
-
-    return false;
-}
-#endif
+//#elif defined(QFO2_LINUX)
+//
+//// Checks the file extension against known working extensions
+//// Returns true if any extension matches, else return false
+//bool Supported_Format(const std::filesystem::path &file)
+//{
+//    // array of compatible filetype extensions
+//    constexpr const static char supported[13][6]{
+//        ".FRM", ".MSK",
+//        ".PNG", ".BMP", ".JPG", ".JPEG",
+//        ".GIF",
+//        ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
+//        };
+//    int k = sizeof(supported) / (6 * sizeof(char));
+//
+//    // actual extension check
+//    int i = 0;
+//    while (i < k) {
+//        //compare extension to determine if file is viewable
+//        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
+//        {
+//            return true;
+//        }
+//        i++;
+//    }
+//
+//    return false;
+//}
+//#endif
 
 //TODO: delete, not used anywhere
 // tried to handle a subdirectory in regular C, but didn't actually finish making this
@@ -305,11 +314,12 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
                 int a_size = a.native().size();
                 int b_size = b.native().size();
                 int larger_size = (a_size > b_size) ? a_size : b_size;
-#ifdef QFO2_WINDOWS
-                return (io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
-#elif defined(QFO2_LINUX)
-                return (io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
-#endif
+                return (io_strncasecmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
+//#ifdef QFO2_WINDOWS
+//                return (io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
+//#elif defined(QFO2_LINUX)
+//                return (io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
+//#endif
             });
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
@@ -401,31 +411,41 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 iter_file = (file.path().c_str() + parent_path_size);
 
                 // if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
-                if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                                       iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
-                                                       NULL, NULL, NULL) - 2 < 0))
-                {io_strncasecmp
+                if (w_frst.empty() || 
+                    (io_strncasecmp((w_frst.c_str() + parent_path_size), iter_file, MAX_PATH)
+                    //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    //                                   iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
+                    //                                   NULL, NULL, NULL) - 2 
+                        < 0))
+                {//io_strncasecmp
                     w_frst = file;
                 }
                 // if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
-                if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                                       iter_file, -1, (w_last.c_str() + parent_path_size), -1,
-                                                       NULL, NULL, NULL) - 2 > 0))
+                if (w_last.empty() || 
+                    (io_strncasecmp((w_last.c_str() + parent_path_size), iter_file, MAX_PATH)
+                    //    (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    //                                   iter_file, -1, (w_last.c_str() + parent_path_size), -1,
+                    //                                   NULL, NULL, NULL) - 2
+                    > 0))
                 {
                     w_last = file;
                 }
 
                 // int cmp = wcscmp(iter_file, w_current + parent_path_size);
-                int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                          iter_file, -1, (w_current + parent_path_size), -1,
-                                          NULL, NULL, NULL) - 2;
+                int cmp = io_strncasecmp((w_current + parent_path_size), iter_file, MAX_PATH);
+                    //CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                    //                      iter_file, -1, (w_current + parent_path_size), -1,
+                    //                      NULL, NULL, NULL) - 2;
 
                 if (cmp < 0)
                 {
                     // if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
-                    if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                                           iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
-                                                           NULL, NULL, NULL) - 2 > 0))
+                    if (w_prev.empty() || 
+                        (io_strncasecmp((w_prev.c_str() + parent_path_size), iter_file, MAX_PATH)
+                        //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                        //                                   iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
+                        //                                   NULL, NULL, NULL) - 2 
+                        > 0))
                     {
                         w_prev = file;
                     }
@@ -433,9 +453,12 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 else if (cmp > 0)
                 {
                     // if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
-                    if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
-                                                           iter_file, -1, (w_next.c_str() + parent_path_size), -1,
-                                                           NULL, NULL, NULL) - 2 < 0))
+                    if (w_next.empty() || 
+                        (io_strncasecmp((w_next.c_str() + parent_path_size), iter_file, MAX_PATH)
+                        //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
+                        //                                   iter_file, -1, (w_next.c_str() + parent_path_size), -1,
+                        //                                   NULL, NULL, NULL) - 2 
+                            < 0))
                     {
                         w_next = file;
                     }

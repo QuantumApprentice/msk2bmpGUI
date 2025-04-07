@@ -107,14 +107,14 @@ bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_cha
 // int io_strncasecmp(std::filesystem::path src, void* iter_src, size_t size)
 int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
-    const wchar_t* iter_file = iter_src;
+    //const wchar_t* iter_file = iter_src;
 
     return (CompareStringEx(
         LOCALE_NAME_USER_DEFAULT,
         LINGUISTIC_IGNORECASE,
         str2, -1,
         str1,
-        -1, NULL, NULL, NULL) - 2;
+        -1, NULL, NULL, NULL) - 2
         //-2 to convert windows bs string
         //  compare to standard  ( -1/0/1 )
     );
