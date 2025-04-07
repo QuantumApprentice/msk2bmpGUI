@@ -366,15 +366,15 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 
     FILE* file_ptr = NULL;
 
-#ifdef QFO2_WINDOWS
-    // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
-    wchar_t *w_save_name = io_utf8_wchar(save_name);
+// #ifdef QFO2_WINDOWS
+//     // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
+//     wchar_t *w_save_name = io_utf8_wchar(save_name);
 
-    _wfopen_s(&file_ptr, w_save_name, L"wb");
-#elif defined(QFO2_LINUX)
+//     _wfopen_s(&file_ptr, w_save_name, L"wb");
+// #elif defined(QFO2_LINUX)
 
     file_ptr = fopen(save_name, "wb");
-#endif
+// #endif
 
     if (!file_ptr) {
         //TODO: log out to txt file
@@ -601,12 +601,12 @@ bool check_and_write_cfg_file(user_info* user_info, char* exe_path)
 
     FILE* cfg_file_ptr = NULL;
 
-#ifdef QFO2_WINDOWS
-    // Windows w/wide character support
-    _wfopen_s(&cfg_file_ptr, io_utf8_wchar(cfg_filepath_buffer), L"rb");
-#elif defined(QFO2_LINUX)
+// #ifdef QFO2_WINDOWS
+//     // Windows w/wide character support
+//     _wfopen_s(&cfg_file_ptr, io_utf8_wchar(cfg_filepath_buffer), L"rb");
+// #elif defined(QFO2_LINUX)
     cfg_file_ptr = fopen(cfg_filepath_buffer, "rb");
-#endif
+// #endif
 
     if (!cfg_file_ptr)
     {
@@ -745,12 +745,12 @@ bool save_tiles_SURFACE(char* base_path, char* save_name, char* save_path,
                 }
             }
 
-#ifdef QFO2_WINDOWS
-            wchar_t* w_save_name = io_utf8_wchar(save_path);
-            _wfopen_s(&File_ptr, w_save_name, L"wb");
-#elif defined(QFO2_LINUX)
+// #ifdef QFO2_WINDOWS
+//             wchar_t* w_save_name = io_utf8_wchar(save_path);
+//             _wfopen_s(&File_ptr, w_save_name, L"wb");
+// #elif defined(QFO2_LINUX)
             File_ptr = fopen(save_path, "wb");
-#endif
+// #endif
 
             if (!File_ptr) {
                 //TODO: replace with set_popup_warning()
@@ -1378,12 +1378,12 @@ void Save_Q_file(image_data* img_data, user_info* usr_info)
         return;
     }
 
-#ifdef QFO2_WINDOWS
-    wchar_t* w_save_name = io_utf8_wchar(Save_File_Name);
-    _wfopen_s(&File_ptr, w_save_name, L"wb");
-#elif defined(QFO2_LINUX)
+// #ifdef QFO2_WINDOWS
+//     wchar_t* w_save_name = io_utf8_wchar(Save_File_Name);
+//     _wfopen_s(&File_ptr, w_save_name, L"wb");
+// #elif defined(QFO2_LINUX)
     File_ptr = fopen(Save_File_Name, "wb");
-#endif
+// #endif
 
     if (!File_ptr)
     {
