@@ -483,13 +483,13 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
         if (sv_info->s_type == single_dir) {
             ext_filter = "FRx file (single direction only)"
             "(*.fr0;*.fr1;*.fr2;.fr3;*.fr4;*.fr5;)"
-            "{.fr0,.FR0,.fr1,.FR1,.fr2,.FR2,.fr3,.FR3,.fr4,.FR4,.fr5,.FR5,}";
+            "{.FR0,.fr0,.FR1,.fr1,.FR2,.fr2,.FR3,.fr3,.FR4,.fr4,.FR5,.fr5,}";
         } else {
             ext_filter = "FRM file (single image or all 6 directions)"
                 // "(*.png;*.apng;*.jpg;*.jpeg;*.frm;*.fr0-5;*.msk;)"
                 "(*.frm;){"
                 // ".png,.jpg,.jpeg,"
-                ".frm,.FRM,"
+                ".FRM,.frm,"
                 // ".msk,.MSK,"
                 "},.*";
         }
@@ -1249,7 +1249,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
     if (ImGui::Button("Save as Town Map Tiles")) {
         ext_filter = "FRM file (single image or all 6 directions)"
             "(*.frm;){"
-            ".frm,.FRM,"
+            ".FRM,.frm,"
             "},.*";
 
         char* folder = usr_info->default_save_path;
