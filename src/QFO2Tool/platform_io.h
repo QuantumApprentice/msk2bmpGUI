@@ -9,6 +9,7 @@
 #endif
 
 int io_strncmp(const char* str1, const char* str2, int num_char);
+int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char);
 bool io_isdir(char* dir_path);
 
 char* io_wchar_utf8(NATIVE_STRING_TYPE* src);

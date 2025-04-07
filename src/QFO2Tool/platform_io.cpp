@@ -103,6 +103,23 @@ bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_cha
     return _wcsnicmp(str1, str2, num_char);
 }
 
+//returns -1/0/1
+// int io_strncasecmp(std::filesystem::path src, void* iter_src, size_t size)
+int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+{
+    const wchar_t* iter_file = iter_src;
+
+    return (CompareStringEx(
+        LOCALE_NAME_USER_DEFAULT,
+        LINGUISTIC_IGNORECASE,
+        str2, -1,
+        str1,
+        -1, NULL, NULL, NULL) - 2;
+        //-2 to convert windows bs string
+        //  compare to standard  ( -1/0/1 )
+    );
+}
+
 // return 0 == match, <0 == less than match, >0 == greater than match
 int io_strncmp(const char* str1, const char* str2, int num_char)
 {
@@ -262,6 +279,11 @@ bool io_make_dir(char* dir_path)
 char* io_get_cwd()
 {
     return getcwd(NULL, 0);
+}
+
+int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+{
+    return strncasecmp(str1, str2, num_char);
 }
 
 // return 0 == match, <0 == less than match, >0 == greater than match

@@ -930,12 +930,12 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
 
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
+            free(selected);
+            selected       = NULL;
             save_folder[0] = '\0';
             save_path[0]   = '\0';
             overwrite      = false;
             success        = false;
-            free(selected);
-            selected = NULL;
             ImGui::EndPopup();
             return false;
         }
@@ -960,7 +960,7 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     }
     if (success) {
         free(selected);
-        selected = NULL;
+        selected       = NULL;
         save_folder[0] = '\0';
         save_path[0]   = '\0';
         overwrite      = false;
@@ -1333,21 +1333,21 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
 //TODO: replace this with something that saves unique data type
 //      *.q or something, allowing user to open up whole worldmap
 //      FRM/MSK file to edit without exporting to tiles
-void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
+void Save_Q_file(image_data* img_data, user_info* usr_info)
 {
     if (usr_info->save_full_MSK_warning)
     {
-        tinyfd_messageBox(
-            "Warning",
-            "This is intended to allow you to save your progress only.\n"
-            "Dimensions are currently not saved with this file format.\n\n"
-            "To load a file saved this way,\n"
-            "make sure to load the full map image first.\n\n"
-            "To disable this warning,\n"
-            "toggle this setting in the File menu.",
-            "yesnocancel",
-            "warning",
-            2);
+        // tinyfd_messageBox(
+        //     "Warning",
+        //     "This is intended to allow you to save your progress only.\n"
+        //     "Dimensions are currently not saved with this file format.\n\n"
+        //     "To load a file saved this way,\n"
+        //     "make sure to load the full map image first.\n\n"
+        //     "To disable this warning,\n"
+        //     "toggle this setting in the File menu.",
+        //     "yesnocancel",
+        //     "warning",
+        //     2);
     }
 
     int texture_size = img_data->width * img_data->height;
@@ -1387,13 +1387,18 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
 
     if (!File_ptr)
     {
-        tinyfd_messageBox(
-            "Error",
+        set_popup_warning(
+            "[ERROR]Save_Q_file()"
             "Can not open this file in write mode.\n"
-            "Make sure the default game path is set.",
-            "ok",
-            "error",
-            1);
+            "Make sure the default game path is set."
+        );
+        // tinyfd_messageBox(
+        //     "Error",
+        //     "Can not open this file in write mode.\n"
+        //     "Make sure the default game path is set.",
+        //     "ok",
+        //     "error",
+        //     1);
         return;
     }
 
@@ -1405,7 +1410,6 @@ void Save_Full_MSK_OpenGL(image_data* img_data, user_info* usr_info)
 //used by save_tiles_SURFACE()
 void save_MSK_tile(uint8_t* tile_buffer, FILE* File_ptr, int width, int height)
 {
-    // int buff_size = ceil(width / 8.0f) * height;
     int buff_size = (width + 7) / 8 * height;
 
     // final output buffer
@@ -1451,5 +1455,4 @@ void save_as_GIF(image_data* img_data, struct user_info* usr_nfo)
     if (img_data->FRM_data == nullptr) {
         return;
     }
-    
 }

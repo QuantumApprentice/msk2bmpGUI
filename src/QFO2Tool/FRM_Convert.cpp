@@ -10,13 +10,13 @@
 #include <math.h>
 #include <limits.h>
 
-#ifdef QFO2_WINDOWS
-#include <direct.h>
+// #ifdef QFO2_WINDOWS
+// #include <direct.h>
 
-#elif defined(QFO2_LINUX)
-#include <fcntl.h>
-#include <errno.h>
-#endif
+// #elif defined(QFO2_LINUX)
+// #include <fcntl.h>
+// #include <errno.h>
+// #endif
 
 union Pxl_Err {
     struct {

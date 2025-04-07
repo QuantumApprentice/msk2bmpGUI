@@ -373,7 +373,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     std::filesystem::path w_prev;
     std::filesystem::path w_frst;
     std::filesystem::path w_last;
-    const wchar_t *iter_file;
+    const wchar_t* iter_file;
     std::error_code error;
     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
     {
@@ -403,18 +403,14 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 // if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
                 if (w_frst.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                                                        iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
-                                                       NULL, NULL, NULL) -
-                                           2 <
-                                       0))
-                {
+                                                       NULL, NULL, NULL) - 2 < 0))
+                {io_strncasecmp
                     w_frst = file;
                 }
                 // if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
                 if (w_last.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                                                        iter_file, -1, (w_last.c_str() + parent_path_size), -1,
-                                                       NULL, NULL, NULL) -
-                                           2 >
-                                       0))
+                                                       NULL, NULL, NULL) - 2 > 0))
                 {
                     w_last = file;
                 }
@@ -422,17 +418,14 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 // int cmp = wcscmp(iter_file, w_current + parent_path_size);
                 int cmp = CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                                           iter_file, -1, (w_current + parent_path_size), -1,
-                                          NULL, NULL, NULL) -
-                          2;
+                                          NULL, NULL, NULL) - 2;
 
                 if (cmp < 0)
                 {
                     // if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
                     if (w_prev.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                                                            iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
-                                                           NULL, NULL, NULL) -
-                                               2 >
-                                           0))
+                                                           NULL, NULL, NULL) - 2 > 0))
                     {
                         w_prev = file;
                     }
@@ -442,9 +435,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                     // if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
                     if (w_next.empty() || (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                                                            iter_file, -1, (w_next.c_str() + parent_path_size), -1,
-                                                           NULL, NULL, NULL) -
-                                               2 <
-                                           0))
+                                                           NULL, NULL, NULL) - 2 < 0))
                     {
                         w_next = file;
                     }
@@ -536,25 +527,25 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
             if (Supported_Format(file)) {
                 iter_file = (file.path().c_str() + parent_path_size);
 
-                if (l_frst.empty() || strcasecmp(iter_file, (l_frst.c_str() + parent_path_size)) < 0)
+                if (l_frst.empty() || io_strncasecmp(iter_file, (l_frst.c_str() + parent_path_size), MAX_PATH) < 0)
                 {
                     l_frst = file;
                 }
 
-                if (l_last.empty() || strcasecmp(iter_file, (l_last.c_str() + parent_path_size)) > 0)
+                if (l_last.empty() || io_strncasecmp(iter_file, (l_last.c_str() + parent_path_size), MAX_PATH) > 0)
                 {
                     l_last = file;
                 }
 
-                int cmp = strcasecmp(iter_file, (current + parent_path_size));
+                int cmp = io_strncasecmp(iter_file, (current + parent_path_size), MAX_PATH);
 
                 if (cmp < 0) {
-                    if (l_prev.empty() || strcasecmp(iter_file, (l_prev.c_str() + parent_path_size)) > 0)
+                    if (l_prev.empty() || io_strncasecmp(iter_file, (l_prev.c_str() + parent_path_size), MAX_PATH) > 0)
                     {
                         l_prev = file;
                     }
                 } else if (cmp > 0) {
-                    if (l_next.empty() || strcasecmp(iter_file, (l_next.c_str() + parent_path_size)) < 0)
+                    if (l_next.empty() || io_strncasecmp(iter_file, (l_next.c_str() + parent_path_size), MAX_PATH) < 0)
                     {
                         l_next = file;
                     }
