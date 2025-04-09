@@ -2,7 +2,7 @@
 #include <cstdint>
 
 #ifdef QFO2_WINDOWS
-    #define NATIVE_STRING_TYPE          const wchart_t
+    #define NATIVE_STRING_TYPE          const wchar_t
 #elif defined(QFO2_LINUX)
     #define NATIVE_STRING_TYPE          const char
 #endif

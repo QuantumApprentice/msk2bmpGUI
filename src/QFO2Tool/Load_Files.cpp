@@ -374,16 +374,16 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     // QueryPerformanceFrequency(&Frequency);
     // QueryPerformanceCounter(&StartingTime);
 
-    std::filesystem::path file_path(current);
-    const std::filesystem::path &directory = file_path.parent_path();
+    std::filesystem::path w_current(current);
+    const std::filesystem::path &directory = w_current.parent_path();
     size_t parent_path_size = directory.native().size();
 
-    wchar_t *w_current = io_utf8_wchar(current);
+    //wchar_t *w_current = io_utf8_wchar(current);
     std::filesystem::path w_next;
     std::filesystem::path w_prev;
     std::filesystem::path w_frst;
     std::filesystem::path w_last;
-    const wchar_t* iter_file;
+    //const wchar_t* iter_file;
     std::error_code error;
     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
     {
@@ -408,7 +408,8 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
             if (Supported_Format(file))
             {
 
-                iter_file = (file.path().c_str() + parent_path_size);
+                //const wchar_t* iter_file = (file.path().c_str() + parent_path_size);
+                NATIVE_STRING_TYPE* iter_file = (file.path().c_str() + parent_path_size);
 
                 // if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
                 if (w_frst.empty() || 
@@ -417,7 +418,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                     //                                   iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
                     //                                   NULL, NULL, NULL) - 2 
                         < 0))
-                {//io_strncasecmp
+                {
                     w_frst = file;
                 }
                 // if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
@@ -432,7 +433,8 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 }
 
                 // int cmp = wcscmp(iter_file, w_current + parent_path_size);
-                int cmp = io_strncasecmp((w_current + parent_path_size), iter_file, MAX_PATH);
+                //int cmp = io_strncasecmp((w_current + parent_path_size), iter_file, MAX_PATH);
+                int cmp = io_strncasecmp((w_current.c_str() + parent_path_size), iter_file, MAX_PATH);
                     //CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                     //                      iter_file, -1, (w_current + parent_path_size), -1,
                     //                      NULL, NULL, NULL) - 2;
@@ -476,24 +478,32 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         w_next = w_frst;
     }
 
-    char *temp = io_wchar_utf8(w_prev.c_str());
-    int temp_size = strlen(temp);
-    memcpy(prev, temp, temp_size);
+    //char *temp = io_wchar_utf8(w_prev.c_str());
+    //int temp_size = strlen(temp);
+    //memcpy(prev, temp, temp_size);
+    int temp_size = strlen(w_prev.u8string().c_str());
+    memcpy(prev, w_prev.u8string().c_str(), temp_size);
     prev[temp_size] = '\0';
 
-    temp = io_wchar_utf8(w_next.c_str());
-    temp_size = strlen(temp);
-    memcpy(next, temp, temp_size);
+    //temp = io_wchar_utf8(w_next.c_str());
+    //temp_size = strlen(temp);
+    //memcpy(next, temp, temp_size);
+    temp_size = strlen(w_next.u8string().c_str());
+    memcpy(next, w_next.u8string().c_str(), temp_size);
     next[temp_size] = '\0';
 
-    temp = io_wchar_utf8(w_frst.c_str());
-    temp_size = strlen(temp);
-    memcpy(frst, temp, temp_size);
+    //temp = io_wchar_utf8(w_frst.c_str());
+    //temp_size = strlen(temp);
+    //memcpy(frst, temp, temp_size);
+    temp_size = strlen(w_frst.u8string().c_str());
+    memcpy(frst, w_frst.u8string().c_str(), temp_size);
     frst[temp_size] = '\0';
 
-    temp = io_wchar_utf8(w_last.c_str());
-    temp_size = strlen(temp);
-    memcpy(last, temp, temp_size);
+    //temp = io_wchar_utf8(w_last.c_str());
+    //temp_size = strlen(temp);
+    //memcpy(last, temp, temp_size);
+    temp_size = strlen(w_last.u8string().c_str());
+    memcpy(last, w_last.u8string().c_str(), temp_size);
     last[temp_size] = '\0';
 
     // QueryPerformanceCounter(&EndingTime);
@@ -1061,7 +1071,7 @@ bool File_Type_Check(LF *F_Prop, shader_info *shaders, image_data *img_data, con
     return true;
 }
 
-//TODO: am I using load_tile_texture() anymore?
+//TODO: delete? am I using load_tile_texture() anymore?
 void load_tile_texture(GLuint *texture, char *file_name)
 {
     Surface *surface = Load_File_to_RGBA(file_name);
