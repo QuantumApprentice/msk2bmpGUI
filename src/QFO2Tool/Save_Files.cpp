@@ -559,36 +559,6 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     return true;
 }
 
-//TODO: delete? not used anywhere (replaced by FRx_extension())
-const char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
-{
-    if (num_dirs > 1)
-    {
-        Direction *dir_ptr = NULL;
-        // dir_ptr = &img_data->FRM_dir[current_dir].orientation;
-        assert(dir_ptr != NULL && "Not FRM or OTHER?");
-        if (*dir_ptr > -1)
-        {
-            switch (*dir_ptr)
-            {
-            case (NE):
-                return ".FR0";
-            case (E):
-                return ".FR1";
-            case (SE):
-                return ".FR2";
-            case (SW):
-                return ".FR3";
-            case (W):
-                return ".FR4";
-            case (NW):
-                return ".FR5";
-            }
-        }
-    }
-    return ".FRM";
-}
-
 //checks if msk2bmpGUI.cfg exists,
 //if it doesn't, creates the file (including folder)
 //then it writes current settings to cfg file
@@ -971,51 +941,6 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     return true;
 }
 
-
-
-
-
-
-
-
-
-// wrapper to save MSK tiles
-
-//returns a buffer ripped from an openGL texture
-//bpp = bytes per pixel
-//TODO: delete? also not used anywhere
-uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h)
-{
-    int size = w*h;
-    int type = 0;
-    switch (bpp)
-    {
-    case 1:
-        type = GL_RED;
-        break;
-    case 3:
-        type = GL_RGB;
-        size *= 3;
-        break;
-    case 4:
-        type = GL_RGBA;
-        size *= 4;
-        break;
-    }
-    if (type == 0) {
-        printf("failed to set color type");
-        return NULL;
-    }
-
-    uint8_t* buffer = (uint8_t*)malloc(size);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glPixelStorei(GL_PACK_ALIGNMENT, bpp);
-    glGetTexImage(GL_TEXTURE_2D, 0, type, GL_UNSIGNED_BYTE, buffer);
-
-    return buffer;
-}
-
 //TODO: do I need this blending system?
 //      seems like it was used to get alpha channels back
 //      into the FRM, but not sure how well it worked
@@ -1392,13 +1317,6 @@ void Save_Q_file(image_data* img_data, user_info* usr_info)
             "Can not open this file in write mode.\n"
             "Make sure the default game path is set."
         );
-        // tinyfd_messageBox(
-        //     "Error",
-        //     "Can not open this file in write mode.\n"
-        //     "Make sure the default game path is set.",
-        //     "ok",
-        //     "error",
-        //     1);
         return;
     }
 

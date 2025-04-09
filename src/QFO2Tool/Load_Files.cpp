@@ -173,7 +173,6 @@ bool Supported_Format(const std::filesystem::path &file)
     while (i < k)
     {
         //compare extension to determine if file is viewable
-        //if (io_wstrncmp(file.extension().c_str(), supported[i], 6) == 0)
         if (io_strncasecmp(file.extension().c_str(), supported[i], 6) == 0)
         {
             return true;
@@ -182,70 +181,6 @@ bool Supported_Format(const std::filesystem::path &file)
     }
 
     return false;
-}
-//#elif defined(QFO2_LINUX)
-//
-//// Checks the file extension against known working extensions
-//// Returns true if any extension matches, else return false
-//bool Supported_Format(const std::filesystem::path &file)
-//{
-//    // array of compatible filetype extensions
-//    constexpr const static char supported[13][6]{
-//        ".FRM", ".MSK",
-//        ".PNG", ".BMP", ".JPG", ".JPEG",
-//        ".GIF",
-//        ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
-//        };
-//    int k = sizeof(supported) / (6 * sizeof(char));
-//
-//    // actual extension check
-//    int i = 0;
-//    while (i < k) {
-//        //compare extension to determine if file is viewable
-//        if (io_strncmp(file.extension().c_str(), supported[i], 5) == 0)
-//        {
-//            return true;
-//        }
-//        i++;
-//    }
-//
-//    return false;
-//}
-//#endif
-
-//TODO: delete, not used anywhere
-// tried to handle a subdirectory in regular C, but didn't actually finish making this
-char **handle_subdirectory_char(const std::filesystem::path &directory)
-{
-    char **array_of_paths = NULL;
-    char *single_path = NULL;
-    std::error_code error;
-    int i = 0;
-
-    for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
-    {
-        bool is_subdirectory = file.is_directory(error);
-        if (error)
-        {
-            printf("generic error message");
-            return array_of_paths;
-        }
-        if (is_subdirectory)
-        {
-            // do nothing for now
-            continue;
-        }
-        else
-        {
-            int str_length = strlen((char *)file.path().c_str());
-            single_path = (char *)malloc(sizeof(char) * str_length);
-            snprintf(single_path, str_length, "%s", file.path().c_str());
-
-            array_of_paths[i] = single_path;
-            i++;
-        }
-    }
-    return array_of_paths;
 }
 
 std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem::path &directory)
@@ -449,21 +384,21 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         w_next = w_frst;
     }
 
-    int temp_size = strlen(w_prev.u8string().c_str());
-    memcpy(prev, w_prev.u8string().c_str(), temp_size);
-    prev[temp_size] = '\0';
+    int str_len = w_prev.u8string().length();
+    memcpy(prev, w_prev.u8string().c_str(), str_len);
+    prev[str_len] = '\0';
 
-    temp_size = strlen(w_next.u8string().c_str());
-    memcpy(next, w_next.u8string().c_str(), temp_size);
-    next[temp_size] = '\0';
+    str_len = w_next.u8string().length();
+    memcpy(next, w_next.u8string().c_str(), str_len);
+    next[str_len] = '\0';
 
-    temp_size = strlen(w_frst.u8string().c_str());
-    memcpy(frst, w_frst.u8string().c_str(), temp_size);
-    frst[temp_size] = '\0';
+    str_len = w_frst.u8string().length();
+    memcpy(frst, w_frst.u8string().c_str(), str_len);
+    frst[str_len] = '\0';
 
-    temp_size = strlen(w_last.u8string().c_str());
-    memcpy(last, w_last.u8string().c_str(), temp_size);
-    last[temp_size] = '\0';
+    str_len = w_last.u8string().length();
+    memcpy(last, w_last.u8string().c_str(), str_len);
+    last[str_len] = '\0';
 
     // QueryPerformanceCounter(&EndingTime);
     // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
@@ -471,50 +406,6 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
     // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
     // printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
-}
-
-// was testing out using a std::set instead of a std::vector, but because it was so slow
-// ended up just storing the filename, making this kind of broken
-//TODO: delete, not used anywhere
-std::set<std::filesystem::path> handle_subdirectory_set(const std::filesystem::path &directory)
-{
-    std::set<std::filesystem::path> animation_images;
-    std::error_code error;
-    for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
-    {
-        bool is_subdirectory = file.is_directory(error);
-        if (error)
-        {
-            // TODO: convert to tinyfd_filedialog() popup warning
-            printf("error when checking if file_name is directory");
-            return animation_images;
-        }
-        if (is_subdirectory)
-        {
-            // TODO: handle different directions in subdirectories
-            // handle_subdirectory(file.path());
-            continue;
-        }
-        else
-        {
-            // char buffer[MAX_PATH] = {};
-
-            // char* temp_name = strrchr((char*)(file.path().u8string().c_str()), PLATFORM_SLASH);
-            // snprintf(buffer, MAX_PATH, "%s", temp_name + 1);
-            // std::filesystem::path temp_path(buffer);
-            // animation_images.insert(temp_path);
-
-            std::string u8file_path = file.path().u8string();
-            char *temp_name = strrchr((char *)(u8file_path.c_str()), '/');
-            if (!temp_name)
-            {
-                temp_name = strrchr((char *)(u8file_path.c_str()), '\\');
-            }
-            animation_images.insert(temp_name + 1);
-        }
-    }
-
-    return animation_images;
 }
 
 bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
