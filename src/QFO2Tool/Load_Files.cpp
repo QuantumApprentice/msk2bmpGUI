@@ -561,7 +561,7 @@ bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, sh
 
     if (load_MSK) {
         char* ext = strrchr(load_name, '.')+1;
-        if (io_strncasecmp(ext, "MSK", 4)) {  // 0 == match
+        if (io_strncmp(ext, "MSK", 4)) {  // 0 == match
             load_MSK = false;
             return false;
         }
