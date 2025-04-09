@@ -321,7 +321,7 @@ bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
     return true;
 }
 
-const char* FRM_extension(Direction dir)
+const char* FRx_extension(Direction dir)
 {
     switch (dir)
     {
@@ -351,7 +351,7 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 
     if (!strrchr(save_name, '.')) {
         Direction dir = (Direction)img_data->display_orient_num;
-        const char* ext = FRM_extension(dir);
+        const char* ext = FRx_extension(dir);
         char buff[MAX_PATH];
         strncpy(buff, save_name, MAX_PATH);
         snprintf(save_name, MAX_PATH, "%s.%s", buff, ext);
@@ -559,6 +559,7 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     return true;
 }
 
+//TODO: delete? not used anywhere (replaced by FRx_extension())
 const char* Set_Save_Ext(image_data* img_data, int current_dir, int num_dirs)
 {
     if (num_dirs > 1)
