@@ -364,7 +364,7 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     return animation_images;
 }
 
-#ifdef QFO2_WINDOWS
+// #ifdef QFO2_WINDOWS
 //Store directory files in memory for quick Next/Prev buttons
 //Filepaths for files are assigned to pointers passed in
 void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
@@ -413,7 +413,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 
                 // if (w_frst.empty() || (wcscmp(iter_file, w_frst.c_str() + parent_path_size) < 0)) {
                 if (w_frst.empty() || 
-                    (io_strncasecmp((w_frst.c_str() + parent_path_size), iter_file, MAX_PATH)
+                    (io_strncasecmp(iter_file, (w_frst.c_str() + parent_path_size), MAX_PATH)
                     //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                     //                                   iter_file, -1, (w_frst.c_str() + parent_path_size), -1,
                     //                                   NULL, NULL, NULL) - 2 
@@ -423,7 +423,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 }
                 // if (w_last.empty() || (wcscmp(iter_file, w_last.c_str() + parent_path_size) > 0)) {
                 if (w_last.empty() || 
-                    (io_strncasecmp((w_last.c_str() + parent_path_size), iter_file, MAX_PATH)
+                    (io_strncasecmp(iter_file, (w_last.c_str() + parent_path_size), MAX_PATH)
                     //    (CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                     //                                   iter_file, -1, (w_last.c_str() + parent_path_size), -1,
                     //                                   NULL, NULL, NULL) - 2
@@ -434,7 +434,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 
                 // int cmp = wcscmp(iter_file, w_current + parent_path_size);
                 //int cmp = io_strncasecmp((w_current + parent_path_size), iter_file, MAX_PATH);
-                int cmp = io_strncasecmp((w_current.c_str() + parent_path_size), iter_file, MAX_PATH);
+                int cmp = io_strncasecmp(iter_file, (w_current.c_str() + parent_path_size), MAX_PATH);
                     //CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                     //                      iter_file, -1, (w_current + parent_path_size), -1,
                     //                      NULL, NULL, NULL) - 2;
@@ -443,7 +443,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 {
                     // if (w_prev.empty() || (wcscmp(iter_file, w_prev.c_str() + parent_path_size) > 0)) {
                     if (w_prev.empty() || 
-                        (io_strncasecmp((w_prev.c_str() + parent_path_size), iter_file, MAX_PATH)
+                        (io_strncasecmp(iter_file, (w_prev.c_str() + parent_path_size), MAX_PATH)
                         //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                         //                                   iter_file, -1, (w_prev.c_str() + parent_path_size), -1,
                         //                                   NULL, NULL, NULL) - 2 
@@ -456,7 +456,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 {
                     // if (w_next.empty() || (wcscmp(iter_file, w_next.c_str() + parent_path_size) < 0)) {
                     if (w_next.empty() || 
-                        (io_strncasecmp((w_next.c_str() + parent_path_size), iter_file, MAX_PATH)
+                        (io_strncasecmp(iter_file, (w_next.c_str() + parent_path_size), MAX_PATH)
                         //(CompareStringEx(LOCALE_NAME_USER_DEFAULT, LINGUISTIC_IGNORECASE,
                         //                                   iter_file, -1, (w_next.c_str() + parent_path_size), -1,
                         //                                   NULL, NULL, NULL) - 2 
@@ -513,113 +513,113 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
 
     // printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
 }
-#elif defined(QFO2_LINUX)
+// // #elif defined(QFO2_LINUX)
 
-//Store directory files in memory for quick Next/Prev buttons
-//Filepaths for files are assigned to the pointers passed in
-void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
-{
-    // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    // LARGE_INTEGER Frequency;
-    // QueryPerformanceFrequency(&Frequency);
-    // QueryPerformanceCounter(&StartingTime);
+// //Store directory files in memory for quick Next/Prev buttons
+// //Filepaths for files are assigned to the pointers passed in
+// void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *current)
+// {
+//     // LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+//     // LARGE_INTEGER Frequency;
+//     // QueryPerformanceFrequency(&Frequency);
+//     // QueryPerformanceCounter(&StartingTime);
 
-    //TODO: I don't think this is hit anymore
-    //      since I moved the check to Next_Prev_Buttons()
-    if (!strlen(current)) {
-        //TODO: make popup error
-        return;
-    }
+//     //TODO: I don't think this is hit anymore
+//     //      since I moved the check to Next_Prev_Buttons()
+//     if (!strlen(current)) {
+//         //TODO: make popup error
+//         return;
+//     }
 
-    std::filesystem::path file_path(current);
-    std::filesystem::path directory = file_path.parent_path();
-    size_t parent_path_size = directory.native().size();
+//     std::filesystem::path file_path(current);
+//     std::filesystem::path directory = file_path.parent_path();
+//     size_t parent_path_size = directory.native().size();
 
-    std::filesystem::path l_next;
-    std::filesystem::path l_prev;
-    std::filesystem::path l_frst;
-    std::filesystem::path l_last;
-    const char *iter_file;
-    std::error_code error;
-    for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
-    {
-        bool is_subdirectory = file.is_directory(error);
-        if (error) {
-            //TODO: log to file
-            set_popup_warning(
-                "[ERROR] Next_Prev_File()\n\n"
-                "Error occurred when checking if file is directory.\n"
-            );
-            printf("Error: Checking if file is directory: %s : %d", file, __LINE__);
-        }
-        if (is_subdirectory) {
-            // TODO: handle different directions in subdirectories?
-            // handle_subdirectory(file.path());
-            continue;
-        } else {
-            if (Supported_Format(file)) {
-                iter_file = (file.path().c_str() + parent_path_size);
+//     std::filesystem::path l_next;
+//     std::filesystem::path l_prev;
+//     std::filesystem::path l_frst;
+//     std::filesystem::path l_last;
+//     const char *iter_file;
+//     std::error_code error;
+//     for (const std::filesystem::directory_entry &file : std::filesystem::directory_iterator(directory))
+//     {
+//         bool is_subdirectory = file.is_directory(error);
+//         if (error) {
+//             //TODO: log to file
+//             set_popup_warning(
+//                 "[ERROR] Next_Prev_File()\n\n"
+//                 "Error occurred when checking if file is directory.\n"
+//             );
+//             printf("Error: Checking if file is directory: %s : %d", file, __LINE__);
+//         }
+//         if (is_subdirectory) {
+//             // TODO: handle different directions in subdirectories?
+//             // handle_subdirectory(file.path());
+//             continue;
+//         } else {
+//             if (Supported_Format(file)) {
+//                 iter_file = (file.path().c_str() + parent_path_size);
 
-                if (l_frst.empty() || io_strncasecmp(iter_file, (l_frst.c_str() + parent_path_size), MAX_PATH) < 0)
-                {
-                    l_frst = file;
-                }
+//                 if (l_frst.empty() || io_strncasecmp(iter_file, (l_frst.c_str() + parent_path_size), MAX_PATH) < 0)
+//                 {
+//                     l_frst = file;
+//                 }
 
-                if (l_last.empty() || io_strncasecmp(iter_file, (l_last.c_str() + parent_path_size), MAX_PATH) > 0)
-                {
-                    l_last = file;
-                }
+//                 if (l_last.empty() || io_strncasecmp(iter_file, (l_last.c_str() + parent_path_size), MAX_PATH) > 0)
+//                 {
+//                     l_last = file;
+//                 }
 
-                int cmp = io_strncasecmp(iter_file, (current + parent_path_size), MAX_PATH);
+//                 int cmp = io_strncasecmp(iter_file, (current + parent_path_size), MAX_PATH);
 
-                if (cmp < 0) {
-                    if (l_prev.empty() || io_strncasecmp(iter_file, (l_prev.c_str() + parent_path_size), MAX_PATH) > 0)
-                    {
-                        l_prev = file;
-                    }
-                } else if (cmp > 0) {
-                    if (l_next.empty() || io_strncasecmp(iter_file, (l_next.c_str() + parent_path_size), MAX_PATH) < 0)
-                    {
-                        l_next = file;
-                    }
-                }
-            }
-        }
-    }
+//                 if (cmp < 0) {
+//                     if (l_prev.empty() || io_strncasecmp(iter_file, (l_prev.c_str() + parent_path_size), MAX_PATH) > 0)
+//                     {
+//                         l_prev = file;
+//                     }
+//                 } else if (cmp > 0) {
+//                     if (l_next.empty() || io_strncasecmp(iter_file, (l_next.c_str() + parent_path_size), MAX_PATH) < 0)
+//                     {
+//                         l_next = file;
+//                     }
+//                 }
+//             }
+//         }
+//     }
 
-    if (l_prev.empty())
-    {
-        l_prev = l_last;
-    }
-    if (l_next.empty())
-    {
-        l_next = l_frst;
-    }
+//     if (l_prev.empty())
+//     {
+//         l_prev = l_last;
+//     }
+//     if (l_next.empty())
+//     {
+//         l_next = l_frst;
+//     }
 
-    int temp_size = strlen(l_prev.c_str());
-    memcpy(prev, l_prev.c_str(), temp_size);
-    prev[temp_size] = '\0';
+//     int temp_size = strlen(l_prev.c_str());
+//     memcpy(prev, l_prev.c_str(), temp_size);
+//     prev[temp_size] = '\0';
 
-    temp_size = strlen(l_next.c_str());
-    memcpy(next, l_next.c_str(), temp_size);
-    next[temp_size] = '\0';
+//     temp_size = strlen(l_next.c_str());
+//     memcpy(next, l_next.c_str(), temp_size);
+//     next[temp_size] = '\0';
 
-    temp_size = strlen(l_frst.c_str());
-    memcpy(frst, l_frst.c_str(), temp_size);
-    frst[temp_size] = '\0';
+//     temp_size = strlen(l_frst.c_str());
+//     memcpy(frst, l_frst.c_str(), temp_size);
+//     frst[temp_size] = '\0';
 
-    temp_size = strlen(l_last.c_str());
-    memcpy(last, l_last.c_str(), temp_size);
-    last[temp_size] = '\0';
+//     temp_size = strlen(l_last.c_str());
+//     memcpy(last, l_last.c_str(), temp_size);
+//     last[temp_size] = '\0';
 
-    // QueryPerformanceCounter(&EndingTime);
-    // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
-    // ElapsedMicroseconds.QuadPart *= 1000000;
-    // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+//     // QueryPerformanceCounter(&EndingTime);
+//     // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+//     // ElapsedMicroseconds.QuadPart *= 1000000;
+//     // ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
-    // printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
-}
-#endif
+//     // printf("Next_Prev_File time: %d\n", ElapsedMicroseconds.QuadPart);
+// }
+// #endif
 
 // was testing out using a std::set instead of a std::vector, but because it was so slow
 // ended up just storing the filename, making this kind of broken

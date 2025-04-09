@@ -112,8 +112,8 @@ int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_c
     return (CompareStringEx(
         LOCALE_NAME_USER_DEFAULT,
         LINGUISTIC_IGNORECASE,
-        str2, -1,
-        str1,
+        str1, -1,
+        str2,
         -1, NULL, NULL, NULL) - 2
         //-2 to convert windows bs string
         //  compare to standard  ( -1/0/1 )
