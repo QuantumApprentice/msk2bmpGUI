@@ -369,7 +369,6 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 // #ifdef QFO2_WINDOWS
 //     // parse Save_File_Name to isolate the directory and save in default_save_path for Windows (w/wide character support)
 //     wchar_t *w_save_name = io_utf8_wchar(save_name);
-
 //     _wfopen_s(&file_ptr, w_save_name, L"wb");
 // #elif defined(QFO2_LINUX)
 
@@ -426,9 +425,9 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
         }
     } else
     if (sv_info->s_type == all_dirs) {
+        s = 0;
         num_dir = 6;
         count = anm_dir[dir].num_frames;
-        s = 0;
         for (int i = 0; i < num_dir; i++) {
             header.Frame_0_Offset[i] = sizeof(FRM_Header) + s;
             for (int j = 0; j < count; j++) {
