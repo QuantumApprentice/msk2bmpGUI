@@ -30,12 +30,10 @@
 
 
 void write_cfg_file(user_info* user_info, char* exe_path);
-uint8_t* texture_to_buff(GLuint texture, int bpp, int w, int h);
 
 //wrapper for stbi_write_png()
 void write_PNG(const char* file_name, Surface* src)
 {
-    // stbiw_convert_wchar_to_utf8
     stbi_write_png(file_name, src->w, src->h, src->channels, src->pxls, src->pitch);
 }
 

@@ -165,7 +165,7 @@ bool Supported_Format(const std::filesystem::path &file)
         ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
     };
 #endif
-    int k = sizeof(supported) / (6 * sizeof(wchar_t));
+    int k = sizeof(supported) / (6 * sizeof(NATIVE_STRING_TYPE));
 
 
     // actual extension check

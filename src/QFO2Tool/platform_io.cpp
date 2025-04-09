@@ -107,7 +107,7 @@ bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_cha
 // int io_strncasecmp(std::filesystem::path src, void* iter_src, size_t size)
 int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
 {
-    //const wchar_t* iter_file = iter_src;
+    // stbiw_convert_wchar_to_utf8()
 
     return (CompareStringEx(
         LOCALE_NAME_USER_DEFAULT,
