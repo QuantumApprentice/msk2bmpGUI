@@ -150,21 +150,19 @@ bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_ar
 bool Supported_Format(const std::filesystem::path &file)
 {
     // array of compatible filetype extensions
+    constexpr static NATIVE_STRING_TYPE supported[13][6]{
 #ifdef QFO2_WINDOWS
-    constexpr const static wchar_t supported[13][6]{
         L".FRM", L".MSK", L".PNG",
         L".JPG", L".JPEG", L".BMP",
         L".GIF",
         L".FR0", L".FR1", L".FR2", L".FR3", L".FR4", L".FR5"
-        };
 #elif defined(QFO2_LINUX)
-    constexpr const static char supported[13][6]{
         ".FRM", ".MSK",
         ".PNG", ".BMP", ".JPG", ".JPEG",
         ".GIF",
         ".FR0",".FR1", ".FR2", ".FR3", ".FR4", ".FR5"
-    };
 #endif
+    };
     int k = sizeof(supported) / (6 * sizeof(NATIVE_STRING_TYPE));
 
 

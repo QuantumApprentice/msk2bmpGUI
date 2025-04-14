@@ -4,7 +4,7 @@ out vec4 FragColor;
 in vec2 TexCoord;
 
 uniform sampler2D Indexed_FRM;
-uniform uint ColorPaletteINT[256];
+uniform uint ColorPaletteUINT[256];
 
 void main()
 {
@@ -12,7 +12,7 @@ void main()
     // vec4 texel = vec4(index);
 
     uint idx = uint(index.r*255.0);
-    uint color = ColorPaletteINT[idx];
+    uint color = ColorPaletteUINT[idx];
     vec4 texel = vec4(
         float((color >>  0) & 0xFFu) / 255.0,    // r
         float((color >>  8) & 0xFFu) / 255.0,    // g

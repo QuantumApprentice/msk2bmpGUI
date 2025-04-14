@@ -58,7 +58,7 @@ enum material {
     Leather = 7
 };
 
-void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head);
+char* add_TMAP_PRO_tiles_to_LST(user_info* usr_info, tt_arr_handle* head);
 bool backup_append_LST(char* path, char* string);
 
 //TODO: refactor append_tiles_lst() to work here
@@ -133,7 +133,7 @@ char* make_proto_list_arr(tt_arr_handle* head, uint8_t* match_buff)
 
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to town_tile* linked list first
-char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
+char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
 {
     int num_tiles = 0;
     tt_arr* tiles = new_protos->tile;
@@ -199,10 +199,41 @@ char* check_proto_names_arr(char* tiles_lst, tt_arr_handle* new_protos)
     return cropped_list;
 }
 
+char* input_name()
+{
+    static char name_buff[23] = "";
+    ImGui::InputText(
+        "Name\n"
+        "(max 23 characters)",
+        name_buff, 23);
+
+    return name_buff;
+}
+char* input_desc()
+{
+    static char desc_buff[71] = "";
+    ImGui::InputTextMultiline(
+        "Description\n"
+        "(max 71 characters)\n"
+        "(no line-breaks)",
+        desc_buff, 71);
+
+    return desc_buff;
+}
+
 void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
 {
     //append to pro_tile.msg if either a name
     //or a description has been provided
+
+    proto_info pr_info;
+    if (info == NULL) {
+        info = &pr_info;
+        pr_info.name        = input_name();
+        pr_info.description = input_desc();
+    }
+
+
     if (strlen(info->name) > 1 || strlen(info->description) > 1) {
         //append to pro_tile.msg
         char msg_line[512+32];
@@ -220,16 +251,108 @@ void pro_tile_msg_append_arr(user_info* usr_nfo, proto_info* info, tt_arr* tile)
     }
 }
 
-void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
+bool create_LST_popup(char* lst_path)
 {
-    proto_info info;
+    ImGui::Text(
+        "Unable to find TILES.LST in"
+        "\n\n%s\n\n"
+
+        "Would you like to make a new one?\n"
+        "This new TILES.LST will be blank\n"
+        "(except for the new tiles made here),\n"
+        "and will create all the subfolders\n"
+        "necessary for the game engine to load\n"
+        "this new TILES.LST file.\n\n"
+
+        "--IMPORTANT--\n"
+        "The Fallout game engine reads tiles in\n"
+        "from TILES.LST based on the line number.\n"
+        "The new TILES.LST file will override the\n"
+        "game list. Only do this if you want to create\n"
+        "the whole tile system from scratch,\n"
+        "or to preview the results before manually merging.\n\n"
+
+        , lst_path
+    );
+    if (ImGui::Button("Create new LST file?")) {
+        return true;
+    }
+
+    ImGui::BeginDisabled();
+    if (ImGui::Button("Extract LST from master.dat")) {
+        //TODO: implement this
+    }
+    ImGui::SetItemTooltip("Unimplemented");
+    ImGui::EndDisabled();
+
+    if (ImGui::Button("Select different Fallout 2 folder?")) {
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+
+    return false;
+}
+
+char* export_protos(user_info* usr_nfo, tt_arr_handle* handle)
+{
+    proto_info pr_info;
+
+    if (handle == nullptr) {
+    //TODO: place a warning here, this needs tile_arr*head to work
+    //TODO: maybe implement this?
+        return NULL;
+    }
+    if (usr_nfo->default_game_path[0] == '\0') {
+        return NULL;
+    }
+    if (!usr_nfo->game_files.FRM_TILES_LST) {
+        return NULL;
+    }
+
+
+    pr_info.name        = input_name();
+    pr_info.description = input_desc();
+    pr_info.material_id = get_material_id();
+
+
+    //tiles can reference different line numbers in pro_tile.msg
+    //have all tiles from this batch point to first new tile entry
+    tt_arr* tiles = handle->tile;
+    pr_info.pro_tile = tiles->tile_id * 100;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == 1) {
+            continue;
+        }
+        export_single_tile_PRO(usr_nfo->default_game_path, node, &pr_info);
+    }
+
+
+    //add tile protos to data/proto/tiles/TILES.LST
+    // add_TMAP_PRO_tiles_to_LST(usr_nfo, handle);
+
+    //TODO: need to add option for different languages?
+    //TODO: maybe need to create the subfolders
+    //TODO: also need to give options for descriptions already on pro_tile.msg
+    //add name/description to data/Text/english/Game/pro_tile.msg
+    // pro_tile_msg_append_arr(usr_nfo, &pr_info, tiles);
+}
+
+void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
+{
+    static char* lst_path = NULL;
+    // static char LST_path[MAX_PATH];
+    bool export_proto = false;
     //input name
     ImGui::Text(
         "In order to get new tiles to appear in the mapper\n"
         "(and thus in the game), each tile must have a proto(.pro)\n"
         "file made, and an entry for each tile appended to\n\n"
-        "   Fallout 2/data/proto/tiles/TILES.LST\n"
-        "   Fallout 2/data/art/tiles/TILES.LST\n\n"
+        "   Fallout 2/data/art/tiles/TILES.LST\n"
+        "   Fallout 2/data/proto/tiles/TILES.LST\n\n"
         "In addition, entries can optionally be made in\n\n"
         "   Fallout 2/data/Text/english/Game/pro_tile.msg\n\n"
         "to give the tile a name and description in the\n"
@@ -242,116 +365,213 @@ void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* handle)
         "(automatically, but currently can't do this.)\n"
         );
     static char FObuf[MAX_PATH] = "";
-    strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    if (FObuf[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
+        strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    }
     ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
     ImGui::Text(
-        "These are Optional,\n"
+        "\nThese are Optional,\n"
         "and will be applied to all tiles in this set.\n"
     );
-    static char buf1[23] = ""; ImGui::InputText(
-        "Name\n(max 23 characters)",                          buf1, 23);
-    static char buf2[71] = ""; ImGui::InputTextMultiline(
-        "Description\n(max 71 characters)\n(no line-breaks)", buf2, 71);
 
-    if (ImGui::Button("Add to Fallout 2...")) {
-        if (handle == nullptr) {
-        //TODO: place a warning here, this needs tile_arr*head to work
-        //TODO: maybe implement this?
-            return;
-        }
+    get_material_id();
+    input_name();
+    input_desc();
 
-        //copy any game_path changes to user_info for saving to config
-        if (fallout2exe_exists(FObuf)) {
-            strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
-        } else {
-            //TODO: log to file
-            set_popup_warning(
-                "[ERROR] export_tile_proto_arr_start()\n\n"
-                "Fallout executable not found.\n"
-            );
-            printf("Error: export_tile_proto_arr_start() Fallout executable not found:\n %s: %d\n", FObuf, __LINE__);
-            return;
-        }
-        info.name        = buf1;
-        info.description = buf2;
-        info.material_id = get_material_id();
-
-        tt_arr* tiles = handle->tile;
-        add_TMAP_tiles_to_lst_arr(usr_nfo, handle, nullptr);
-        // TMAP_tiles_pattern_arr(usr_nfo, handle);
-
-        //tiles can reference different line numbers in pro_tile.msg
-        //have all tiles from this batch point to first new tile entry
-        info.pro_tile = tiles->tile_id * 100;
-        for (int i = 0; i < handle->size; i++)
-        {
-            tt_arr* node = &tiles[i];
-            if (node->tile_id == 1) {
-                continue;
-            }
-            export_tile_proto_arr(usr_nfo, node, &info);
-        }
-
-        if (usr_nfo->default_game_path[0] == '\0') {
-            return;
-        }
-
-        //add tile protos to data/proto/tiles/TILES.LST
-        proto_tiles_lst_append_arr(usr_nfo, handle);
-
-        //TODO: need to add option for different languages
-        //TODO: maybe need to create the subfolders
-        //TODO: also need to give options for descriptions already on pro_tile.msg
-        //add name/description to data/Text/english/Game/pro_tile.msg
-        pro_tile_msg_append_arr(usr_nfo, &info, tiles);
+    if (ImGui::Button("Add to Fallout 2")) {
+        export_proto = true;
     }
-
     if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
     }
+
+
+    //Begin Popups/////////////////////////////////
+    bool game_path      = false;
+    bool load_LST       = false;
+    bool make_LST       = false;
+    bool append_LST     = false;
+    bool append_PRO_LST = false;
+    bool append_PRO_MSG = false;
+    if (ImGui::BeginPopupModal("Create LST File")) {
+        make_LST = create_LST_popup(lst_path);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("Append to LST")) {
+        ImGui::Text(
+            "%s\n\n"
+            "Append new tiles to TILES.LST?\n"
+            "(A backup will be made.)\n\n"
+            "--IMPORTANT--\n"
+            "The Fallout game engine reads tiles in\n"
+            "from TILES.LST based on the line number.\n"
+            "Be careful not to change the order of\n"
+            "tiles once they are on the list.\n\n"
+            , lst_path
+        );
+        if (ImGui::Button("Append to TILES.LST")) {
+            append_LST = true;
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Create new TILES.LST")) {
+            make_LST = true;
+            ImGui::CloseCurrentPopup();
+        }
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
+        ImGui::Text(
+            "%s\n\n"
+            "TILES.LST not updated...\n"
+            "All new tile-names were already\n"
+            "found on TILES.LST.\n"
+            "No new tile-names were added.\n"
+            , lst_path
+        );
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    //End Popups/////////////////////////////////
+
+    // 1) export tile FRM files (already done outside this function)
+    // 2) append tile names to /art/tiles/TILES.LST (or create new one)
+    //  a) load /art/ TILES.LST
+    //  b) if no /art/ TILES.LST then ==> select new folder || create new LST || cancel
+    //  c) check if names already on list
+    //  d) if not then append
+    // 3) export tile PRO files
+    //  a) load /art/ TILES.LST
+    //  b) if no /art/ TILES.LST then ==> select new folder || create new LST || cancel
+    //  c) check if names already on list (and get line #)
+    //  d) if not then append             (and get line #)
+    //  e) finally, export protos with line info from /art/ TILES.LST
+    // 4) append tile proto info to /pro/tiles/TILES.LST (or create new one)
+    //  a) load /proto/ TILES.LST
+    //  b) if no /proto/ TILES.LST then ==> select new folder || create new LST || cancel
+    //  c) can only append?
+
+    if (game_path) {
+        //copy any game_path changes to user_info for saving to config
+        if (fallout2exe_exists(FObuf) == false) {
+            //TODO: log to file
+            set_popup_warning(
+                "[ERROR] export_proto_arr_POPUP()\n\n"
+                "Fallout executable not found.\n"
+            );
+            printf("Error: export_proto_arr_POPUP() Fallout executable not found:\n %s: %d\n", FObuf, __LINE__);
+            return;
+        }
+        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+    }
+
+
+    if (load_LST) {
+        lst_path = load_FRM_tiles_LST(usr_nfo, handle);
+    }
+    if (make_LST) {
+        usr_nfo->game_files.FRM_TILES_LST = save_NEW_tiles_LST(handle, lst_path);
+    }
+    if (append_LST) {
+        lst_path = add_TMAP_tiles_to_lst_arr(usr_nfo, handle, lst_path);
+    }
+
+
+    if (export_proto) {
+        lst_path = export_protos(usr_nfo, handle);
+    }
+    if (append_PRO_LST) {
+        //add tile protos to data/proto/tiles/TILES.LST
+        // lst_path = add_TMAP_PRO_tiles_to_LST(usr_nfo, handle);
+        add_TMAP_PRO_tiles_to_LST(usr_nfo, handle);
+    }
+    if (append_PRO_MSG) {
+        //TODO: need to add option for different languages?
+        //TODO: maybe need to create the subfolders
+        //TODO: also need to give options for descriptions already on pro_tile.msg
+        //add name/description to data/Text/english/Game/pro_tile.msg
+        pro_tile_msg_append_arr(usr_nfo, NULL, handle->tile);
+    }
 }
 
-void proto_tiles_lst_append_arr(user_info* usr_info, tt_arr_handle* head)
+char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, bool set_auto)
 {
-    //this assumes usr_info->default_game_path has been set
-    //append to data/proto/tiles/TILES.LST
-    char save_path[MAX_PATH];
-    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_info->default_game_path);
-    //check if new protos are on old list
-    char* old_proto_list = io_load_text_file(save_path);
-    if (old_proto_list == nullptr) {
-        //TODO: need either a popup or some menu
-        //      telling the user they're missing this file
-        //      and asking if we should create a new one
-        //      or load the original from master.dat file
+
+    //append new protos to list in memory
+    char* new_PRO_LST = check_PRO_LST_names(old_PRO_LST, head);
+    if (new_PRO_LST == nullptr) {
+        return old_PRO_LST;
+    }
+
+
+    //TODO: use an io_ function to append text instead
+    //append new list_of_tiles to the end of original list
+    //in a new buffer large enough to fit both
+    int old_LST_size    = strlen(old_PRO_LST);
+    int new_LST_size    = strlen(new_PRO_LST);
+    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
+    strncpy(final_PRO_LST, old_PRO_LST, old_LST_size);
+    final_PRO_LST[old_LST_size] = '\0';    //needed for strncat() to work
+    strncat(final_PRO_LST, new_PRO_LST, new_LST_size);
+
+    free(old_PRO_LST);
+    return final_PRO_LST;
+}
+
+//##### I feel like this is a stupid way to write this
+//##### but it's better than it was,
+//##### and I don't know a better way yet
+//this assumes usr_info->default_game_path has been set
+//append to data/proto/tiles/TILES.LST
+char* add_TMAP_PRO_tiles_to_LST(user_info* usr_nfo, tt_arr_handle* head)
+{
+    static char LST_path[MAX_PATH];
+    snprintf(LST_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_nfo->default_game_path);
+    char* old_PRO_LST = io_load_txt_file(LST_path);
+
+    if (old_PRO_LST == nullptr) {
+        //TODO: may want to handle other failures
+        //      which would cause io_load_text_file()
+        //      to return NULL/nullptr
+
+        ImGui::OpenPopup("Create LST File");
         printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+        return LST_path;
     }
-    char* new_proto_list = check_proto_names_arr(old_proto_list, head);
-    if (new_proto_list == nullptr) {
-        free(old_proto_list);
-        return;
+
+    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, false);
+    if (new_PRO_LST != usr_nfo->game_files.PRO_TILES_LST) {
+        free(usr_nfo->game_files.PRO_TILES_LST);
     }
+
     //backup and save new list
-    backup_append_LST(save_path, new_proto_list);
-    free(old_proto_list);
-    free(new_proto_list);
+    io_backup_file(LST_path, nullptr);
+    io_save_txt_file(LST_path, new_PRO_LST);
+
+    usr_nfo->game_files.PRO_TILES_LST = new_PRO_LST;
+
+    return LST_path;
 }
 
 //backs up file at "path",
 //appends "names" to text file at "path"
-bool backup_append_LST(char* path, char* string)
+bool backup_append_LST(char* path, char* LST_file)
 {
     if (io_file_exists(path) == false) {
         return false;
     }
-    if (string == nullptr) {
+    if (LST_file == nullptr) {
         return false;
     }
 
-    int file_size = io_file_size(path);
-    int string_len = strlen(string);
+    int file_size        = io_file_size(path);
+    int string_len       = strlen(LST_file);
     char* buff_tiles_lst = (char*)malloc(file_size + string_len);
-    FILE* tiles_lst = fopen(path, "rb");
+    FILE* tiles_lst      = fopen(path, "rb");
     if (tiles_lst == nullptr) {
         //TODO: popup warning?
         //unable to open file for some reason
@@ -362,7 +582,7 @@ bool backup_append_LST(char* path, char* string)
     fclose(tiles_lst);
 
     char* ptr = buff_tiles_lst + file_size;
-    memcpy(ptr, string, string_len);
+    memcpy(ptr, LST_file, string_len);
 
     io_backup_file(path, nullptr);
     tiles_lst = fopen(path, "wb");
@@ -373,7 +593,7 @@ bool backup_append_LST(char* path, char* string)
     return true;
 }
 
-void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
+void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
 {
     if (tile == nullptr) {
         //TODO: place a warning here, this needs town_tile*head to work
@@ -396,12 +616,24 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
     //end TODO
     proto.MaterialID      = info->material_id;
 
-    B_Endian::swap_32(proto.ObjectID);
-    B_Endian::swap_32(proto.TextID);
-    B_Endian::swap_32(proto.FrmID);
-    B_Endian::swap_32(proto.MaterialID);
+    B_Endian::flip_proto_endian(&proto);
 
-    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", usr_info->default_game_path, tile->tile_id);
+    // B_Endian::swap_32(proto.ObjectID);
+    // B_Endian::swap_32(proto.TextID);
+    // B_Endian::swap_32(proto.FrmID);
+    // B_Endian::swap_32(proto.MaterialID);
+
+    //TODO: create folder paths if they don't exist
+    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", game_path, tile->tile_id);
+
+    char* ptr = strrchr(path_buff, PLATFORM_SLASH);
+    char back = ptr[0];
+    ptr[0] = '\0';
+    if (!io_isdir(path_buff)) {
+        io_make_dir(path_buff);
+    }
+    ptr[0] = back;
+
     FILE* tile_pro = fopen(path_buff, "wb");
     if (tile_pro == nullptr) {
         printf("Unable to open proto file: %s\n", path_buff);
@@ -422,27 +654,9 @@ void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info)
 //     7: Leather
 int get_material_id()
 {
-    //input material type
     static int material_id = 0;
     const char* names[] = { "Glass", "Metal", "Plastic", "Wood", "Dirt", "Stone", "Cement", "Leather" };
-    // Simple selection popup (if you want to show the current selection inside the Button itself,
-    // you may want to build a string using the "###" operator to preserve a constant ID with a variable label)
+    ImGui::Combo("Material Type", &material_id, names, IM_ARRAYSIZE(names));
 
-    if (ImGui::Button("Select Material Type...")) {
-        ImGui::OpenPopup("material_select");
-    }
-    ImGui::SameLine();
-    ImGui::TextUnformatted(material_id == 0 ? "Glass" : names[material_id]);
-    if (ImGui::BeginPopup("material_select"))
-    {
-        ImGui::SeparatorText("Material");
-        for (int i = 0; i < IM_ARRAYSIZE(names); i++) {
-            if (ImGui::Selectable(names[i])) {
-                material_id = i;
-            }
-        }
-
-        ImGui::EndPopup();
-    }
     return material_id;
 }

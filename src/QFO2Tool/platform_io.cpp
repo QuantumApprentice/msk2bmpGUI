@@ -395,7 +395,7 @@ bool io_make_dir(char* dir_path)
 
 #endif
 
-//TODO: delete?
+//TODO: delete? not used anywhere
 //check if path exists
 bool io_path_check(char* file_path)
 {
@@ -440,20 +440,20 @@ bool io_path_check(char* file_path)
 //      _yyyymmdd_hhmmss
 //appends same file extension as source
 //TODO: need windows version? rename() is linux specific?
-bool io_backup_file(char* file_path, char* dest_path)
+bool io_backup_file(char* src_path, char* dst_path)
 {
-    if (dest_path == nullptr) {
-        dest_path = file_path;
+    if (dst_path == nullptr) {
+        dst_path = src_path;
     }
-    char* extension = strrchr(file_path, '\0');
+    char* extension = strrchr(src_path, '\0');  //get end of string position?
     char time_buff[32];
     char rename_buff[MAX_PATH];
     time_t t = time(NULL);
     tm* tp = localtime(&t);
     strftime(time_buff, 32, "_%Y%m%d_%H%M%S", tp);
-    snprintf(rename_buff, MAX_PATH, "%s%s%s", dest_path, time_buff, extension-4);
+    snprintf(rename_buff, MAX_PATH, "%s%s%s", dst_path, time_buff, extension-4);
 
-    int error = rename(file_path, rename_buff);
+    int error = rename(src_path, rename_buff);
     if (error != 0) {
         //TODO: log to file
         perror("Error backing up file: ");
@@ -494,7 +494,7 @@ bool io_create_backup_dir(char* dir)
 
 //loads a text file into a buffer
 //returns the buffer
-char* io_load_text_file(char* full_path)
+char* io_load_txt_file(char* full_path)
 {
     if (io_file_exists(full_path) == false) {
         return nullptr;
@@ -507,9 +507,28 @@ char* io_load_text_file(char* full_path)
     FILE* tiles_lst = fopen(full_path, "rb");
     fread(text_file_buff, file_size, 1, tiles_lst);
     fclose(tiles_lst);
+    //TODO: should I put error checking in
+    //      to verify the entire file read in correctly?
 
     text_file_buff[file_size] = '\0';
     return text_file_buff;
+}
+
+bool io_save_txt_file(char* path, char* txt)
+{
+    if (path == nullptr) {return false;}
+    if (txt[0] == '\0')  {return false;}
+
+    FILE* txt_file = fopen(path, "wb");
+    if (txt_file == NULL) {
+        //TODO: log to file
+        printf("Error: io_save_txt_file() : unable to open file to write to\n");
+        return false;
+    }
+    fwrite(txt, strlen(txt), 1, txt_file);
+    fclose(txt_file);
+
+    return true;
 }
 
 bool fallout2exe_exists(char* game_path)

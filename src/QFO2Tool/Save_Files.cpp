@@ -295,6 +295,12 @@ void init_IFD()
 
 bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
 {
+    if (!src) {
+        return false;
+    }
+    if (!dst) {
+        return false;
+    }
     int w = src->w;
     int h = src->h;
     int s = w*h;
@@ -387,9 +393,6 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 
     int dir = img_data->display_orient_num;
     int num = img_data->display_frame_num;
-    int w   = anm_dir[dir].frame_data[num]->w;
-    int h   = anm_dir[dir].frame_data[num]->h;
-    int s   = w*h;
     int fpo = sv_info->s_type == single_frm ? 1 : anm_dir[dir].num_frames;
 
     FRM_Header header;
@@ -412,24 +415,36 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
 //need to have a centering hex? how in the world do
 //I figure out what a 0,0 positioned FRM will look
 //like in the mapper/game engine?
-
+    int s = 0;
     if (sv_info->s_type == single_dir) {
         num_dir = 1;
         count = anm_dir[dir].num_frames;
         s = 0;
         for (int i = 0; i < count; i++) {
             s += 12;
+            int w = anm_dir[dir].frame_data[i]->w;
+            int h = anm_dir[dir].frame_data[i]->h;
             s += w*h;
         }
     } else
     if (sv_info->s_type == all_dirs) {
-        s = 0;
+        s       = 0;
         num_dir = 6;
         count = anm_dir[dir].num_frames;
         for (int i = 0; i < num_dir; i++) {
+            if (anm_dir[i].num_frames < 1) {
+                continue;
+            }
             header.Frame_0_Offset[i] = sizeof(FRM_Header) + s;
             for (int j = 0; j < count; j++) {
                 s += 12;
+                //Oddly, it seems FRx images store the total for all 6 directions
+                //      even though only 1 direction is in the FRM
+                //      not sure how to handle that here, seems to work with
+                //      actual size in this direction instead of total
+                //TODO: needs in-game testing
+                int w = anm_dir[i].frame_data[j]->w;
+                int h = anm_dir[i].frame_data[j]->h;
                 s += w*h;
             }
         }
@@ -442,6 +457,9 @@ bool save_FRM_SURFACE(char* save_name, image_data* img_data, user_info* usr_info
     for (int i = 0; i < num_dir; i++) {
         if (num_dir < 6) {
             i = dir;
+        }
+        if (anm_dir[i].num_frames < 1) {
+            continue;
         }
         for (int j = 0; j < count; j++) {
             if (count < anm_dir[i].num_frames) {

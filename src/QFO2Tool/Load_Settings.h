@@ -1,13 +1,7 @@
 #pragma once
 #include <filesystem>
+#include "platform_io.h"
 
-#ifdef QFO2_WINDOWS
-    #define MAX_PATH 256
-    //TODO: add error messages if user goes over MAX_PATH
-#elif defined(QFO2_LINUX)
-    #define MAX_PATH 4096
-    #include <string.h>
-#endif
 #define MAX_KEY  32
 
 enum export_auto {
@@ -25,6 +19,7 @@ enum {
 
 struct fo2_files {
     char* FRM_TILES_LST;
+    char* PRO_TILES_LST;
     char* WORLDMAP_TXT;
 };
 
@@ -38,7 +33,8 @@ struct user_info {
 
     int  auto_export = not_set;           // 0=not set, 1=auto all the way, 2=manual
     bool save_full_MSK_warning;
-    bool show_image_stats;
+    bool show_image_stats;          //TODO: remove, replace with window specific bool
+    bool create_new_LST;
     size_t length;
 };
 

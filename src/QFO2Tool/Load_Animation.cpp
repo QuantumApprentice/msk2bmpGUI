@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <algorithm>
 
-#include "Load_Files.h"
+#include "platform_io.h"
 #include "Load_Animation.h"
 #include "Edit_Animation.h"
 
@@ -57,7 +57,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         if (!img_data->ANM_dir[i].frame_box) {
             //TODO: log to file
             set_popup_warning(
-                "[ERROR] File_Type_Check()\n\n"
+                "[ERROR] Drag_Drop_Load_Animation()\n\n"
                 "Unable to allocate memory for ANM_dir[i].frame_box."
             );
             printf("Unable to allocate memory for ANM_dir[i].frame_box: %d", __LINE__);
@@ -76,7 +76,7 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
         free(frame_data);
         frame_data = NULL;
     }
-    frame_data = (Surface**)malloc(sizeof(Surface*) * num_frames);
+    frame_data = (Surface**)calloc(1, sizeof(Surface*) * num_frames);
     if (!frame_data) {
         //TODO: log out to txt file
         set_popup_warning(
@@ -96,7 +96,15 @@ bool Drag_Drop_Load_Animation(std::vector <std::filesystem::path>& path_set, LF*
     int i = 0;
     for (const std::filesystem::path& path : path_set) {
         frame_data[i] = Load_File_to_RGBA(path.u8string().c_str());
-        i++;
+        if (frame_data[i] != NULL) {
+            //only increment if current frame_data[] has been filled
+            i++;
+        }
+    }
+    if (frame_data[0] == NULL) {
+        //nothing could be loaded in this folder
+        free(frame_data);
+        return false;
     }
 
     F_Prop->img_data.type = OTHER;

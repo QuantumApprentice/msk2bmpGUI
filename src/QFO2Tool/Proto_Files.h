@@ -20,5 +20,5 @@ struct tile_proto {
 
 
 int get_material_id();
-void export_tile_proto_arr_start(user_info* usr_nfo, tt_arr_handle* tile_arr);
-void export_tile_proto_arr(user_info* usr_info, tt_arr* tile, proto_info* info);
+void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* tile_arr);
+void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info);

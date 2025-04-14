@@ -5,11 +5,13 @@
 #include <cstdint>
 #include <fstream>
 #include "load_FRM_OpenGL.h"
+#include "Proto_Files.h"
 
 namespace B_Endian {
     // Convert signed values
     void flip_header_endian(FRM_Header* header);
     void flip_frame_endian(FRM_Frame* frame_data);
+    void flip_proto_endian(tile_proto* proto);
 
     void swap_16(uint16_t* in);
     void swap_16(int16_t*  in);

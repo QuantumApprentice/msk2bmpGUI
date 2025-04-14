@@ -219,21 +219,47 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
 }
 
 
-void TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect* offset, tt_arr_handle* handle)
+tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect* offset, tt_arr_handle* handle)
 {
     static tt_arr_handle* exported_tiles = NULL;
+    if (handle) {
+        exported_tiles = handle;
+    }
     //Save tiles button
     if (ImGui::Button("Export Tiles")) {
-
         ImGui::OpenPopup("Export Tiles");
     }
+
     if (ImGui::BeginPopupModal("Export Tiles")) {
         tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, img_data, offset);
         if (temp) {
             //assign handle only if tiles have been fully exported
             //pressing cancel won't clear old handle
             exported_tiles = temp;
-            ImGui::CloseCurrentPopup();
+        }
+
+
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Add to Fallout 2")) {
+            //TODO: add to fallout 2 TILES.LST file
+        }
+        ImGui::SetItemTooltip(
+            "TILES.LST located in:\n"
+            "Fallout 2/data/art/tiles/\n\n"
+            "Is checked for the names of these tiles\n"
+            "and then appended to only if they\n"
+            "don't already exist.\n\n"
+            "(NOTE: Currently can't load\n"
+            "TILES.LST from master.dat\n"
+            "but should be able too in the future)"
+        );
+
+
+
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
         }
         if (ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
@@ -241,28 +267,35 @@ void TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect* offset, t
         ImGui::EndPopup();
     }
 
-    //TODO: disable these buttons if handle==NULL
+
+
+    if (exported_tiles == NULL) {
+        ImGui::BeginDisabled();
+    }
     if (ImGui::Button("Export Protos")) {
         ImGui::OpenPopup("Proto Info");
     }
-    // Always center this window when appearing
+    if (ImGui::Button("Export Pattern File")) {
+        ImGui::OpenPopup("Pattern File");
+    }
+    if (exported_tiles == NULL) {
+        ImGui::EndDisabled();
+    }
+
+    // Popups: Always center this window when appearing
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
     {
-        export_tile_proto_arr_start(usr_nfo, handle);
+        export_proto_arr_POPUP(usr_nfo, exported_tiles);
 
         ImGui::EndPopup();
     }
-
-    if (ImGui::Button("Export Pattern File")) {
-        ImGui::OpenPopup("Pattern File");
-    }
-    // Always center this window when appearing
+    // Always center this window when appearing? does this even work?
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
     {
-        export_pattern_file(usr_nfo, handle);
+        export_pattern_file(usr_nfo, exported_tiles);
 
         ImGui::EndPopup();
     }
@@ -272,6 +305,10 @@ void TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect* offset, t
 
     ImGui::SliderInt("Tile Spacing X", &offset->w, 0, 80, NULL);
     ImGui::SliderInt("Tile Spacing Y", &offset->h, 0, 80, NULL);
+
+    if (exported_tiles != handle) {
+        return exported_tiles;
+    }
 }
 
 
@@ -329,7 +366,7 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
     static Rect offset = {};
     static tt_arr_handle* handle = nullptr;
 
-    TMAP_tile_buttons(usr_info, img_data, &offset, handle);
+    handle = TMAP_tile_buttons(usr_info, img_data, &offset, handle);
 
     draw_TMAP_tiles(usr_info, img_data, shaders,
                     My_Variables->tile_texture_rend,

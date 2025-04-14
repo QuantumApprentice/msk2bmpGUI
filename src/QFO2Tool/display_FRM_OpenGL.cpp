@@ -46,8 +46,14 @@ void render_OTHER_OpenGL(image_data* img_data, int width, int height)
     int x_offset = anm_dir[orient].frame_box->x1 - img_data->ANM_bounding_box[orient].x1;
     int y_offset = anm_dir[orient].frame_box->y1 - img_data->ANM_bounding_box[orient].y1;
 
-    uint8_t* pxls = anm_dir[orient].frame_data[frame_num]->pxls;
-
+    uint8_t* pxls;
+    if (anm_dir[orient].frame_data[frame_num] == NULL) {
+        width  = 0;
+        height = 0;
+        pxls = NULL;
+    } else {
+        pxls = anm_dir[orient].frame_data[frame_num]->pxls;
+    }
     //Change alignment with glPixelStorei() (this change is global/permanent until changed back)
     //FRM's are aligned to 1-byte, SDL_Surfaces are typically 4-byte
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -63,10 +69,28 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
 
     float fps = 10 * playback_speeds[img_data->playback_speed];
 
-    int orient = img_data->display_orient_num;
+    int dir = img_data->display_orient_num;
+    int num = img_data->display_frame_num;
+    ANM_Dir* anm_dir = img_data->ANM_dir;
 
-    int img_width  = img_data->ANM_dir[orient].frame_data[0]->w;
-    int img_height = img_data->ANM_dir[orient].frame_data[0]->h;
+    int img_width  = 0;
+    int img_height = 0;
+    //TODO: probably want to make the image display
+    //      more flexible, manage the case where
+    //      frame_data[num] doesn't have a surface
+    //      but we can add one with a button if we
+    //      want, also can add a "num" entry at the
+    //      end (or possibly in between frames?)
+    if (anm_dir[dir].frame_data[num]) {
+        img_width  = img_data->ANM_dir[dir].frame_data[num]->w;
+        img_height = img_data->ANM_dir[dir].frame_data[num]->h;
+    } else {
+        //TODO: for now this assigns frame[0]'s w/h
+        //      to force glViewport() to be full image size
+        //      for clearing, in case current frame is NULL
+        img_width  = img_data->ANM_dir[dir].frame_data[0]->w;
+        img_height = img_data->ANM_dir[dir].frame_data[0]->h;
+    }
 
     glViewport(0, 0, img_width, img_height);
     glBindFramebuffer(GL_FRAMEBUFFER, img_data->framebuffer);
@@ -82,7 +106,7 @@ void animate_OTHER_to_framebuff(Shader* shader, mesh* triangle, image_data* img_
         last_time = current_time;
 
         img_data->display_frame_num += 1;
-        if (img_data->display_frame_num >= img_data->ANM_dir[orient].num_frames) {
+        if (img_data->display_frame_num >= img_data->ANM_dir[dir].num_frames) {
             img_data->display_frame_num = 0;
         }
         render_OTHER_OpenGL(img_data, img_width, img_height);
@@ -216,7 +240,7 @@ void draw_FRM_to_framebuffer(shader_info* shader_i, int width, int height,
     shader_i->render_FRM_shader->use();
     uint32_t ID = shader_i->render_FRM_shader->ID;
 
-    GLint t = glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPaletteINT");
+    GLint t = glGetUniformLocation(shader_i->render_FRM_shader->ID, "ColorPaletteUINT");
     glUniform1uiv(t, 256, (GLuint*)shader_i->FO_pal->colors);
 
     shader_i->render_FRM_shader->setInt("Indexed_FRM", 0);
@@ -258,7 +282,7 @@ void draw_PAL_to_framebuffer(Palette* pal, Shader* shader,
     //shader
     shader->use();
     uint32_t ID = shader->ID;
-    glUniform1uiv(glGetUniformLocation(ID, "ColorPaletteINT"), 256, (GLuint*)pal->colors);
+    glUniform1uiv(glGetUniformLocation(ID, "ColorPaletteUINT"), 256, (GLuint*)pal->colors);
 
     shader->setInt("Indexed_FRM", 0);
     shader->setInt("Indexed_PAL", 1);
@@ -291,7 +315,7 @@ void draw_texture_to_framebuffer(Palette* pal, Shader* shader, mesh* triangle,
     shader->use();
 
 
-    GLint t = glGetUniformLocation(shader->ID, "ColorPaletteINT");
+    GLint t = glGetUniformLocation(shader->ID, "ColorPaletteUINT");
     glUniform1uiv(t, 256, (GLuint*)pal->colors);
 
     GLenum err = glGetError();
@@ -319,7 +343,7 @@ void draw_MSK_to_framebuffer(Palette* pal, Shader* shader, mesh* triangle,
 
     //shader
     shader->use();
-    glUniform1uiv(glGetUniformLocation(shader->ID, "ColorPaletteINT"), 256, (GLuint*)pal->colors);
+    glUniform1uiv(glGetUniformLocation(shader->ID, "ColorPaletteUINT"), 256, (GLuint*)pal->colors);
     shader->setInt("Indexed_FRM", 0);
 
     glDrawArrays(GL_TRIANGLES, 0, triangle->vertexCount);
