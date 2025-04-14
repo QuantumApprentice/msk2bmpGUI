@@ -444,7 +444,7 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
     //  b) if no /art/ TILES.LST then ==> select new folder || create new LST || cancel
     //  c) check if names already on list
     //  d) if not then append
-    // 3) export tile PRO files
+    // 3) export tile PRO files using info from /art/ TILES.LST
     //  a) load /art/ TILES.LST
     //  b) if no /art/ TILES.LST then ==> select new folder || create new LST || cancel
     //  c) check if names already on list (and get line #)
