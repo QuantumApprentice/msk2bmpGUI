@@ -304,6 +304,7 @@ tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_f
 
             memcpy(tile->frm_data, tile_buff, TMAP_W*TMAP_H);
             tile->tile_id = 0;
+            // tile->tile_id = tile_num;
 
             //TODO: make this a separate process
             //      tiles should be in memory first
@@ -313,7 +314,7 @@ tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_f
         }
     }
 
-    tile_num        = 0;
+    // tile_num        = 0;
     handle->size    = col_cnt*row_cnt;
     handle->col_cnt = col_cnt;
     handle->row_cnt = row_cnt;
