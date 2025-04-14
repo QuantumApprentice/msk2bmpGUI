@@ -66,6 +66,19 @@ void B_Endian::flip_frame_endian(FRM_Frame* frame_data)
     B_Endian::swap_16(&frame_data->Shift_Offset_y);
 }
 
+//need to re-add commented out fields?
+void B_Endian::flip_proto_endian(tile_proto* proto)
+{
+    B_Endian::swap_32(proto->ObjectID);
+    B_Endian::swap_32(proto->TextID);
+    B_Endian::swap_32(proto->FrmID);
+    B_Endian::swap_32(proto->MaterialID);
+
+    // B_Endian::swap_32(proto->Light_Radius);
+    // B_Endian::swap_32(proto->Light_Intensity);
+    // B_Endian::swap_32(proto->Flags);
+}
+
 // Unsigned conversions
 uint32_t B_Endian::read_u32(std::istream& f)
 {
@@ -73,9 +86,9 @@ uint32_t B_Endian::read_u32(std::istream& f)
     uint8_t bytes[4];
     f.read((char*)bytes, 4);
 
-    val = bytes[3] 
-        | (bytes[2] << 8) 
-        | (bytes[1] << 16) 
+    val = bytes[3]
+        | (bytes[2] << 8)
+        | (bytes[1] << 16)
         | (bytes[0] << 24);
     return val;
 }

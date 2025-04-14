@@ -113,7 +113,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
     if (tiles_lst == nullptr) {
         if (strlen(usr_info->default_game_path) > 1) {
-            usr_info->game_files.FRM_TILES_LST = load_tiles_lst_game(usr_info->default_game_path);
+            usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path,  "/data/art/tiles/", "TILES.LST");
         }
         if (tiles_lst == nullptr) {
             //TODO: log to file
@@ -173,7 +173,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
         int j = 0;
         for (int i = handle->col_cnt-1; i > (handle->col_cnt-1)/2; i--)
         {
-            uint32_t temp = ptr[i].tile_id;
+            uint32_t temp  = ptr[i].tile_id;
             ptr[i].tile_id = ptr[j].tile_id;
             ptr[j].tile_id = temp;
             j++;
@@ -203,13 +203,6 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
 
 void export_pattern_file(user_info* usr_nfo, tt_arr_handle* handle)
 {
-    if (fallout2exe_exists(usr_nfo->default_game_path) == false) {
-        ImGui::Text(
-            "Default game path is not set.\n"
-            "Please set the path for fallout2.exe here:"
-        );
-        ImGui::InputText("###fallout2.exe", usr_nfo->default_game_path, MAX_PATH);
-    }
 
     //check pattern filename
     int patt_num = 1;

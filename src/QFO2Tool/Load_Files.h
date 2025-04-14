@@ -11,11 +11,6 @@
 #include "shader_class.h"
 
 
-#ifdef QFO2_WINDOWS
-    #define PLATFORM_SLASH  ('\\')
-#elif defined(QFO2_LINUX)
-    #define PLATFORM_SLASH  ('/')
-#endif
 
 //File info
 struct LF {

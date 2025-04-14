@@ -15,6 +15,11 @@ struct tile_name_arr {
     uint32_t next;           //points to array index of next viable name
 };
 
-void add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle,    char* save_buff);
-char* load_tiles_lst_game(char* game_path);
+char* add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle,    char* save_buff);
+// char* load_tiles_lst_game(char* game_path);
 tile_name_arr* make_name_list_arr(char* new_tiles_list);
+
+char* save_NEW_tiles_LST(tt_arr_handle* handle, char* save_path);
+char* load_LST_file(char* game_path, char* LST_path, char* LST_file);
+char* append_FRM_tiles_LST(char* tiles_lst_path, tt_arr_handle* handle, bool set_auto);
+char* load_FRM_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle);

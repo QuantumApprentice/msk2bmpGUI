@@ -6,7 +6,7 @@ in vec2 TexCoord;
 uniform sampler2D Indexed_FRM;
 uniform sampler2D Indexed_PAL;
 uniform sampler2D Indexed_MSK;
-uniform uint ColorPaletteINT[256];
+uniform uint ColorPaletteUINT[256];
 
 void main()
 {
@@ -16,9 +16,9 @@ void main()
     vec4 index3 = texture(Indexed_MSK, vec2(TexCoord.x, TexCoord.y));
 
     if (index2.r == 0) {
-        // texel = vec4(ColorPaletteINT[int(index1.r*255)]);//, 1.0f);
+        // texel = vec4(ColorPaletteUINT[int(index1.r*255)]);//, 1.0f);
         uint idx = uint(index1.r*255);
-        uint color = ColorPaletteINT[idx];
+        uint color = ColorPaletteUINT[idx];
         texel = vec4(
             float(int(color >>  0) & 0xFF) / 255.0,    // r
             float(int(color >>  8) & 0xFF) / 255.0,    // g
@@ -27,9 +27,9 @@ void main()
         );
     }
     else {
-        // texel = vec4(ColorPaletteINT[int(index2.r*255)]);//, 1.0f);
+        // texel = vec4(ColorPaletteUINT[int(index2.r*255)]);//, 1.0f);
         uint idx = uint(index2.r*255);
-        uint color = ColorPaletteINT[idx];
+        uint color = ColorPaletteUINT[idx];
         texel = vec4(
             float(int(color >>  0) & 0xFF) / 255.0,    // r
             float(int(color >>  8) & 0xFF) / 255.0,    // g

@@ -1,6 +1,7 @@
 #include "Load_Settings.h"
 #include "tinyfiledialogs.h"
-#include "platform_io.h"
+
+#include <string.h>
 
 #include <iostream>
 #include <string>

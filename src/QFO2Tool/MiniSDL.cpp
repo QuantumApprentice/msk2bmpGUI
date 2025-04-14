@@ -62,13 +62,13 @@ Surface* Convert_Surface_to_RGBA(Surface* src)
         //convert from paletted to 32bit
         for (int i = 0; i < total_pxls; i++)
         {
-            if (*src_pxl == 0) {
+            if (src_pxl[i]  == 0) {
+                dst_pxl[i].a = 0;
                 continue;
             }
-            *dst_pxl = src->palette->colors[*src_pxl];
-            dst_pxl->a = 0xFF;
-            src_pxl++;
-            dst_pxl++;
+            dst_pxl[i]   = src->palette->colors[src_pxl[i]];
+            dst_pxl[i].a = 0xFF;
+
         }
     }
     else if (src->channels == 3) {
