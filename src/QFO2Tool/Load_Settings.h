@@ -20,6 +20,7 @@ enum {
 struct fo2_files {
     char* FRM_TILES_LST;
     char* PRO_TILES_LST;
+    char* PRO_TILE_MSG;
     char* WORLDMAP_TXT;
 };
 

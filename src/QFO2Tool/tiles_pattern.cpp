@@ -48,27 +48,27 @@ bool is_tile_blank(town_tile* tile)
 //tile-names should already be on TILES.LST
 //so we loop through the list and identify the line number
 //then assign that line number as the tile_id
-void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
+void assign_tile_id(tt_arr_handle* handle, const char* tiles_LST)
 {
-    int tiles_lst_len = strlen(tiles_lst);
+    int tiles_lst_len = strlen(tiles_LST);
 
-    tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
-        tt_arr* node = &tiles[i];
-        //skip known blank tiles
-        if (node->tile_id == 1) {
+        tt_arr* node = &handle->tile[i];
+        if (node->tile_id == -1) {
+            //skip known blank tiles
             continue;
         }
 
         //art FID is 0 indexed, so start at 0 when assigning lines
         int current_line = 0;
-        const char* strt = tiles_lst;
+        const char* strt = tiles_LST;
         for (int j = 0; j < tiles_lst_len; j++)
         {
-            if (tiles_lst[j] != '\n') {
+            if (tiles_LST[j] != '\n') {
                 continue;
             }
+            //TODO: delete this commented stuff?
             // if (tiles_lst[i] >= 'A' && tiles_lst[i] <= 'Z') {
             //     c1 = 'a' + tiles_lst[i] - 'A';
             // }
@@ -78,22 +78,21 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
             // if (c1 != c2) {
             //     continue;
             // }
+            current_line++;
 
             if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
-                strt = &tiles_lst[j+1];
-                current_line++;
+                strt = &tiles_LST[j+1];
                 continue;
             }
             if (io_strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
-                strt = &tiles_lst[j+1];
-                current_line++;
+                strt = &tiles_LST[j+1];
                 continue;
             }
             //match found, assign current line # to current tile_id
             node->tile_id = current_line;
             break;
         }
-        if (tiles[i].tile_id == 0) {
+        if (node->tile_id == 0) {
             //TODO: this needs its own popup window asking for next step
             printf("we've got a problem here, unable to find matching name\n");
         }
@@ -131,7 +130,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
         }
     }
 
-    assign_tile_id_arr(handle, tiles_lst);
+    assign_tile_id(handle, tiles_lst);
 
     //  pattern file is array of
     //  4x int struct w/pragma pack applied

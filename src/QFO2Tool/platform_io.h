@@ -26,8 +26,10 @@ char* io_scan_dir(void* dir_stream);
 bool io_close_dir(void* dir_stream);
 
 
+char* io_actual_path(char* file_name);
 bool io_file_exists(const char* filename);
 bool io_path_check(char* file_path);
+bool io_create_path_from_file(char* file_path);
 bool io_make_dir(char* dir_path);
 int io_file_size(const char* filename);
 bool io_backup_file(char* file_path, char* dest_path);

@@ -1041,7 +1041,7 @@ bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type 
         //if default_save_path isn't set, set it using default_game_path
         if (!strcmp(usr_info->default_save_path, "\0"))
         {
-            strcpy(usr_info->default_save_path, usr_info->default_game_path);
+            strncpy(usr_info->default_save_path, usr_info->default_game_path, MAX_PATH);
         }
 
         bool file_exists = check_and_write_cfg_file(usr_info, exe_path);

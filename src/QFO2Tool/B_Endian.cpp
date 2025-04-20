@@ -69,6 +69,8 @@ void B_Endian::flip_frame_endian(FRM_Frame* frame_data)
 //need to re-add commented out fields?
 void B_Endian::flip_proto_endian(tile_proto* proto)
 {
+    //just these 4 for now
+    //used in export_single_tile_PRO()
     B_Endian::swap_32(proto->ObjectID);
     B_Endian::swap_32(proto->TextID);
     B_Endian::swap_32(proto->FrmID);
