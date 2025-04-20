@@ -338,6 +338,53 @@ bool io_close_dir(void* dir_stream)
     return true;
 }
 
+//returns correct path for case insensitive input
+//  or NULL if no match is found
+char* io_actual_path(char* file_name)
+{
+    static char full_path[MAX_PATH];
+    strncpy(full_path, file_name, MAX_PATH);
+
+    bool isdir = 0;
+    char* curr = NULL;
+    char* last = NULL;
+    while (!isdir) {
+        curr = strrchr(full_path, '/');
+        if (!curr) {
+            return NULL;
+        }
+        if (last) {
+            last[0] = '/';
+        }
+        last = curr;
+        curr[0] = '\0';
+        isdir = io_isdir(full_path);
+    }
+
+    while(curr[1] != '\0') {
+        DIR* stream = (DIR*)io_open_dir(full_path);
+
+        int match  = -1;
+        char* dir  = NULL;
+        char* next = strchr(curr+1, '/');
+        if (!next) {
+            curr[0] = '/';
+            break;
+        }
+        next[0] = '\0';
+        while (match) {
+            dir = io_scan_dir(stream);
+            match = io_strncasecmp(curr+1, dir, MAX_PATH);
+        }
+        snprintf(curr, MAX_PATH-strlen(full_path), "/%s", dir);
+        curr += strlen(dir)+1;
+
+        io_close_dir(stream);
+    }
+
+    return full_path;
+}
+
 //another way to check if directory exists?
 // #include <stdbool.h>  //bool type ?
 //returns true if the file exists, false otherwise
@@ -375,11 +422,10 @@ bool io_make_dir(char* dir_path)
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
     if (error == 0) {
-        //TODO: log to file
-        printf("Error io_make_dir() %s\n", strerror(errno));
+        //successfully created directory
         return true;
     }
-    if (errno == 2) {
+    if (errno == ENOENT) {  // No such file or directory
         char* ptr = strrchr(dir_path, PLATFORM_SLASH);
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
@@ -434,6 +480,24 @@ bool io_path_check(char* file_path)
     return true;
 }
 
+bool io_create_path_from_file(char* file_path)
+{
+    //TODO: create folder paths if they don't exist
+    // char* ptr = strrchr(file_path, PLATFORM_SLASH);
+    char* ptr = strrchr(file_path, '/');    //TODO: figure out how to get PLATFORM_SLASH back in here for windows
+    char back = ptr[0];
+    ptr[0] = '\0';
+    if (!io_isdir(file_path)) {
+        bool success = io_make_dir(file_path);
+        if (!success) {
+            return false;
+        }
+    }
+    ptr[0] = back;
+
+    return true;
+}
+
 //renames a file from file_path
 //to dest_path as a backup file
 //appends date&time in this format
@@ -481,7 +545,7 @@ bool io_move_file(char* file_path, char* dest_dir)
 bool io_create_backup_dir(char* dir)
 {
     char dest_path[MAX_PATH];
-    strcpy(dest_path, dir);
+    strncpy(dest_path, dir, MAX_PATH);
 
     char time_buff[32];
     time_t t = time(NULL);
@@ -522,7 +586,7 @@ bool io_save_txt_file(char* path, char* txt)
     FILE* txt_file = fopen(path, "wb");
     if (txt_file == NULL) {
         //TODO: log to file
-        printf("Error: io_save_txt_file() : unable to open file to write to\n");
+        printf("Error: io_save_txt_file() : unable to open file to write to: %d\n", __LINE__);
         return false;
     }
     fwrite(txt, strlen(txt), 1, txt_file);

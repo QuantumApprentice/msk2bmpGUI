@@ -201,8 +201,10 @@ void animate_SURFACE_to_sub_texture(
     int total_w = img_data->ANM_bounding_box[dir].x2 - img_data->ANM_bounding_box[dir].x1;
     int total_h = img_data->ANM_bounding_box[dir].y2 - img_data->ANM_bounding_box[dir].y1;
 
-    int frame_w = img_data->ANM_dir[dir].frame_data[frame_num]->w;
-    int frame_h = img_data->ANM_dir[dir].frame_data[frame_num]->h;
+    // int frame_w = img_data->ANM_dir[dir].frame_data[frame_num]->w;
+    // int frame_h = img_data->ANM_dir[dir].frame_data[frame_num]->h;
+    int frame_w = edit_srfc->w;
+    int frame_h = edit_srfc->h;
 
     int x_offset = img_data->ANM_dir[dir].frame_box[frame_num].x1 - img_data->ANM_bounding_box[dir].x1;
     int y_offset = img_data->ANM_dir[dir].frame_box[frame_num].y1 - img_data->ANM_bounding_box[dir].y1;

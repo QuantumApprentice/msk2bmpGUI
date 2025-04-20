@@ -7,6 +7,7 @@
 #include "Save_Files.h"
 #include "Edit_TILES_LST.h"
 #include "tinyfiledialogs.h"
+#include "ImGui_Warning.h"
 
 void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
 {
@@ -75,6 +76,7 @@ char* write_tiles_lst(char* tiles_lst_path, char* list_of_tiles)
 
 //ask user for new name,
 //use old_name as default
+//TODO: delete? am I using this?
 char* get_new_name(char* old_name)
 {
     // create the filename for the current list of tiles
@@ -131,6 +133,7 @@ tile_name_arr* make_name_list_arr(char* new_tiles_list)
 
 //same function as skip_or_rename()
 //but uses array of linked lists
+//TODO: delete? am I using this?
 int skip_or_rename_arr(tile_name_arr* node)
 {
     char msg_buff[MAX_PATH] = {
@@ -149,6 +152,7 @@ int skip_or_rename_arr(tile_name_arr* node)
     return choice;
 }
 
+//TODO: delete? am I using this?
 int skip_or_rename_arr(char* name)
 {
     char msg_buff[255];
@@ -186,7 +190,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == 1) {
+        if (node->tile_id == -1) {
             continue;
         }
 
@@ -203,7 +207,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     }
 
     //if there are no nodes (or none with viable names)
-#pragma region                                                            open popup check
+#pragma region                                                         popup
     if (buff_size < 1) {
         ImGui::OpenPopup("TILES.LST Unmodified");
         return nullptr;
@@ -227,7 +231,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == 1) {
+        if (node->tile_id == -1) {
             continue;
         }
 
@@ -239,6 +243,8 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
             c[copy_len]   = '\r';
             c[copy_len+1] = '\n';
             c += copy_len+2;
+
+            node->tile_id = tile_num;
         }
 
         shift_ctr++;
@@ -257,18 +263,35 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     return cropped_list;
 }
 
-char* save_NEW_tiles_LST(tt_arr_handle* handle, char* save_path)
+char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, proto_export* state)
 {
-    //blank match_buff so all tiles are added to new_tile_list
-    char* new_tile_list = make_FRM_tile_LST(handle, NULL);
-    char* tiles_lst     = write_tiles_lst(save_path, new_tile_list);
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", game_path);
 
-    return tiles_lst;
+    bool success = io_create_path_from_file(save_path);
+    if (!success) {
+        set_false(state);
+        set_popup_warning(
+            "Error: save_NEW_FRM_tiles_LST()\n"
+            "Unable to create folders\n"
+        );
+        return NULL;
+    }
+
+    //NULL match_buff so all tiles are added to new_tile_list
+    char* new_tile_LST = make_FRM_tile_LST(handle, NULL);
+    success = io_save_txt_file(save_path, new_tile_LST);
+    if (!success) {
+        return NULL;
+    }
+
+    return new_tile_LST;
 }
 
-char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
+
+char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, proto_export* state)
 {
-    bool append_new_only = set_auto;
+    bool append_new_only = state->auto_export;
     int num_tiles = 0;
     for (int i = 0; i < handle->size; i++)
     {
@@ -288,8 +311,9 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
     tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
+        int line_ctr  = 0;      //.LST file line numbers are 1-indexed (not 0-indexed)
         tt_arr* node = &tiles[i];
-        if (node->tile_id == 1) {
+        if (node->tile_id == -1) {
             continue;
         }
 
@@ -298,6 +322,7 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
             if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
                 continue;
             }
+            line_ctr++;
             //check first char of strt == first char of node[i].name_ptr
             if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
                 strt = &tiles_lst[char_ctr+1];
@@ -308,28 +333,33 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
                 strt = &tiles_lst[char_ctr+1];
                 continue;
             }
+            node->tile_id = line_ctr;
+
             //first match found, ask what to do
             if (append_new_only == false) {
-                int choice = skip_or_rename_arr(node->name_ptr);
-                if (choice == CANCEL) {     //return and cancel out of the whole thing
-                    // free_tile_name_lst_tt(new_tiles);
-                    return nullptr;
-                }
-                if (choice == YES)    {     //just append names not already on TILES.LST
-                    append_new_only = true;
-                }
-                if (choice == NO)     {     //pick a new name and re-make new_tiles then re-check
-                    int length = strlen(node->name_ptr);
-                    char* old_name = (char*)malloc(length);
-                    strncpy(old_name, node->name_ptr, length);
-                    old_name[length-7] = '\0';
+                //append popup here
+                ImGui::OpenPopup("Append to LST");
+                set_false(state);
+                return NULL;
 
-                    char* new_name = get_new_name(old_name);
-                    generate_new_tile_list_arr(new_name, handle);
-
-                    free(old_name);
-                    return check_FRM_LST_names(tiles_lst, handle, set_auto);
-                }
+                // int choice = skip_or_rename_arr(node->name_ptr);
+                // if (choice == CANCEL) {     //return and cancel out of the whole thing
+                //     // free_tile_name_lst_tt(new_tiles);
+                //     return nullptr;
+                // }
+                // if (choice == YES)    {     //just append names not already on TILES.LST
+                //     append_new_only = true;
+                // }
+                // if (choice == NO)     {     //pick a new name and re-make new_tiles then re-check
+                //     int length = strlen(node->name_ptr);
+                //     char* old_name = (char*)malloc(length);
+                //     strncpy(old_name, node->name_ptr, length);
+                //     old_name[length-7] = '\0';
+                //     char* new_name = get_new_name(old_name);
+                //     generate_new_tile_list_arr(new_name, handle);
+                //     free(old_name);
+                //     return check_FRM_LST_names(tiles_lst, handle, set_auto);
+                // }
             }
             if (append_new_only == true) {
                 //identify this node as having a duplicate match
@@ -346,6 +376,9 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
         strt = tiles_lst;
     }
 
+    //TODO: maybe pull this function out to the surface?
+    //      would make the whole process flatter,
+    //      but its a pita to refactor
     //generate new list from remaining nodes in linked_lst
     char* cropped_list = nullptr;
     cropped_list = make_FRM_tile_LST(handle, matches);
@@ -354,11 +387,11 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, bool set_auto)
     return cropped_list;
 }
 
-char* append_FRM_tiles_LST(char* old_tiles_LST, tt_arr_handle* handle, bool set_auto)
+char* append_FRM_tiles_LST(char* old_tiles_LST, tt_arr_handle* handle, proto_export* state)
 {
     //search old_tiles_list (TILES.LST)
     //for matching names from tiles in handle
-    char* cropped_list = check_FRM_LST_names(old_tiles_LST, handle, set_auto);     //TODO: this also has a tinyfd_ popup
+    char* cropped_list = check_FRM_LST_names(old_tiles_LST, handle, state);
     if (cropped_list == nullptr) {
         return old_tiles_LST;
     }
@@ -377,18 +410,61 @@ char* append_FRM_tiles_LST(char* old_tiles_LST, tt_arr_handle* handle, bool set_
     return final_tiles_LST;
 }
 
-char* load_FRM_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle)
+void set_false(proto_export* state)
 {
-    static char LST_path[MAX_PATH];
-    snprintf(LST_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", usr_nfo->default_game_path);
-    char* FRM_tiles_lst = io_load_txt_file(LST_path);
+    state->auto_export    = false;
+    state->export_proto   = false;
+    state->game_path      = false;
 
+    state->make_FRM_LST   = false;
+    state->make_PRO_LST   = false;
+    state->make_PRO_MSG   = false;
+
+    state->load_files     = false;
+
+    state->loaded_FRM_LST = false;
+    state->loaded_PRO_LST = false;
+    state->loaded_PRO_MSG = false;
+    state->append_FRM_LST = false;
+    state->append_PRO_LST = false;
+    state->append_PRO_MSG = false;
+}
+
+bool load_FRM_tiles_LST(user_info* usr_nfo, proto_export* state)
+{
+    char* LST_path = state->LST_path;
+    snprintf(LST_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", usr_nfo->default_game_path);
+    char* actual_path = io_actual_path(LST_path);
+    if (actual_path) {
+        strncpy(LST_path, actual_path, MAX_PATH);
+    }
+
+    char* FRM_tiles_lst = io_load_txt_file(LST_path);
     if (FRM_tiles_lst == NULL) {
         //TODO: may want to handle other failures
         //      which would cause io_load_txt_file()
         //      to return NULL/nullptr
-        ImGui::OpenPopup("Create LST File");
-        return LST_path;
+        ImGui::OpenPopup("Missing Files");
+
+        state->auto_export    = false;
+        state->export_proto   = false;
+        state->game_path      = false;
+
+        state->make_FRM_LST   = false;
+        state->make_PRO_LST   = false;
+        state->make_PRO_MSG   = false;
+
+        state->load_files     = false;
+        // state->loaded_FRM_LST   = false;
+        // state->loaded_PRO_LST   = false;
+        // state->loaded_PRO_MSG   = false;
+
+        state->append_FRM_LST = false;
+        state->append_PRO_LST = false;
+        state->append_PRO_MSG = false;
+
+        printf("Unable to load /art/tiles/TILES.LST...\nCreating new one...\n");
+        return false;
     }
 
     if (usr_nfo->game_files.FRM_TILES_LST) {
@@ -397,12 +473,12 @@ char* load_FRM_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle)
     usr_nfo->game_files.FRM_TILES_LST = FRM_tiles_lst;
     ImGui::OpenPopup("Append to LST");
 
-    return LST_path;
+    return true;
 }
 
 // Returns current full save path if fail
 //TODO: need to change to return new_tiles_lst?
-char* add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char* LST_path)
+bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, proto_export* state)
 {
     // //Auto option
     // if (usr_nfo->auto_export == true) {
@@ -412,10 +488,16 @@ char* add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char*
     //     }
     // }
 
+    char* LST_path = state->LST_path;
+
     //append new tiles to list in memory
     char* FRM_tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
-    char* new_tiles_lst = append_FRM_tiles_LST(FRM_tiles_lst, handle, false);
-    if (new_tiles_lst != usr_nfo->game_files.FRM_TILES_LST) {
+    char* new_tiles_lst = append_FRM_tiles_LST(FRM_tiles_lst, handle, state);
+    if (new_tiles_lst == FRM_tiles_lst) {
+        return true;
+    }
+
+    if (usr_nfo->game_files.FRM_TILES_LST) {
         free(usr_nfo->game_files.FRM_TILES_LST);
     }
     usr_nfo->game_files.FRM_TILES_LST = new_tiles_lst;
@@ -424,5 +506,5 @@ char* add_TMAP_tiles_to_lst_arr(user_info* usr_nfo, tt_arr_handle* handle, char*
     io_backup_file(LST_path, nullptr);
     io_save_txt_file(LST_path, new_tiles_lst);
 
-    return LST_path;
+    return true;
 }
