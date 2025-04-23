@@ -7,7 +7,7 @@ struct proto_export {
     char LST_path[MAX_PATH];
     bool auto_export    = false;
     bool export_proto   = false;
-    bool game_path      = false;
+    bool chk_game_path  = false;
 
     bool make_FRM_LST   = false;
     bool make_PRO_LST   = false;

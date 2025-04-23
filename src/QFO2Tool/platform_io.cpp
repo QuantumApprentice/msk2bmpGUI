@@ -300,7 +300,9 @@ bool io_isdir(char* dir_path)
     int error = stat(dir_path, &stat_info);
     if (error) {
         //TODO: log to file
-        printf("Error checking directory? %s\n", strerror(errno));
+        if (errno != ENOENT) {
+            printf("Error checking directory? %s\n", strerror(errno));
+        }
         return false;
     }
     return (stat_info.st_mode & S_IFDIR);
@@ -314,11 +316,19 @@ void* io_open_dir(char* dir_name)
     return dir_stream;
 }
 
+//TODO: handle files vs folders
+//      with a flag input of some sort
+//returns folders/files inside dir_stream location
 char* io_scan_dir(void* dir_stream)
 {
+    errno = 0;
     struct dirent* iterator;
     iterator = readdir((DIR*)dir_stream);
     if (iterator == NULL) {
+        if (errno != 0) {
+            //TODO: log to file
+            printf("Error: io_scan_dir() : errno: %d\n", errno);
+        }
         return NULL;
     }
 
@@ -339,7 +349,10 @@ bool io_close_dir(void* dir_stream)
 }
 
 //returns correct path for case insensitive input
-//  or NULL if no match is found
+//  returns original path if no matching path is found
+//  this is currently designed to need a create_path_()
+//  function call following a call to this
+//TODO: rename to io_path_check()?
 char* io_actual_path(char* file_name)
 {
     static char full_path[MAX_PATH];
@@ -374,6 +387,13 @@ char* io_actual_path(char* file_name)
         next[0] = '\0';
         while (match) {
             dir = io_scan_dir(stream);
+            //no match found for this folder
+            //pass full path back so new folders can be made
+            if (dir == NULL) {
+                curr[0] = '/';
+                next[0] = '/';
+                return full_path;
+            }
             match = io_strncasecmp(curr+1, dir, MAX_PATH);
         }
         snprintf(curr, MAX_PATH-strlen(full_path), "/%s", dir);
@@ -480,11 +500,12 @@ bool io_path_check(char* file_path)
     return true;
 }
 
+//create folder paths if they don't exist
 bool io_create_path_from_file(char* file_path)
 {
-    //TODO: create folder paths if they don't exist
     // char* ptr = strrchr(file_path, PLATFORM_SLASH);
-    char* ptr = strrchr(file_path, '/');    //TODO: figure out how to get PLATFORM_SLASH back in here for windows
+    //TODO: figure out how to get PLATFORM_SLASH back in here for windows?
+    char* ptr = strrchr(file_path, '/');
     char back = ptr[0];
     ptr[0] = '\0';
     if (!io_isdir(file_path)) {
