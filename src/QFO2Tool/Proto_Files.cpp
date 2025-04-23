@@ -58,7 +58,7 @@ enum material {
     Leather = 7
 };
 
-char* append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, proto_export* cur_state);
+bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, proto_export* state);
 bool backup_append_LST(char* path, char* string);
 
 //TODO: refactor append_tiles_lst() to work here
@@ -200,6 +200,8 @@ char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
     return cropped_list;
 }
 
+//ImGui menu input
+//returns stored name
 char* input_name()
 {
     //TODO: move name_buff into proto_export struct and pass into here
@@ -211,6 +213,8 @@ char* input_name()
 
     return name_buff;
 }
+//ImGui menu input
+//returns stored description
 char* input_desc()
 {
     static char desc_buff[71] = "";
@@ -280,8 +284,6 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
     }
 
     assign_tile_id(handle, FRM_tiles_LST);
-
-
     char* new_PRO_tile_MSG = make_PRO_tile_MSG(info, tile->tile_id);
 
     const char* language[] = {
@@ -293,8 +295,15 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, language[0]);
-    bool success = io_save_txt_file(save_path, new_PRO_tile_MSG);
+    char* actual_path = io_actual_path(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    bool success = io_backup_file(save_path, nullptr);
+    success      = io_save_txt_file(save_path, new_PRO_tile_MSG);
     if (!success) {
+        free(new_PRO_tile_MSG);
         return false;
     }
 
@@ -389,7 +398,7 @@ bool missing_files_popup(proto_export* state)
     return false;
 }
 
-char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, proto_info* info)
+char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, proto_export* state)
 {
     char* FRM_tiles_LST = usr_nfo->game_files.FRM_TILES_LST;
     if (FRM_tiles_LST == NULL) {
@@ -411,25 +420,37 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, proto_inf
         break;
     }
 
-    proto_info pr_info;
-    if (info == NULL) {
-        info                = &pr_info;
-        pr_info.name        = input_name();
-        pr_info.description = input_desc();
-    }
+    proto_info info;
+    info.name        = input_name();
+    info.description = input_desc();
 
     // if (strlen(info->name) > 1 || strlen(info->description) > 1) {
-    if (info->name[0] == '\0' && info->description[0] == '\0') {
+    if (info.name[0] == '\0' && info.description[0] == '\0') {
         return NULL;
     }
 
     assign_tile_id(handle, FRM_tiles_LST);
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(info, tile->tile_id);
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/english/game/pro_tile.msg", game_path);
-    bool success = io_save_txt_file(save_path, new_PRO_tile_MSG);
+    char* actual_path = io_actual_path(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    bool success = io_create_path_from_file(save_path);
+    if (!success) {
+        set_false(state);
+        set_popup_warning(
+            "Error: save_NEW_FRM_tiles_LST()\n"
+            "Unable to create folders\n"
+        );
+        return NULL;
+    }
+
+    success = io_save_txt_file(save_path, new_PRO_tile_MSG);
     if (!success) {
         return NULL;
     }
@@ -451,6 +472,10 @@ char* save_NEW_PRO_tiles_LST(tt_arr_handle* handle, user_info* usr_nfo, proto_ex
     }
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);
+    char* actual_path = io_actual_path(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
 
     bool success = io_create_path_from_file(save_path);
     if (!success) {
@@ -580,53 +605,47 @@ bool create_FRM_tiles_LST_popup(proto_export* state)
     return false;
 }
 
-char* export_protos(user_info* usr_nfo, tt_arr_handle* handle)
+void export_protos(user_info* usr_nfo, tt_arr_handle* handle)
 {
-    proto_info pr_info;
-
     if (handle == nullptr) {
     //TODO: place a warning here, this needs tile_arr*head to work
     //TODO: maybe implement this?
-        return NULL;
+        return;
     }
     if (usr_nfo->default_game_path[0] == '\0') {
-        return NULL;
+        return;
     }
     if (!usr_nfo->game_files.FRM_TILES_LST) {
-        return NULL;
+        return;
     }
 
-
-    pr_info.name        = input_name();
-    pr_info.description = input_desc();
-    pr_info.material_id = get_material_id();
-
+    proto_info info;
+    info.name        = input_name();
+    info.description = input_desc();
+    info.material_id = get_material_id();
 
     //tiles can reference different line numbers in pro_tile.msg
     //have all tiles from this batch point to first new tile entry
     tt_arr* tiles = handle->tile;
-    pr_info.pro_tile = tiles->tile_id * 100;
+    info.pro_tile = tiles->tile_id * 100;
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
         if (node->tile_id == -1) {
             continue;
         }
-        export_single_tile_PRO(usr_nfo->default_game_path, node, &pr_info);
+        bool success = export_single_tile_PRO(usr_nfo->default_game_path, node, &info);
+        if (!success) {
+            set_popup_warning(
+                "[ERROR] export_protos()\n\n"
+                "Something broke while exporting *.pro files.\n"
+            );
+            break;
+        }
     }
-
-
-    //add tile protos to data/proto/tiles/TILES.LST
-    // append_TMAP_PRO_tiles_LST(usr_nfo, handle);
-
-    //TODO: need to add option for different languages?
-    //TODO: maybe need to create the subfolders
-    //TODO: also need to give options for descriptions already on pro_tile.msg
-    //add name/description to data/text/english/game/pro_tile.msg
-    // append_PRO_tile_MSG(usr_nfo, &pr_info, tiles);
 }
 
-char* load_PRO_tiles_MSG(user_info* usr_nfo, proto_export* state)
+bool load_PRO_tiles_MSG(user_info* usr_nfo, proto_export* state)
 {
     char* LST_path = state->LST_path;
     const char* language[] = {
@@ -651,7 +670,7 @@ char* load_PRO_tiles_MSG(user_info* usr_nfo, proto_export* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
-        state->game_path      = false;
+        state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
         state->make_PRO_LST   = false;
@@ -667,14 +686,17 @@ char* load_PRO_tiles_MSG(user_info* usr_nfo, proto_export* state)
         state->append_PRO_MSG = false;
 
         printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
-        return NULL;
+        return false;
     }
 
-    usr_nfo->game_files.PRO_TILES_LST = old_PRO_MSG;
-    return old_PRO_MSG;
+    if (usr_nfo->game_files.PRO_TILE_MSG) {
+        free(usr_nfo->game_files.PRO_TILE_MSG);
+    }
+    usr_nfo->game_files.PRO_TILE_MSG = old_PRO_MSG;
+    return true;
 }
 
-char* load_PRO_tiles_LST(user_info* usr_nfo, proto_export* state)
+bool load_PRO_tiles_LST(user_info* usr_nfo, proto_export* state)
 {
     char* LST_path = state->LST_path;
     snprintf(LST_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_nfo->default_game_path);
@@ -693,7 +715,7 @@ char* load_PRO_tiles_LST(user_info* usr_nfo, proto_export* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
-        state->game_path      = false;
+        state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
         state->make_PRO_LST   = false;
@@ -709,11 +731,14 @@ char* load_PRO_tiles_LST(user_info* usr_nfo, proto_export* state)
         state->append_PRO_MSG = false;
 
         printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
-        return NULL;
+        return false;
     }
 
+    if (usr_nfo->game_files.PRO_TILES_LST) {
+        free(usr_nfo->game_files.PRO_TILES_LST);
+    }
     usr_nfo->game_files.PRO_TILES_LST = old_PRO_LST;
-    return old_PRO_LST;
+    return true;
 }
 
 void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
@@ -759,7 +784,9 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
         state.export_proto   = true;
         state.load_files     = true;
         state.append_FRM_LST = true;
-        state.game_path      = true;
+        state.append_PRO_LST = true;
+        state.append_PRO_MSG = true;
+        state.chk_game_path  = true;
     }
     if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
@@ -792,10 +819,6 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
 
             ImGui::CloseCurrentPopup();
         }
-        if (ImGui::Button("Create new TILES.LST")) {
-            state.make_PRO_LST = true;
-            ImGui::CloseCurrentPopup();
-        }
         if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
         }
@@ -825,7 +848,8 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
             "sub-directories --\n"
             "'/art/tiles/TILES.LST',\n"
             "'/proto/tiles/TILES.LST'.\n"
-            "(optional)'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
+            "(optional)\n"
+            "'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
             "If you want to bypass this for now, just add a file\n"
             "named 'fallout2.exe' into the selected folder and retry.\n"
             , FObuf
@@ -855,7 +879,7 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
     //  b) if no /proto/ TILES.LST then ==> select new folder || create new LST || cancel
     //  c) can only append?
 
-    if (state.game_path) {
+    if (state.chk_game_path) {
         //copy any game_path changes to user_info for saving to config
         if (fallout2exe_exists(FObuf) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
@@ -872,7 +896,7 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
         state.loaded_PRO_MSG = load_PRO_tiles_MSG(usr_nfo, &state);
 
         if (!state.loaded_FRM_LST || !state.loaded_PRO_LST || !state.loaded_PRO_MSG) {
-            //TODO: may want to handle other failures
+            //TODO: maybe want to handle other failures
             //      which would cause io_load_txt_file()
             //      to return NULL/nullptr
             return;
@@ -880,6 +904,11 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
     }
 
     if (state.make_FRM_LST) {
+        //TODO: maybe I should group these together
+        //      and check game_files pointers to see
+        //      if I need to create new files or not?
+        // if (state.make_files) {
+        // if (!usr_nfo->game_files.FRM_TILES_LST) {
         usr_nfo->game_files.FRM_TILES_LST = save_NEW_FRM_tiles_LST(handle, usr_nfo->default_game_path, &state);
     }
     if (state.make_PRO_LST) {
@@ -898,55 +927,58 @@ void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* handle)
     state.make_PRO_LST = false;
     state.make_PRO_MSG = false;
 
-
-
-
-
-
+    bool success = false;
     if (state.append_FRM_LST) {
-        bool success = append_TMAP_tiles_LST(usr_nfo, handle, &state);
-        // if (success) {
-        //     state.export_proto = true;
-        // }
-    }
-
-    if (state.export_proto) {
-        lst_path = export_protos(usr_nfo, handle);
+        //append to art/tiles/TILES.LST
+        success = append_TMAP_tiles_LST(usr_nfo, handle, &state);
+        if (!success) {
+            set_false(&state);
+            return;
+        }
     }
     if (state.append_PRO_LST) {
-        //add tile protos to data/proto/tiles/TILES.LST
-        append_TMAP_PRO_tiles_LST(usr_nfo, handle, &state);
+        //append to proto/tiles/TILES.LST
+        success = append_TMAP_PRO_tiles_LST(usr_nfo, handle, &state);
+        if (!success) {
+            set_false(&state);
+            return;
+        }
     }
     if (state.append_PRO_MSG) {
         //TODO: need to add option for different languages?
-        //TODO: also need to give options for descriptions already on pro_tile.msg
+        //TODO: also need to give options to use descriptions
+        //      already on pro_tile.msg
         //add name/description to data/text/english/game/pro_tile.msg
-        append_PRO_tile_MSG(usr_nfo, NULL, handle);
+        success = append_PRO_tile_MSG(usr_nfo, NULL, handle);
+        if (!success) {
+            set_false(&state);
+            return;
+        }
+    }
+
+    if (state.export_proto) {
+        export_protos(usr_nfo, handle);
     }
 
     set_false(&state);
 }
 
+//append new protos to list in memory
 char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, bool set_auto)
 {
-
-    //append new protos to list in memory
     char* new_PRO_LST = check_PRO_LST_names(old_PRO_LST, head);
     if (new_PRO_LST == nullptr) {
         return old_PRO_LST;
     }
 
-    //TODO: use an io_ function to append text instead
     //append new list_of_tiles to the end of original list
     //in a new buffer large enough to fit both
     int old_LST_size    = strlen(old_PRO_LST);
     int new_LST_size    = strlen(new_PRO_LST);
+    int final_size      = old_LST_size+new_LST_size+1;
     char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
-    strncpy(final_PRO_LST, old_PRO_LST, old_LST_size);
-    final_PRO_LST[old_LST_size] = '\0';    //needed for strncat() to work
-    strncat(final_PRO_LST, new_PRO_LST, new_LST_size);
+    snprintf(final_PRO_LST, final_size, "%s%s", old_PRO_LST, new_PRO_LST);
 
-    free(old_PRO_LST);
     return final_PRO_LST;
 }
 
@@ -954,33 +986,36 @@ char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, bool set_auto
 //##### but it's better than it was,
 //##### and I don't know a better way yet
 //this assumes usr_info->default_game_path has been set
+//and art/tiles/TILES.LST has been loaded up correctly
 //append to data/proto/tiles/TILES.LST
-char* append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, proto_export* cur_state)
+bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, proto_export* cur_state)
 {
-    char* LST_path    = cur_state->LST_path;
+    char* game_path   = usr_nfo->default_game_path;
     char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
-
-    // if (old_PRO_LST == nullptr) {
-    //     //TODO: may want to handle other failures
-    //     //      which would cause io_load_text_file()
-    //     //      to return NULL/nullptr
-    //     ImGui::OpenPopup("Create LST File");
-    //     printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
-    //     return LST_path;
-    // }
-
     char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, false);
-    if (new_PRO_LST != usr_nfo->game_files.PRO_TILES_LST) {
-        free(usr_nfo->game_files.PRO_TILES_LST);
+
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);
+    char* actual_path = io_actual_path(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
     }
 
     //backup and save new list
-    io_backup_file(LST_path, nullptr);
-    io_save_txt_file(LST_path, new_PRO_LST);
+    bool success = io_backup_file(save_path, nullptr);
+    success = io_save_txt_file(save_path, new_PRO_LST);
+    if (!success) {
+        free(new_PRO_LST);
+        return false;
+    }
 
+    if (new_PRO_LST != usr_nfo->game_files.PRO_TILES_LST) {
+        free(usr_nfo->game_files.PRO_TILES_LST);
+    }
     usr_nfo->game_files.PRO_TILES_LST = new_PRO_LST;
 
-    return LST_path;
+
+    return true;
 }
 
 //backs up file at "path",
@@ -1020,11 +1055,12 @@ bool backup_append_LST(char* path, char* LST_file)
     return true;
 }
 
-void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
+bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
 {
     if (tile == nullptr) {
-        //TODO: place a warning here, this needs tt_arr*head to work
-        return;
+        //TODO: place a warning here?
+        //      this needs tt_arr*head to work
+        return false;
     }
 
     char path_buff[MAX_PATH];
@@ -1049,10 +1085,16 @@ void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
 
     //TODO: create folder paths if they don't exist
     snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", game_path, tile->tile_id);
+    char* actual_path = io_actual_path(path_buff);
+    if (actual_path) {
+        strncpy(path_buff, actual_path, MAX_PATH);
+    }
+    //TODO: maybe want to add io_create_path_from_file()
+    //      so folder is created if it didn't exist already?
 
     char* ptr = strrchr(path_buff, PLATFORM_SLASH);
     char back = ptr[0];
-    ptr[0] = '\0';
+    ptr[0]    = '\0';
     if (!io_isdir(path_buff)) {
         io_make_dir(path_buff);
     }
@@ -1061,9 +1103,13 @@ void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
     FILE* tile_pro = fopen(path_buff, "wb");
     if (tile_pro == nullptr) {
         printf("Unable to open proto file: %s\n", path_buff);
+        fclose(tile_pro);
+        return false;
     }
     fwrite(&proto, sizeof(tile_proto), 1, tile_pro);
     fclose(tile_pro);
+
+    return true;
 }
 
 //dropdown menu picking type of material
@@ -1076,6 +1122,7 @@ void export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
 //     5: Stone
 //     6: Cement
 //     7: Leather
+//returns selected value when called
 int get_material_id()
 {
     static int material_id = 0;

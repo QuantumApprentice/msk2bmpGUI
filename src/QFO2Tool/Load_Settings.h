@@ -18,10 +18,10 @@ enum {
 
 
 struct fo2_files {
-    char* FRM_TILES_LST;
-    char* PRO_TILES_LST;
-    char* PRO_TILE_MSG;
-    char* WORLDMAP_TXT;
+    char* FRM_TILES_LST = NULL;
+    char* PRO_TILES_LST = NULL;
+    char* PRO_TILE_MSG  = NULL;
+    char* WORLDMAP_TXT  = NULL;
 };
 
 struct user_info {
