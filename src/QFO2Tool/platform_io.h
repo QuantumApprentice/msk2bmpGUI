@@ -26,9 +26,8 @@ char* io_scan_dir(void* dir_stream);
 bool io_close_dir(void* dir_stream);
 
 
-char* io_actual_path(char* file_name);
+char* io_path_check(char* file_name);
 bool io_file_exists(const char* filename);
-bool io_path_check(char* file_path);
 bool io_create_path_from_file(char* file_path);
 bool io_make_dir(char* dir_path);
 int io_file_size(const char* filename);
@@ -37,4 +36,4 @@ bool io_create_backup_dir(char* dir);
 bool io_move_file(char* file_path, char* dest_dir);
 char* io_load_txt_file(char* full_path);
 bool io_save_txt_file(char* path, char* txt);
-bool fallout2exe_exists(char* game_path);
+bool fallout2exe_exists(const char* game_path);

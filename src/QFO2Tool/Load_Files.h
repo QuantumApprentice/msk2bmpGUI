@@ -76,4 +76,6 @@ void load_tile_texture(GLuint* texture, char* file_name);
 bool drag_drop_POPUP(variables* My_Variables, LF* F_Prop, image_paths* images_arr, int* counter);
 bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr);
 
-// std::optional<bool> handle_directory_drop(char* file_name, LF* F_Prop, int* window_number_focus, int* counter, shader_info* shaders);
+void game_path_set_POPUP(user_info* usr_nfo);
+void set_game_path_POPUP(user_info* usr_nfo);
+void game_path_NOT_set_POPUP();

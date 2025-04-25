@@ -49,7 +49,6 @@ INCLUDE_ARGS=(
   -I "$src/dependencies/imgui-1.90.8-docking"
   -I "$src/dependencies/imgui-1.90.8-docking/backends"
   -I "$src/dependencies/ImFileDialog"
-  -I "$src/dependencies/tinyfiledialogs"  #this goes byebye soon
   -I "$src/dependencies/stb"
 )
 #^^^^^^^^^^^^^^^these are all variables storing file info
@@ -89,16 +88,10 @@ echo "GLFW Built"
 #object/executable destination/filename next
 #source file.c at the end
 #included libraries after
-echo "Building other C libraries (GLAD, tinyfiledialogs)"
+echo "Building other C libraries (GLAD)"
 echo "Glad first..."
 cc -g -I "$src/dependencies/GLAD/include" -c -o "$build/glad.o" "$src/dependencies/GLAD/src/glad.c"
 echo $'GLAD Built\n'
-
-echo "TinyFileDialogs next..."
-#do not need include folder because TFD header
-#is in the same folder as the .c file
-cc -g -c -o "$build/tinyfiledialogs.o" "$src/dependencies/tinyfiledialogs/tinyfiledialogs.c"
-echo "TinyFileDialogs built"
 
 echo "ImFileDialog next..."
 cc -g -c -o "$build/ImFileDialog.o" "$src/dependencies/ImFileDialog/ImFileDialog.cpp"

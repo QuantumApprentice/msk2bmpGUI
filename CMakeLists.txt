@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.25)
 #compile option (-mavx) for is_tile_blank() in tiles_patterns.cpp
 #applies to current directory & below?
 add_compile_options(
-  -mavx             #support for AVX instructions
-  # -fsanitize=address
+  -mavx                 #support for AVX instructions
+  # -fsanitize=address    # used for memory leak checking
 )
 
 
@@ -69,10 +69,6 @@ target_include_directories(
 #this creates a new "library" for the linker (.dll/.so)
 #(don't have to add a CMakeLists.txt file tinyfiledialogs folder)
 #library still needs to be added to target_link_libraries()
-add_library(tinyfiledialogs
-  src/dependencies/tinyfiledialogs/tinyfiledialogs.c
-  src/dependencies/tinyfiledialogs/tinyfiledialogs.h
-)
 
 add_library(ImFileDialog
   src/dependencies/ImFileDialog/ImFileDialog.cpp
@@ -145,7 +141,6 @@ target_link_libraries(
   glad
   imgui_docking
   QFO2ToolLib
-  tinyfiledialogs
   STB
   glfw
   ImFileDialog

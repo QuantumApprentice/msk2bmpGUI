@@ -21,7 +21,6 @@
 #include "Load_Files.h"
 #include "Load_Animation.h"
 #include "Load_Settings.h"
-#include "tinyfiledialogs.h"
 #include "Image2Texture.h"
 #include "FRM_Convert.h"
 #include "MSK_Convert.h"
@@ -505,6 +504,104 @@ bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
     // TODO: remove this printf 8==D
     printf("\nextension: %s\n", F_Prop->extension);
     return true;
+}
+
+void game_path_NOT_set_POPUP()
+{
+    if (ImGui::BeginPopupModal("Fallout2.exe Not Found")) {
+        ImGui::Text(
+            "Fallout2.exe not found, game path not set.\n"
+            // "Fallout2.exe or Fallout2HR.exe not found at:\n"
+            // "%s\n",
+            // usr_nfo.
+
+        );
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+
+void game_path_set_POPUP(user_info* usr_nfo)
+{
+    if (ImGui::BeginPopupModal("Fallout2.exe Found")) {
+        ImGui::Text(
+            "Fallout2.exe found, new game path set to:\n"
+            "%s\n",
+            usr_nfo->default_game_path
+        );
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void set_game_path_POPUP(user_info* usr_nfo)
+{
+    if (ifd::FileDialog::Instance().IsDone("Fallout2exe_path")) {
+        if (ifd::FileDialog::Instance().HasResult()) {
+            std::string game_path = ifd::FileDialog::Instance().GetResult().u8string();
+            int indx = game_path.find_last_of('/');
+            if (io_strncasecmp(game_path.c_str()+indx+1, "fallout2.exe", 13)
+            &&  io_strncasecmp(game_path.c_str()+indx+1, "fallout2HR.exe", 15)) {
+                ImGui::OpenPopup("Fallout2.exe Not Found");
+                ifd::FileDialog::Instance().Close();
+                return;
+            }
+            if (io_file_exists(game_path.c_str())) {
+                strncpy(usr_nfo->default_game_path, game_path.c_str(), MAX_PATH);
+                ImGui::OpenPopup("Fallout2.exe Found");
+            } else {
+                ImGui::OpenPopup("Fallout2.exe Not Found");
+            }
+        }
+        ifd::FileDialog::Instance().Close();
+    }
+}
+
+//Ask user where the default Fallout 2 path is,
+//then store path in both default_game_path and default_save_path if default_save_path is '\0'
+//then write user_info out to config file
+void Set_Default_Game_Path(user_info* usr_nfo, char* exe_path)
+{
+    //TODO: move this to some initializing function
+    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
+        GLuint tex;
+        // https://github.com/dfranx/ImFileDialog
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        return (void*)(uint64_t)tex;
+    };
+    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
+        GLuint texID = (uint64_t)tex;
+        glDeleteTextures(1, &texID);
+    };
+
+    //Set the default Fallout 2 game path
+    char* file_path = usr_nfo->default_game_path;
+    if (file_path[0] == '\0') {
+        file_path = exe_path;
+    }
+    char path_buff[MAX_PATH];
+    snprintf(path_buff, MAX_PATH, "%s", file_path);
+    char* ptr = strrchr(path_buff, '/');
+    ptr[0] = '\0';
+    ifd::FileDialog::Instance().Open(
+        "Fallout2exe_path",
+        "Open Folder",
+        "Fallout2(*.exe;){.exe,.EXE,}",
+        false, path_buff);
 }
 
 bool ImDialog_load_MSK(LF* F_Prop, image_data* img_data, user_info* usr_info, shader_info* shaders)
