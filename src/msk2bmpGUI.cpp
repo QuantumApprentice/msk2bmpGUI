@@ -53,7 +53,6 @@ bool show_demo_window = false;
 #include "Load_Settings.h"
 #include "Edit_Image.h"
 #include "Preview_Image.h"
-#include "tinyfiledialogs.h"
 
 #include "display_FRM_OpenGL.h"
 #include "Palette_Cycle.h"
@@ -985,7 +984,7 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
             // if (ImGui::MenuItem("Open", "Ctrl+O")) { 
                 Open_Files(&usr_info, counter, My_Variables->FO_Palette, My_Variables);
             // }
-            if (ImGui::MenuItem("Default Fallout Path")) {
+            if (ImGui::MenuItem("Set Fallout2.exe Path")) {
                 Set_Default_Game_Path(&usr_info, My_Variables->exe_directory);
             }
             if (ImGui::MenuItem("Toggle \"Save Full MSK\" warning")) {
@@ -1050,6 +1049,9 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
         }
         ImGui::EndMainMenuBar();
     }
+    set_game_path_POPUP(&usr_info);
+    game_path_set_POPUP(&usr_info);
+    game_path_NOT_set_POPUP();
 }
 
 bool save_FRM_popup(LF* F_Prop)

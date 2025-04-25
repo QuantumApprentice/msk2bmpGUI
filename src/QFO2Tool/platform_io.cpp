@@ -3,8 +3,6 @@
 
 #include "platform_io.h"
 #include "Image2Texture.h"
-#include "tinyfiledialogs.h"
-#include "stb_image.h"
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -352,8 +350,7 @@ bool io_close_dir(void* dir_stream)
 //  returns original path if no matching path is found
 //  this is currently designed to need a create_path_()
 //  function call following a call to this
-//TODO: rename to io_path_check()?
-char* io_actual_path(char* file_name)
+char* io_path_check(char* file_name)
 {
     static char full_path[MAX_PATH];
     strncpy(full_path, file_name, MAX_PATH);
@@ -461,44 +458,6 @@ bool io_make_dir(char* dir_path)
 
 #endif
 
-//TODO: delete? not used anywhere
-//check if path exists
-bool io_path_check(char* file_path)
-{
-    if (io_isdir(file_path) == false) {
-        int choice = tinyfd_messageBox(
-            "Warning",
-            "Directory does not exist.\n"
-            "Create directory?\n\n"
-            "--YES:    Create directory and new TILES.LST\n"
-            "--NO:     Select different folder to create TILES.LST\n"
-            "--CANCEL: Cancel...do I need to explain?\n",
-            "yesnocancel", "warning", 2);
-        if (choice == 0) {      //CANCEL: Cancel
-            return false;
-        }
-        if (choice == 1) {      //YES:    Create directory and new TILES.LST
-            bool dir_exists = io_make_dir(file_path);
-            if (dir_exists == false) {
-
-            //TODO: do I need to track this choice2?
-                int choice2 = tinyfd_messageBox(
-                    "Warning",
-                    "Unable to create the directory.\n"
-                    "probably a file system error?\n",
-                    "ok", "warning", 0);
-
-                return false;
-            }
-        }
-        if (choice == 2) {      //NO:     Select different folder to create TILES.LST
-            char* new_path = tinyfd_selectFolderDialog("Select save folder...", file_path);
-            strncpy(file_path, new_path, MAX_PATH);
-            return io_path_check(file_path);
-        }
-    }
-    return true;
-}
 
 //create folder paths if they don't exist
 bool io_create_path_from_file(char* file_path)
@@ -616,7 +575,7 @@ bool io_save_txt_file(char* path, char* txt)
     return true;
 }
 
-bool fallout2exe_exists(char* game_path)
+bool fallout2exe_exists(const char* game_path)
 {
     char temp[MAX_PATH];
     snprintf(temp, MAX_PATH, "%s/fallout2.exe", game_path);

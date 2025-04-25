@@ -1,5 +1,6 @@
 #pragma once
 #include "town_map_tiles.h"
+#include "Edit_TILES_LST.h"
 
 struct proto_info {
     char* name;
@@ -20,5 +21,5 @@ struct tile_proto {
 
 
 int get_material_id();
-void export_proto_arr_POPUP(user_info* usr_nfo, tt_arr_handle* tile_arr);
+void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export);
 bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info);

@@ -3,7 +3,6 @@
 //all the current research available is here:
 //http://duckandcover.cx/forums/viewtopic.php?p=168760
 
-#include <tinyfiledialogs.h>
 #include <string.h>
 
 #include "Edit_TILES_LST.h"
@@ -111,8 +110,11 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     int choice = 0;
     const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
     if (tiles_lst == nullptr) {
-        if (strlen(usr_info->default_game_path) > 1) {
-            usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path,  "/data/art/tiles/", "TILES.LST");
+        if (usr_info->default_game_path[0] != '\0') {
+            usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path, "/data/art/tiles/", "TILES.LST");
+            //TODO: keep using load_LST_file()? or replace with
+            // load_FRM_tiles_LST(usr_info, )?
+
         }
         if (tiles_lst == nullptr) {
             //TODO: log to file
@@ -200,9 +202,8 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
 }
 
 
-void export_pattern_file(user_info* usr_nfo, tt_arr_handle* handle)
+void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
 {
-
     //check pattern filename
     int patt_num = 1;
     static char file_buff[MAX_PATH];
@@ -226,22 +227,26 @@ void export_pattern_file(user_info* usr_nfo, tt_arr_handle* handle)
     );
     ImGui::InputText("###patternfile", patt_buff, 9);
 
-
     //export button
-    if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
-        if (handle == nullptr) {
-        //TODO: place a warning here, this needs tile_arr*head to work
-            return;
+    if (!auto_export) {
+        if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
+            if (handle == nullptr) {
+            //TODO: place a warning here, this needs tile_arr*head to work
+                return;
+            }
+            state->export_pattern = true;
         }
+    }
+
+    if (!handle) {
+        return;
+    }
+
+    if (state->export_pattern) {
         if (atoi(patt_buff) != patt_num) {
             snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, patt_buff);
         }
 
         TMAP_tiles_pattern_arr(usr_nfo, handle, file_buff);
-
-        ImGui::EndPopup();
-    }
-    if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
     }
 }

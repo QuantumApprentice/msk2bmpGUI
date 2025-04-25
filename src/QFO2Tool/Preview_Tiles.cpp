@@ -218,32 +218,74 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     // free(temp_buffer);
 }
 
-
-tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect* offset, tt_arr_handle* handle)
+tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
 {
+    static bool auto_export_art = false;
+    static bool auto_export_pro = false;
+    static bool auto_export_pat = false;
+    static export_state state;
+
     static tt_arr_handle* exported_tiles = NULL;
     if (handle) {
         exported_tiles = handle;
     }
     //Save tiles button
-    if (ImGui::Button("Export Tiles")) {
+    if (ImGui::Button("Export Tile FRMs only")) {
         ImGui::OpenPopup("Export Tiles");
     }
 
-    if (ImGui::BeginPopupModal("Export Tiles")) {
-        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, img_data, offset);
+    bool close_x = true;
+    if (ImGui::BeginPopupModal("Export Tiles", &close_x, ImGuiChildFlags_AutoResizeY)) {
+
+        if (auto_export_art || auto_export_pro || auto_export_pat) {
+            if (ImGui::Button("Auto Export All")) {
+                if (auto_export_art) {
+                    state.load_files     = true;
+                    state.append_FRM_LST = true;
+                }
+                if (auto_export_pro) {
+                    state.export_proto   = true;
+                    state.append_PRO_LST = true;
+                    state.append_PRO_MSG = true;
+                }
+                if (auto_export_pat) {
+                    state.export_pattern = true;
+                }
+            }
+        }
+
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
+
+        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, srfc, offset, auto_export_art);
         if (temp) {
             //assign handle only if tiles have been fully exported
             //pressing cancel won't clear old handle
             exported_tiles = temp;
         }
 
+        if (auto_export_art) {
+            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_art);
+        }
+        if (auto_export_pro) {
+            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_pro);
+        }
+        if (auto_export_pat) {
+            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export_pat);
+        }
 
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginTable("auto_export", 2))
+    {
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
-        if (ImGui::Button("Add to Fallout 2")) {
-            //TODO: add to fallout 2 TILES.LST file
+        ImGui::TableNextColumn();
+        if (ImGui::Button("Add to art/tiles/TILES.LST")) {
+            ImGui::OpenPopup("Add FRMs to Mapper");
         }
         ImGui::SetItemTooltip(
             "TILES.LST located in:\n"
@@ -255,49 +297,92 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect*
             "TILES.LST from master.dat\n"
             "but should be able too in the future)"
         );
-
-
-
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
         }
-        if (ImGui::Button("Close")) {
-            ImGui::CloseCurrentPopup();
+        ImGui::TableNextColumn();
+        ImGui::Checkbox("Auto Append", &auto_export_art);
+        ImGui::SetItemTooltip(
+            "Automatically appends\n"
+            "exported FRMs to\n"
+            "art/tiles/TILES.LST\n"
+        );
+        if (!auto_export_art) {
+            auto_export_pro = false;
+            auto_export_pat = false;
         }
-        ImGui::EndPopup();
-    }
 
 
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        ImGui::TableNextColumn();
+        if (ImGui::Button("Export Protos")) {
+            ImGui::OpenPopup("Proto Info");
+        }
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
+        }
+        ImGui::TableNextColumn();
+        ImGui::Checkbox("Auto Export Protos", &auto_export_pro);
+        ImGui::SetItemTooltip(
+            "Needs FRMs to be already listed in art/tiles/TILES.LST\n"
+        );
+        if (auto_export_pro) {
+            auto_export_art = true;
+        } else {
+            auto_export_pat = false;
+        }
 
-    if (exported_tiles == NULL) {
-        ImGui::BeginDisabled();
-    }
-    if (ImGui::Button("Export Protos")) {
-        ImGui::OpenPopup("Proto Info");
-    }
-    if (ImGui::Button("Export Pattern File")) {
-        ImGui::OpenPopup("Pattern File");
-    }
-    if (exported_tiles == NULL) {
-        ImGui::EndDisabled();
-    }
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        ImGui::TableNextColumn();
+        if (ImGui::Button("Export Pattern File")) {
+            ImGui::OpenPopup("Pattern File");
+        }
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
+        }
+        ImGui::TableNextColumn();
+        ImGui::Checkbox("Auto Export Pattern File", &auto_export_pat);
+        ImGui::SetItemTooltip(
+            "Needs FRMs to be already listed in art/tiles/TILES.LST\n"
+            "AND proto files to be exported and appended to proto/tiles/TILES.LST\n"
+        );
+        if (auto_export_pat) {
+            auto_export_art = true;
+            auto_export_pro = true;
+        }
 
-    // Popups: Always center this window when appearing
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
-    {
-        export_proto_arr_POPUP(usr_nfo, exported_tiles);
+        if (ImGui::BeginPopupModal("Add FRMs to Mapper")) {
+            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, false);
+            ImGui::EndPopup();
+        }
 
-        ImGui::EndPopup();
-    }
-    // Always center this window when appearing? does this even work?
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
-    {
-        export_pattern_file(usr_nfo, exported_tiles);
+        // Popups: Always center this window when appearing
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
+        {
+            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_pro);
+            if (ImGui::Button("Close")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        // Always center this window when appearing? does this even work?
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
+        {
+            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export_pat);
+            if (ImGui::Button("Close")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
-        ImGui::EndPopup();
+        ImGui::EndTable();
     }
 
     ImGui::SliderInt("Image Offset X", &offset->x, -400, 400, NULL);
@@ -309,6 +394,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, image_data* img_data, Rect*
     if (exported_tiles != handle) {
         return exported_tiles;
     }
+    return NULL;
 }
 
 
@@ -365,8 +451,8 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
 
     static Rect offset = {};
     static tt_arr_handle* handle = nullptr;
-
-    handle = TMAP_tile_buttons(usr_info, img_data, &offset, handle);
+    Surface* srfc = img_data->ANM_dir[dir].frame_data[0];
+    handle = TMAP_tile_buttons(usr_info, srfc, &offset, handle);
 
     draw_TMAP_tiles(usr_info, img_data, shaders,
                     My_Variables->tile_texture_rend,

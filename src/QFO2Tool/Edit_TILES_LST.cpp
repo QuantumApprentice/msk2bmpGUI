@@ -6,7 +6,6 @@
 #include "Load_Settings.h"
 #include "Save_Files.h"
 #include "Edit_TILES_LST.h"
-#include "tinyfiledialogs.h"
 #include "ImGui_Warning.h"
 
 void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
@@ -41,7 +40,7 @@ char* load_tiles_lst_game(char* game_path)
 
 
 //read TILES.LST into memory directly from provided path
-//TODO: delete? not used yet
+//TODO: delete? only used in TMAP_tiles_pattern_arr()
 char* load_LST_file(char* game_path, char* LST_path, char* LST_file)
 {
     //nothing to load if default_game_path not set
@@ -74,30 +73,6 @@ char* write_tiles_lst(char* tiles_lst_path, char* list_of_tiles)
     return list_of_tiles;
 }
 
-//ask user for new name,
-//use old_name as default
-//TODO: delete? am I using this?
-char* get_new_name(char* old_name)
-{
-    // create the filename for the current list of tiles
-    // assigns final save path string to Full_Save_File_Path
-    char* name = tinyfd_inputBox(
-                "Tile Name...",
-                "Please type a default tile name for these,\n"
-                "exporting will append a tile number to this name.\n",
-                old_name);
-    if (name == nullptr) {
-        return nullptr;
-    }
-    //TODO: check if game engine will take more than 8 character names
-    //      if not, then limit this to 8 (name length + tile digits)
-    //      possibly give bypass?
-    if (strlen(name) >= 32) {
-        printf("name too long?");
-        // return nullptr;
-    }
-    return name;
-}
 
 //testing array list version/////////////////////////////////////////////////////start
 
@@ -131,45 +106,6 @@ tile_name_arr* make_name_list_arr(char* new_tiles_list)
     return large_list;
 }
 
-//same function as skip_or_rename()
-//but uses array of linked lists
-//TODO: delete? am I using this?
-int skip_or_rename_arr(tile_name_arr* node)
-{
-    char msg_buff[MAX_PATH] = {
-        "One of the new tile-names matches\n"
-        "a tile-name already on TILES.LST.\n\n"
-    };
-    strncat(msg_buff, node->name_ptr, node->length);
-    strncat(msg_buff, "\n"
-        "YES:   Skip and append only new names?\n"
-        "NO:    Rename the new tiles?\n", 74);
-
-    int choice = tinyfd_messageBox(
-                "Match found...",
-                msg_buff,
-                "yesnocancel", "warning", 2);
-    return choice;
-}
-
-//TODO: delete? am I using this?
-int skip_or_rename_arr(char* name)
-{
-    char msg_buff[255];
-    snprintf(msg_buff, 255,
-        "One of the new tile-names matches\n"
-        "a tile-name already on TILES.LST.\n\n"
-        "%s\n\n"
-        "YES:   Skip and append only new names?\n"
-        "NO:    Rename the new tiles?\n", name
-    );
-
-    int choice = tinyfd_messageBox(
-                "Match found...",
-                msg_buff,
-                "yesnocancel", "warning", 2);
-    return choice;
-}
 
 //returns list of tile names being exported
 //passing NULL into match_buff_src will
@@ -253,12 +189,12 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     return cropped_list;
 }
 
-char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, proto_export* state)
+char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_state* state)
 {
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", game_path);
 
-    char* actual_path = io_actual_path(save_path);
+    char* actual_path = io_path_check(save_path);
     if (actual_path) {
         strncpy(save_path, actual_path, MAX_PATH);
     }
@@ -284,7 +220,7 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, proto_expor
 }
 
 
-char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, proto_export* state)
+char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* state)
 {
     bool append_new_only = state->auto_export;
     int num_tiles = 0;
@@ -364,7 +300,7 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, proto_export* 
     return cropped_list;
 }
 
-char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, proto_export* state)
+char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, export_state* state)
 {
     //search old_tiles_list (TILES.LST)
     //for matching names from tiles in handle
@@ -384,11 +320,11 @@ char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, proto_expor
     return final_FRM_LST;
 }
 
-void set_false(proto_export* state)
+void set_false(export_state* state)
 {
     state->auto_export    = false;
     state->export_proto   = false;
-    state->game_path      = false;
+    state->chk_game_path  = false;
 
     state->make_FRM_LST   = false;
     state->make_PRO_LST   = false;
@@ -404,11 +340,11 @@ void set_false(proto_export* state)
     state->append_PRO_MSG = false;
 }
 
-bool load_FRM_tiles_LST(user_info* usr_nfo, proto_export* state)
+bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
 {
     char* LST_path = state->LST_path;
     snprintf(LST_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", usr_nfo->default_game_path);
-    char* actual_path = io_actual_path(LST_path);
+    char* actual_path = io_path_check(LST_path);
     if (actual_path) {
         strncpy(LST_path, actual_path, MAX_PATH);
     }
@@ -422,7 +358,7 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, proto_export* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
-        state->game_path      = false;
+        state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
         state->make_PRO_LST   = false;
@@ -445,14 +381,14 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, proto_export* state)
         free(usr_nfo->game_files.FRM_TILES_LST);
     }
     usr_nfo->game_files.FRM_TILES_LST = FRM_tiles_lst;
-    // ImGui::OpenPopup("Append to LST");
 
     return true;
 }
 
-// Returns current full save path if fail
-//TODO: need to change to return new_tiles_lst?
-bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, proto_export* state)
+//Create new art TILES.LST then append to old art TILES.LST
+//  full LST is then attached to usr_nfo.game_files.FRM_TILES_LST
+//  On fail returns false, game_files.FRM_TILES_LST not changed
+bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
     // //Auto option
     // if (usr_nfo->auto_export == true) {
@@ -464,7 +400,7 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, proto_expo
 
     char* game_path = usr_nfo->default_game_path;
 
-    //append new tiles to list in memory
+    //append new tiles.LST to old tiles.LST in memory
     char* FRM_tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
     char* new_tiles_lst = append_FRM_tiles_LST(FRM_tiles_lst, handle, state);
     if (new_tiles_lst == FRM_tiles_lst) {
@@ -473,7 +409,7 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, proto_expo
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", game_path);
-    char* actual_path = io_actual_path(save_path);
+    char* actual_path = io_path_check(save_path);
     if (actual_path) {
         strncpy(save_path, actual_path, MAX_PATH);
     }
@@ -496,4 +432,63 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, proto_expo
     usr_nfo->game_files.FRM_TILES_LST = new_tiles_lst;
 
     return true;
+}
+
+//makes a char* list of tilenames from handle
+//      and appends (or replaces) original TILES.LST
+void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
+{
+    //input name
+    ImGui::Text(
+        "In order to get new FRMs to appear in the Fallout 2\n"
+        "mapper (mapper2.exe), new entries must be made in\n\n"
+        "   Fallout 2/data/art/tiles/TILES.LST\n\n"
+        "For this to work, please provide the path to\n"
+        "fallout2.exe in your modded Fallout 2 folder,\n"
+        "and have this file extracted to its\n"
+        "appropriate location.\n"
+    );
+
+    static char FObuf[MAX_PATH] = "";
+    if (FObuf[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
+        strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    }
+    ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
+    // ImGui::SameLine();
+
+    ImGui::Text(
+        "(I plan on adding a feature to extract these from)\n"
+        "(master.dat automatically, currently unimplemented.)\n\n"
+        "If only exporting FRMs, the mapper must be set in\n"
+        "'Librarian' mode and new protos must be made from\n"
+        "these new FRMs."
+    );
+
+    if (!handle) {
+        return;
+    }
+
+    if (state->chk_game_path) {
+        //copy any game_path changes to user_info for saving to config
+        if (fallout2exe_exists(FObuf) == false) {
+            ImGui::OpenPopup("fallout2.exe not found");
+            set_false(state);
+            return;
+        }
+        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+    }
+
+    if (state->load_files) {
+        state->loaded_FRM_LST = load_FRM_tiles_LST(usr_nfo, state);
+        if (!state->loaded_FRM_LST) {
+            //TODO: maybe want to handle other failures
+            //      which would cause io_load_txt_file()
+            //      to return NULL/nullptr
+            return;
+        }
+    }
+
+    if (state->make_FRM_LST) {
+        usr_nfo->game_files.FRM_TILES_LST = save_NEW_FRM_tiles_LST(handle, usr_nfo->default_game_path, state);
+    }
 }

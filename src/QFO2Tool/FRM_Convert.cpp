@@ -1,6 +1,5 @@
 #include "FRM_Convert.h"
 #include "B_Endian.h"
-#include "tinyfiledialogs.h"
 #include "Load_Files.h"
 #include "ImGui_Warning.h"
 #include "platform_io.h"
@@ -9,14 +8,6 @@
 #include <vector>
 #include <math.h>
 #include <limits.h>
-
-// #ifdef QFO2_WINDOWS
-// #include <direct.h>
-
-// #elif defined(QFO2_LINUX)
-// #include <fcntl.h>
-// #include <errno.h>
-// #endif
 
 union Pxl_Err {
     struct {

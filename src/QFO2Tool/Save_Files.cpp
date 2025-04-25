@@ -24,7 +24,6 @@
 #include "town_map_tiles.h"
 #include "ImGui_Warning.h"
 
-#include "tinyfiledialogs.h"    //TODO: remove/delete
 #include <ImFileDialog.h>
 #include <imgui_internal.h>
 
@@ -627,17 +626,6 @@ bool check_and_write_cfg_file(user_info* user_info, char* exe_path)
     return true;
 }
 
-//Ask user where the default Fallout 2 path is,
-//then store path in both default_game_path and default_save_path if default_save_path is '\0'
-//then write user_info out to config file
-void Set_Default_Game_Path(user_info* usr_info, char* exe_path)
-{
-    //Set the default Fallout 2 game path
-    bool path_set = export_auto(usr_info, exe_path, NULL, UNK);
-    if (!path_set) {
-        return;
-    }
-}
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
 #define MAP_TILE_W (350)
@@ -890,8 +878,8 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
         ifd::FileDialog::Instance().Open("FileSaveDialog", "Save Folder", "", false, folder);
     }
 
-    static bool success = false;
-    static bool overwrite;
+    static bool success   = false;
+    static bool overwrite = false;
     static char save_folder[MAX_PATH];
     static char save_path[MAX_PATH];
     if (ImGui::BeginPopupModal("Match found"))
@@ -1006,6 +994,7 @@ uint8_t *blend_PAL_texture(image_data* img_data)
 //       5) game path or last used save path is
 //           stored in user_info & msk2bmpGUI.cfg file
 //TODO: replace with something that doesn't suck
+//TODO: delete
 bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type save_type)
 {
     char dest[3][27]{
@@ -1013,10 +1002,11 @@ bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type 
         {"/data/data"},             //wrldmpXX.msk
         {"/data/art/tiles"},        //town map tiles
         };
-    int choice = tinyfd_messageBox("Set Default Game Path...",
-                                   "Do you want to set your default Fallout 2 game path?\n"
-                                   "(Automatically overwrites game files)",
-                                   "yesnocancel", "question", 2);
+    int choice;
+    // choice = tinyfd_messageBox("Set Default Game Path...",
+    //                                "Do you want to set your default Fallout 2 game path?\n"
+    //                                "(Automatically overwrites game files)",
+    //                                "yesnocancel", "question", 2);
     if (choice == 0)
     {                   // cancel
         return false;
@@ -1025,9 +1015,9 @@ bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type 
     {                   // Set default FO2 directory, auto_export = true
         usr_info->auto_export = 1;
         char* current_save_path;
-        current_save_path = tinyfd_selectFolderDialog(
-            "Select your modded Fallout 2 base directory...",
-            usr_info->default_save_path);
+        // current_save_path = tinyfd_selectFolderDialog(
+        //     "Select your modded Fallout 2 base directory...",
+        //     usr_info->default_save_path);
         if (!current_save_path)
         {
             return false;
@@ -1054,9 +1044,9 @@ bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type 
     if (choice == 2)
     {                   // Manual - chosen instead of selecting default path from previous popup
         char* current_save_path;
-        current_save_path = tinyfd_selectFolderDialog(
-            "Select directory to save to...",
-            usr_info->default_save_path);
+        // current_save_path = tinyfd_selectFolderDialog(
+        //     "Select directory to save to...",
+        //     usr_info->default_save_path);
         if (!current_save_path)
         {
             return false;
@@ -1077,14 +1067,15 @@ bool export_auto(user_info* usr_info, char* exe_path, char* save_path, img_type 
     return true;
 }
 
+//TODO: delete
 bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
 {
     usr_info->auto_export = 2;
 
     char* current_save_path;
-    current_save_path = tinyfd_selectFolderDialog(
-        "Select directory to save to...",
-        usr_info->default_save_path);
+    // current_save_path = tinyfd_selectFolderDialog(
+    //     "Select directory to save to...",
+    //     usr_info->default_save_path);
     if (!current_save_path) {
         return false;
     }
@@ -1104,7 +1095,9 @@ bool export_manual(user_info *usr_info, char *save_path, char* exe_path)
     return true;
 }
 
-//TODO: re-implement this with ImFileDialog()
+//TODO: re-implement this with ImFileDialog()?
+//TODO: delete? replacing with checkboxes in tile export functions
+//      probably need to do the same for worldmap & msk functions
 bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, img_type save_type)
 {
     char dest[3][24] {
@@ -1113,18 +1106,19 @@ bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, 
         {"/data/art/tiles"},        //town map tiles
     };
     if (usr_info->auto_export == not_set) {       // ask user if they want auto/manual
-        int auto_choice = tinyfd_messageBox(
-            //TODO: simplify this text
-                    "Automatic? or Manual?",
-                    "Tiles (map/town/msk) are only located\n"
-                    "in specific places in the game files.\n\n"
-                    "For rapid testing in game, you can export tiles\n"
-                    "automatically and bypass this screen.\n"
-                    "by setting the modded Fallout 2 directory.\n\n"
-                    "Yes --- Auto:   (set Fallout 2 directory)\n"
-                    "No  --- Manual: (select a folder)\n\n"
-                    "You can change this setting in the config menu.",
-                    "yesnocancel", "question", 2);
+        int auto_choice;
+        // auto_choice = tinyfd_messageBox(
+        //     //TODO: simplify this text
+        //             "Automatic? or Manual?",
+        //             "Tiles (map/town/msk) are only located\n"
+        //             "in specific places in the game files.\n\n"
+        //             "For rapid testing in game, you can export tiles\n"
+        //             "automatically and bypass this screen.\n"
+        //             "by setting the modded Fallout 2 directory.\n\n"
+        //             "Yes --- Auto:   (set Fallout 2 directory)\n"
+        //             "No  --- Manual: (select a folder)\n\n"
+        //             "You can change this setting in the config menu.",
+        //             "yesnocancel", "question", 2);
         if (auto_choice == CANCEL) {            // cancel
             return false;
         }
@@ -1160,7 +1154,7 @@ bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, 
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
-tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data, Rect* offset)
+tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, bool auto_export)
 {
 
     //TODO: re-implement auto_export_question() with ImFileDialog()
@@ -1176,7 +1170,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
         "and 3 of those characters are currently\n"
         "taken up by the numbering system.\n"
         "(Which leaves 5 for you to work with).\n"
-        "ex: tile_000.FRM, tile_001.FRM, ... , tile_999.FRM\n"
+        "ex: tile_000.FRM, tile_001.FRM, ... tile_999.FRM\n"
     );
     //game engine/mapper only takes 8 character tile-names
     static char save_name[16] = "tile_";
@@ -1186,17 +1180,18 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
 
     // create the filename for the current list of tiles
     // assigns final save path string to Full_Save_File_Path
-    const char* ext_filter;
-    if (ImGui::Button("Save as Town Map Tiles")) {
-        ext_filter = "FRM file (single image or all 6 directions)"
-            "(*.frm;){"
-            ".FRM,.frm,"
-            "},.*";
+    if (!auto_export) {
+        const char* ext_filter;
+        if (ImGui::Button("Save as Town Map Tiles")) {
+            ext_filter = "FRM file (single image or all 6 directions)"
+                "(*.frm;){"
+                ".FRM,.frm,"
+                "},.*";
 
-        char* folder = usr_info->default_save_path;
-        ifd::FileDialog::Instance().Open("TMAPSaveDialog", "Save Folder", "", false, folder);
+            char* folder = usr_info->default_save_path;
+            ifd::FileDialog::Instance().Open("TMAPSaveDialog", "Save Folder", "", false, folder);
+        }
     }
-
 
     static char save_fldr[MAX_PATH];
     static char save_path[MAX_PATH];
@@ -1247,13 +1242,10 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, image_data* img_data
     }
 
 
-    int dir = img_data->display_orient_num;
-    int num = img_data->display_frame_num;
-    Surface* src = img_data->ANM_dir[dir].frame_data[num];
 
     tt_arr_handle* handle = NULL;
     if (strlen(save_fldr) > 0 && success) {
-        handle = crop_TMAP_tile_arr_POPUP(offset, src, save_fldr, save_name, save_path, overwrite);
+        handle = crop_TMAP_tile_arr_POPUP(offset, srfc, save_fldr, save_name, save_path, overwrite);
         if (!handle) {
             success = false;
         }
@@ -1307,12 +1299,12 @@ void Save_Q_file(image_data* img_data, user_info* usr_info)
 
     snprintf(save_path, MAX_PATH, "%s/temp001.MSK", usr_info->default_save_path);
 
-    Save_File_Name = tinyfd_saveFileDialog(
-        "default_name",
-        save_path,
-        2,
-        lFilterPatterns,
-        nullptr);
+    // Save_File_Name = tinyfd_saveFileDialog(
+    //     "default_name",
+    //     save_path,
+    //     2,
+    //     lFilterPatterns,
+    //     nullptr);
 
     if (Save_File_Name == NULL)
     {
