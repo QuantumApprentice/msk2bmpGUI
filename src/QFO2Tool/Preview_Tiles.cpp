@@ -251,10 +251,13 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
                 if (auto_export_pat) {
                     state.export_pattern = true;
                 }
+
+                ImGui::CloseCurrentPopup();
             }
         }
 
         if (ImGui::Button("Close")) {
+            set_false(&state);
             ImGui::CloseCurrentPopup();
         }
 
@@ -334,10 +337,10 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
             auto_export_pat = false;
         }
 
+        ImGui::TableNextColumn();
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
-        ImGui::TableNextColumn();
         if (ImGui::Button("Export Pattern File")) {
             ImGui::OpenPopup("Pattern File");
         }
@@ -351,12 +354,18 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
             "AND proto files to be exported and appended to proto/tiles/TILES.LST\n"
         );
         if (auto_export_pat) {
+            state.export_pattern = true;
             auto_export_art = true;
             auto_export_pro = true;
         }
 
-        if (ImGui::BeginPopupModal("Add FRMs to Mapper")) {
+        if (ImGui::BeginPopupModal("Add FRMs to Mapper"))
+        {
             append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, false);
+            if (ImGui::Button("Close")) {
+                set_false(&state);
+                ImGui::CloseCurrentPopup();
+            }
             ImGui::EndPopup();
         }
 
@@ -367,6 +376,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         {
             export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_pro);
             if (ImGui::Button("Close")) {
+                set_false(&state);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -377,6 +387,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         {
             export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export_pat);
             if (ImGui::Button("Close")) {
+                set_false(&state);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();

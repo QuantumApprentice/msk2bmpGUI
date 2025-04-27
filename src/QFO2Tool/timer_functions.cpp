@@ -36,7 +36,7 @@ void print_timer(uint64_t StartingTime)
     uint64_t EndingTime = nano_time();
     uint64_t nanoseconds_total = EndingTime - StartingTime; // = NANOSECONDS_IN_SECOND * (end.tv_sec - start.tv_sec);
     uint64_t microseconds_total = nanoseconds_total / 1000;
-    printf("Total time elapsed: %ldμs\n", microseconds_total);
+    printf("Total time elapsed: %ldus\n", microseconds_total);
 }
 
 #elif defined(QFO2_LINUX)

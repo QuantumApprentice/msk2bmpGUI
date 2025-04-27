@@ -239,6 +239,9 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
     //                return (wcscmp(a_file, b_file) < 0);
     //              });                                                                                     // ~1ms
 
+
+
+
     size_t parent_path_size = directory.native().size();
     std::sort(animation_images.begin(), animation_images.end(),
             [&parent_path_size](std::filesystem::path &a, std::filesystem::path &b)
@@ -247,12 +250,11 @@ std::vector<std::filesystem::path> handle_subdirectory_vec(const std::filesystem
                 int b_size = b.native().size();
                 int larger_size = (a_size > b_size) ? a_size : b_size;
                 return (io_strncasecmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
-//#ifdef QFO2_WINDOWS
-//                return (io_wstrncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
-//#elif defined(QFO2_LINUX)
-//                return (io_strncmp((a.c_str() + parent_path_size), (b.c_str() + parent_path_size), larger_size) < 0);
-//#endif
             });
+
+
+
+
 
     // std::sort(std::execution::seq, animation_images.begin(), animation_images.end(),
     //            [](std::filesystem::path& a, std::filesystem::path& b)
@@ -336,25 +338,31 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         {
             if (Supported_Format(file))
             {
-
                 NATIVE_STRING_TYPE* iter_file = (file.path().c_str() + parent_path_size);
+                //TODO:
+                //move all filesystem things (includeing std::filesystem) into platform layer
+                //and use windows conversion funcs to convert from wchar_t to utf8
 
-                if (w_frst.empty() || 
+                if (w_frst.empty() ||
+                    //io_strncasecmp(iter_file, w_frst.filename().u8string().c_str(), MAX_PATH) < 0)
                     (io_strncasecmp(iter_file, (w_frst.c_str() + parent_path_size), MAX_PATH) < 0))
                 {
                     w_frst = file;
                 }
                 if (w_last.empty() || 
+                    //io_strncasecmp(iter_file, w_last.filename().u8string().c_str(), MAX_PATH) > 0)
                     (io_strncasecmp(iter_file, (w_last.c_str() + parent_path_size), MAX_PATH) > 0))
                 {
                     w_last = file;
                 }
 
+                //int cmp = io_strncasecmp(iter_file, w_current.filename().u8string().c_str(), MAX_PATH);
                 int cmp = io_strncasecmp(iter_file, (w_current.c_str() + parent_path_size), MAX_PATH);
 
                 if (cmp < 0)
                 {
                     if (w_prev.empty() || 
+                        //io_strncasecmp(iter_file, w_prev.filename().u8string().c_str(), MAX_PATH) > 0)
                         (io_strncasecmp(iter_file, (w_prev.c_str() + parent_path_size), MAX_PATH) > 0))
                     {
                         w_prev = file;
@@ -363,6 +371,7 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
                 else if (cmp > 0)
                 {
                     if (w_next.empty() || 
+                        //io_strncasecmp(iter_file, w_next.filename().u8string().c_str(), MAX_PATH) < 0)
                         (io_strncasecmp(iter_file, (w_next.c_str() + parent_path_size), MAX_PATH) < 0))
                     {
                         w_next = file;
@@ -372,30 +381,17 @@ void Next_Prev_File(char *next, char *prev, char *frst, char *last, char *curren
         }
     }
 
-    if (w_prev.empty())
-    {
+    if (w_prev.empty()) {
         w_prev = w_last;
     }
-    if (w_next.empty())
-    {
+    if (w_next.empty()) {
         w_next = w_frst;
     }
 
-    int str_len = w_prev.u8string().length();
-    memcpy(prev, w_prev.u8string().c_str(), str_len);
-    prev[str_len] = '\0';
-
-    str_len = w_next.u8string().length();
-    memcpy(next, w_next.u8string().c_str(), str_len);
-    next[str_len] = '\0';
-
-    str_len = w_frst.u8string().length();
-    memcpy(frst, w_frst.u8string().c_str(), str_len);
-    frst[str_len] = '\0';
-
-    str_len = w_last.u8string().length();
-    memcpy(last, w_last.u8string().c_str(), str_len);
-    last[str_len] = '\0';
+    strncpy(prev, w_prev.u8string().c_str(), MAX_PATH);
+    strncpy(next, w_next.u8string().c_str(), MAX_PATH);
+    strncpy(frst, w_frst.u8string().c_str(), MAX_PATH);
+    strncpy(last, w_last.u8string().c_str(), MAX_PATH);
 
     // QueryPerformanceCounter(&EndingTime);
     // ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
@@ -543,16 +539,30 @@ void set_game_path_POPUP(user_info* usr_nfo)
 {
     if (ifd::FileDialog::Instance().IsDone("Fallout2exe_path")) {
         if (ifd::FileDialog::Instance().HasResult()) {
-            std::string game_path = ifd::FileDialog::Instance().GetResult().u8string();
-            int indx = game_path.find_last_of('/');
-            if (io_strncasecmp(game_path.c_str()+indx+1, "fallout2.exe", 13)
-            &&  io_strncasecmp(game_path.c_str()+indx+1, "fallout2HR.exe", 15)) {
+
+            NATIVE_STRING_TYPE* fallout2_exe;
+            NATIVE_STRING_TYPE* fallout2HR_exe;
+#ifdef QFO2_WINDOWS
+            fallout2_exe = L"fallout2.exe";
+            fallout2HR_exe = L"fallout2HR.exe";
+#elif defined QFO2_Linux
+            fallout2_exe = "fallout2.exe";
+            fallout2HR_exe = "fallout2HR.exe";
+#endif
+
+            std::filesystem::path game_path = ifd::FileDialog::Instance().GetResult();
+            std::filesystem::path filename = game_path.filename();
+
+            if (io_strncasecmp(filename.c_str(), fallout2_exe, 13)
+            &&  io_strncasecmp(filename.c_str(), fallout2HR_exe, 15)) {
+
                 ImGui::OpenPopup("Fallout2.exe Not Found");
                 ifd::FileDialog::Instance().Close();
                 return;
             }
-            if (io_file_exists(game_path.c_str())) {
-                strncpy(usr_nfo->default_game_path, game_path.c_str(), MAX_PATH);
+
+            if (std::filesystem::exists(game_path)) {
+                strncpy(usr_nfo->default_game_path, game_path.u8string().c_str(), MAX_PATH);
                 ImGui::OpenPopup("Fallout2.exe Found");
             } else {
                 ImGui::OpenPopup("Fallout2.exe Not Found");
@@ -595,8 +605,12 @@ void Set_Default_Game_Path(user_info* usr_nfo, char* exe_path)
     }
     char path_buff[MAX_PATH];
     snprintf(path_buff, MAX_PATH, "%s", file_path);
-    char* ptr = strrchr(path_buff, '/');
-    ptr[0] = '\0';
+
+    char* ptr = strrchr(path_buff, PLATFORM_SLASH);
+    if (ptr) {
+        ptr[0] = '\0';
+    }
+
     ifd::FileDialog::Instance().Open(
         "Fallout2exe_path",
         "Open Folder",

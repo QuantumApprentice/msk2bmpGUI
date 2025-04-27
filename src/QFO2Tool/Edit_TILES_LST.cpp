@@ -324,6 +324,7 @@ void set_false(export_state* state)
 {
     state->auto_export    = false;
     state->export_proto   = false;
+    state->export_pattern = false;
     state->chk_game_path  = false;
 
     state->make_FRM_LST   = false;

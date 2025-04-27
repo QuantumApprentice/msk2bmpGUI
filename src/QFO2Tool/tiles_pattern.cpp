@@ -201,52 +201,104 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     free(out_pattern);
 }
 
+struct PAT_list {
+    char** list = NULL;
+    int count   = 0;
+};
+
+PAT_list check_PAT_files(user_info* usr_nfo)
+{
+    char* game_path = usr_nfo->default_game_path;
+    char path_buff[MAX_PATH];
+    int patt_num = 0;
+    //check for existing pattern filenames
+    do {
+        snprintf(path_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", game_path, ++patt_num);
+    } while (io_file_exists(path_buff));
+
+    char** pattern_list = (char**)malloc(patt_num * sizeof(char*));
+    char*  pattern_str  = (char*) malloc(patt_num * 10);
+    char*  ptr = pattern_str;
+    for (int i = 0; i < patt_num; i++)
+    {
+        snprintf(ptr, MAX_PATH, "%08d", i+1);
+        pattern_list[i] = ptr;
+        ptr += 10;
+    }
+
+    PAT_list final_list;
+    final_list.list = pattern_list;
+    final_list.count = patt_num;
+
+    return final_list;
+}
+
+char* select_PAT_name(PAT_list* filenames)
+{
+    static int pattern_select = filenames->count-1;
+    int pattern_count  = filenames->count;
+    ImGui::Combo("pattern_filename", &pattern_select, filenames->list, pattern_count);
+    //ImGui::InputText("###patternfile", patt_buff, 9);
+
+    return filenames->list[pattern_select];
+
+}
 
 void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
 {
-    //check pattern filename
-    int patt_num = 1;
-    static char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/00000001", usr_nfo->default_game_path);
-    while (io_file_exists(file_buff)) {
-        snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", usr_nfo->default_game_path, ++patt_num);
+    static PAT_list filenames;
+    if (!filenames.list) {
+        filenames = check_PAT_files(usr_nfo);
     }
-    //allow user to change filename
-    static char patt_buff[12];
-    if (patt_buff[0] == '\0') {
-        snprintf(patt_buff, 12, "%08d", patt_num);
-    }
+
     ImGui::Text(
-        "%s\n"
-        "was the first slot open for pattern files.\n"
-        "To use a different slot number, change it here.\n"
-        "(This actually changes the filename, if you\n"
-        "want this file to work, change only the end number\n"
-        "and it must be contiguous from any previous number.)\n",
-        patt_buff
+        "The first slot open for a pattern file is:\n"
     );
-    ImGui::InputText("###patternfile", patt_buff, 9);
+    char* selected_PAT = select_PAT_name(&filenames);
+    ImGui::Text(
+        "To use a different slot number, change it here.\n"
+        "(This actually changes the filename.\n"
+        "Default selection is a new file.\n"
+        "To overwrite an existing entry, select that number.)\n"
+    );
 
     //export button
+    bool save_pattern = false;
     if (!auto_export) {
         if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
             if (handle == nullptr) {
             //TODO: place a warning here, this needs tile_arr*head to work
                 return;
             }
-            state->export_pattern = true;
+            save_pattern = true;
         }
+    }
+
+    if (!state->export_pattern) {
+        for (int i = 0; i < filenames.count; i++)
+        {
+            if (!filenames.list[i]) {
+                printf("why am I running?\n");
+                continue;
+            }
+            printf("freeing\n");
+            free(filenames.list[i]);
+            filenames.list[i] = NULL;
+        }
+        free(filenames.list);
+        filenames.list  = NULL;
+        filenames.count = 0;
     }
 
     if (!handle) {
         return;
     }
 
-    if (state->export_pattern) {
-        if (atoi(patt_buff) != patt_num) {
-            snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, patt_buff);
-        }
+    if (save_pattern) {
+        char path_buff[MAX_PATH];
+        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, selected_PAT);
 
-        TMAP_tiles_pattern_arr(usr_nfo, handle, file_buff);
+        TMAP_tiles_pattern_arr(usr_nfo, handle, path_buff);
+        state->export_pattern = false;
     }
 }

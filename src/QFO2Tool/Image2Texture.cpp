@@ -260,10 +260,10 @@ GLuint init_texture(Surface* src, int w, int h, img_type type)
     }
 
     int alignment = 1;      //FRM & MSK
-    int pxl_type  = GL_RED; //FRM & MSK
+    int pxl_type  = GL_RED; //FRM & MSK //6403
     if (type == OTHER) {    //everything else
         alignment = 4;
-        pxl_type  = GL_RGBA;
+        pxl_type  = GL_RGBA;            //6408
     }
 
     GLuint texture = 0;

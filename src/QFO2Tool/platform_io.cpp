@@ -55,7 +55,6 @@ char* io_wchar_utf8(NATIVE_STRING_TYPE* src)
     if (count == 0) {
         int err = GetLastError();
         printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
-        free(buff);
         return NULL;
     }
 
@@ -82,7 +81,6 @@ wchar_t* io_utf8_wchar(const char* src)
     if (count == 0) {
         int err = GetLastError();
         printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
-        free(buff);
         return NULL;
     }
 
@@ -103,18 +101,17 @@ bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_cha
 
 //returns -1/0/1
 // int io_strncasecmp(std::filesystem::path src, void* iter_src, size_t size)
-int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+//int io_strncasecmp(const char* str1, const char* str2, int num_char)
+int io_strncasecmp(NATIVE_STRING_TYPE* wstr1, NATIVE_STRING_TYPE* wstr2, int num_char)
 {
-    // stbiw_convert_wchar_to_utf8()
-
     return (CompareStringEx(
         LOCALE_NAME_USER_DEFAULT,
         LINGUISTIC_IGNORECASE,
-        str1, -1,
-        str2,
+        wstr1, -1,
+        wstr2,
         -1, NULL, NULL, NULL) - 2
         //-2 to convert windows bs string
-        //  compare to standard  ( -1/0/1 )
+        //  to match the standard  ( -1/0/1 )
     );
 }
 
@@ -209,6 +206,14 @@ bool io_close_dir(void* dir_stream)
     return true;
 }
 
+//returns correct path for case insensitive input
+//  returns original path if no matching path is found
+//  this is currently designed to need a create_path_()
+//  function call following a call to this
+char* io_path_check(char* file_name)
+{
+    return file_name;
+}
 
 int io_file_size(const char* filename)
 {
@@ -233,6 +238,9 @@ bool io_file_exists(const char* filename)
     int error = stat(filename, &stat_info);
     if (error) {
         //TODO: log to file
+        if (errno != ENOENT) {
+            printf("Error: io_file_exists() : %d\n", error);
+        }
         return false;
     }
     return (stat_info.st_mode & S_IFREG);
@@ -250,7 +258,7 @@ bool io_make_dir(char* dir_path)
         return true;
     }
     else {
-        if (errno == 2) {
+        if (errno == ENOENT) {
         char* ptr = strrchr(dir_path, '/');
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
