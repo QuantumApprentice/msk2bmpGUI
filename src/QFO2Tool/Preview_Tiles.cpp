@@ -252,7 +252,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
                     state.export_pattern = true;
                 }
 
-                ImGui::CloseCurrentPopup();
+                // ImGui::CloseCurrentPopup();
             }
         }
 

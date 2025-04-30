@@ -198,6 +198,170 @@ char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
     return cropped_list;
 }
 
+void TILES_LST_unmodified(export_state* state)
+{
+    ImGui::Text(
+        "%s\n\n"
+        "TILES.LST not updated...\n"
+        "All new tile-names were already\n"
+        "found on TILES.LST.\n"
+        "No new tile-names were added.\n"
+        , state->LST_path
+    );
+    if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+void append_to_LST(export_state* state)
+{
+    ImGui::Text(
+        "%s\n\n"
+        "Append new tiles to TILES.LST?\n"
+        "(A backup will be made.)\n\n"
+        "--IMPORTANT--\n"
+        "The Fallout game engine reads tiles in\n"
+        "from TILES.LST based on the line number.\n"
+        "Be careful not to change the order of\n"
+        "tiles once they are on the list.\n\n"
+        , state->LST_path
+    );
+    if (ImGui::Button("Append to TILES.LST")) {
+        state->auto_export    = true;
+        state->append_FRM_LST = true;
+        state->append_PRO_LST = true;
+        state->append_PRO_MSG = true;
+
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+void fallout2_exe_NOT_FOUND(char* FObuff)
+{
+    ImGui::Text(
+        "The Fallout 2 executable (fallout2.exe) couldn't be found at\n\n"
+        "%s\n\n"
+        "In order to make these tiles accessible in the\n"
+        "Fallout 2 mapper (mapper2.exe), we need to add\n"
+        "entries in several files located in the Fallout 2\n"
+        "sub-directories --\n"
+        "'/art/tiles/TILES.LST',\n"
+        "'/proto/tiles/TILES.LST'.\n"
+        "(optional)\n"
+        "'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
+        "If you want to bypass this for now, just add a file\n"
+        "named 'fallout2.exe' into the selected folder and retry.\n"
+        , FObuff
+    );
+    if (ImGui::Button("Close")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+bool missing_files_popup(export_state* state)
+{
+    const char* art = "";
+    const char* pro = "";
+    const char* msg = "";
+    if (state->loaded_FRM_LST == false) {
+        art = "/data/art/tiles/TILES.LST\n";
+    }
+    if (state->loaded_PRO_LST == false) {
+        pro = "/data/proto/tiles/TILES.LST\n";
+    }
+    if (state->loaded_PRO_MSG == false) {
+        msg = "/data/text/%s/game/pro_tile.msg\n";
+    }
+
+
+    // char* lst_path = state->LST_path;
+    ImGui::Text(
+        "Unable to find these files:\n"
+        "\n"
+        "%s%s%s"
+        "\n"
+
+        "Would you like to make new ones?\n"
+        "These new proto files will be blank\n"
+        "(except for the new tiles made here),\n"
+        "and will create all the subfolders\n"
+        "necessary for the game engine to load\n"
+        "these new files.\n\n"
+
+        "--IMPORTANT--\n"
+        "The Fallout game engine reads proto IDs/FRM names\n"
+        "in from *.LST files based on the line number.\n"
+        "The new *.LST files will override the old ones.\n"
+        "Only do this if you want to create\n"
+        "the whole tile system from scratch,\n"
+        "or to preview the results before manually merging.\n\n"
+
+        , art,pro,msg//,language[0]
+    );
+    if (ImGui::Button("Create new files?")) {
+        if (state->loaded_FRM_LST == false) {
+            state->make_FRM_LST = true;
+        } else {
+            state->append_FRM_LST = true;
+        }
+
+        if (state->loaded_PRO_LST == false) {
+            state->make_PRO_LST = true;
+        } else {
+            state->append_PRO_LST = true;
+        }
+
+        if (state->loaded_PRO_MSG == false) {
+            state->make_PRO_MSG = true;
+        } else {
+            state->append_PRO_MSG = true;
+        }
+
+        state->export_proto   = true;
+        ImGui::CloseCurrentPopup();
+        return true;
+    }
+
+    ImGui::BeginDisabled();
+    if (ImGui::Button("Extract files from master.dat")) {
+        //TODO: implement this
+    }
+    ImGui::SetItemTooltip("Unimplemented");
+    ImGui::EndDisabled();
+
+    if (ImGui::Button("Select different Fallout 2 folder?")) {
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+
+    return false;
+}
+
+void export_tiles_POPUPS(export_state* state, char* FObuff)
+{
+    if (ImGui::BeginPopupModal("Missing Files")) {
+        missing_files_popup(state);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("Append to LST")) {
+        append_to_LST(state);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
+        TILES_LST_unmodified(state);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("fallout2.exe not found")) {
+        fallout2_exe_NOT_FOUND(FObuff);
+        ImGui::EndPopup();
+    }
+}
+
 //ImGui menu input
 //returns stored name
 char* input_name()
@@ -312,88 +476,6 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
     usr_nfo->game_files.PRO_TILE_MSG = new_PRO_tile_MSG;
 
     return true;
-}
-
-bool missing_files_popup(export_state* state)
-{
-
-    const char* art = "";
-    const char* pro = "";
-    const char* msg = "";
-    if (state->loaded_FRM_LST == false) {
-        art = "/data/art/tiles/TILES.LST\n";
-    }
-    if (state->loaded_PRO_LST == false) {
-        pro = "/data/proto/tiles/TILES.LST\n";
-    }
-    if (state->loaded_PRO_MSG == false) {
-        msg = "/data/text/%s/game/pro_tile.msg\n";
-    }
-
-
-    // char* lst_path = state->LST_path;
-    ImGui::Text(
-        "Unable to find these files:\n"
-        "\n"
-        "%s%s%s"
-        "\n"
-
-        "Would you like to make new ones?\n"
-        "These new proto files will be blank\n"
-        "(except for the new tiles made here),\n"
-        "and will create all the subfolders\n"
-        "necessary for the game engine to load\n"
-        "these new files.\n\n"
-
-        "--IMPORTANT--\n"
-        "The Fallout game engine reads proto IDs/FRM names\n"
-        "in from *.LST files based on the line number.\n"
-        "The new *.LST files will override the old ones.\n"
-        "Only do this if you want to create\n"
-        "the whole tile system from scratch,\n"
-        "or to preview the results before manually merging.\n\n"
-
-        , art,pro,msg//,language[0]
-    );
-    if (ImGui::Button("Create new files?")) {
-        if (state->loaded_FRM_LST == false) {
-            state->make_FRM_LST = true;
-        } else {
-            state->append_FRM_LST = true;
-        }
-
-        if (state->loaded_PRO_LST == false) {
-            state->make_PRO_LST = true;
-        } else {
-            state->append_PRO_LST = true;
-        }
-
-        if (state->loaded_PRO_MSG == false) {
-            state->make_PRO_MSG = true;
-        } else {
-            state->append_PRO_MSG = true;
-        }
-
-        state->export_proto   = true;
-        ImGui::CloseCurrentPopup();
-        return true;
-    }
-
-    ImGui::BeginDisabled();
-    if (ImGui::Button("Extract files from master.dat")) {
-        //TODO: implement this
-    }
-    ImGui::SetItemTooltip("Unimplemented");
-    ImGui::EndDisabled();
-
-    if (ImGui::Button("Select different Fallout 2 folder?")) {
-        ImGui::CloseCurrentPopup();
-    }
-    if (ImGui::Button("Cancel")) {
-        ImGui::CloseCurrentPopup();
-    }
-
-    return false;
 }
 
 char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_state* state)
@@ -767,12 +849,12 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         );
     }
 
-    static char FObuf[MAX_PATH] = "";
-    if (FObuf[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
-        strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    static char FObuff[MAX_PATH] = "";
+    if (FObuff[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
+        strncpy(FObuff, usr_nfo->default_game_path, MAX_PATH);
     }
     if (!auto_export) {
-        ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
+        ImGui::InputText("###fallout2.exe", FObuff, MAX_PATH);
     }
 
     ImGui::Text(
@@ -805,70 +887,73 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
     //Begin Popups/////////////////////////////////
 
-    if (ImGui::BeginPopupModal("Missing Files")) {
-        missing_files_popup(state);
-        ImGui::EndPopup();
-    }
-    if (ImGui::BeginPopupModal("Append to LST")) {
-        ImGui::Text(
-            "%s\n\n"
-            "Append new tiles to TILES.LST?\n"
-            "(A backup will be made.)\n\n"
-            "--IMPORTANT--\n"
-            "The Fallout game engine reads tiles in\n"
-            "from TILES.LST based on the line number.\n"
-            "Be careful not to change the order of\n"
-            "tiles once they are on the list.\n\n"
-            , state->LST_path
-        );
-        if (ImGui::Button("Append to TILES.LST")) {
-            state->auto_export    = true;
-            state->append_FRM_LST = true;
-            state->append_PRO_LST = true;
-            state->append_PRO_MSG = true;
+    // if (ImGui::BeginPopupModal("Missing Files")) {
+    //     missing_files_popup(state);
+    //     ImGui::EndPopup();
+    // }
+    // if (ImGui::BeginPopupModal("Append to LST")) {
+    //     ImGui::Text(
+    //         "%s\n\n"
+    //         "Append new tiles to TILES.LST?\n"
+    //         "(A backup will be made.)\n\n"
+    //         "--IMPORTANT--\n"
+    //         "The Fallout game engine reads tiles in\n"
+    //         "from TILES.LST based on the line number.\n"
+    //         "Be careful not to change the order of\n"
+    //         "tiles once they are on the list.\n\n"
+    //         , state->LST_path
+    //     );
+    //     if (ImGui::Button("Append to TILES.LST")) {
+    //         state->auto_export    = true;
+    //         state->append_FRM_LST = true;
+    //         state->append_PRO_LST = true;
+    //         state->append_PRO_MSG = true;
 
-            ImGui::CloseCurrentPopup();
-        }
-        if (ImGui::Button("Cancel")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-    if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
-        ImGui::Text(
-            "%s\n\n"
-            "TILES.LST not updated...\n"
-            "All new tile-names were already\n"
-            "found on TILES.LST.\n"
-            "No new tile-names were added.\n"
-            , state->LST_path
-        );
-        if (ImGui::Button("Close")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-    if (ImGui::BeginPopupModal("fallout2.exe not found")) {
-        ImGui::Text(
-            "The Fallout 2 executable (fallout2.exe) couldn't be found at\n\n"
-            "%s\n\n"
-            "In order to make these tiles accessible in the\n"
-            "Fallout 2 mapper (mapper2.exe), we need to add\n"
-            "entries in several files located in the Fallout 2\n"
-            "sub-directories --\n"
-            "'/art/tiles/TILES.LST',\n"
-            "'/proto/tiles/TILES.LST'.\n"
-            "(optional)\n"
-            "'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
-            "If you want to bypass this for now, just add a file\n"
-            "named 'fallout2.exe' into the selected folder and retry.\n"
-            , FObuf
-        );
-        if (ImGui::Button("Close")) {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
+    //         ImGui::CloseCurrentPopup();
+    //     }
+    //     if (ImGui::Button("Cancel")) {
+    //         ImGui::CloseCurrentPopup();
+    //     }
+    //     ImGui::EndPopup();
+    // }
+    // if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
+    //     ImGui::Text(
+    //         "%s\n\n"
+    //         "TILES.LST not updated...\n"
+    //         "All new tile-names were already\n"
+    //         "found on TILES.LST.\n"
+    //         "No new tile-names were added.\n"
+    //         , state->LST_path
+    //     );
+    //     if (ImGui::Button("Close")) {
+    //         ImGui::CloseCurrentPopup();
+    //     }
+    //     ImGui::EndPopup();
+    // }
+    // if (ImGui::BeginPopupModal("fallout2.exe not found")) {
+    //     ImGui::Text(
+    //         "The Fallout 2 executable (fallout2.exe) couldn't be found at\n\n"
+    //         "%s\n\n"
+    //         "In order to make these tiles accessible in the\n"
+    //         "Fallout 2 mapper (mapper2.exe), we need to add\n"
+    //         "entries in several files located in the Fallout 2\n"
+    //         "sub-directories --\n"
+    //         "'/art/tiles/TILES.LST',\n"
+    //         "'/proto/tiles/TILES.LST'.\n"
+    //         "(optional)\n"
+    //         "'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
+    //         "If you want to bypass this for now, just add a file\n"
+    //         "named 'fallout2.exe' into the selected folder and retry.\n"
+    //         , FObuf
+    //     );
+    //     if (ImGui::Button("Close")) {
+    //         ImGui::CloseCurrentPopup();
+    //     }
+    //     ImGui::EndPopup();
+    // }
+
+    export_tiles_POPUPS(state, FObuff);
+
 
     //End Popups/////////////////////////////////
 
@@ -891,12 +976,12 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
     if (state->chk_game_path) {
         //copy any game_path changes to user_info for saving to config
-        if (fallout2exe_exists(FObuf) == false) {
+        if (fallout2exe_exists(FObuff) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
             set_false(state);
             return;
         }
-        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+        strncpy(usr_nfo->default_game_path, FObuff, MAX_PATH);
     }
 
 
