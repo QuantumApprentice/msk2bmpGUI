@@ -1,6 +1,5 @@
 #include <string.h>
 #include <math.h>
-#include "tinyfiledialogs.h"
 
 #include "B_Endian.h"
 #include "platform_io.h"
@@ -16,7 +15,7 @@
 #define TMAP_W          (80)    //width of a town-map tile
 #define TMAP_H          (36)    //height of a town-map tile
 
-void save_TMAP_tile(char *save_path, uint8_t *pxls, char* name);
+void save_TMAP_tile_FRM(char *save_path, uint8_t *pxls, char* name);
 
 
 //crop town map tiles into linked list structs
@@ -283,12 +282,13 @@ tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_f
             tile->col     = col;
             tile->row     = row;
 
+            //ignore tiles outside the viewable area? (tiles with no info in them)
             if (   (origin_x <= -TMAP_W)
                 || (origin_y <= -TMAP_H)
                 || (origin_x >= img_w)
                 || (origin_y >= img_h)
                 ) {
-                tile->tile_id = 1;
+                tile->tile_id = -1;
                 continue;
             }
 
@@ -308,12 +308,11 @@ tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_f
             //TODO: make this a separate process
             //      tiles should be in memory first
             //      then saved at button press
-            save_TMAP_tile(save_path, tile_buff, tile->name_ptr);
+            save_TMAP_tile_FRM(save_path, tile_buff, tile->name_ptr);
             tile_num++;
         }
     }
 
-    tile_num        = 0;
     handle->size    = col_cnt*row_cnt;
     handle->col_cnt = col_cnt;
     handle->row_cnt = row_cnt;
@@ -322,7 +321,7 @@ tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_f
 }
 
 //TODO: replace this with the other save FRM function?
-void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
+void save_TMAP_tile_FRM(char* save_path, uint8_t* pxls, char* name)
 {
     FRM_Header header = {};
     header.version = 4; // not sure why 4? but vanilla game frm tiles have this
@@ -341,7 +340,7 @@ void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
     // if (io_file_exists(save_path)) {
     //     static char backup_path[MAX_PATH] = {'\0'};
     //     if (backup_path[0] == '\0') {
-    //         strcpy(backup_path, save_path);
+    //         strncpy(backup_path, save_path, MAX_PATH);
     //         *strrchr(backup_path, '/\\') = '\0';
     //         bool success = io_create_backup_dir(backup_path);
     //         if (success == false) {
@@ -356,10 +355,10 @@ void save_TMAP_tile(char* save_path, uint8_t* pxls, char* name)
     if (!file_ptr) {
         //TODO: log to file
         set_popup_warning(
-            "[ERROR] save_TMAP_tile()\n\n"
+            "[ERROR] save_TMAP_tile_FRM()\n\n"
             "Unable to open file in write mode.\n"
         );
-        printf("Error: save_TMAP_tile() Unable to open file in write mode: %s: %d\n", name, __LINE__);
+        printf("Error: save_TMAP_tile_FRM() Unable to open file in write mode: %s: %d\n", name, __LINE__);
         return;
     }
     fwrite(&header, sizeof(FRM_Header), 1, file_ptr);

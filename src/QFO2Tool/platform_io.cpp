@@ -3,8 +3,6 @@
 
 #include "platform_io.h"
 #include "Image2Texture.h"
-#include "tinyfiledialogs.h"
-#include "stb_image.h"
 
 #ifdef QFO2_WINDOWS
 #include <Windows.h>
@@ -57,7 +55,6 @@ char* io_wchar_utf8(NATIVE_STRING_TYPE* src)
     if (count == 0) {
         int err = GetLastError();
         printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
-        free(buff);
         return NULL;
     }
 
@@ -84,7 +81,6 @@ wchar_t* io_utf8_wchar(const char* src)
     if (count == 0) {
         int err = GetLastError();
         printf("Error: io_wchar_utf8() : %d\n%S\n", err, io_get_err_str(err));
-        free(buff);
         return NULL;
     }
 
@@ -105,18 +101,17 @@ bool io_wstrncmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_cha
 
 //returns -1/0/1
 // int io_strncasecmp(std::filesystem::path src, void* iter_src, size_t size)
-int io_strncasecmp(NATIVE_STRING_TYPE* str1, NATIVE_STRING_TYPE* str2, int num_char)
+//int io_strncasecmp(const char* str1, const char* str2, int num_char)
+int io_strncasecmp(NATIVE_STRING_TYPE* wstr1, NATIVE_STRING_TYPE* wstr2, int num_char)
 {
-    // stbiw_convert_wchar_to_utf8()
-
     return (CompareStringEx(
         LOCALE_NAME_USER_DEFAULT,
         LINGUISTIC_IGNORECASE,
-        str1, -1,
-        str2,
+        wstr1, -1,
+        wstr2,
         -1, NULL, NULL, NULL) - 2
         //-2 to convert windows bs string
-        //  compare to standard  ( -1/0/1 )
+        //  to match the standard  ( -1/0/1 )
     );
 }
 
@@ -211,6 +206,14 @@ bool io_close_dir(void* dir_stream)
     return true;
 }
 
+//returns correct path for case insensitive input
+//  returns original path if no matching path is found
+//  this is currently designed to need a create_path_()
+//  function call following a call to this
+char* io_path_check(char* file_name)
+{
+    return file_name;
+}
 
 int io_file_size(const char* filename)
 {
@@ -235,6 +238,9 @@ bool io_file_exists(const char* filename)
     int error = stat(filename, &stat_info);
     if (error) {
         //TODO: log to file
+        if (errno != ENOENT) {
+            printf("Error: io_file_exists() : %d\n", error);
+        }
         return false;
     }
     return (stat_info.st_mode & S_IFREG);
@@ -252,7 +258,7 @@ bool io_make_dir(char* dir_path)
         return true;
     }
     else {
-        if (errno == 2) {
+        if (errno == ENOENT) {
         char* ptr = strrchr(dir_path, '/');
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
@@ -300,7 +306,9 @@ bool io_isdir(char* dir_path)
     int error = stat(dir_path, &stat_info);
     if (error) {
         //TODO: log to file
-        printf("Error checking directory? %s\n", strerror(errno));
+        if (errno != ENOENT) {
+            printf("Error checking directory? %s\n", strerror(errno));
+        }
         return false;
     }
     return (stat_info.st_mode & S_IFDIR);
@@ -314,11 +322,19 @@ void* io_open_dir(char* dir_name)
     return dir_stream;
 }
 
+//TODO: handle files vs folders
+//      with a flag input of some sort
+//returns folders/files inside dir_stream location
 char* io_scan_dir(void* dir_stream)
 {
+    errno = 0;
     struct dirent* iterator;
     iterator = readdir((DIR*)dir_stream);
     if (iterator == NULL) {
+        if (errno != 0) {
+            //TODO: log to file
+            printf("Error: io_scan_dir() : errno: %d\n", errno);
+        }
         return NULL;
     }
 
@@ -336,6 +352,62 @@ bool io_close_dir(void* dir_stream)
         return false;
     }
     return true;
+}
+
+//returns correct path for case insensitive input
+//  returns original path if no matching path is found
+//  this is currently designed to need a create_path_()
+//  function call following a call to this
+char* io_path_check(char* file_name)
+{
+    static char full_path[MAX_PATH];
+    strncpy(full_path, file_name, MAX_PATH);
+
+    bool isdir = 0;
+    char* curr = NULL;
+    char* last = NULL;
+    while (!isdir) {
+        curr = strrchr(full_path, '/');
+        if (!curr) {
+            return NULL;
+        }
+        if (last) {
+            last[0] = '/';
+        }
+        last = curr;
+        curr[0] = '\0';
+        isdir = io_isdir(full_path);
+    }
+
+    while(curr[1] != '\0') {
+        DIR* stream = (DIR*)io_open_dir(full_path);
+
+        int match  = -1;
+        char* dir  = NULL;
+        char* next = strchr(curr+1, '/');
+        if (!next) {
+            curr[0] = '/';
+            break;
+        }
+        next[0] = '\0';
+        while (match) {
+            dir = io_scan_dir(stream);
+            //no match found for this folder
+            //pass full path back so new folders can be made
+            if (dir == NULL) {
+                curr[0] = '/';
+                next[0] = '/';
+                return full_path;
+            }
+            match = io_strncasecmp(curr+1, dir, MAX_PATH);
+        }
+        snprintf(curr, MAX_PATH-strlen(full_path), "/%s", dir);
+        curr += strlen(dir)+1;
+
+        io_close_dir(stream);
+    }
+
+    return full_path;
 }
 
 //another way to check if directory exists?
@@ -375,11 +447,10 @@ bool io_make_dir(char* dir_path)
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
     if (error == 0) {
-        //TODO: log to file
-        printf("Error io_make_dir() %s\n", strerror(errno));
+        //successfully created directory
         return true;
     }
-    if (errno == 2) {
+    if (errno == ENOENT) {  // No such file or directory
         char* ptr = strrchr(dir_path, PLATFORM_SLASH);
         *ptr = '\0';
         if (io_make_dir(dir_path)) {
@@ -395,42 +466,23 @@ bool io_make_dir(char* dir_path)
 
 #endif
 
-//TODO: delete? not used anywhere
-//check if path exists
-bool io_path_check(char* file_path)
+
+//create folder paths if they don't exist
+bool io_create_path_from_file(char* file_path)
 {
-    if (io_isdir(file_path) == false) {
-        int choice = tinyfd_messageBox(
-            "Warning",
-            "Directory does not exist.\n"
-            "Create directory?\n\n"
-            "--YES:    Create directory and new TILES.LST\n"
-            "--NO:     Select different folder to create TILES.LST\n"
-            "--CANCEL: Cancel...do I need to explain?\n",
-            "yesnocancel", "warning", 2);
-        if (choice == 0) {      //CANCEL: Cancel
+    // char* ptr = strrchr(file_path, PLATFORM_SLASH);
+    //TODO: figure out how to get PLATFORM_SLASH back in here for windows?
+    char* ptr = strrchr(file_path, '/');
+    char back = ptr[0];
+    ptr[0] = '\0';
+    if (!io_isdir(file_path)) {
+        bool success = io_make_dir(file_path);
+        if (!success) {
             return false;
         }
-        if (choice == 1) {      //YES:    Create directory and new TILES.LST
-            bool dir_exists = io_make_dir(file_path);
-            if (dir_exists == false) {
-
-            //TODO: do I need to track this choice2?
-                int choice2 = tinyfd_messageBox(
-                    "Warning",
-                    "Unable to create the directory.\n"
-                    "probably a file system error?\n",
-                    "ok", "warning", 0);
-
-                return false;
-            }
-        }
-        if (choice == 2) {      //NO:     Select different folder to create TILES.LST
-            char* new_path = tinyfd_selectFolderDialog("Select save folder...", file_path);
-            strncpy(file_path, new_path, MAX_PATH);
-            return io_path_check(file_path);
-        }
     }
+    ptr[0] = back;
+
     return true;
 }
 
@@ -481,7 +533,7 @@ bool io_move_file(char* file_path, char* dest_dir)
 bool io_create_backup_dir(char* dir)
 {
     char dest_path[MAX_PATH];
-    strcpy(dest_path, dir);
+    strncpy(dest_path, dir, MAX_PATH);
 
     char time_buff[32];
     time_t t = time(NULL);
@@ -522,7 +574,7 @@ bool io_save_txt_file(char* path, char* txt)
     FILE* txt_file = fopen(path, "wb");
     if (txt_file == NULL) {
         //TODO: log to file
-        printf("Error: io_save_txt_file() : unable to open file to write to\n");
+        printf("Error: io_save_txt_file() : unable to open file to write to: %d\n", __LINE__);
         return false;
     }
     fwrite(txt, strlen(txt), 1, txt_file);
@@ -531,7 +583,7 @@ bool io_save_txt_file(char* path, char* txt)
     return true;
 }
 
-bool fallout2exe_exists(char* game_path)
+bool fallout2exe_exists(const char* game_path)
 {
     char temp[MAX_PATH];
     snprintf(temp, MAX_PATH, "%s/fallout2.exe", game_path);

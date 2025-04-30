@@ -1,5 +1,4 @@
 #include "Load_Settings.h"
-#include "tinyfiledialogs.h"
 
 #include <string.h>
 

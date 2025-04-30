@@ -3,7 +3,6 @@
 //all the current research available is here:
 //http://duckandcover.cx/forums/viewtopic.php?p=168760
 
-#include <tinyfiledialogs.h>
 #include <string.h>
 
 #include "Edit_TILES_LST.h"
@@ -48,27 +47,27 @@ bool is_tile_blank(town_tile* tile)
 //tile-names should already be on TILES.LST
 //so we loop through the list and identify the line number
 //then assign that line number as the tile_id
-void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
+void assign_tile_id(tt_arr_handle* handle, const char* tiles_LST)
 {
-    int tiles_lst_len = strlen(tiles_lst);
+    int tiles_lst_len = strlen(tiles_LST);
 
-    tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
-        tt_arr* node = &tiles[i];
-        //skip known blank tiles
-        if (node->tile_id == 1) {
+        tt_arr* node = &handle->tile[i];
+        if (node->tile_id == -1) {
+            //skip known blank tiles
             continue;
         }
 
         //art FID is 0 indexed, so start at 0 when assigning lines
         int current_line = 0;
-        const char* strt = tiles_lst;
+        const char* strt = tiles_LST;
         for (int j = 0; j < tiles_lst_len; j++)
         {
-            if (tiles_lst[j] != '\n') {
+            if (tiles_LST[j] != '\n') {
                 continue;
             }
+            //TODO: delete this commented stuff?
             // if (tiles_lst[i] >= 'A' && tiles_lst[i] <= 'Z') {
             //     c1 = 'a' + tiles_lst[i] - 'A';
             // }
@@ -78,22 +77,21 @@ void assign_tile_id_arr(tt_arr_handle* handle, const char* tiles_lst)
             // if (c1 != c2) {
             //     continue;
             // }
+            current_line++;
 
             if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
-                strt = &tiles_lst[j+1];
-                current_line++;
+                strt = &tiles_LST[j+1];
                 continue;
             }
             if (io_strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
-                strt = &tiles_lst[j+1];
-                current_line++;
+                strt = &tiles_LST[j+1];
                 continue;
             }
             //match found, assign current line # to current tile_id
             node->tile_id = current_line;
             break;
         }
-        if (tiles[i].tile_id == 0) {
+        if (node->tile_id == 0) {
             //TODO: this needs its own popup window asking for next step
             printf("we've got a problem here, unable to find matching name\n");
         }
@@ -112,8 +110,11 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     int choice = 0;
     const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
     if (tiles_lst == nullptr) {
-        if (strlen(usr_info->default_game_path) > 1) {
-            usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path,  "/data/art/tiles/", "TILES.LST");
+        if (usr_info->default_game_path[0] != '\0') {
+            usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path, "/data/art/tiles/", "TILES.LST");
+            //TODO: keep using load_LST_file()? or replace with
+            // load_FRM_tiles_LST(usr_info, )?
+
         }
         if (tiles_lst == nullptr) {
             //TODO: log to file
@@ -131,7 +132,7 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
         }
     }
 
-    assign_tile_id_arr(handle, tiles_lst);
+    assign_tile_id(handle, tiles_lst);
 
     //  pattern file is array of
     //  4x int struct w/pragma pack applied
@@ -200,49 +201,105 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     free(out_pattern);
 }
 
+struct PAT_list {
+    char** list = NULL;
+    int count   = 0;
+};
 
-void export_pattern_file(user_info* usr_nfo, tt_arr_handle* handle)
+PAT_list check_PAT_files(user_info* usr_nfo)
 {
+    char* game_path = usr_nfo->default_game_path;
+    char path_buff[MAX_PATH];
+    int patt_num = 0;
+    //check for existing pattern filenames
+    do {
+        snprintf(path_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", game_path, ++patt_num);
+    } while (io_file_exists(path_buff));
 
-    //check pattern filename
-    int patt_num = 1;
-    static char file_buff[MAX_PATH];
-    snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/00000001", usr_nfo->default_game_path);
-    while (io_file_exists(file_buff)) {
-        snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", usr_nfo->default_game_path, ++patt_num);
+    char** pattern_list = (char**)malloc(patt_num * sizeof(char*));
+    char*  pattern_str  = (char*) malloc(patt_num * 10);
+    char*  ptr = pattern_str;
+    for (int i = 0; i < patt_num; i++)
+    {
+        snprintf(ptr, MAX_PATH, "%08d", i+1);
+        pattern_list[i] = ptr;
+        ptr += 10;
     }
-    //allow user to change filename
-    static char patt_buff[12];
-    if (patt_buff[0] == '\0') {
-        snprintf(patt_buff, 12, "%08d", patt_num);
+
+    PAT_list final_list;
+    final_list.list = pattern_list;
+    final_list.count = patt_num;
+
+    return final_list;
+}
+
+char* select_PAT_name(PAT_list* filenames)
+{
+    static int pattern_select = filenames->count-1;
+    int pattern_count  = filenames->count;
+    ImGui::Combo("pattern_filename", &pattern_select, filenames->list, pattern_count);
+    //ImGui::InputText("###patternfile", patt_buff, 9);
+
+    return filenames->list[pattern_select];
+
+}
+
+void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
+{
+    static PAT_list filenames;
+    if (!filenames.list) {
+        filenames = check_PAT_files(usr_nfo);
     }
+
     ImGui::Text(
-        "%s\n"
-        "was the first slot open for pattern files.\n"
-        "To use a different slot number, change it here.\n"
-        "(This actually changes the filename, if you\n"
-        "want this file to work, change only the end number\n"
-        "and it must be contiguous from any previous number.)\n",
-        patt_buff
+        "The first slot open for a pattern file is:\n"
     );
-    ImGui::InputText("###patternfile", patt_buff, 9);
+    char* selected_PAT = select_PAT_name(&filenames);
+    ImGui::Text(
+        "To use a different slot number, change it here.\n"
+        "(This actually changes the filename.\n"
+        "Default selection is a new file.\n"
+        "To overwrite an existing entry, select that number.)\n"
+    );
 
 
     //export button
-    if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
-        if (handle == nullptr) {
-        //TODO: place a warning here, this needs tile_arr*head to work
-            return;
+    bool save_pattern = false;
+    if (!auto_export) {
+        if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
+            if (handle == nullptr) {
+            //TODO: place a warning here, this needs tile_arr*head to work
+                return;
+            }
+            save_pattern = true;
         }
-        if (atoi(patt_buff) != patt_num) {
-            snprintf(file_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, patt_buff);
-        }
-
-        TMAP_tiles_pattern_arr(usr_nfo, handle, file_buff);
-
-        ImGui::EndPopup();
     }
-    if (ImGui::Button("Close")) {
-        ImGui::CloseCurrentPopup();
+
+    if (!state->export_pattern) {
+        for (int i = 0; i < filenames.count; i++)
+        {
+            if (!filenames.list[i]) {
+                printf("why am I running?\n");
+                continue;
+            }
+            printf("freeing\n");
+            free(filenames.list[i]);
+            filenames.list[i] = NULL;
+        }
+        free(filenames.list);
+        filenames.list  = NULL;
+        filenames.count = 0;
+    }
+
+    if (!handle) {
+        return;
+    }
+
+    if (save_pattern) {
+        char path_buff[MAX_PATH];
+        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, selected_PAT);
+
+        TMAP_tiles_pattern_arr(usr_nfo, handle, path_buff);
+        state->export_pattern = false;
     }
 }

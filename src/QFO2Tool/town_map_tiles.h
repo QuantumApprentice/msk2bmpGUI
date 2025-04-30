@@ -27,6 +27,7 @@
 //           i <= last non-transparent-row;
 //           row++)
 
+//TODO: delete? this was for the linked list version
 struct town_tile {
     char*    name_ptr = nullptr;
     uint8_t* frm_data = nullptr;

@@ -1,7 +1,6 @@
 //https://falloutmods.fandom.com/wiki/PAL_File_Format
 //https://falloutmods.fandom.com/wiki/Pal_animations#Animated_colors
 #include "Palette_Cycle.h"
-#include "tinyfiledialogs.h"
 #include "ImGui_Warning.h"
 #ifdef QFO2_WINDOWS
     #include <Windows.h>
