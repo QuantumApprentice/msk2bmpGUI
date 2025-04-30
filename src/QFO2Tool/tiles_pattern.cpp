@@ -238,7 +238,6 @@ char* select_PAT_name(PAT_list* filenames)
     static int pattern_select = filenames->count-1;
     int pattern_count  = filenames->count;
     ImGui::Combo("pattern_filename", &pattern_select, filenames->list, pattern_count);
-    //ImGui::InputText("###patternfile", patt_buff, 9);
 
     return filenames->list[pattern_select];
 
@@ -261,7 +260,6 @@ void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_sta
         "Default selection is a new file.\n"
         "To overwrite an existing entry, select that number.)\n"
     );
-
 
     //export button
     bool save_pattern = false;

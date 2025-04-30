@@ -251,7 +251,8 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
                 if (auto_export_pat) {
                     state.export_pattern = true;
                 }
-                ImGui::CloseCurrentPopup();
+
+                // ImGui::CloseCurrentPopup();
             }
         }
 
