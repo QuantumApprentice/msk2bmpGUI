@@ -213,11 +213,37 @@ void TILES_LST_unmodified(export_state* state)
     }
 }
 
-void append_to_LST(export_state* state)
+void append_to_MSG(export_state* state)
 {
     ImGui::Text(
         "%s\n\n"
-        "Append new tiles to TILES.LST?\n"
+        "Append new entries to pro_tile.msg?\n"
+        "(A backup will be made.)\n\n"
+        // "--IMPORTANT--\n"
+        // "The Fallout game engine reads tiles in\n"
+        // "from TILES.LST based on the line number.\n"
+        // "Be careful not to change the order of\n"
+        // "tiles once they are on the list.\n\n"
+        , state->LST_path
+    );
+    if (ImGui::Button("Append to TILES.LST")) {
+        state->auto_export    = true;
+        // state->append_FRM_LST = true;
+        // state->append_PRO_LST = true;
+        state->append_PRO_MSG = true;
+
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+void append_to_FRM_LST(export_state* state)
+{
+    ImGui::Text(
+        "%s\n\n"
+        "Append new tiles to art/tiles/TILES.LST?\n"
         "(A backup will be made.)\n\n"
         "--IMPORTANT--\n"
         "The Fallout game engine reads tiles in\n"
@@ -229,8 +255,34 @@ void append_to_LST(export_state* state)
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
         state->append_FRM_LST = true;
+        // state->append_PRO_LST = true;
+        // state->append_PRO_MSG = true;
+
+        ImGui::CloseCurrentPopup();
+    }
+    if (ImGui::Button("Cancel")) {
+        ImGui::CloseCurrentPopup();
+    }
+}
+
+void append_to_PRO_LST(export_state* state)
+{
+    ImGui::Text(
+        "%s\n\n"
+        "Append new tiles to proto/tiles/TILES.LST?\n"
+        "(A backup will be made.)\n\n"
+        "--IMPORTANT--\n"
+        "The Fallout game engine reads tiles in\n"
+        "from TILES.LST based on the line number.\n"
+        "Be careful not to change the order of\n"
+        "tiles once they are on the list.\n\n"
+        , state->LST_path
+    );
+    if (ImGui::Button("Append to TILES.LST")) {
+        state->auto_export    = true;
+        // state->append_FRM_LST = true;
         state->append_PRO_LST = true;
-        state->append_PRO_MSG = true;
+        // state->append_PRO_MSG = true;
 
         ImGui::CloseCurrentPopup();
     }
@@ -348,8 +400,16 @@ void export_tiles_POPUPS(export_state* state, char* FObuff)
         missing_files_popup(state);
         ImGui::EndPopup();
     }
-    if (ImGui::BeginPopupModal("Append to LST")) {
-        append_to_LST(state);
+    if (ImGui::BeginPopupModal("Append to FRM LST")) {
+        append_to_FRM_LST(state);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("Append to PRO LST")) {
+        append_to_PRO_LST(state);
+        ImGui::EndPopup();
+    }
+    if (ImGui::BeginPopupModal("Append to MSG")) {
+        append_to_MSG(state);
         ImGui::EndPopup();
     }
     if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
@@ -876,84 +936,20 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
             state->load_files     = true;
 
-            state->append_FRM_LST = true;
+            // state->append_FRM_LST = true;
             state->append_PRO_LST = true;
             state->append_PRO_MSG = true;
 
             state->chk_game_path  = true;
         }
+        export_tiles_POPUPS(state, FObuff);
     }
 
 
     //Begin Popups/////////////////////////////////
-
-    // if (ImGui::BeginPopupModal("Missing Files")) {
-    //     missing_files_popup(state);
-    //     ImGui::EndPopup();
-    // }
-    // if (ImGui::BeginPopupModal("Append to LST")) {
-    //     ImGui::Text(
-    //         "%s\n\n"
-    //         "Append new tiles to TILES.LST?\n"
-    //         "(A backup will be made.)\n\n"
-    //         "--IMPORTANT--\n"
-    //         "The Fallout game engine reads tiles in\n"
-    //         "from TILES.LST based on the line number.\n"
-    //         "Be careful not to change the order of\n"
-    //         "tiles once they are on the list.\n\n"
-    //         , state->LST_path
-    //     );
-    //     if (ImGui::Button("Append to TILES.LST")) {
-    //         state->auto_export    = true;
-    //         state->append_FRM_LST = true;
-    //         state->append_PRO_LST = true;
-    //         state->append_PRO_MSG = true;
-
-    //         ImGui::CloseCurrentPopup();
-    //     }
-    //     if (ImGui::Button("Cancel")) {
-    //         ImGui::CloseCurrentPopup();
-    //     }
-    //     ImGui::EndPopup();
-    // }
-    // if (ImGui::BeginPopupModal("TILES.LST Unmodified")) {
-    //     ImGui::Text(
-    //         "%s\n\n"
-    //         "TILES.LST not updated...\n"
-    //         "All new tile-names were already\n"
-    //         "found on TILES.LST.\n"
-    //         "No new tile-names were added.\n"
-    //         , state->LST_path
-    //     );
-    //     if (ImGui::Button("Close")) {
-    //         ImGui::CloseCurrentPopup();
-    //     }
-    //     ImGui::EndPopup();
-    // }
-    // if (ImGui::BeginPopupModal("fallout2.exe not found")) {
-    //     ImGui::Text(
-    //         "The Fallout 2 executable (fallout2.exe) couldn't be found at\n\n"
-    //         "%s\n\n"
-    //         "In order to make these tiles accessible in the\n"
-    //         "Fallout 2 mapper (mapper2.exe), we need to add\n"
-    //         "entries in several files located in the Fallout 2\n"
-    //         "sub-directories --\n"
-    //         "'/art/tiles/TILES.LST',\n"
-    //         "'/proto/tiles/TILES.LST'.\n"
-    //         "(optional)\n"
-    //         "'/text/english/game/pro_tile.msg'(just english for now, will add more later)\n\n"
-    //         "If you want to bypass this for now, just add a file\n"
-    //         "named 'fallout2.exe' into the selected folder and retry.\n"
-    //         , FObuf
-    //     );
-    //     if (ImGui::Button("Close")) {
-    //         ImGui::CloseCurrentPopup();
-    //     }
-    //     ImGui::EndPopup();
-    // }
-
-    export_tiles_POPUPS(state, FObuff);
-
+    if (state->append_PRO_LST) {
+        export_tiles_POPUPS(state, FObuff);
+    }
 
     //End Popups/////////////////////////////////
 
@@ -1010,7 +1006,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         usr_nfo->game_files.PRO_TILES_LST = save_NEW_PRO_tiles_LST(handle, usr_nfo, state);
     }
     if (state->make_PRO_MSG) {
-        usr_nfo->game_files.PRO_TILE_MSG  = save_NEW_PRO_tile_MSG(handle, usr_nfo, NULL);
+        usr_nfo->game_files.PRO_TILE_MSG  = save_NEW_PRO_tile_MSG(handle, usr_nfo, state);
     }
 
     if (!usr_nfo->game_files.FRM_TILES_LST ||
@@ -1059,7 +1055,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 }
 
 //append new protos to list in memory
-char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, bool set_auto)
+char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, export_state* state)
 {
     char* new_PRO_LST = check_PRO_LST_names(old_PRO_LST, head);
     if (new_PRO_LST == nullptr) {
@@ -1083,17 +1079,25 @@ char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, bool set_auto
 //this assumes usr_info->default_game_path has been set
 //and art/tiles/TILES.LST has been loaded up correctly
 //append to data/proto/tiles/TILES.LST
-bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_state* cur_state)
+bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_state* state)
 {
     char* game_path   = usr_nfo->default_game_path;
     char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
-    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, false);
+    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, state);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);
     char* actual_path = io_path_check(save_path);
     if (actual_path) {
         strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    //all proto names found in old_PRO_LST,
+    //  no new names appended,
+    //  proto/tiles/TILES.LST not changed
+    if (new_PRO_LST == old_PRO_LST) {
+        strncpy(state->LST_path, save_path, MAX_PATH);
+        return true;
     }
 
     //backup and save new list

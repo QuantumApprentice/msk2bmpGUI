@@ -30,3 +30,4 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);
 
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, bool auto_export);
+void save_folder_dialog(user_info* usr);

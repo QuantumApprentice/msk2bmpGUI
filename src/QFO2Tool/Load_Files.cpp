@@ -545,7 +545,7 @@ void set_game_path_POPUP(user_info* usr_nfo)
 #ifdef QFO2_WINDOWS
             fallout2_exe = L"fallout2.exe";
             fallout2HR_exe = L"fallout2HR.exe";
-#elif defined QFO2_Linux
+#elif defined(QFO2_LINUX)
             fallout2_exe = "fallout2.exe";
             fallout2HR_exe = "fallout2HR.exe";
 #endif
@@ -562,7 +562,7 @@ void set_game_path_POPUP(user_info* usr_nfo)
             }
 
             if (std::filesystem::exists(game_path)) {
-                strncpy(usr_nfo->default_game_path, game_path.u8string().c_str(), MAX_PATH);
+                strncpy(usr_nfo->default_game_path, game_path.parent_path().u8string().c_str(), MAX_PATH);
                 ImGui::OpenPopup("Fallout2.exe Found");
             } else {
                 ImGui::OpenPopup("Fallout2.exe Not Found");

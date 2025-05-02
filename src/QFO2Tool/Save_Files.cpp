@@ -1152,6 +1152,19 @@ bool auto_export_question(user_info* usr_info, char* exe_path, char* save_path, 
     return false; // again, shouldn't be able to reach this line
 }
 
+void save_folder_dialog(user_info* usr)
+{
+    // const char* ext_filter;
+    // ext_filter = "FRM file (single image or all 6 directions)"
+    //     "(*.frm;){"
+    //     ".FRM,.frm,"
+    //     "},.*";
+
+    char* folder = usr->default_save_path;
+    ifd::FileDialog::Instance().Open("TMAPSaveDialog", "Save Folder", "", false, folder);
+
+}
+
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, bool auto_export)
@@ -1181,15 +1194,8 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
     // create the filename for the current list of tiles
     // assigns final save path string to Full_Save_File_Path
     if (!auto_export) {
-        const char* ext_filter;
         if (ImGui::Button("Save as Town Map Tiles")) {
-            ext_filter = "FRM file (single image or all 6 directions)"
-                "(*.frm;){"
-                ".FRM,.frm,"
-                "},.*";
-
-            char* folder = usr_info->default_save_path;
-            ifd::FileDialog::Instance().Open("TMAPSaveDialog", "Save Folder", "", false, folder);
+            save_folder_dialog(usr_info);
         }
     }
 

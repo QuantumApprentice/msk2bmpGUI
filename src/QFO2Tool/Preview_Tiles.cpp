@@ -218,75 +218,23 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
     // free(temp_buffer);
 }
 
-tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
+struct auto_bools
 {
-    static bool auto_export_art = false;
-    static bool auto_export_pro = false;
-    static bool auto_export_pat = false;
-    static export_state state;
+    bool art = false;
+    bool pro = false;
+    bool pat = false;
+};
 
-    static tt_arr_handle* exported_tiles = NULL;
-    if (handle) {
-        exported_tiles = handle;
-    }
-    //Save tiles button
-    if (ImGui::Button("Export Tile FRMs only")) {
-        ImGui::OpenPopup("Export Tiles");
-    }
-
-    bool close_x = true;
-    if (ImGui::BeginPopupModal("Export Tiles", &close_x, ImGuiChildFlags_AutoResizeY)) {
-
-        if (auto_export_art || auto_export_pro || auto_export_pat) {
-            if (ImGui::Button("Auto Export All")) {
-                if (auto_export_art) {
-                    state.load_files     = true;
-                    state.append_FRM_LST = true;
-                }
-                if (auto_export_pro) {
-                    state.export_proto   = true;
-                    state.append_PRO_LST = true;
-                    state.append_PRO_MSG = true;
-                }
-                if (auto_export_pat) {
-                    state.export_pattern = true;
-                }
-
-                // ImGui::CloseCurrentPopup();
-            }
-        }
-
-        if (ImGui::Button("Close")) {
-            set_false(&state);
-            ImGui::CloseCurrentPopup();
-        }
-
-        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, srfc, offset, auto_export_art);
-        if (temp) {
-            //assign handle only if tiles have been fully exported
-            //pressing cancel won't clear old handle
-            exported_tiles = temp;
-        }
-
-        if (auto_export_art) {
-            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_art);
-        }
-        if (auto_export_pro) {
-            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_pro);
-        }
-        if (auto_export_pat) {
-            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export_pat);
-        }
-
-        ImGui::EndPopup();
-    }
-
+void export_button_table(tt_arr_handle* exported_tiles, auto_bools* auto_export, user_info* usr_nfo, export_state* state)
+{
     if (ImGui::BeginTable("auto_export", 2))
     {
+//////////////////////////////////////////
+        ImGui::TableNextColumn();
+        //button 1
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
-        ImGui::TableNextColumn();
         if (ImGui::Button("Add to art/tiles/TILES.LST")) {
             ImGui::OpenPopup("Add FRMs to Mapper");
         }
@@ -303,23 +251,25 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
         }
+        //checkbox 1
         ImGui::TableNextColumn();
-        ImGui::Checkbox("Auto Append", &auto_export_art);
+        ImGui::Checkbox("Auto Append", &auto_export->art);
         ImGui::SetItemTooltip(
             "Automatically appends\n"
             "exported FRMs to\n"
             "art/tiles/TILES.LST\n"
         );
-        if (!auto_export_art) {
-            auto_export_pro = false;
-            auto_export_pat = false;
+        if (!auto_export->art) {
+            auto_export->pro = false;
+            auto_export->pat = false;
         }
 
-
+//////////////////////////////////////////
+        ImGui::TableNextColumn();
+        //button 2
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
-        ImGui::TableNextColumn();
         if (ImGui::Button("Export Protos")) {
             ImGui::OpenPopup("Proto Info");
         }
@@ -327,17 +277,20 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
             ImGui::EndDisabled();
         }
         ImGui::TableNextColumn();
-        ImGui::Checkbox("Auto Export Protos", &auto_export_pro);
+        //checkbox 2
+        ImGui::Checkbox("Auto Export Protos", &auto_export->pro);
         ImGui::SetItemTooltip(
-            "Needs FRMs to be already listed in art/tiles/TILES.LST\n"
+            "Needs FRMs to be already listed\n"
+            "in art/tiles/TILES.LST\n"
         );
-        if (auto_export_pro) {
-            auto_export_art = true;
+        if (auto_export->pro) {
+            auto_export->art = true;
         } else {
-            auto_export_pat = false;
+            auto_export->pat = false;
         }
-
+//////////////////////////////////////////
         ImGui::TableNextColumn();
+        //button 3
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
@@ -348,35 +301,38 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
             ImGui::EndDisabled();
         }
         ImGui::TableNextColumn();
-        ImGui::Checkbox("Auto Export Pattern File", &auto_export_pat);
+        //checkbox 3
+        ImGui::Checkbox("Auto Export Pattern File", &auto_export->pat);
         ImGui::SetItemTooltip(
-            "Needs FRMs to be already listed in art/tiles/TILES.LST\n"
-            "AND proto files to be exported and appended to proto/tiles/TILES.LST\n"
+            "Needs FRMs to be already listed\n"
+            "in art/tiles/TILES.LST\n"
+            "AND proto files to be exported\n"
+            "and appended to proto/tiles/TILES.LST\n"
         );
-        if (auto_export_pat) {
-            state.export_pattern = true;
-            auto_export_art = true;
-            auto_export_pro = true;
+        if (auto_export->pat) {
+            state->export_pattern = true;
+            auto_export->art      = true;
+            auto_export->pro      = true;
         }
-
+//////////////////////////////////////////
+        //individual popups
         if (ImGui::BeginPopupModal("Add FRMs to Mapper"))
         {
-            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, false);
+            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(&state);
+                set_false(state);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
         }
-
         // Popups: Always center this window when appearing
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
         {
-            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export_pro);
+            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(&state);
+                set_false(state);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -385,9 +341,9 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
         {
-            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export_pat);
+            export_PAT_file_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(&state);
+                set_false(state);
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -395,6 +351,79 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
 
         ImGui::EndTable();
     }
+}
+
+tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
+{
+    // static bool auto_export_art = false;
+    // static bool auto_export_pro = false;
+    // static bool auto_export_pat = false;
+    static auto_bools auto_export;
+    static export_state state;
+
+    static tt_arr_handle* exported_tiles = NULL;
+    if (handle) {
+        exported_tiles = handle;
+    }
+    //Save tiles button
+    if (ImGui::Button("Export Tile FRMs only")) {
+        ImGui::OpenPopup("Export Tiles");
+    }
+
+    bool close_x = true;
+    if (ImGui::BeginPopupModal("Export Tiles", &close_x, ImGuiChildFlags_AutoResizeY)) {
+        if (auto_export.art || auto_export.pro || auto_export.pat) {
+            if (ImGui::Button("Auto Export All")) {
+                if (auto_export.art) {
+                    state.load_files     = true;
+                    state.append_FRM_LST = true;
+                }
+                if (auto_export.pro) {
+                    state.export_proto   = true;
+                    state.append_PRO_LST = true;
+                    state.append_PRO_MSG = true;
+                }
+                if (auto_export.pat) {
+                    state.export_pattern = true;
+                }
+                save_folder_dialog(usr_nfo);
+            }
+        }
+
+        if (ImGui::Button("Close")) {
+            set_false(&state);
+            ImGui::CloseCurrentPopup();
+        }
+
+        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, srfc, offset, auto_export.art);
+        if (temp) {
+            //assign handle only if tiles have been fully exported
+            //pressing cancel won't clear old handle
+            exported_tiles = temp;
+        }
+
+        if (auto_export.art) {
+            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export.art);
+        }
+        if (auto_export.pro) {
+            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, auto_export.pro);
+        }
+        if (auto_export.pat) {
+            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, auto_export.pat);
+        }
+
+        ImGui::EndPopup();
+    }
+
+
+
+
+
+    export_button_table(exported_tiles, &auto_export, usr_nfo, &state);
+
+
+
+
 
     ImGui::SliderInt("Image Offset X", &offset->x, -400, 400, NULL);
     ImGui::SliderInt("Image Offset Y", &offset->y, -400, 400, NULL);

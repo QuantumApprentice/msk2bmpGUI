@@ -23,3 +23,4 @@ struct tile_proto {
 int get_material_id();
 void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export);
 bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info);
+void export_tiles_POPUPS(export_state* state, char* FObuff);

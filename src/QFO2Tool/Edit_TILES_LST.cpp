@@ -7,6 +7,7 @@
 #include "Save_Files.h"
 #include "Edit_TILES_LST.h"
 #include "ImGui_Warning.h"
+#include "Proto_Files.h"
 
 void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
 {
@@ -40,7 +41,7 @@ char* load_tiles_lst_game(char* game_path)
 
 
 //read TILES.LST into memory directly from provided path
-//TODO: delete? only used in TMAP_tiles_pattern_arr()
+//TODO: delete? only used in export_TMAP_tiles_pattern()
 char* load_LST_file(char* game_path, char* LST_path, char* LST_file)
 {
     //nothing to load if default_game_path not set
@@ -269,11 +270,10 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
             //first match found, ask what to do
             if (append_new_only == false) {
                 //append popup here
-                ImGui::OpenPopup("Append to LST");
-                set_false(state);
+                ImGui::OpenPopup("Append to FRM LST");
                 return NULL;
-
             }
+
             if (append_new_only == true) {
                 //identify this node as having a duplicate match
                 matches[match_ctr/8] |= 1 << shift_ctr;
@@ -306,6 +306,8 @@ char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, export_stat
     //for matching names from tiles in handle
     char* new_FRM_LST = check_FRM_LST_names(old_FRM_LST, handle, state);
     if (new_FRM_LST == nullptr) {
+        //either matches found or no new names added to LST file
+        set_false(state);
         return old_FRM_LST;
     }
 
@@ -450,12 +452,11 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         "appropriate location.\n"
     );
 
-    static char FObuf[MAX_PATH] = "";
-    if (FObuf[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
-        strncpy(FObuf, usr_nfo->default_game_path, MAX_PATH);
+    static char FObuff[MAX_PATH] = "";
+    if (FObuff[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
+        strncpy(FObuff, usr_nfo->default_game_path, MAX_PATH);
     }
-    ImGui::InputText("###fallout2.exe", FObuf, MAX_PATH);
-    // ImGui::SameLine();
+    ImGui::InputText("###fallout2.exe", FObuff, MAX_PATH);
 
     ImGui::Text(
         "(I plan on adding a feature to extract these from)\n"
@@ -465,18 +466,28 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         "these new FRMs."
     );
 
+    if (!auto_export) {
+        if (ImGui::Button("Append to art/tiles/TILES.LST")) {
+            state->chk_game_path  = true;
+            state->load_files     = true;
+            state->append_FRM_LST = true;
+        }
+    }
+
+    export_tiles_POPUPS(state, FObuff);
+
     if (!handle) {
         return;
     }
 
     if (state->chk_game_path) {
         //copy any game_path changes to user_info for saving to config
-        if (fallout2exe_exists(FObuf) == false) {
+        if (fallout2exe_exists(FObuff) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
             set_false(state);
             return;
         }
-        strncpy(usr_nfo->default_game_path, FObuf, MAX_PATH);
+        strncpy(usr_nfo->default_game_path, FObuff, MAX_PATH);
     }
 
     if (state->load_files) {
@@ -487,6 +498,10 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
             //      to return NULL/nullptr
             return;
         }
+    }
+
+    if (state->append_FRM_LST) {
+        usr_nfo->game_files.FRM_TILES_LST = append_FRM_tiles_LST(usr_nfo->game_files.FRM_TILES_LST, handle, state);
     }
 
     if (state->make_FRM_LST) {

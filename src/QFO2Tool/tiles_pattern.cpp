@@ -47,9 +47,9 @@ bool is_tile_blank(town_tile* tile)
 //tile-names should already be on TILES.LST
 //so we loop through the list and identify the line number
 //then assign that line number as the tile_id
-void assign_tile_id(tt_arr_handle* handle, const char* tiles_LST)
+void assign_tile_id(tt_arr_handle* handle, const char* FRM_tiles_LST)
 {
-    int tiles_lst_len = strlen(tiles_LST);
+    int tiles_lst_len = strlen(FRM_tiles_LST);
 
     for (int i = 0; i < handle->size; i++)
     {
@@ -61,30 +61,20 @@ void assign_tile_id(tt_arr_handle* handle, const char* tiles_LST)
 
         //art FID is 0 indexed, so start at 0 when assigning lines
         int current_line = 0;
-        const char* strt = tiles_LST;
+        const char* strt = FRM_tiles_LST;
         for (int j = 0; j < tiles_lst_len; j++)
         {
-            if (tiles_LST[j] != '\n') {
+            if (FRM_tiles_LST[j] != '\n') {
                 continue;
             }
-            //TODO: delete this commented stuff?
-            // if (tiles_lst[i] >= 'A' && tiles_lst[i] <= 'Z') {
-            //     c1 = 'a' + tiles_lst[i] - 'A';
-            // }
-            // if (node[i].name_ptr[0] >= 'A' && node[i].name_ptr[0] <= 'Z') {
-            //     c2 = 'a' + node[i].name_ptr[0] - 'A';
-            // }
-            // if (c1 != c2) {
-            //     continue;
-            // }
             current_line++;
 
             if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
-                strt = &tiles_LST[j+1];
+                strt = &FRM_tiles_LST[j+1];
                 continue;
             }
             if (io_strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
-                strt = &tiles_LST[j+1];
+                strt = &FRM_tiles_LST[j+1];
                 continue;
             }
             //match found, assign current line # to current tile_id
@@ -98,41 +88,38 @@ void assign_tile_id(tt_arr_handle* handle, const char* tiles_LST)
     }
 }
 
-void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* file_buff)
+void export_TMAP_tiles_pattern(user_info* usr_info, tt_arr_handle* handle, char* save_path)
 {
     if (handle == nullptr) {
     //TODO: place a warning here, this needs tile_arr*head to work
         return;
     }
-    //TODO:
-    //create new TILES.LST?
-    //point to TILES.LST?
     int choice = 0;
-    const char* tiles_lst = usr_info->game_files.FRM_TILES_LST;
-    if (tiles_lst == nullptr) {
+    const char* FRM_tiles_LST = usr_info->game_files.FRM_TILES_LST;
+    if (FRM_tiles_LST == nullptr) {
         if (usr_info->default_game_path[0] != '\0') {
             usr_info->game_files.FRM_TILES_LST = load_LST_file(usr_info->default_game_path, "/data/art/tiles/", "TILES.LST");
             //TODO: keep using load_LST_file()? or replace with
-            // load_FRM_tiles_LST(usr_info, )?
+            // load_FRM_tiles_LST(usr_info, state)?
 
         }
-        if (tiles_lst == nullptr) {
+        if (FRM_tiles_LST == nullptr) {
             //TODO: log to file
             set_popup_warning(
-                "[ERROR] TMAP_tiles_pattern_arr()\n\n"
-                "Unable to find TILES.LST.\n\n"
+                "[ERROR] export_TMAP_tiles_pattern()\n\n"
+                "Unable to find art/tiles/TILES.LST.\n\n"
                 "TILES.LST is needed to match up\n"       // data/art/tiles/TILES.LST
                 "the tile-name to a line number,\n"
                 "then that line number is used\n"
                 "in the pattern file to indicate\n"
                 "which tile is in what position.\n\n"
             );
-            printf("Error: TMAP_tiles_pattern_arr() Unable to find TILES.LST: %d\n", __LINE__);
+            printf("Error: export_TMAP_tiles_pattern() Unable to find art/tiles/TILES.LST: %d\n", __LINE__);
             return;
         }
     }
 
-    assign_tile_id(handle, tiles_lst);
+    assign_tile_id(handle, FRM_tiles_LST);
 
     //  pattern file is array of
     //  4x int struct w/pragma pack applied
@@ -189,9 +176,27 @@ void TMAP_tiles_pattern_arr(user_info* usr_info, tt_arr_handle* handle, char* fi
     u32_ptr[1] = handle->row_cnt;
     u32_ptr[2] = 0;//unkown exactly what does this do?
 
-    FILE* pattern_file = fopen(file_buff, "wb");
+
+    char* actual_path = io_path_check(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    bool success = io_create_path_from_file(save_path);
+    if (!success) {
+        // set_false(state);
+        set_popup_warning(
+            "Error: save_NEW_FRM_tiles_LST()\n"
+            "Unable to create folders\n"
+        );
+        return;
+    }
+
+
+    FILE* pattern_file = fopen(save_path, "wb");
     if (pattern_file == nullptr) {
         free(out_pattern);
+        //TODO: needs a popup warning
         printf("Can't open pattern file...%d", __LINE__);
         return;
     }
@@ -213,7 +218,7 @@ PAT_list check_PAT_files(user_info* usr_nfo)
     int patt_num = 0;
     //check for existing pattern filenames
     do {
-        snprintf(path_buff, MAX_PATH, "%sdata/proto/tiles/PATTERNS/%08d", game_path, ++patt_num);
+        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%08d", game_path, ++patt_num);
     } while (io_file_exists(path_buff));
 
     char** pattern_list = (char**)malloc(patt_num * sizeof(char*));
@@ -241,6 +246,23 @@ char* select_PAT_name(PAT_list* filenames)
 
     return filenames->list[pattern_select];
 
+}
+
+void free_PAT_list(PAT_list* filenames)
+{
+    for (int i = 0; i < filenames->count; i++)
+    {
+        if (!filenames->list[i]) {
+            printf("why am I running?\n");
+            continue;
+        }
+        printf("freeing %d\n", i);
+        free(filenames->list[i]);
+        filenames->list[i] = NULL;
+    }
+    free(filenames->list);
+    filenames->list  = NULL;
+    filenames->count = 0;
 }
 
 void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
@@ -273,31 +295,16 @@ void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_sta
         }
     }
 
-    if (!state->export_pattern) {
-        for (int i = 0; i < filenames.count; i++)
-        {
-            if (!filenames.list[i]) {
-                printf("why am I running?\n");
-                continue;
-            }
-            printf("freeing\n");
-            free(filenames.list[i]);
-            filenames.list[i] = NULL;
-        }
-        free(filenames.list);
-        filenames.list  = NULL;
-        filenames.count = 0;
-    }
-
     if (!handle) {
         return;
     }
 
     if (save_pattern) {
-        char path_buff[MAX_PATH];
-        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, selected_PAT);
+        char save_path[MAX_PATH];
+        snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%s", usr_nfo->default_game_path, selected_PAT);
 
-        TMAP_tiles_pattern_arr(usr_nfo, handle, path_buff);
+        export_TMAP_tiles_pattern(usr_nfo, handle, save_path);
         state->export_pattern = false;
+        free_PAT_list(&filenames);
     }
 }
