@@ -271,6 +271,7 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
             if (append_new_only == false) {
                 //append popup here
                 ImGui::OpenPopup("Append to FRM LST");
+                set_false(state);
                 return NULL;
             }
 
@@ -307,7 +308,6 @@ char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, export_stat
     char* new_FRM_LST = check_FRM_LST_names(old_FRM_LST, handle, state);
     if (new_FRM_LST == nullptr) {
         //either matches found or no new names added to LST file
-        set_false(state);
         return old_FRM_LST;
     }
 
@@ -361,6 +361,7 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
+        state->export_pattern = false;
         state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
@@ -492,6 +493,12 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
     if (state->load_files) {
         state->loaded_FRM_LST = load_FRM_tiles_LST(usr_nfo, state);
+        //TODO: maybe isolate this better?
+        //      these state->loaded_ are used in the create_LST popup
+        //      so need to at least check if the other two files exist
+        state->loaded_PRO_LST = load_PRO_tiles_LST(usr_nfo, state);
+        state->loaded_PRO_MSG = load_PRO_tiles_MSG(usr_nfo, state);
+
         if (!state->loaded_FRM_LST) {
             //TODO: maybe want to handle other failures
             //      which would cause io_load_txt_file()

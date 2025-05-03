@@ -215,16 +215,16 @@ PAT_list check_PAT_files(user_info* usr_nfo)
 {
     char* game_path = usr_nfo->default_game_path;
     char path_buff[MAX_PATH];
-    int patt_num = 0;
+    int num_patt = 0;
     //check for existing pattern filenames
     do {
-        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%08d", game_path, ++patt_num);
+        snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/PATTERNS/%08d", game_path, ++num_patt);
     } while (io_file_exists(path_buff));
 
-    char** pattern_list = (char**)malloc(patt_num * sizeof(char*));
-    char*  pattern_str  = (char*) malloc(patt_num * 10);
+    char** pattern_list = (char**)malloc(num_patt * sizeof(char*));
+    char*  pattern_str  = (char*) malloc(num_patt * 10);
     char*  ptr = pattern_str;
-    for (int i = 0; i < patt_num; i++)
+    for (int i = 0; i < num_patt; i++)
     {
         snprintf(ptr, MAX_PATH, "%08d", i+1);
         pattern_list[i] = ptr;
@@ -233,7 +233,7 @@ PAT_list check_PAT_files(user_info* usr_nfo)
 
     PAT_list final_list;
     final_list.list = pattern_list;
-    final_list.count = patt_num;
+    final_list.count = num_patt;
 
     return final_list;
 }
@@ -248,18 +248,10 @@ char* select_PAT_name(PAT_list* filenames)
 
 }
 
+//TODO: arena - this seems like a perfect use for memory arena
 void free_PAT_list(PAT_list* filenames)
 {
-    for (int i = 0; i < filenames->count; i++)
-    {
-        if (!filenames->list[i]) {
-            printf("why am I running?\n");
-            continue;
-        }
-        printf("freeing %d\n", i);
-        free(filenames->list[i]);
-        filenames->list[i] = NULL;
-    }
+    free(filenames->list[0]);
     free(filenames->list);
     filenames->list  = NULL;
     filenames->count = 0;
@@ -284,7 +276,7 @@ void export_PAT_file_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_sta
     );
 
     //export button
-    bool save_pattern = false;
+    bool save_pattern = state->export_pattern;
     if (!auto_export) {
         if (ImGui::Button("Create Pattern file and add to Fallout 2...")) {
             if (handle == nullptr) {

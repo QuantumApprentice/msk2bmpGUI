@@ -7,6 +7,10 @@ struct export_state {
     char LST_path[MAX_PATH];
     bool auto_export    = false;
 
+    bool art = false;
+    bool pro = false;
+    bool pat = false;
+
     bool export_proto   = false;
     bool export_pattern = false;
 

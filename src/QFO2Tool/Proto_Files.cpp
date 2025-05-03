@@ -254,9 +254,19 @@ void append_to_FRM_LST(export_state* state)
     );
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
-        state->append_FRM_LST = true;
-        // state->append_PRO_LST = true;
-        // state->append_PRO_MSG = true;
+
+        if (state->art) {
+            state->load_files     = true;
+            state->append_FRM_LST = true;
+        }
+        if (state->pro) {
+            state->export_proto   = true;
+            state->append_PRO_LST = true;
+            state->append_PRO_MSG = true;
+        }
+        if (state->pat) {
+            state->export_pattern = true;
+        }
 
         ImGui::CloseCurrentPopup();
     }
@@ -280,9 +290,19 @@ void append_to_PRO_LST(export_state* state)
     );
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
-        // state->append_FRM_LST = true;
-        state->append_PRO_LST = true;
-        // state->append_PRO_MSG = true;
+
+        // if (state->art) {
+        //     state->load_files     = true;
+        //     state->append_FRM_LST = true;
+        // }
+        if (state->pro) {
+            state->export_proto   = true;
+            state->append_PRO_LST = true;
+            state->append_PRO_MSG = true;
+        }
+        if (state->pat) {
+            state->export_pattern = true;
+        }
 
         ImGui::CloseCurrentPopup();
     }
@@ -482,16 +502,6 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
         return false;
     }
 
-    tt_arr* tile;
-    for (int i = 0; i < handle->size; i++)
-    {
-        tile = &handle->tile[i];
-        if (tile->tile_id == -1) {
-            continue;
-        }
-        break;
-    }
-
     proto_info pr_info;
     if (info == NULL) {
         info                = &pr_info;
@@ -502,10 +512,34 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
     if (info->name[0] == '\0' && info->description[0] == '\0') {
         //append to pro_tile.msg if either a name
         //or a description has been provided
-        return false;
+        return true;
     }
 
     assign_tile_id(handle, FRM_tiles_LST);
+
+    //look for the first non-blank tile and assign that to *tile
+    tt_arr* tile = NULL;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tile = &handle->tile[i];
+        if (tile->tile_id == -1) {
+            break;
+        }
+    }
+    // //I dunno...what do you think?
+    // //     easy to read? or trash?
+    // //     also doesn't handle the case where all tiles are blank
+    // tt_arr* tile;
+    // for (int i = 0;
+    //     i < handle->size &&
+    //     (tile=&handle->tile[i++])->tile_id != -1;
+    // ){}
+    if (tile == NULL) {
+        //TODO: popup warning saying no tiles exported
+        //      (same in save_NEW_PRO_tile_MSG())
+        return false;
+    }
+
     char* new_PRO_tile_MSG = make_PRO_tile_MSG(info, tile->tile_id);
 
     const char* language[] = {
@@ -550,21 +584,24 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
     if (game_path[0] == '\0') {
         return NULL;
     }
-    tt_arr* tile;
+    //look for the first non-blank tile and assign that to *tile
+    tt_arr* tile = NULL;
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
         if (tile->tile_id == -1) {
-            continue;
+            break;
         }
-        break;
+    }
+    if (tile == NULL) {
+        //TODO: popup warning saying no tiles exported
+        return NULL;
     }
 
     proto_info info;
     info.name        = input_name();
     info.description = input_desc();
 
-    // if (strlen(info->name) > 1 || strlen(info->description) > 1) {
     if (info.name[0] == '\0' && info.description[0] == '\0') {
         return NULL;
     }
@@ -810,6 +847,7 @@ bool load_PRO_tiles_MSG(user_info* usr_nfo, export_state* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
+        state->export_pattern = false;
         state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
@@ -855,6 +893,7 @@ bool load_PRO_tiles_LST(user_info* usr_nfo, export_state* state)
 
         state->auto_export    = false;
         state->export_proto   = false;
+        state->export_pattern = false;
         state->chk_game_path  = false;
 
         state->make_FRM_LST   = false;
@@ -998,8 +1037,6 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //TODO: maybe I should group these together
         //      and check game_files pointers to see
         //      if I need to create new files or not?
-        // if (state.make_files) {
-        // if (!usr_nfo->game_files.FRM_TILES_LST) {
         usr_nfo->game_files.FRM_TILES_LST = save_NEW_FRM_tiles_LST(handle, usr_nfo->default_game_path, state);
     }
     if (state->make_PRO_LST) {
@@ -1050,8 +1087,6 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
     if (state->export_proto) {
         export_protos(usr_nfo, handle);
     }
-
-    set_false(state);
 }
 
 //append new protos to list in memory

@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     glfwSetKeyCallback(window, key_callback);
     glfwSetDropCallback(window, dropped_files_callback);
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(0); // Enable vsync
+    glfwSwapInterval(true); // Enable vsync
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
