@@ -891,6 +891,7 @@ void init_MSK_surface(Surface* edit_MSK_srfc, int w, int h)
 bool runOnce = true;
 void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* usr_info, int counter)
 {
+    image_data* edit_data = &F_Prop->edit_data;
     char b[3];
     sprintf(b, "%02d", counter);
     std::string a = "";
@@ -899,26 +900,45 @@ void Edit_Image_Window(variables *My_Variables, LF* F_Prop, struct user_info* us
     }
     std::string name = a + " Edit Window...###edit" + b;
 
-    image_data* edit_data = &F_Prop->edit_data;
     static ANM_Dir edit_struct[6];
-    if (!edit_struct[0].frame_data) {
-        init_edit_struct_ANM(edit_struct, edit_data, My_Variables->FO_Palette);
-    }
     static Surface edit_MSK_srfc;
-    if (!edit_MSK_srfc.pxls) {
-        init_MSK_surface(&edit_MSK_srfc, edit_data->width, edit_data->height);
-    }
-    //TODO: this runOnce is dumb, replace with something not dumb
-    //      should probably run when loading MSK to slot
-    if (runOnce) {
-        if (edit_data->MSK_srfc) {
-            runOnce = false;
-            memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, edit_MSK_srfc.w*edit_MSK_srfc.h);
-        }
-    }
 
+    //TODO: completely refactor this function
+    //      to have the ImGui::Begin() call outside
     if (ImGui::Begin(name.c_str(), &F_Prop->edit_image_window, 0))
     {
+        if (!edit_data->ANM_dir) {
+            ImGui::Text("No FRM_dir");
+            ImGui::End();
+            return;
+        }
+        if (edit_data->ANM_dir[edit_data->display_orient_num].frame_data == NULL) {
+            ImGui::Text("No frame_data");
+            ImGui::End();
+            return;
+        }
+
+
+
+        if (!edit_struct[0].frame_data) {
+            init_edit_struct_ANM(edit_struct, edit_data, My_Variables->FO_Palette);
+        }
+        if (!edit_MSK_srfc.pxls) {
+            init_MSK_surface(&edit_MSK_srfc, edit_data->width, edit_data->height);
+        }
+        //TODO: this runOnce is dumb, replace with something not dumb
+        //      should probably run when loading MSK to slot
+        if (runOnce) {
+            if (edit_data->MSK_srfc) {
+                runOnce = false;
+                memcpy(edit_MSK_srfc.pxls, edit_data->MSK_srfc->pxls, edit_MSK_srfc.w*edit_MSK_srfc.h);
+            }
+        }
+
+
+
+
+
         ImGui::Checkbox("Show Frame Stats", &F_Prop->show_stats);
         if (F_Prop->show_stats) {
             show_image_stats_FRM_SURFACE(&F_Prop->edit_data, My_Variables->Font);
