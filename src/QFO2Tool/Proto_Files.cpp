@@ -227,11 +227,7 @@ void append_to_MSG(export_state* state)
         , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
-        state->auto_export    = true;
-        // state->append_FRM_LST = true;
-        // state->append_PRO_LST = true;
-        state->append_PRO_MSG = true;
-
+        state->append_to_msg_tiles_list_clicked();
         ImGui::CloseCurrentPopup();
     }
     if (ImGui::Button("Cancel")) {
@@ -253,21 +249,7 @@ void append_to_FRM_LST(export_state* state)
         , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
-        state->auto_export    = true;
-
-        if (state->art) {
-            state->load_files     = true;
-            state->append_FRM_LST = true;
-        }
-        if (state->pro) {
-            state->export_proto   = true;
-            state->append_PRO_LST = true;
-            state->append_PRO_MSG = true;
-        }
-        if (state->pat) {
-            state->export_pattern = true;
-        }
-
+        state->append_to_frm_tiles_list_clicked();
         ImGui::CloseCurrentPopup();
     }
     if (ImGui::Button("Cancel")) {
@@ -289,21 +271,7 @@ void append_to_PRO_LST(export_state* state)
         , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
-        state->auto_export    = true;
-
-        // if (state->art) {
-        //     state->load_files     = true;
-        //     state->append_FRM_LST = true;
-        // }
-        if (state->pro) {
-            state->export_proto   = true;
-            state->append_PRO_LST = true;
-            state->append_PRO_MSG = true;
-        }
-        if (state->pat) {
-            state->export_pattern = true;
-        }
-
+        state->append_to_pro_tiles_list_clicked();
         ImGui::CloseCurrentPopup();
     }
     if (ImGui::Button("Cancel")) {
@@ -374,25 +342,7 @@ bool missing_files_popup(export_state* state)
         , art,pro,msg//,language[0]
     );
     if (ImGui::Button("Create new files?")) {
-        if (state->loaded_FRM_LST == false) {
-            state->make_FRM_LST = true;
-        } else {
-            state->append_FRM_LST = true;
-        }
-
-        if (state->loaded_PRO_LST == false) {
-            state->make_PRO_LST = true;
-        } else {
-            state->append_PRO_LST = true;
-        }
-
-        if (state->loaded_PRO_MSG == false) {
-            state->make_PRO_MSG = true;
-        } else {
-            state->append_PRO_MSG = true;
-        }
-
-        state->export_proto   = true;
+        state->create_new_files_clicked();
         ImGui::CloseCurrentPopup();
         return true;
     }
@@ -619,7 +569,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
 
     bool success = io_create_path_from_file(save_path);
     if (!success) {
-        set_false(state);
+        state->set_false();
         set_popup_warning(
             "Error: save_NEW_FRM_tiles_LST()\n"
             "Unable to create folders\n"
@@ -656,7 +606,7 @@ char* save_NEW_PRO_tiles_LST(tt_arr_handle* handle, user_info* usr_nfo, export_s
 
     bool success = io_create_path_from_file(save_path);
     if (!success) {
-        set_false(state);
+        state->set_false();
         set_popup_warning(
             "Error: save_NEW_FRM_tiles_LST()\n"
             "Unable to create folders\n"
@@ -708,9 +658,7 @@ bool create_PRO_tiles_LST_popup(export_state* state)
         , lst_path
     );
     if (ImGui::Button("Create new LST file?")) {
-        state->make_PRO_LST   = true;
-        state->append_PRO_MSG = true;
-        state->export_proto   = true;
+        state->create_new_pro_list_clicked();
         return true;
     }
 
@@ -759,9 +707,7 @@ bool create_FRM_tiles_LST_popup(export_state* state)
         , lst_path
     );
     if (ImGui::Button("Create new LST file?")) {
-        state->make_FRM_LST   = true;
-        state->append_PRO_MSG = true;
-        state->export_proto   = true;
+        state->create_new_frm_list_clicked();
         return true;
     }
 
@@ -845,23 +791,7 @@ bool load_PRO_tiles_MSG(user_info* usr_nfo, export_state* state)
 
         ImGui::OpenPopup("Missing Files");
 
-        state->auto_export    = false;
-        state->export_proto   = false;
-        state->export_pattern = false;
-        state->chk_game_path  = false;
-
-        state->make_FRM_LST   = false;
-        state->make_PRO_LST   = false;
-        state->make_PRO_MSG   = false;
-
-        state->load_files     = false;
-        // state->loaded_FRM_LST   = false;
-        // state->loaded_PRO_LST   = false;
-        // state->loaded_PRO_MSG   = false;
-
-        state->append_FRM_LST = false;
-        state->append_PRO_LST = false;
-        state->append_PRO_MSG = false;
+        state->pro_tiles_msg_failed_to_load();
 
         printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
         return false;
@@ -891,23 +821,7 @@ bool load_PRO_tiles_LST(user_info* usr_nfo, export_state* state)
 
         ImGui::OpenPopup("Missing Files");
 
-        state->auto_export    = false;
-        state->export_proto   = false;
-        state->export_pattern = false;
-        state->chk_game_path  = false;
-
-        state->make_FRM_LST   = false;
-        state->make_PRO_LST   = false;
-        state->make_PRO_MSG   = false;
-
-        state->load_files     = false;
-        // state->loaded_FRM_LST   = false;
-        // state->loaded_PRO_LST   = false;
-        // state->loaded_PRO_MSG   = false;
-
-        state->append_FRM_LST = false;
-        state->append_PRO_LST = false;
-        state->append_PRO_MSG = false;
+        state->pro_tiles_lst_failed_to_load();
 
         printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
         return false;
@@ -971,15 +885,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
     if (!auto_export) {
         if (ImGui::Button("Add to Fallout 2")) {
-            state->export_proto   = true;
-
-            state->load_files     = true;
-
-            // state->append_FRM_LST = true;
-            state->append_PRO_LST = true;
-            state->append_PRO_MSG = true;
-
-            state->chk_game_path  = true;
+            state->add_to_fallout_2_clicked();
         }
         export_tiles_POPUPS(state, FObuff);
     }
@@ -1013,7 +919,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //copy any game_path changes to user_info for saving to config
         if (fallout2exe_exists(FObuff) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
-            set_false(state);
+            state->set_false();
             return;
         }
         strncpy(usr_nfo->default_game_path, FObuff, MAX_PATH);
@@ -1060,7 +966,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //append to art/tiles/TILES.LST
         success = append_TMAP_tiles_LST(usr_nfo, handle, state);
         if (!success) {
-            set_false(state);
+            state->set_false();
             return;
         }
     }
@@ -1068,7 +974,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //append to proto/tiles/TILES.LST
         success = append_TMAP_PRO_tiles_LST(usr_nfo, handle, state);
         if (!success) {
-            set_false(state);
+            state->set_false();
             return;
         }
     }
@@ -1079,7 +985,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //add name/description to data/text/english/game/pro_tile.msg
         success = append_PRO_tile_MSG(usr_nfo, NULL, handle);
         if (!success) {
-            set_false(state);
+            state->set_false();
             return;
         }
     }
