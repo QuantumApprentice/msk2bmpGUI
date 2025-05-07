@@ -1167,9 +1167,9 @@ void save_folder_dialog(user_info* usr)
 
 //Save town map tiles to gamedir/manual
 //TODO: add offset for tile cutting
-tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, bool auto_export)
+tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, export_state* state)
 {
-
+    bool auto_export = state->art;
     //TODO: re-implement auto_export_question() with ImFileDialog()
     // bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     // if (!success) {
@@ -1199,6 +1199,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
         }
     }
 
+    //TODO: move this into export_tiles_POPUPS()?
     static char save_fldr[MAX_PATH];
     static char save_path[MAX_PATH];
     static bool success = false;
@@ -1210,9 +1211,12 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
             "%s already exists,\n\n", dup_name
         );
         if (ImGui::Button("Overwrite?")) {
+            ImGui::CloseCurrentPopup();
             success   = true;
             overwrite = true;
-            ImGui::CloseCurrentPopup();
+            if (state->art) {
+                state->load_files = true;
+            }
         }
         if (ImGui::Button("Select a different folder?")) {
             ImGui::CloseCurrentPopup();
@@ -1251,7 +1255,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
 
     tt_arr_handle* handle = NULL;
     if (strlen(save_fldr) > 0 && success) {
-        handle = crop_TMAP_tile_arr_POPUP(offset, srfc, save_fldr, save_name, save_path, overwrite);
+        handle = crop_export_TMAP_tiles(offset, srfc, save_fldr, save_name, save_path, overwrite);
         if (!handle) {
             success = false;
         }

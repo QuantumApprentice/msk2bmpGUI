@@ -10,22 +10,22 @@ inline void B_Endian::swap_16(uint16_t* in)
 }
 inline void B_Endian::swap_16(int16_t* in)
 {
-    *in = (*in << 8) | ((*in >> 8) & 0x0ff);
+    *in = (*in << 8) | ((*in >> 8) & 0xff);
 }
 void B_Endian::swap_32(uint32_t& in)
 {
     uint32_t v = 0;
-    v |= (in & 0x000000ff) << 24;
-    v |= (in & 0x0000ff00) << 8;
-    v |= (in & 0x00ff0000) >> 8;
-    v |= (in & 0xff000000) >> 24;
+    v = (in & 0x000000ff) << 24 |
+        (in & 0x0000ff00) << 8  |
+        (in & 0x00ff0000) >> 8  |
+        (in & 0xff000000) >> 24;
 
     in = v;
 }
 void byte_swap_16x4(uint64_t *p) {
     uint64_t q = 0;
-    q |= (*p & 0xff00ff00ff00ff00ULL) >> 8;
-    q |= (*p & 0x00ff00ff00ff00ffULL) << 8;
+    q = (*p & 0xff00ff00ff00ff00ULL) >> 8 |
+        (*p & 0x00ff00ff00ff00ffULL) << 8;
     *p = q;
 }
 
@@ -124,6 +124,7 @@ uint16_t B_Endian::write_u16(int f)
 }
 uint8_t B_Endian::read_u8(std::istream& f)
 {
+    //lol this does nothing
     uint8_t val;
     uint8_t bytes[1];
     f.read((char*)bytes, 1);

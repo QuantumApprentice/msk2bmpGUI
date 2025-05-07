@@ -477,13 +477,9 @@ int main(int argc, char** argv)
         }
 
         //update palette at regular intervals
-        {
-
-            My_Variables.Palette_Update = update_PAL_array(
-                                            My_Variables.shaders.FO_pal,
-                                            My_Variables.CurrentTime_ms);
-
-        }
+        My_Variables.Palette_Update = update_PAL_array(
+                                        My_Variables.shaders.FO_pal,
+                                        My_Variables.CurrentTime_ms);
 
         for (int i = 0; i < counter; i++) {
             if (My_Variables.F_Prop[i].file_open_window) {

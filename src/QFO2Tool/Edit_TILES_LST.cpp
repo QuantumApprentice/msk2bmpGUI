@@ -335,9 +335,10 @@ void set_false(export_state* state)
 
     state->load_files     = false;
 
-    state->loaded_FRM_LST = false;
-    state->loaded_PRO_LST = false;
-    state->loaded_PRO_MSG = false;
+    // state->loaded_FRM_LST = false;
+    // state->loaded_PRO_LST = false;
+    // state->loaded_PRO_MSG = false;
+
     state->append_FRM_LST = false;
     state->append_PRO_LST = false;
     state->append_PRO_MSG = false;

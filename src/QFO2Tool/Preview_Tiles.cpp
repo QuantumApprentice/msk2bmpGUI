@@ -384,7 +384,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
             ImGui::CloseCurrentPopup();
         }
 
-        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, srfc, offset, state.art);
+        tt_arr_handle* temp = export_TMAP_tiles_POPUP(usr_nfo, srfc, offset, &state);
         if (temp) {
             //assign handle only if tiles have been fully exported
             //pressing cancel won't clear old handle

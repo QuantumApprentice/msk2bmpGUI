@@ -231,7 +231,7 @@ int crop_single_tile_vector_clear(
 #define row_offset_y         (24)   //  move one row down
 
 //array version (stores tile position)
-tt_arr_handle* crop_TMAP_tile_arr_POPUP(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite)
+tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite)
 {
     uint8_t tile_buff[TMAP_W * TMAP_H] = {0};
     int img_w = src->w;

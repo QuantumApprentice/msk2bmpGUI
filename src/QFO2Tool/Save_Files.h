@@ -1,4 +1,5 @@
 #pragma once
+#include "Edit_TILES_LST.h"
 #include "Load_Settings.h"
 #include "load_FRM_OpenGL.h"
 #include "Load_Files.h"
@@ -29,5 +30,5 @@ bool export_auto(user_info *usr_info, char *exe_path, char *save_path, img_type 
 
 void Set_Default_Game_Path(user_info* user_info, char* exe_path);
 
-tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, bool auto_export);
+tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, export_state* state);
 void save_folder_dialog(user_info* usr);
