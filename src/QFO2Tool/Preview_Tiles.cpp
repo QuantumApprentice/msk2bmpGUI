@@ -313,7 +313,7 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
         {
             append_FRM_tiles_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(state);
+                state->set_false();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -325,7 +325,7 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
         {
             export_PRO_tiles_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(state);
+                state->set_false();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -336,7 +336,7 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
         {
             export_PAT_file_POPUP(usr_nfo, exported_tiles, state, false);
             if (ImGui::Button("Close")) {
-                set_false(state);
+                state->set_false();
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
@@ -363,24 +363,13 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
     if (ImGui::BeginPopupModal("Export Tiles", &close_x, ImGuiChildFlags_AutoResizeY)) {
         if (state.art || state.pro || state.pat) {
             if (ImGui::Button("Auto Export All")) {
-                if (state.art) {
-                    state.load_files     = true;
-                    state.append_FRM_LST = true;
-                }
-                if (state.pro) {
-                    state.export_proto   = true;
-                    state.append_PRO_LST = true;
-                    state.append_PRO_MSG = true;
-                }
-                if (state.pat) {
-                    state.export_pattern = true;
-                }
+                state.auto_export_all_clicked();
                 save_folder_dialog(usr_nfo);
             }
         }
 
         if (ImGui::Button("Close")) {
-            set_false(&state);
+            state.set_false();
             ImGui::CloseCurrentPopup();
         }
 
@@ -400,7 +389,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         if (state.pat) {
             export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, state.pat);
         }
-        set_false(&state);
+        state.set_false();
 
         ImGui::EndPopup();
     }

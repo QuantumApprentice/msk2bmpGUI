@@ -202,7 +202,7 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_stat
 
     bool success = io_create_path_from_file(save_path);
     if (!success) {
-        set_false(state);
+        state->set_false();
         set_popup_warning(
             "Error: save_NEW_FRM_tiles_LST()\n"
             "Unable to create folders\n"
@@ -271,7 +271,7 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
             if (append_new_only == false) {
                 //append popup here
                 ImGui::OpenPopup("Append to FRM LST");
-                set_false(state);
+                state->set_false();
                 return NULL;
             }
 
@@ -322,27 +322,6 @@ char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, export_stat
     return final_FRM_LST;
 }
 
-void set_false(export_state* state)
-{
-    state->auto_export    = false;
-    state->export_proto   = false;
-    state->export_pattern = false;
-    state->chk_game_path  = false;
-
-    state->make_FRM_LST   = false;
-    state->make_PRO_LST   = false;
-    state->make_PRO_MSG   = false;
-
-    state->load_files     = false;
-
-    state->loaded_FRM_LST = false;
-    state->loaded_PRO_LST = false;
-    state->loaded_PRO_MSG = false;
-    state->append_FRM_LST = false;
-    state->append_PRO_LST = false;
-    state->append_PRO_MSG = false;
-}
-
 bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
 {
     char* LST_path = state->LST_path;
@@ -359,23 +338,7 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
         //      to return NULL/nullptr
         ImGui::OpenPopup("Missing Files");
 
-        state->auto_export    = false;
-        state->export_proto   = false;
-        state->export_pattern = false;
-        state->chk_game_path  = false;
-
-        state->make_FRM_LST   = false;
-        state->make_PRO_LST   = false;
-        state->make_PRO_MSG   = false;
-
-        state->load_files     = false;
-        // state->loaded_FRM_LST   = false;
-        // state->loaded_PRO_LST   = false;
-        // state->loaded_PRO_MSG   = false;
-
-        state->append_FRM_LST = false;
-        state->append_PRO_LST = false;
-        state->append_PRO_MSG = false;
+        state->load_frm_tiles_list_failed();
 
         printf("Unable to load /art/tiles/TILES.LST...\nCreating new one...\n");
         return false;
@@ -469,9 +432,7 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
     if (!auto_export) {
         if (ImGui::Button("Append to art/tiles/TILES.LST")) {
-            state->chk_game_path  = true;
-            state->load_files     = true;
-            state->append_FRM_LST = true;
+            state->append_to_art_tiles_clicked();
         }
     }
 
@@ -485,7 +446,7 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //copy any game_path changes to user_info for saving to config
         if (fallout2exe_exists(FObuff) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
-            set_false(state);
+            state->set_false();
             return;
         }
         strncpy(usr_nfo->default_game_path, FObuff, MAX_PATH);
