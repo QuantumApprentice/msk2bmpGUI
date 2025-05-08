@@ -355,7 +355,11 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         exported_tiles = handle;
     }
     //Save tiles button
-    if (ImGui::Button("Export Tile FRMs only")) {
+    const char* export_txt = "Export Tile FRMs only";
+    if (state.art) {
+        export_txt = "Export Selected";
+    }
+    if (ImGui::Button(export_txt)) {
         ImGui::OpenPopup("Export Tiles");
     }
 

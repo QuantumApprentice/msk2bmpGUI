@@ -1215,7 +1215,16 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
             success   = true;
             overwrite = true;
             if (state->art) {
-                state->load_files = true;
+                state->load_files     = true;
+                state->append_FRM_LST = true;
+            }
+            if (state->pro) {
+                state->export_proto   = true;
+                state->append_PRO_LST = true;
+                state->append_PRO_MSG = true;
+            }
+            if (state->pat) {
+                state->export_pattern = true;
             }
         }
         if (ImGui::Button("Select a different folder?")) {

@@ -216,6 +216,7 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_stat
     if (!success) {
         return NULL;
     }
+    state->make_FRM_LST = false;
 
     return new_tile_LST;
 }
@@ -269,9 +270,26 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
 
             //first match found, ask what to do
             if (append_new_only == false) {
-                //append popup here
                 ImGui::OpenPopup("Append to FRM LST");
-                set_false(state);
+                state->auto_export    = false;
+                state->export_proto   = false;
+                state->export_pattern = false;
+                state->chk_game_path  = false;
+
+                // state->make_FRM_LST   = false;
+                // state->make_PRO_LST   = false;
+                // state->make_PRO_MSG   = false;
+
+                state->load_files     = false;
+
+                // state->loaded_FRM_LST = false;
+                // state->loaded_PRO_LST = false;
+                // state->loaded_PRO_MSG = false;
+
+                state->append_FRM_LST = false;
+                state->append_PRO_LST = false;
+                state->append_PRO_MSG = false;
+
                 return NULL;
             }
 
@@ -435,6 +453,7 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_sta
         free(usr_nfo->game_files.FRM_TILES_LST);
     }
     usr_nfo->game_files.FRM_TILES_LST = new_tiles_lst;
+    state->append_FRM_LST = false;
 
     return true;
 }
@@ -503,7 +522,7 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         if (!state->loaded_FRM_LST) {
             //TODO: maybe want to handle other failures
             //      which would cause io_load_txt_file()
-            //      to return NULL/nullptr
+            //      to return NULL/nullptr?
             return;
         }
     }

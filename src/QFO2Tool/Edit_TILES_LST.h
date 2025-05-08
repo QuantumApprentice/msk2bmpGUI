@@ -5,6 +5,12 @@
 
 struct export_state {
     char LST_path[MAX_PATH];
+    const char* language[4] = {
+        "english",
+        "french",
+        "russian",
+        "etc"
+    };
     bool auto_export    = false;
 
     bool art = false;

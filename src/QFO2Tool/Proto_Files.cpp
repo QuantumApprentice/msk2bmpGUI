@@ -200,13 +200,16 @@ char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
 
 void TILES_LST_unmodified(export_state* state)
 {
+    //finding it difficult to get the correct
+    //  filename in to the LST_path
+    //  so I've commented the relevant sections out for now
     ImGui::Text(
-        "%s\n\n"
+        // "%s\n\n"
         "TILES.LST not updated...\n"
         "All new tile-names were already\n"
         "found on TILES.LST.\n"
         "No new tile-names were added.\n"
-        , state->LST_path
+        // , state->LST_path
     );
     if (ImGui::Button("Close")) {
         ImGui::CloseCurrentPopup();
@@ -215,8 +218,11 @@ void TILES_LST_unmodified(export_state* state)
 
 void append_to_MSG(export_state* state)
 {
+    //finding it difficult to get the correct
+    //  filename in to the LST_path
+    //  so I've commented the relevant sections out for now
     ImGui::Text(
-        "%s\n\n"
+        // "%s\n\n"
         "Append new entries to pro_tile.msg?\n"
         "(A backup will be made.)\n\n"
         // "--IMPORTANT--\n"
@@ -224,7 +230,7 @@ void append_to_MSG(export_state* state)
         // "from TILES.LST based on the line number.\n"
         // "Be careful not to change the order of\n"
         // "tiles once they are on the list.\n\n"
-        , state->LST_path
+        // , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
@@ -241,8 +247,11 @@ void append_to_MSG(export_state* state)
 
 void append_to_FRM_LST(export_state* state)
 {
+    //finding it difficult to get the correct
+    //  filename in to the LST_path
+    //  so I've commented the relevant sections out for now
     ImGui::Text(
-        "%s\n\n"
+        // "%s\n\n"
         "Append new tiles to art/tiles/TILES.LST?\n"
         "(A backup will be made.)\n\n"
         "--IMPORTANT--\n"
@@ -250,7 +259,7 @@ void append_to_FRM_LST(export_state* state)
         "from TILES.LST based on the line number.\n"
         "Be careful not to change the order of\n"
         "tiles once they are on the list.\n\n"
-        , state->LST_path
+        // , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
@@ -277,8 +286,11 @@ void append_to_FRM_LST(export_state* state)
 
 void append_to_PRO_LST(export_state* state)
 {
+    //finding it difficult to get the correct
+    //  filename in to the LST_path
+    //  so I've commented the relevant sections out for now
     ImGui::Text(
-        "%s\n\n"
+        // "%s\n\n"
         "Append new tiles to proto/tiles/TILES.LST?\n"
         "(A backup will be made.)\n\n"
         "--IMPORTANT--\n"
@@ -286,7 +298,7 @@ void append_to_PRO_LST(export_state* state)
         "from TILES.LST based on the line number.\n"
         "Be careful not to change the order of\n"
         "tiles once they are on the list.\n\n"
-        , state->LST_path
+        // , state->LST_path
     );
     if (ImGui::Button("Append to TILES.LST")) {
         state->auto_export    = true;
@@ -345,7 +357,7 @@ bool missing_files_popup(export_state* state)
         pro = "/data/proto/tiles/TILES.LST\n";
     }
     if (state->loaded_PRO_MSG == false) {
-        msg = "/data/text/%s/game/pro_tile.msg\n";
+        msg = "/data/text/%s/game/pro_tile.msg\n", state->language[0];
     }
 
 
@@ -489,7 +501,29 @@ char* make_PRO_tile_MSG(proto_info* info, int tile_id)
     return msg_line;
 }
 
-bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* handle)
+//append new protos to list in memory
+char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG, export_state* state)
+{
+    //TODO: make a function that searches old_PRO_MSG
+    //      for matching entries so those can be replaced
+    //      instead of just appending anything
+    // char* new_PRO_MSG = check_PRO_MSG_names(old_PRO_MSG, head);
+    if (new_PRO_MSG == nullptr) {
+        return old_PRO_MSG;
+    }
+
+    //append new list_of_tiles to the end of original list
+    //in a new buffer large enough to fit both
+    int old_LST_size    = strlen(old_PRO_MSG);
+    int new_LST_size    = strlen(new_PRO_MSG);
+    int final_size      = old_LST_size+new_LST_size+1;
+    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
+    snprintf(final_PRO_LST, final_size, "%s%s", old_PRO_MSG, new_PRO_MSG);
+
+    return final_PRO_LST;
+}
+
+bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
     char* FRM_tiles_LST = usr_nfo->game_files.FRM_TILES_LST;
     if (FRM_tiles_LST == NULL) {
@@ -502,16 +536,14 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
         return false;
     }
 
-    proto_info pr_info;
-    if (info == NULL) {
-        info                = &pr_info;
-        pr_info.name        = input_name();
-        pr_info.description = input_desc();
-    }
+    proto_info info;
+    info.name        = input_name();
+    info.description = input_desc();
 
-    if (info->name[0] == '\0' && info->description[0] == '\0') {
+    if (info.name[0] == '\0' && info.description[0] == '\0') {
         //append to pro_tile.msg if either a name
         //or a description has been provided
+        state->append_PRO_MSG = false;
         return true;
     }
 
@@ -522,7 +554,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
-        if (tile->tile_id == -1) {
+        if (tile->tile_id != -1) {
             break;
         }
     }
@@ -533,41 +565,40 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, proto_info* info, tt_arr_handle* ha
     // for (int i = 0;
     //     i < handle->size &&
     //     (tile=&handle->tile[i++])->tile_id != -1;
-    // ){}
+    // );
     if (tile == NULL) {
         //TODO: popup warning saying no tiles exported
         //      (same in save_NEW_PRO_tile_MSG())
         return false;
     }
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(info, tile->tile_id);
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
 
-    const char* language[] = {
-        "english",
-        "french",
-        "russian",
-        "etc"
-    };
+
+    char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG, state);
 
     char save_path[MAX_PATH];
-    snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, language[0]);
+    snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, state->language[0]);
     char* actual_path = io_path_check(save_path);
     if (actual_path) {
         strncpy(save_path, actual_path, MAX_PATH);
     }
 
     bool success = io_backup_file(save_path, nullptr);
-    success      = io_save_txt_file(save_path, new_PRO_tile_MSG);
+    success      = io_save_txt_file(save_path, final_PRO_tile_MSG);
     if (!success) {
         free(new_PRO_tile_MSG);
+        free(final_PRO_tile_MSG);
         return false;
     }
 
-    // assign new_PRO_tile_MSG;
+    // store new_PRO_tile_MSG;
     if (usr_nfo->game_files.PRO_TILE_MSG) {
         free(usr_nfo->game_files.PRO_TILE_MSG);
     }
-    usr_nfo->game_files.PRO_TILE_MSG = new_PRO_tile_MSG;
+    usr_nfo->game_files.PRO_TILE_MSG = final_PRO_tile_MSG;
+    free(new_PRO_tile_MSG);
+    state->append_PRO_MSG = false;
 
     return true;
 }
@@ -589,7 +620,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
-        if (tile->tile_id == -1) {
+        if (tile->tile_id != -1) {
             break;
         }
     }
@@ -601,10 +632,16 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
     proto_info info;
     info.name        = input_name();
     info.description = input_desc();
-
-    if (info.name[0] == '\0' && info.description[0] == '\0') {
-        return NULL;
-    }
+    //TODO: do I want to not create the file
+    //      but have a switch that disables the append function
+    //      if there isn't any text to add to the file?
+    //      Or just leave it like this and create the file anyway?
+    //      This might be a moot point after I'm able to extract
+    //      the txt file from the DAT file
+    // if (info.name[0] == '\0' && info.description[0] == '\0') {
+    //     state->append_PRO_MSG = false;
+    //     return NULL;
+    // }
 
     assign_tile_id(handle, FRM_tiles_LST);
 
@@ -629,8 +666,14 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
 
     success = io_save_txt_file(save_path, new_PRO_tile_MSG);
     if (!success) {
+        set_false(state);
+        set_popup_warning(
+            "Error: save_NEW_FRM_tiles_LST()\n"
+            "Unable to create folders\n"
+        );
         return NULL;
     }
+    state->make_PRO_MSG = false;
 
     return new_PRO_tile_MSG;
 }
@@ -672,8 +715,12 @@ char* save_NEW_PRO_tiles_LST(tt_arr_handle* handle, user_info* usr_nfo, export_s
     char* new_tile_list = make_PRO_tiles_LST(handle, NULL);
     success = io_save_txt_file(save_path, new_tile_list);
     if (!success) {
+        if (new_tile_list) {
+            free(new_tile_list);
+        }
         return NULL;
     }
+    state->make_PRO_LST = false;
 
     return new_tile_list;
 }
@@ -825,13 +872,7 @@ void export_protos(user_info* usr_nfo, tt_arr_handle* handle)
 bool load_PRO_tiles_MSG(user_info* usr_nfo, export_state* state)
 {
     char* LST_path = state->LST_path;
-    const char* language[] = {
-        "english",
-        "french",
-        "russian"
-    };
-
-    snprintf(LST_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", usr_nfo->default_game_path, language[0]);
+    snprintf(LST_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", usr_nfo->default_game_path, state->language[0]);
     char* actual_path = io_path_check(LST_path);
     if (actual_path) {
         strncpy(LST_path, actual_path, MAX_PATH);
@@ -1077,7 +1118,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         //TODO: also need to give options to use descriptions
         //      already on pro_tile.msg
         //add name/description to data/text/english/game/pro_tile.msg
-        success = append_PRO_tile_MSG(usr_nfo, NULL, handle);
+        success = append_PRO_tile_MSG(usr_nfo, handle, state);
         if (!success) {
             set_false(state);
             return;
@@ -1147,7 +1188,7 @@ bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_s
         free(usr_nfo->game_files.PRO_TILES_LST);
     }
     usr_nfo->game_files.PRO_TILES_LST = new_PRO_LST;
-
+    state->append_PRO_LST = false;
 
     return true;
 }
