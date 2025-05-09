@@ -4,6 +4,7 @@
 #include "town_map_tiles.h"
 
 struct export_state {
+    char save_name[16] = "tile_";
     char LST_path[MAX_PATH];
     const char* language[4] = {
         "english",

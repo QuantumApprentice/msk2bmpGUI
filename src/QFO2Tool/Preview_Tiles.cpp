@@ -346,6 +346,22 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
     }
 }
 
+
+void rename_tiles(tt_arr_handle* handle, char* name)
+{
+    if (!handle) {
+        return;
+    }
+
+    int tile_num = 0;
+    tt_arr* tile = handle->tile;
+    for (int i = 0; i < handle->size; i++) {
+        if (tile[i].tile_id != -1) {
+            snprintf(tile[i].name_ptr, 14, "%s%03d.FRM", name, tile_num++);
+        }
+    }
+}
+
 tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
 {
     static export_state state;
@@ -368,6 +384,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         if (state.art || state.pro || state.pat) {
             if (ImGui::Button("Auto Export All")) {
                 if (state.art) {
+                    state.auto_export    = true;
                     state.load_files     = true;
                     state.append_FRM_LST = true;
                 }
@@ -380,6 +397,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
                     state.export_pattern = true;
                 }
                 save_folder_dialog(usr_nfo);
+                rename_tiles(exported_tiles, state.save_name);
             }
         }
 

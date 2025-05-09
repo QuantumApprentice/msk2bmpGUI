@@ -222,7 +222,7 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_stat
 }
 
 
-char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* state)
+char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_state* state)
 {
     bool append_new_only = state->auto_export;
     int num_tiles = 0;
@@ -234,11 +234,11 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
         }
     }
 
-    int tiles_lst_len = strlen(tiles_lst);
+    int tiles_lst_len = strlen(old_tiles_LST);
     uint8_t shift_ctr = 0;
 
     uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
-    char* strt       = tiles_lst;           //keeps track of first letter of name on TILES.LST
+    char* strt       = old_tiles_LST;           //keeps track of first letter of name on TILES.LST
 
     int match_ctr = 0;
     tt_arr* tiles = handle->tile;
@@ -252,18 +252,18 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
 
         for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
         {
-            if (tiles_lst[char_ctr] != '\n' && tiles_lst[char_ctr] != '\0') {
+            if (old_tiles_LST[char_ctr] != '\n' && old_tiles_LST[char_ctr] != '\0') {
                 continue;
             }
             line_ctr++;
             //compare first character before full string
             if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
-                strt = &tiles_lst[char_ctr+1];
+                strt = &old_tiles_LST[char_ctr+1];
                 continue;
             }
             //TODO: replace with io_strncasecmp()? or at least strncsecmp()?
             if (strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
-                strt = &tiles_lst[char_ctr+1];
+                strt = &old_tiles_LST[char_ctr+1];
                 continue;
             }
             node->tile_id = line_ctr;
@@ -305,7 +305,7 @@ char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* 
         if (shift_ctr >= 8) {
             shift_ctr = 0;
         }
-        strt = tiles_lst;
+        strt = old_tiles_LST;
     }
 
     //TODO: maybe pull this function out to the surface?
@@ -413,14 +413,6 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
 //  On fail returns false, game_files.FRM_TILES_LST not changed
 bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
-    // //Auto option
-    // if (usr_nfo->auto_export == true) {
-    //     success = auto_export_TMAP_tiles_lst(usr_nfo, save_buff, tiles_lst, *new_tile_list);
-    //     if (success == false) {
-    //         return;
-    //     }
-    // }
-
     char* game_path = usr_nfo->default_game_path;
 
     //append new tiles.LST to old tiles.LST in memory
@@ -527,8 +519,13 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         }
     }
 
+    //append to art/tiles/TILES.LST
     if (state->append_FRM_LST) {
-        usr_nfo->game_files.FRM_TILES_LST = append_FRM_tiles_LST(usr_nfo->game_files.FRM_TILES_LST, handle, state);
+        bool success = append_TMAP_tiles_LST(usr_nfo, handle, state);
+        if (!success) {
+            set_false(state);
+            return;
+        }
     }
 
     if (state->make_FRM_LST) {

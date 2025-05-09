@@ -1186,10 +1186,9 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
         "ex: tile_000.FRM, tile_001.FRM, ... tile_999.FRM\n"
     );
     //game engine/mapper only takes 8 character tile-names
-    static char save_name[16] = "tile_";
     ImGui::InputText(
         "Name\n(max 5 characters)",
-        save_name, 6);
+        state->save_name, 6);
 
     // create the filename for the current list of tiles
     // assigns final save path string to Full_Save_File_Path
@@ -1237,7 +1236,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
             ifd::FileDialog::Instance().Open("TMAPSaveDialog", "Save Folder", "", false, folder);
         }
 
-        if (ImGui::Button("Cancel") ){
+        if (ImGui::Button("Cancel")) {
             ImGui::CloseCurrentPopup();
             ImGui::EndPopup();
             success      = false;
@@ -1264,7 +1263,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
 
     tt_arr_handle* handle = NULL;
     if (strlen(save_fldr) > 0 && success) {
-        handle = crop_export_TMAP_tiles(offset, srfc, save_fldr, save_name, save_path, overwrite);
+        handle = crop_export_TMAP_tiles(offset, srfc, save_fldr, state->save_name, save_path, overwrite);
         if (!handle) {
             success = false;
         }
