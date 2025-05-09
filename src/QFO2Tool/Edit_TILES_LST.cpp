@@ -319,6 +319,11 @@ char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_sta
     return cropped_list;
 }
 
+//checks old_FRM_LST for matching tilenames from handle.tiles
+//  if only matches found, returns old_FRM_LST
+//  if new entries made (some non-matches found)
+//      allocates space for total (old LST w/new names appended)
+//      and returns allocated ptr
 char* append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle, export_state* state)
 {
     //search old_tiles_list (TILES.LST)

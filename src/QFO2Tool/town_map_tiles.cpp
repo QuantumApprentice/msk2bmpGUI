@@ -231,8 +231,9 @@ int crop_single_tile_vector_clear(
 #define row_offset_y         (24)   //  move one row down
 
 //array version (stores tile position)
-tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite)
+tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite)
 {
+    char* name = state->save_name;
     uint8_t tile_buff[TMAP_W * TMAP_H] = {0};
     int img_w = src->w;
     int img_h = src->h;
@@ -263,8 +264,10 @@ tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fld
 
             if (!overwrite) {
                 if (io_file_exists(save_path)) {
-                    ImGui::OpenPopup("Match found");
-                    return NULL;
+                    if (state->auto_export == false) {
+                        ImGui::OpenPopup("Match found");
+                        return NULL;
+                    }
                 }
             }
 

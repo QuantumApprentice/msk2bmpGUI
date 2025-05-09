@@ -396,7 +396,6 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
                 if (state.pat) {
                     state.export_pattern = true;
                 }
-                save_folder_dialog(usr_nfo);
                 rename_tiles(exported_tiles, state.save_name);
             }
         }
@@ -414,13 +413,13 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         }
 
         if (state.art) {
-            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, state.art);
+            append_FRM_tiles_POPUP(usr_nfo, exported_tiles, &state, true);
         }
         if (state.pro) {
-            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, state.pro);
+            export_PRO_tiles_POPUP(usr_nfo, exported_tiles, &state, true);
         }
         if (state.pat) {
-            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, state.pat);
+            export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, true);
         }
         set_false(&state);
 

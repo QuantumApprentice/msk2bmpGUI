@@ -1,17 +1,6 @@
 #pragma once
 #include "load_FRM_OpenGL.h"
 
-// programmer_jeff
-// : try this? 
-// Point rotatePoint(
-//     Point p, double angle) {
-//         return {
-//             p.x * cos(angle) - p.y * sin(angle),
-//             p.x * sin(angle) + p.y * cos(angle)
-//         };
-//     }
-
-
 // BakerStaunch
 // So your grid structure might become:
 //
@@ -26,6 +15,42 @@
 // for (int row = first non-transparent-row;
 //           i <= last non-transparent-row;
 //           row++)
+
+
+struct export_state {
+    char save_name[16] = "tile_";
+    char LST_path[MAX_PATH];
+    const char* language[4] = {
+        "english",
+        "french",
+        "russian",
+        "etc"
+    };
+    bool auto_export    = false;
+
+    bool art = false;
+    bool pro = false;
+    bool pat = false;
+
+    bool export_proto   = false;
+    bool export_pattern = false;
+
+    bool chk_game_path  = false;
+
+    bool make_FRM_LST   = false;
+    bool make_PRO_LST   = false;
+    bool make_PRO_MSG   = false;
+
+    bool load_files     = false;
+    bool loaded_FRM_LST = false;
+    bool loaded_PRO_LST = false;
+    bool loaded_PRO_MSG = false;
+
+    bool append_FRM_LST = false;
+    bool append_PRO_LST = false;
+    bool append_PRO_MSG = false;
+};
+
 
 //TODO: delete? this was for the linked list version
 struct town_tile {
@@ -92,5 +117,5 @@ static int tile_mask[] = {
     32, 35,     //row 36
 };
 
-tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, char* name, char* save_path, bool overwrite);
+tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite);
 void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls, int img_w, int img_h, int x, int y);

@@ -1169,7 +1169,7 @@ void save_folder_dialog(user_info* usr)
 //TODO: add offset for tile cutting
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, export_state* state)
 {
-    bool auto_export = state->art;
+    bool auto_export = state->auto_export;
     //TODO: re-implement auto_export_question() with ImFileDialog()
     // bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     // if (!success) {
@@ -1214,6 +1214,7 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
             success   = true;
             overwrite = true;
             if (state->art) {
+                state->auto_export    = true;
                 state->load_files     = true;
                 state->append_FRM_LST = true;
             }
@@ -1253,17 +1254,25 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
         if (ifd::FileDialog::Instance().HasResult()) {
             success = true;
             std::string temp = ifd::FileDialog::Instance().GetResult().u8string();
-            strncpy(save_fldr, temp.c_str(), temp.length()+1);
-            strncpy(usr_info->default_save_path, temp.c_str(), temp.length()+1);
+            strncpy(save_fldr, temp.c_str(), MAX_PATH);
+            strncpy(usr_info->default_save_path, temp.c_str(), MAX_PATH);
         }
         ifd::FileDialog::Instance().Close();
     }
 
+    if (state->auto_export) {
+        success = true;
+        snprintf(save_fldr, MAX_PATH, "%s%s", usr_info->default_game_path, "/data/art/tiles/");
+        char* path = io_path_check(save_fldr);
+        if (path != save_fldr) {
+            strncpy(save_fldr, path, MAX_PATH);
+        }
+    }
 
 
     tt_arr_handle* handle = NULL;
-    if (strlen(save_fldr) > 0 && success) {
-        handle = crop_export_TMAP_tiles(offset, srfc, save_fldr, state->save_name, save_path, overwrite);
+    if (save_fldr[0] != '\0' && success) {
+        handle = crop_export_TMAP_tiles(offset, srfc, save_fldr, state, save_path, overwrite);
         if (!handle) {
             success = false;
         }

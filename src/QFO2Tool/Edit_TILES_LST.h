@@ -3,40 +3,6 @@
 #include "Load_Settings.h"
 #include "town_map_tiles.h"
 
-struct export_state {
-    char save_name[16] = "tile_";
-    char LST_path[MAX_PATH];
-    const char* language[4] = {
-        "english",
-        "french",
-        "russian",
-        "etc"
-    };
-    bool auto_export    = false;
-
-    bool art = false;
-    bool pro = false;
-    bool pat = false;
-
-    bool export_proto   = false;
-    bool export_pattern = false;
-
-    bool chk_game_path  = false;
-
-    bool make_FRM_LST   = false;
-    bool make_PRO_LST   = false;
-    bool make_PRO_MSG   = false;
-
-    bool load_files     = false;
-    bool loaded_FRM_LST = false;
-    bool loaded_PRO_LST = false;
-    bool loaded_PRO_MSG = false;
-
-    bool append_FRM_LST = false;
-    bool append_PRO_LST = false;
-    bool append_PRO_MSG = false;
-};
-
 struct tile_name {
     char* name_ptr;
     int length;
