@@ -45,9 +45,6 @@
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dependencies\tinyfiledialogs\tinyfiledialogs.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\msk2bmpGUI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

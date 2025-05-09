@@ -164,7 +164,6 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\imstb_textedit.h" />
     <ClInclude Include="src\dependencies\imgui-1.90.8-docking\imstb_truetype.h" />
     <ClInclude Include="src\dependencies\stb\stb_image.h" />
-    <ClInclude Include="src\dependencies\tinyfiledialogs\tinyfiledialogs.h" />
     <ClInclude Include="src\QFO2Tool\B_Endian.h" />
     <ClInclude Include="src\QFO2Tool\display_FRM_OpenGL.h" />
     <ClInclude Include="src\QFO2Tool\Edit_Animation.h" />
@@ -232,7 +231,6 @@ XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" 
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\imgui_draw.cpp" />
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\imgui_tables.cpp" />
     <ClCompile Include="src\dependencies\imgui-1.90.8-docking\imgui_widgets.cpp" />
-    <ClCompile Include="src\dependencies\tinyfiledialogs\tinyfiledialogs.c" />
     <ClCompile Include="src\msk2bmpGUI.cpp" />
     <ClCompile Include="src\QFO2Tool\B_Endian.cpp" />
     <ClCompile Include="src\QFO2Tool\display_FRM_OpenGL.cpp" />
