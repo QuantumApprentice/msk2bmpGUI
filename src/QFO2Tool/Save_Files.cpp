@@ -1169,7 +1169,7 @@ void save_folder_dialog(user_info* usr)
 //TODO: add offset for tile cutting
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, export_state* state)
 {
-    bool auto_export = state->auto_export;
+    bool auto_export = state->art;
     //TODO: re-implement auto_export_question() with ImFileDialog()
     // bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     // if (!success) {
@@ -1261,12 +1261,12 @@ tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect*
     }
 
     if (state->auto_export) {
-        success = true;
         snprintf(save_fldr, MAX_PATH, "%s%s", usr_info->default_game_path, "/data/art/tiles/");
         char* path = io_path_check(save_fldr);
         if (path != save_fldr) {
             strncpy(save_fldr, path, MAX_PATH);
         }
+        success = io_make_dir(save_fldr);
     }
 
 

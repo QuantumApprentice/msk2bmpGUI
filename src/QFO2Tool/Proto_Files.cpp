@@ -525,6 +525,7 @@ char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG, export_s
 
 bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
+    state->append_PRO_MSG = false;
     char* FRM_tiles_LST = usr_nfo->game_files.FRM_TILES_LST;
     if (FRM_tiles_LST == NULL) {
         //need /art/tiles/TILES.LST in order to
@@ -543,7 +544,6 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
     if (info.name[0] == '\0' && info.description[0] == '\0') {
         //append to pro_tile.msg if either a name
         //or a description has been provided
-        state->append_PRO_MSG = false;
         return true;
     }
 
@@ -598,7 +598,6 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
     }
     usr_nfo->game_files.PRO_TILE_MSG = final_PRO_tile_MSG;
     free(new_PRO_tile_MSG);
-    state->append_PRO_MSG = false;
 
     return true;
 }
@@ -1051,6 +1050,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
     //  c) can only append?
 
     if (state->chk_game_path) {
+        state->chk_game_path = false;
         //copy any game_path changes to user_info for saving to config
         if (fallout2exe_exists(FObuff) == false) {
             ImGui::OpenPopup("fallout2.exe not found");
@@ -1062,6 +1062,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 
 
     if (state->load_files) {
+        state->load_files = false;
         state->loaded_FRM_LST = load_FRM_tiles_LST(usr_nfo, state);
         state->loaded_PRO_LST = load_PRO_tiles_LST(usr_nfo, state);
         state->loaded_PRO_MSG = load_PRO_tiles_MSG(usr_nfo, state);
@@ -1126,6 +1127,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
     }
 
     if (state->export_proto) {
+        state->export_proto = false;
         export_protos(usr_nfo, handle);
     }
 }
@@ -1157,6 +1159,8 @@ char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, export_state*
 //append to data/proto/tiles/TILES.LST
 bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_state* state)
 {
+    state->append_PRO_LST = false;
+
     char* game_path   = usr_nfo->default_game_path;
     char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
     char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, state);
@@ -1188,7 +1192,6 @@ bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_s
         free(usr_nfo->game_files.PRO_TILES_LST);
     }
     usr_nfo->game_files.PRO_TILES_LST = new_PRO_LST;
-    state->append_PRO_LST = false;
 
     return true;
 }

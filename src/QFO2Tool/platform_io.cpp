@@ -446,8 +446,8 @@ bool io_make_dir(char* dir_path)
 {
     int error;
     error = mkdir(dir_path, (S_IRWXU | S_IRWXG | S_IRWXO));
-    if (error == 0) {
-        //successfully created directory
+    if (error == 0 || errno == EEXIST) {
+        //successfully created directory (or it was already there)
         return true;
     }
     if (errno == ENOENT) {  // No such file or directory

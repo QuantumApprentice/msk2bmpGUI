@@ -418,6 +418,7 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* state)
 //  On fail returns false, game_files.FRM_TILES_LST not changed
 bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
+    state->append_FRM_LST = false;
     char* game_path = usr_nfo->default_game_path;
 
     //append new tiles.LST to old tiles.LST in memory
@@ -450,7 +451,6 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_sta
         free(usr_nfo->game_files.FRM_TILES_LST);
     }
     usr_nfo->game_files.FRM_TILES_LST = new_tiles_lst;
-    state->append_FRM_LST = false;
 
     return true;
 }
@@ -470,11 +470,16 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         "appropriate location.\n"
     );
 
+    set_game_path_POPUP(usr_nfo);
     static char FObuff[MAX_PATH] = "";
     if (FObuff[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
         strncpy(FObuff, usr_nfo->default_game_path, MAX_PATH);
     }
     ImGui::InputText("###fallout2.exe", FObuff, MAX_PATH);
+    ImGui::SameLine();
+    if (ImGui::Button("Browse")) {
+        Set_Default_Game_Path(usr_nfo, usr_nfo->exe_directory);
+    }
 
     ImGui::Text(
         "(I plan on adding a feature to extract these from)\n"
@@ -509,6 +514,7 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
     }
 
     if (state->load_files) {
+        state->load_files = false;
         state->loaded_FRM_LST = load_FRM_tiles_LST(usr_nfo, state);
         //TODO: maybe isolate this better?
         //      these state->loaded_ are used in the create_LST popup
