@@ -131,9 +131,7 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>XCOPY "$(ProjectDir)\src\resources\" "$(TargetDir)\resources\" /S /Y
-XCOPY "$(ProjectDir)\..\SDL2-2.30.4\lib\x64\SDL2.dll" "$(TargetDir)" /Y
-XCOPY "$(ProjectDir)\..\SDL2_image-2.6.3\lib\x64\SDL2_image.dll" "$(TargetDir)" /Y</Command>
+      <Command>XCOPY "$(ProjectDir)\src\resources\" "$(TargetDir)\resources\" /S /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
