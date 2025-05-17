@@ -37,14 +37,14 @@ struct export_state {
 
     bool chk_game_path  = false;
 
-    bool make_FRM_LST   = false;
-    bool make_PRO_LST   = false;
-    bool make_PRO_MSG   = false;
-
     bool load_files     = false;
     bool loaded_FRM_LST = false;
     bool loaded_PRO_LST = false;
     bool loaded_PRO_MSG = false;
+
+    bool make_FRM_LST   = false;
+    bool make_PRO_LST   = false;
+    bool make_PRO_MSG   = false;
 
     bool append_FRM_LST = false;
     bool append_PRO_LST = false;

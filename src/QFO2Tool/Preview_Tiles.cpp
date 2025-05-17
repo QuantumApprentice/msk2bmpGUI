@@ -379,8 +379,8 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         ImGui::OpenPopup("Export Tiles");
     }
 
-    bool close_x = true;
-    if (ImGui::BeginPopupModal("Export Tiles", &close_x, ImGuiChildFlags_AutoResizeY)) {
+    bool export_tile_popup = true;
+    if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
         if (state.art || state.pro || state.pat) {
             if (ImGui::Button("Auto Export All")) {
                 if (state.art) {
@@ -421,8 +421,23 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
         if (state.pat) {
             export_PAT_file_POPUP(usr_nfo, exported_tiles, &state, true);
         }
-        set_false(&state);
 
+        ImGui::EndPopup();
+
+        if (state.auto_export == true) {
+            ImGui::OpenPopup("Export Complete");
+        }
+        set_false(&state);
+    }
+
+    bool export_success = true;
+    if (ImGui::BeginPopupModal("Export Complete", &export_success)) {
+        ImGui::Text(
+            "Tiles exported successfully."
+        );
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
 

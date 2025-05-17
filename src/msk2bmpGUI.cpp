@@ -430,10 +430,6 @@ int main(int argc, char** argv)
                 &counter
             );
 
-            // if (!does_window_exist) {
-            //     My_Variables.window_number_focus = counter;
-            //     counter++;
-            // }
             if (clear_images_arr) {
                 clear_images_arr = false;
                 for (int i = 0; i < 6; i++) {
