@@ -106,6 +106,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 // Main code
 int main(int argc, char** argv)
 {
+    //AllocConsole();       //to turn on console from code
+    //FILE* fDummy;
+    //freopen_s(&fDummy, "CONIN$",  "r", stdin);
+    //freopen_s(&fDummy, "CONOUT$", "w", stderr);
+    //freopen_s(&fDummy, "CONOUT$", "w", stdout);
+    //FreeConsole();        //used to disable the console while rendering (maybe attach to a button?)
     int my_argc;
 
 #ifdef QFO2_WINDOWS
