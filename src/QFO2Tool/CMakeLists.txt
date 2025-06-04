@@ -5,6 +5,8 @@ add_library(QFO2ToolLib
   B_Endian.cpp
   display_FRM_OpenGL.h
   display_FRM_OpenGL.cpp
+  DAT_extract.h
+  DAT_extract.cpp
   Edit_Animation.cpp
   Edit_Animation.h
   Edit_Image.cpp
@@ -79,4 +81,5 @@ target_include_directories(
   ../dependencies/GLFW/glfw-3.4/include/
   ../dependencies/stb
   ../dependencies/ImFileDialog
+  ../dependencies/boost
 )

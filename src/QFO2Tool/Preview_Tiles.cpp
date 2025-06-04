@@ -362,6 +362,274 @@ void rename_tiles(tt_arr_handle* handle, char* name)
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+tt_arr_handle* export_TMAP_tiles_POPUP_STATE(user_info* usr_nfo, Surface* srfc, Rect* offset, STATE_export* which)
+{
+    
+}
+
+void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo, STATE_export* state)
+{
+    if (ImGui::BeginTable("auto_export", 2))
+    {
+//////////////////////////////////////////
+        ImGui::TableNextColumn();
+        //button 1
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Add to art/tiles/TILES.LST")) {
+            ImGui::OpenPopup("Add FRMs to Mapper");
+        }
+        ImGui::SetItemTooltip(
+            "TILES.LST located in:\n"
+            "Fallout 2/data/art/tiles/\n\n"
+            "Is checked for the names of these tiles\n"
+            "and then appended to only if they\n"
+            "don't already exist.\n\n"
+            "(NOTE: Currently can't load\n"
+            "TILES.LST from master.dat\n"
+            "but should be able too in the future)"
+        );
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
+        }
+        //checkbox 1
+        ImGui::TableNextColumn();
+        ImGui::Checkbox("Auto Append", &state->art);
+        ImGui::SetItemTooltip(
+            "Automatically appends\n"
+            "exported FRMs to\n"
+            "art/tiles/TILES.LST\n"
+        );
+        if (!state->art) {
+            state->pro = false;
+            state->pat = false;
+        }
+
+//////////////////////////////////////////
+        ImGui::TableNextColumn();
+        //button 2
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Export Protos")) {
+            ImGui::OpenPopup("Proto Info");
+        }
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
+        }
+        ImGui::TableNextColumn();
+        //checkbox 2
+        ImGui::Checkbox("Auto Export Protos", &state->pro);
+        ImGui::SetItemTooltip(
+            "Needs FRMs to be already listed\n"
+            "in art/tiles/TILES.LST\n"
+        );
+        if (state->pro) {
+            state->art = true;
+        } else {
+            state->pat = false;
+        }
+//////////////////////////////////////////
+        ImGui::TableNextColumn();
+        //button 3
+        if (exported_tiles == NULL) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Export Pattern File")) {
+            ImGui::OpenPopup("Pattern File");
+        }
+        if (exported_tiles == NULL) {
+            ImGui::EndDisabled();
+        }
+        ImGui::TableNextColumn();
+        //checkbox 3
+        ImGui::Checkbox("Auto Export Pattern File", &state->pat);
+        ImGui::SetItemTooltip(
+            "Needs FRMs to be already listed\n"
+            "in art/tiles/TILES.LST\n"
+            "AND proto files to be exported\n"
+            "and appended to proto/tiles/TILES.LST\n"
+        );
+        if (state->pat) {
+            state->art      = true;
+            state->pro      = true;
+        }
+//////////////////////////////////////////
+        //individual popups
+        if (ImGui::BeginPopupModal("Add FRMs to Mapper"))
+        {
+            // append_FRM_tiles_POPUP(usr_nfo, exported_tiles, state, false);
+            if (ImGui::Button("Close")) {
+                // set_false(state);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        // Popups: Always center this window when appearing (not sure this works)
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
+        {
+            // export_PRO_tiles_POPUP(usr_nfo, exported_tiles, state, false);
+            if (ImGui::Button("Close")) {
+                // set_false(state);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        // Always center this window when appearing? does this even work?
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
+        {
+            // export_PAT_file_POPUP(usr_nfo, exported_tiles, state, false);
+            if (ImGui::Button("Close")) {
+                // set_false(state);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::EndTable();
+    }
+}
+
+
+
+/*
+button press to start checking files    CheckFiles
+checking files success          --      ExportFiles
+checking files failure          --      UserInput
+user exit for failure           --      ExportMenu
+user overwrite/extract          --      ExportFiles
+*/
+#include <queue>
+#include <sml.hpp>
+//events
+class Render {};
+class Export {};
+class FilesFound {};
+class FilesNotFound {};
+class UserExit {};
+class UserOverwrite {};
+//states
+class ExportMenu {};
+class CheckFiles {};
+class UserInput {};
+class ExportFiles {};
+
+class ExportMachine {
+    public:
+    auto operator()() const {
+        using namespace boost::sml;
+
+        auto render_check_files = [](const Render&) {
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+            ImGui::Text("Render Check Files");
+            ImGui::PopStyleColor();
+        };
+        auto render_user_input  = [](const Render&) {
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+            ImGui::Text("Render User Input");
+            ImGui::PopStyleColor();
+        };
+        auto render_export_files = [](const Render&) {
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+            ImGui::Text("Render Export Files");
+            ImGui::PopStyleColor();
+        };
+
+        return make_transition_table(
+            *state<class ExportMenu> + event<Export>
+                = state<class CheckFiles>,
+
+            *state<class ExportMenu> + event<Render> /
+                [](back::process<Export> process_event, const Render&, STATE_export* state) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+                    if (ImGui::Button("Export Selected")) {
+                        ImGui::OpenPopup("Export Tiles");
+                    }
+                    bool export_tile_popup = true;
+                    if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
+                        if (ImGui::Button("something something")){
+                            process_event(Export{});
+                        }
+                        if (state->art || state->pro || state->pat) {
+                            //TODO: need to disable this button if fallout2.exe not found
+                            static tt_arr_handle* exported_tiles = NULL;
+                            if (ImGui::Button("Auto Export All")) {
+
+                            }
+                            if (ImGui::Button("Close")) {
+                                ImGui::CloseCurrentPopup();
+                            }
+                        }
+                        ImGui::EndPopup();
+                    }
+                    ImGui::PopStyleColor();
+                }
+                ,
+
+            state<class CheckFiles>  + event<FilesFound>
+                = state<class ExportFiles>,
+            state<class CheckFiles>  + event<Render> /
+                // render_check_files
+                [](back::process<CheckFiles> process_event, const Render&, STATE_export* state) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+                    ImGui::Text("Render Check Files");
+                    ImGui::PopStyleColor();
+                }
+                ,
+
+            state<class CheckFiles>  + event<FilesNotFound>
+                = state<class UserInput>,
+
+            state<class UserInput>   + event<UserExit>
+                = state<class ExportMenu>,
+            state<class UserInput>   + event<Render>
+                / render_user_input,
+
+            state<class UserInput>   + event<UserOverwrite>
+                = state<class ExportFiles>,
+            state<class UserInput>   + event<Render>
+                / render_export_files
+        );
+    }
+};
+
+tt_arr_handle* TMAP_tile_state_machine(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
+{
+    static STATE_export state;
+    static tt_arr_handle* exported_tiles = NULL;
+    if (handle) {
+        exported_tiles = handle;
+    }
+    export_button_table_STATE(exported_tiles, usr_nfo, &state);
+
+    static boost::sml::sm<ExportMachine, boost::sml::process_queue<std::queue>> StateMachine{&state};
+
+    StateMachine.process_event(Render{});
+
+    // tt_arr_handle* test = (tt_arr_handle*)malloc(sizeof(tt_arr_handle));
+    // return test;
+
+}
+
+
 tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
 {
     static export_state state;
@@ -382,6 +650,7 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
     bool export_tile_popup = true;
     if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
         if (state.art || state.pro || state.pat) {
+        //TODO: need to disable this button if fallout2.exe not found
             if (ImGui::Button("Auto Export All")) {
                 if (state.art) {
                     state.auto_export    = true;
@@ -457,6 +726,39 @@ tt_arr_handle* TMAP_tile_buttons(user_info* usr_nfo, Surface* srfc, Rect* offset
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image_data *img_data)
 {
     zoom_pan(img_data, My_Variables->new_mouse_pos, My_Variables->mouse_delta);
@@ -511,7 +813,9 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
     static Rect offset = {};
     static tt_arr_handle* handle = nullptr;
     Surface* srfc = img_data->ANM_dir[dir].frame_data[0];
-    handle = TMAP_tile_buttons(usr_info, srfc, &offset, handle);
+    // handle = TMAP_tile_buttons(usr_info, srfc, &offset, handle);
+
+    handle = TMAP_tile_state_machine(usr_info, srfc, &offset, handle);
 
     draw_TMAP_tiles(usr_info, img_data, shaders,
                     My_Variables->tile_texture_rend,
