@@ -444,8 +444,8 @@ bool handle_directory_drop_POPUP(char* dir_name, image_paths* image_arr)
         }
     }
 
-    bool err = io_close_dir(directory);
-    if (err) {
+    bool success = io_close_dir(directory);
+    if (!success) {
         //TODO: log to file
         set_popup_warning(
             "[ERROR] handle_directory_drop_POPUP()\n\n"
@@ -519,7 +519,8 @@ void game_path_NOT_set_POPUP()
     }
 }
 
-
+//TODO: delete, replace with in-menu warning text
+//TODO: might use with the menu bar popup? (msk2bmpGUI.cpp L1070)
 void game_path_set_POPUP(user_info* usr_nfo)
 {
     if (ImGui::BeginPopupModal("Fallout2.exe Found")) {
@@ -535,37 +536,40 @@ void game_path_set_POPUP(user_info* usr_nfo)
     }
 }
 
-void set_game_path_POPUP(user_info* usr_nfo)
+void set_game_path_POPUP(user_info* usr_nfo, char* FObuff)
 {
     if (ifd::FileDialog::Instance().IsDone("Fallout2exe_path")) {
         if (ifd::FileDialog::Instance().HasResult()) {
-
-            NATIVE_STRING_TYPE* fallout2_exe;
-            NATIVE_STRING_TYPE* fallout2HR_exe;
-#ifdef QFO2_WINDOWS
-            fallout2_exe = L"fallout2.exe";
-            fallout2HR_exe = L"fallout2HR.exe";
-#elif defined(QFO2_LINUX)
-            fallout2_exe = "fallout2.exe";
-            fallout2HR_exe = "fallout2HR.exe";
-#endif
+//TODO: clean this up
+//             NATIVE_STRING_TYPE* fallout2_exe;
+//             NATIVE_STRING_TYPE* fallout2HR_exe;
+// #ifdef QFO2_WINDOWS
+//             fallout2_exe = L"fallout2.exe";
+//             fallout2HR_exe = L"fallout2HR.exe";
+// #elif defined(QFO2_LINUX)
+//             fallout2_exe = "fallout2.exe";
+//             fallout2HR_exe = "fallout2HR.exe";
+// #endif
 
             std::filesystem::path game_path = ifd::FileDialog::Instance().GetResult();
             std::filesystem::path filename = game_path.filename();
 
-            if (io_strncasecmp(filename.c_str(), fallout2_exe, 13)
-            &&  io_strncasecmp(filename.c_str(), fallout2HR_exe, 15)) {
+            // if (io_strncasecmp(filename.c_str(), fallout2_exe, 13)
+            // &&  io_strncasecmp(filename.c_str(), fallout2HR_exe, 15)) {
 
-                ImGui::OpenPopup("Fallout2.exe Not Found");
-                ifd::FileDialog::Instance().Close();
-                return;
-            }
+            //     ImGui::OpenPopup("Fallout2.exe Not Found");
+            //     ifd::FileDialog::Instance().Close();
+            //     return;
+            // }
 
             if (std::filesystem::exists(game_path)) {
+                if (FObuff) {
+                    FObuff[0] = '\0';
+                }
                 strncpy(usr_nfo->default_game_path, game_path.parent_path().u8string().c_str(), MAX_PATH);
-                ImGui::OpenPopup("Fallout2.exe Found");
+                // ImGui::OpenPopup("Fallout2.exe Found");
             } else {
-                ImGui::OpenPopup("Fallout2.exe Not Found");
+                // ImGui::OpenPopup("Fallout2.exe Not Found");
             }
         }
         ifd::FileDialog::Instance().Close();

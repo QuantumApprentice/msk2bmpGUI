@@ -215,6 +215,7 @@ char* io_path_check(char* file_name)
     return file_name;
 }
 
+//returns file size using platform specific stat check
 int io_file_size(const char* filename)
 {
     struct stat stat_info;
@@ -229,7 +230,6 @@ int io_file_size(const char* filename)
 }
 
 //another way to check if directory exists?
-// #include <stdbool.h>  //bool type ?
 //returns true if the file exists, false otherwise
 //TODO: needs a windows version?
 bool io_file_exists(const char* filename)
@@ -411,7 +411,6 @@ char* io_path_check(char* file_name)
 }
 
 //another way to check if directory exists?
-// #include <stdbool.h>  //bool type ?
 //returns true if the file exists, false otherwise
 bool io_file_exists(const char* filename)
 {
@@ -427,6 +426,7 @@ bool io_file_exists(const char* filename)
     return (stat_info.st_mode & S_IFREG);
 }
 
+//returns file size using platform specific stat check
 int io_file_size(const char* filename)
 {
     struct stat stat_info;
@@ -583,9 +583,20 @@ bool io_save_txt_file(char* path, char* txt)
     return true;
 }
 
+//returns true if fallout2.exe/fallout2HR.exe exist at game_path
 bool fallout2exe_exists(const char* game_path)
 {
     char temp[MAX_PATH];
+    bool exe_found = false;
     snprintf(temp, MAX_PATH, "%s/fallout2.exe", game_path);
-    return io_file_exists(temp);
+    exe_found = io_file_exists(temp);
+    if (exe_found) {
+        return true;
+    }
+    snprintf(temp, MAX_PATH, "%s/fallout2HR.exe", game_path);
+    exe_found = io_file_exists(temp);
+    if (exe_found) {
+        return true;
+    }
+    return false;
 }

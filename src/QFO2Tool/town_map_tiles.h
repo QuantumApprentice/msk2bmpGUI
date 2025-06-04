@@ -16,6 +16,20 @@
 //           i <= last non-transparent-row;
 //           row++)
 
+struct STATE_export {
+    char save_name[16] = "tile_";
+    char LST_path[MAX_PATH];
+    const char* language[4] = {
+        "english",
+        "french",
+        "russian",
+        "etc"
+    };
+
+    bool art = false;
+    bool pro = false;
+    bool pat = false;
+};
 
 struct export_state {
     char save_name[16] = "tile_";
@@ -67,7 +81,7 @@ struct tt_arr {
     uint8_t  frm_data[80*36];
     uint32_t row     = 0;   //might not need these
     uint32_t col     = 0;   //might not need these
-    uint32_t tile_id = 0;       //line number where it appears in TILES.LST (proto? or art?)
+    uint32_t tile_id = 0;   //line number where it appears in TILES.LST (proto? or art?)
 };
 
 struct tt_arr_handle {

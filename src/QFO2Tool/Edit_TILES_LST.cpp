@@ -455,6 +455,34 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_sta
     return true;
 }
 
+//Fallout 2 source folder location menu
+void game_path_menu(user_info* usr_nfo, char* FObuff)
+{
+    static bool no_exe = false;
+    set_game_path_POPUP(usr_nfo, FObuff);
+    if (FObuff[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
+        strncpy(FObuff, usr_nfo->default_game_path, MAX_PATH);
+        if (fallout2exe_exists(FObuff)) {
+            no_exe = false;
+        }
+    }
+    if (ImGui::InputText("###fallout2.exe", FObuff, MAX_PATH)) {
+        if (!fallout2exe_exists(FObuff)) {
+            no_exe = true;
+        } else {
+            no_exe = false;
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Browse")) {
+        Set_Default_Game_Path(usr_nfo, usr_nfo->exe_directory);
+    }
+    const char* error_txt = no_exe ? "Fallout2.exe/Fallout2HR.exe not found." : ""; //empty string keeps spacing consistent
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+    ImGui::Text(error_txt);
+    ImGui::PopStyleColor();
+}
+
 //makes a char* list of tilenames from handle
 //      and appends (or replaces) original TILES.LST
 void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export)
@@ -470,16 +498,11 @@ void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
         "appropriate location.\n"
     );
 
-    set_game_path_POPUP(usr_nfo);
+
+    //fallout2.exe check
+    //TODO: disable the "Auto Export All" button when fallout2.exe not found
     static char FObuff[MAX_PATH] = "";
-    if (FObuff[0] == '\0' && usr_nfo->default_game_path[0] != '\0') {
-        strncpy(FObuff, usr_nfo->default_game_path, MAX_PATH);
-    }
-    ImGui::InputText("###fallout2.exe", FObuff, MAX_PATH);
-    ImGui::SameLine();
-    if (ImGui::Button("Browse")) {
-        Set_Default_Game_Path(usr_nfo, usr_nfo->exe_directory);
-    }
+    game_path_menu(usr_nfo, FObuff);
 
     ImGui::Text(
         "(I plan on adding a feature to extract these from)\n"

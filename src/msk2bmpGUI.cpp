@@ -1067,7 +1067,9 @@ static void ShowMainMenuBar(int* counter, struct variables* My_Variables)
         }
         ImGui::EndMainMenuBar();
     }
-    set_game_path_POPUP(&usr_info);
+    //TODO: this needs its own separate popup because the popup system sucks
+    // char FObuff[1];
+    // set_game_path_POPUP(&usr_info, FObuff);
     game_path_set_POPUP(&usr_info);
     game_path_NOT_set_POPUP();
 }
