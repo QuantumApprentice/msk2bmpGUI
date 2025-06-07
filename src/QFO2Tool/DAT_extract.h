@@ -11,11 +11,11 @@ struct DAT_file {
 struct DIR_entry {
     char*   path_ptr;
     int32_t path_size;
-    char    path_pack;
     uint8_t type;
     int32_t unpack_size;
     int32_t packed_size;
     int32_t offset;
+    uint8_t* file_ptr;
 };
 
 //generic buffer struct?

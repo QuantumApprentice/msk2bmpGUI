@@ -94,9 +94,13 @@ void extract_from_DAT(char* file_name, char* dat_name, user_info* usr_nfo)
         }
 
 
-        DIR_entry entry = {0};
-        entry.path_ptr = (char*)&entry_ptr[4];
-        // entry.
+        DIR_entry entry   = {0};
+        entry.path_ptr    = (char*)&entry_ptr[4];
+        entry.type        = entry_ptr[4+path_size];
+        entry.unpack_size = entry_ptr[4+path_size+1];
+        entry.packed_size = entry_ptr[4+path_size+1+4];
+        entry.offset      = entry_ptr[4+path_size+1+4+4];
+        entry.file_ptr    = &dat_file.data[entry.offset];
     }
     
 

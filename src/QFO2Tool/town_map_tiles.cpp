@@ -230,6 +230,83 @@ int crop_single_tile_vector_clear(
 #define row_offset_x         (32)   //  move one row to the right
 #define row_offset_y         (24)   //  move one row down
 
+
+tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
+{
+    char* name = state->save_name;
+    int w = src->w;
+    int h = src->h;
+
+    float row_l =      (float)h / (float)pxl_per_row_y;
+    float row_r =      (float)w / (float)pxl_per_row_x;
+    int   col_l = ceil((float)h / (float)pxl_per_col_y);
+    int   col_r = ceil((float)w / (float)pxl_per_col_x);
+
+    int row_cnt = ceil(row_l + row_r);
+    int col_cnt = col_l + col_r;
+
+    uint8_t* frm_pxls     = src->pxls;
+    tt_arr_handle* handle = (tt_arr_handle*)malloc(sizeof(tt_arr_handle) + row_cnt*col_cnt*(sizeof(tt_arr)));
+    tt_arr* towntiles     = handle->tile;
+    tt_arr* tile          = towntiles;
+    int tile_num          = 0;
+
+    for (int row = 0; row < row_cnt; row++) {
+        for (int col = 0; col < col_cnt; col++) {
+
+
+            int origin_x =   -col_offset_x * col_l    //initial origin position x
+                            + col_offset_x * col      //individual tile position x_col
+                            + row_offset_x * row      //individual tile position x_row
+                            + offset->x;
+            int origin_y =   -col_offset_y * col_l    //initial origin position y
+                            + col_offset_y * col      //individual tile position y_col
+                            + row_offset_y * row      //individual tile position y_row
+                            + offset->y;
+            tile = &towntiles[row*col_cnt + col];
+
+            //assign col/row for later placement on screen
+            tile->col = col;
+            tile->row = row;
+
+            //ignore tiles outside the viewable area (tiles with no info in them)
+            if (   (origin_x <= -TMAP_W)
+                || (origin_y <= -TMAP_H)
+                || (origin_x >= w)
+                || (origin_y >= h)
+                ) {
+                // tile->name_ptr = {0};
+                tile->tile_id = -1;      //-1 indicates blank tile, 0 indicates filled tile
+                continue;
+            }
+            snprintf(tile->name_ptr, 14, "%s%03d.FRM", name, tile_num);
+
+            uint8_t tile_buff[TMAP_W * TMAP_H] = {0};
+            //TODO: clean this up, was used for testing different methods
+            // crop_single_tileB(tile_buff, frm_pxls, w, h, origin_y, origin_x);
+            crop_single_tile(tile_buff, frm_pxls, w, h, origin_x, origin_y);
+            // crop_single_tile_vector_clear(tile_buff, frm_pxls, w, h,
+            //         origin.y, origin.x);
+
+            //TODO: check if blank tile before memcpy
+            //      if blank, tile[row*col_cnt + col].tileID = 1;
+            //      then move to next tile
+
+            memcpy(tile->frm_data, tile_buff, TMAP_W*TMAP_H);
+            tile->tile_id = 0;      //-1 indicates blank tile, 0 indicates filled tile
+
+            tile_num++;
+        }
+    }
+
+    handle->size    = col_cnt*row_cnt;
+    handle->col_cnt = col_cnt;
+    handle->row_cnt = row_cnt;
+
+    return handle;
+}
+
+
 //array version (stores tile position)
 tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite)
 {
@@ -339,7 +416,7 @@ void save_TMAP_tile_FRM(char* save_path, uint8_t* pxls, char* name)
     B_Endian::flip_frame_endian(&frame);
 
 
-    //TODO: make backups of the original tiles
+    //TODO: make backups of the original tiles?
     // if (io_file_exists(save_path)) {
     //     static char backup_path[MAX_PATH] = {'\0'};
     //     if (backup_path[0] == '\0') {

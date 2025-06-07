@@ -508,6 +508,85 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
     }
 }
 
+bool load_FRM_LST_state(user_info* usr_nfo, STATE_export* state)
+{
+    char* LST_path = state->LST_path;
+    snprintf(LST_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", usr_nfo->default_game_path);
+    char* actual_path = io_path_check(LST_path);
+    if (actual_path) {
+        strncpy(LST_path, actual_path, MAX_PATH);
+    }
+
+    char* FRM_tiles_lst = io_load_txt_file(LST_path);
+    if (!FRM_tiles_lst) {
+        return false;
+    }
+
+    if (usr_nfo->game_files.FRM_TILES_LST) {
+        free(usr_nfo->game_files.FRM_TILES_LST);
+    }
+    usr_nfo->game_files.FRM_TILES_LST = FRM_tiles_lst;
+    return true;
+
+
+
+}
+
+bool load_PRO_LST_state(user_info* usr_nfo, STATE_export* state)
+{
+
+    char* LST_path = state->LST_path;
+    snprintf(LST_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_nfo->default_game_path);
+    char* actual_path = io_path_check(LST_path);
+    if (actual_path) {
+        strncpy(LST_path, actual_path, MAX_PATH);
+    }
+
+    char* old_PRO_LST = io_load_txt_file(LST_path);
+    if (old_PRO_LST == nullptr) {
+        printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+        return false;
+    }
+
+    if (usr_nfo->game_files.PRO_TILES_LST) {
+        free(usr_nfo->game_files.PRO_TILES_LST);
+    }
+    usr_nfo->game_files.PRO_TILES_LST = old_PRO_LST;
+    return true;
+
+    // state->loaded_PRO_LST = load_PRO_tiles_LST(usr_nfo, state);
+    // state->loaded_PRO_MSG = load_PRO_tiles_MSG(usr_nfo, state);
+}
+
+bool load_PRO_MSG_state(user_info* usr_nfo, STATE_export* state)
+{
+    char* LST_path = state->LST_path;
+    snprintf(LST_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", usr_nfo->default_game_path, state->language[0]);
+    char* actual_path = io_path_check(LST_path);
+    if (actual_path) {
+        strncpy(LST_path, actual_path, MAX_PATH);
+    }
+
+    char* old_PRO_MSG = io_load_txt_file(LST_path);
+    if (old_PRO_MSG == nullptr) {
+        //TODO: may want to handle other failures
+        //      which would cause io_load_text_file()
+        //      to return NULL/nullptr
+
+        // ImGui::OpenPopup("Missing Files");
+
+
+        printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+        return false;
+    }
+
+    if (usr_nfo->game_files.PRO_TILE_MSG) {
+        free(usr_nfo->game_files.PRO_TILE_MSG);
+    }
+    usr_nfo->game_files.PRO_TILE_MSG = old_PRO_MSG;
+    return true;
+}
+
 
 
 /*
@@ -520,59 +599,62 @@ user overwrite/extract          --      ExportFiles
 #include <queue>
 #include <sml.hpp>
 //events
-class Render {};
-class Export {};
-class FilesFound {};
-class FilesNotFound {};
-class UserExit {};
-class UserOverwrite {};
+class event_Render {};
+class event_Export {};
+class event_MatchesFound {};
+class event_FilesNotFound {};
+class event_UserExit {};
+class event_UserOverwrite {};
+class event_ResetState {};
 //states
-class ExportMenu {};
-class CheckFiles {};
-class UserInput {};
-class ExportFiles {};
+class state_ExportMenu {};
+class state_CheckFiles {};
+class state_UserInput {};
+class state_ExportFiles {};
 
 class ExportMachine {
     public:
     auto operator()() const {
         using namespace boost::sml;
 
-        auto render_check_files = [](const Render&) {
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-            ImGui::Text("Render Check Files");
-            ImGui::PopStyleColor();
-        };
-        auto render_user_input  = [](const Render&) {
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-            ImGui::Text("Render User Input");
-            ImGui::PopStyleColor();
-        };
-        auto render_export_files = [](const Render&) {
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-            ImGui::Text("Render Export Files");
-            ImGui::PopStyleColor();
-        };
+        // auto render_check_files = [](const event_Render&) {
+        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+        //     ImGui::Text("Render Check Files");
+        //     ImGui::PopStyleColor();
+        // };
+        // auto render_user_input  = [](const event_Render&) {
+        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+        //     ImGui::Text("Render User Input");
+        //     ImGui::PopStyleColor();
+        // };
+        // auto render_export_files = [](const event_Render&) {
+        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+        //     ImGui::Text("Render Export Files");
+        //     ImGui::PopStyleColor();
+        // };
 
         return make_transition_table(
-            *state<class ExportMenu> + event<Export>
-                = state<class CheckFiles>,
+            *state<class state_ExportMenu> + event<event_Export>
+                = state<class state_CheckFiles>,
 
-            *state<class ExportMenu> + event<Render> /
-                [](back::process<Export> process_event, const Render&, STATE_export* state) {
+            *state<class state_ExportMenu> + event<event_Render> /
+                [](back::process<event_Export> process_event, const event_Render&, STATE_export* state) {
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-                    if (ImGui::Button("Export Selected")) {
-                        ImGui::OpenPopup("Export Tiles");
-                    }
+
                     bool export_tile_popup = true;
                     if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
-                        if (ImGui::Button("something something")){
-                            process_event(Export{});
-                        }
                         if (state->art || state->pro || state->pat) {
                             //TODO: need to disable this button if fallout2.exe not found
-                            static tt_arr_handle* exported_tiles = NULL;
                             if (ImGui::Button("Auto Export All")) {
 
+                                state->handle = crop_TMAP_tiles(state->offset, state->src, state);
+                                if (!state->handle) {
+                                    //TODO: what do I do on fail?
+                                }
+
+                                // rename_tiles(state->handle, state->save_name);
+
+                                process_event(event_Export{});
                             }
                             if (ImGui::Button("Close")) {
                                 ImGui::CloseCurrentPopup();
@@ -584,29 +666,104 @@ class ExportMachine {
                 }
                 ,
 
-            state<class CheckFiles>  + event<FilesFound>
-                = state<class ExportFiles>,
-            state<class CheckFiles>  + event<Render> /
+            state<class state_CheckFiles>  + event<event_Render> /
                 // render_check_files
-                [](back::process<CheckFiles> process_event, const Render&, STATE_export* state) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-                    ImGui::Text("Render Check Files");
-                    ImGui::PopStyleColor();
+                [](back::process<event_FilesNotFound, event_MatchesFound> process_event, const event_Render&, STATE_export* state) {
+                    bool FRM_LST = false;
+                    bool PRO_LST = false;
+                    bool PRO_MSG = false;
+                    bool matches = false;
+                    if (state->art) {
+                        FRM_LST = load_FRM_LST_state(state->usr_nfo, state);
+                    }
+                    if (state->pro) {
+                        PRO_LST = load_PRO_LST_state(state->usr_nfo, state);
+                        PRO_MSG = load_PRO_MSG_state(state->usr_nfo, state);
+                    }
+                    if (!FRM_LST || !PRO_LST || !PRO_MSG) {
+                        process_event(event_FilesNotFound{});
+                        ImGui::OpenPopup("Need Input!");
+                        printf("open need input\n");
+                    }
+
+                    for (int i = 0; i < state->handle->size; i++)
+                    {
+                        snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s", state->usr_nfo->default_game_path, state->handle->tile[i]);
+
+                        char* name = state->LST_path;
+                        bool match_found = false;
+                        if (io_file_exists(name)) {
+                            match_found = true;
+                        }
+
+                        if (match_found) {
+                            process_event(event_MatchesFound{});
+                        }
+                    }
                 }
                 ,
 
-            state<class CheckFiles>  + event<FilesNotFound>
-                = state<class UserInput>,
+            state<class state_CheckFiles>  + event<event_MatchesFound>
+                = state<class state_ExportFiles>,
+            state<class state_CheckFiles>  + event<event_FilesNotFound>
+                = state<class state_UserInput>,
 
-            state<class UserInput>   + event<UserExit>
-                = state<class ExportMenu>,
-            state<class UserInput>   + event<Render>
-                / render_user_input,
+            state<class state_UserInput>   + event<event_UserExit>
+                = state<class state_ExportMenu>,
 
-            state<class UserInput>   + event<UserOverwrite>
-                = state<class ExportFiles>,
-            state<class UserInput>   + event<Render>
-                / render_export_files
+            state<class state_UserInput>   + event<event_Render> /
+                // render_user_input
+                [](back::process<event_Export, event_UserOverwrite, event_UserExit> process_event, const event_Render&, STATE_export* state) {
+                    bool export_tile_popup = true;
+                    bool open_popup = false;
+                    if (ImGui::BeginPopupModal("Need Input!", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
+                        ImGui::Text("this text is not red");
+                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+                        if (state->art || state->pro || state->pat) {
+                            //TODO: need to disable this button if fallout2.exe not found
+                            ImGui::Text("Render Check Files");
+                            static tt_arr_handle* exported_tiles = NULL;
+                            if (ImGui::Button("Extract")) {
+                                open_popup = true;
+                                process_event(event_UserOverwrite{});
+                            }
+                            if (ImGui::Button("Close")) {
+                                ImGui::CloseCurrentPopup();
+                                process_event(event_UserExit{});
+                            }
+                        }
+                        ImGui::PopStyleColor();
+                        ImGui::EndPopup();
+
+                    }
+                    if (open_popup) {
+                        ImGui::OpenPopup("just a test screen");
+                    }
+                }
+                ,
+
+
+            state<class state_UserInput>   + event<event_UserOverwrite>
+                = state<class state_ExportFiles>,
+
+            state<class state_ExportFiles> + event<event_Render> /
+                [](back::process<event_Render, event_ResetState> process_event, const event_Render&, STATE_export* state) {
+                    if (ImGui::BeginPopupModal("just a test screen")) {
+                        ImGui::Text("This will be replaced by the extract process");
+                        ImGui::Text("(When I get it working that is)");
+
+                        if (ImGui::Button("return to start?")) {
+                            process_event(event_ResetState{});
+                            ImGui::CloseCurrentPopup();
+                        }
+
+
+                        ImGui::EndPopup();
+                    }
+                }
+            ,
+            state<class state_ExportFiles> + event<event_ResetState>
+                = state<class state_ExportMenu>
         );
     }
 };
@@ -614,18 +771,22 @@ class ExportMachine {
 tt_arr_handle* TMAP_tile_state_machine(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
 {
     static STATE_export state;
-    static tt_arr_handle* exported_tiles = NULL;
-    if (handle) {
-        exported_tiles = handle;
-    }
-    export_button_table_STATE(exported_tiles, usr_nfo, &state);
-
+    state.offset = offset;
+    state.src    = srfc;
     static boost::sml::sm<ExportMachine, boost::sml::process_queue<std::queue>> StateMachine{&state};
 
-    StateMachine.process_event(Render{});
+    if (handle) {
+        state.handle = handle;
+    }
+    if (ImGui::Button("Export Selected")) {
+        ImGui::OpenPopup("Export Tiles");
+    }
+    state.usr_nfo = usr_nfo;
+    export_button_table_STATE(state.handle, usr_nfo, &state);
 
-    // tt_arr_handle* test = (tt_arr_handle*)malloc(sizeof(tt_arr_handle));
-    // return test;
+    StateMachine.process_event(event_Render{});
+
+    return state.handle;
 
 }
 
