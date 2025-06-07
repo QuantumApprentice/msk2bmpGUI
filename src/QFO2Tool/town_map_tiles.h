@@ -16,6 +16,21 @@
 //           i <= last non-transparent-row;
 //           row++)
 
+struct tt_arr {
+    char     name_ptr[14];  //names can't be longer than 8 characters plus extension (plus '\0')
+    uint8_t  frm_data[80*36];
+    uint32_t row     = 0;   //might not need these
+    uint32_t col     = 0;   //might not need these
+    uint32_t tile_id = 0;   //line number where it appears in TILES.LST (proto? or art?)
+};
+
+struct tt_arr_handle {
+    int size = 0;
+    int row_cnt = 0;
+    int col_cnt = 0;
+    tt_arr tile[];
+};
+
 struct STATE_export {
     char save_name[16] = "tile_";
     char LST_path[MAX_PATH];
@@ -25,6 +40,12 @@ struct STATE_export {
         "russian",
         "etc"
     };
+
+    user_info* usr_nfo;
+    Rect* offset;
+    Surface* src;
+    tt_arr_handle* handle;
+
 
     bool art = false;
     bool pro = false;
@@ -76,20 +97,6 @@ struct town_tile {
     town_tile* next  = nullptr;
 };
 
-struct tt_arr {
-    char     name_ptr[14];  //names can't be longer than 8 characters plus extension (plus '\0')
-    uint8_t  frm_data[80*36];
-    uint32_t row     = 0;   //might not need these
-    uint32_t col     = 0;   //might not need these
-    uint32_t tile_id = 0;   //line number where it appears in TILES.LST (proto? or art?)
-};
-
-struct tt_arr_handle {
-    int size = 0;
-    int row_cnt = 0;
-    int col_cnt = 0;
-    tt_arr tile[];
-};
 
 //marking this static makes a local copy for each translation unit?
 static int tile_mask[] = {
@@ -131,5 +138,6 @@ static int tile_mask[] = {
     32, 35,     //row 36
 };
 
+tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state);
 tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite);
 void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls, int img_w, int img_h, int x, int y);
