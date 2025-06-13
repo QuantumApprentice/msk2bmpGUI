@@ -59,6 +59,7 @@ add_subdirectory(src/dependencies/GLAD            SYSTEM)
 add_subdirectory(src/dependencies/GLFW/glfw-3.4   SYSTEM)
 add_subdirectory(src/QFO2Tool                     SYSTEM)
 add_subdirectory(src/dependencies/ImFileDialog    SYSTEM)
+add_subdirectory(src/dependencies/zlib-1.3.1/     SYSTEM)
 
 #is this what allows <> around local #includes?
 target_include_directories(
@@ -144,6 +145,7 @@ target_link_libraries(
   STB
   glfw
   ImFileDialog
+  zlib
 )
 
 #this custom command copies the contents of src/resources

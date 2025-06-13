@@ -13,6 +13,7 @@
 #include "tiles_pattern.h"
 
 #include "ImGui_Warning.h"
+#include "DAT_extract.h"
 
 
 // Fallout map tile size hardcoded in engine to 350x300 pixels WxH
@@ -376,11 +377,6 @@ void rename_tiles(tt_arr_handle* handle, char* name)
 
 
 
-tt_arr_handle* export_TMAP_tiles_POPUP_STATE(user_info* usr_nfo, Surface* srfc, Rect* offset, STATE_export* which)
-{
-    
-}
-
 void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo, STATE_export* state)
 {
     if (ImGui::BeginTable("auto_export", 2))
@@ -528,8 +524,6 @@ bool load_FRM_LST_state(user_info* usr_nfo, STATE_export* state)
     usr_nfo->game_files.FRM_TILES_LST = FRM_tiles_lst;
     return true;
 
-
-
 }
 
 bool load_PRO_LST_state(user_info* usr_nfo, STATE_export* state)
@@ -554,8 +548,6 @@ bool load_PRO_LST_state(user_info* usr_nfo, STATE_export* state)
     usr_nfo->game_files.PRO_TILES_LST = old_PRO_LST;
     return true;
 
-    // state->loaded_PRO_LST = load_PRO_tiles_LST(usr_nfo, state);
-    // state->loaded_PRO_MSG = load_PRO_tiles_MSG(usr_nfo, state);
 }
 
 bool load_PRO_MSG_state(user_info* usr_nfo, STATE_export* state)
@@ -606,32 +598,18 @@ class event_FilesNotFound {};
 class event_UserExit {};
 class event_UserOverwrite {};
 class event_ResetState {};
+class event_ShowError{};
 //states
 class state_ExportMenu {};
 class state_CheckFiles {};
 class state_UserInput {};
 class state_ExportFiles {};
+class state_ErrorPopup {};
 
 class ExportMachine {
     public:
     auto operator()() const {
         using namespace boost::sml;
-
-        // auto render_check_files = [](const event_Render&) {
-        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-        //     ImGui::Text("Render Check Files");
-        //     ImGui::PopStyleColor();
-        // };
-        // auto render_user_input  = [](const event_Render&) {
-        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-        //     ImGui::Text("Render User Input");
-        //     ImGui::PopStyleColor();
-        // };
-        // auto render_export_files = [](const event_Render&) {
-        //     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
-        //     ImGui::Text("Render Export Files");
-        //     ImGui::PopStyleColor();
-        // };
 
         return make_transition_table(
             *state<class state_ExportMenu> + event<event_Export>
@@ -647,14 +625,13 @@ class ExportMachine {
                             //TODO: need to disable this button if fallout2.exe not found
                             if (ImGui::Button("Auto Export All")) {
 
+                                // rename_tiles(state->handle, state->save_name);
                                 state->handle = crop_TMAP_tiles(state->offset, state->src, state);
                                 if (!state->handle) {
                                     //TODO: what do I do on fail?
+                                } else {
+                                    process_event(event_Export{});
                                 }
-
-                                // rename_tiles(state->handle, state->save_name);
-
-                                process_event(event_Export{});
                             }
                             if (ImGui::Button("Close")) {
                                 ImGui::CloseCurrentPopup();
@@ -672,7 +649,6 @@ class ExportMachine {
                     bool FRM_LST = false;
                     bool PRO_LST = false;
                     bool PRO_MSG = false;
-                    bool matches = false;
                     if (state->art) {
                         FRM_LST = load_FRM_LST_state(state->usr_nfo, state);
                     }
@@ -683,16 +659,15 @@ class ExportMachine {
                     if (!FRM_LST || !PRO_LST || !PRO_MSG) {
                         process_event(event_FilesNotFound{});
                         ImGui::OpenPopup("Need Input!");
-                        printf("open need input\n");
                     }
 
                     for (int i = 0; i < state->handle->size; i++)
                     {
                         snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s", state->usr_nfo->default_game_path, state->handle->tile[i]);
+                        char* path_case = io_path_check(state->LST_path);
 
-                        char* name = state->LST_path;
                         bool match_found = false;
-                        if (io_file_exists(name)) {
+                        if (io_file_exists(path_case)) {
                             match_found = true;
                         }
 
@@ -717,27 +692,38 @@ class ExportMachine {
                     bool export_tile_popup = true;
                     bool open_popup = false;
                     if (ImGui::BeginPopupModal("Need Input!", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
-                        ImGui::Text("this text is not red");
-                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
                         if (state->art || state->pro || state->pat) {
+                            ImGui::Text("Unable to find:");
+                            if (!state->usr_nfo->game_files.FRM_TILES_LST) {
+                                ImGui::Text("art\\tiles\\TILES.LST");
+                            }
+                            if (state->pro) {
+                                if (!state->usr_nfo->game_files.PRO_TILES_LST) {
+                                    ImGui::Text("proto\\tiles\\TILES.LST");
+                                }
+                                if (!state->usr_nfo->game_files.PRO_TILE_MSG) {
+                                    ImGui::Text("text\\english\\Game\\pro_tile.msg");
+                                }
+                            }
+
+                            ImGui::Text("Extract from the relevant DAT file?\n");
+
+
                             //TODO: need to disable this button if fallout2.exe not found
-                            ImGui::Text("Render Check Files");
-                            static tt_arr_handle* exported_tiles = NULL;
-                            if (ImGui::Button("Extract")) {
-                                open_popup = true;
+                            if (ImGui::Button("Extract from DAT")) {
                                 process_event(event_UserOverwrite{});
+                            }
+                            ImGui::Text("Create new from scratch?\n");
+                            if (ImGui::Button("Create blank")) {
+
+
                             }
                             if (ImGui::Button("Close")) {
                                 ImGui::CloseCurrentPopup();
                                 process_event(event_UserExit{});
                             }
                         }
-                        ImGui::PopStyleColor();
                         ImGui::EndPopup();
-
-                    }
-                    if (open_popup) {
-                        ImGui::OpenPopup("just a test screen");
                     }
                 }
                 ,
@@ -747,22 +733,66 @@ class ExportMachine {
                 = state<class state_ExportFiles>,
 
             state<class state_ExportFiles> + event<event_Render> /
-                [](back::process<event_Render, event_ResetState> process_event, const event_Render&, STATE_export* state) {
-                    if (ImGui::BeginPopupModal("just a test screen")) {
-                        ImGui::Text("This will be replaced by the extract process");
-                        ImGui::Text("(When I get it working that is)");
+                [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
+                    if (tt_file_DAT_extract(state->usr_nfo, state)) {
+                        ImGui::OpenPopup("Success! Files Extracted");
+                        process_event(event_ShowError{});
+                    } else {
+                        ImGui::OpenPopup("Error: Unable to Extract Files");
+                        process_event(event_ShowError{});
+                    }
+                }
+                ,
+            state<class state_ExportFiles> + event<event_ShowError>
+                = state<class state_ErrorPopup>,
 
-                        if (ImGui::Button("return to start?")) {
-                            process_event(event_ResetState{});
+            state<class state_ErrorPopup> + event<event_Render> /
+                [](back::process<event_Render, event_ResetState, event_ShowError> process_event, const event_Render&, STATE_export* state) {
+
+                    if (ImGui::BeginPopupModal("Success! Files Extracted")) {
+                        char* ptr = state->extracted;
+
+                        int i = 0;
+                        while (ptr[i] != '\0' && i < 4096)
+                        {
+                            ImGui::Text(&ptr[i]);
+                            i += strlen(&ptr[i]) + 1;
+                        }
+
+                        ImGui::Text("Extracted from %s.dat");
+
+                        if (ImGui::Button("Close")) {
                             ImGui::CloseCurrentPopup();
                         }
 
 
                         ImGui::EndPopup();
                     }
+
+                    if (ImGui::BeginPopupModal("Error: Unable to Extract Files")) {
+
+                        ImGui::Text("Unable to extract:");
+                        if (!state->usr_nfo->game_files.FRM_TILES_LST) {
+                            ImGui::Text("art\\tiles\\TILES.LST");
+                        }
+                        if (state->pro) {
+                            if (!state->usr_nfo->game_files.PRO_TILES_LST) {
+                                ImGui::Text("proto\\tiles\\TILES.LST");
+                            }
+                            if (!state->usr_nfo->game_files.PRO_TILE_MSG) {
+                                ImGui::Text("text\\english\\Game\\pro_tile.msg");
+                            }
+                        }
+
+                        if (ImGui::Button("return to start?")) {
+                            process_event(event_ResetState{});
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
+                    }
                 }
-            ,
-            state<class state_ExportFiles> + event<event_ResetState>
+                ,
+            state<class state_ErrorPopup> + event<event_ResetState>
                 = state<class state_ExportMenu>
         );
     }

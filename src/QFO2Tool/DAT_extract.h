@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include "platform_io.h"
+#include "Load_Settings.h"
+#include "town_map_tiles.h"
 
 struct DAT_file {
     char     name[MAX_PATH];
@@ -11,7 +13,7 @@ struct DAT_file {
 struct DIR_entry {
     char*   path_ptr;
     int32_t path_size;
-    uint8_t type;
+    uint8_t packed;
     int32_t unpack_size;
     int32_t packed_size;
     int32_t offset;
@@ -20,6 +22,10 @@ struct DIR_entry {
 
 //generic buffer struct?
 struct Buffer {
-    int      file_size;
+    int32_t  file_size;
     uint8_t* file_data;
 };
+
+// DAT_file load_dat_file(char* file_name, char* game_path);
+bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state);
+bool extract_from_DAT(char* file_name, char* dat_name, user_info* usr_nfo, DAT_file* dat_file);

@@ -135,7 +135,7 @@ int main(int argc, char** argv)
     // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Quantum's Fallout 2 FRM Editor", nullptr, nullptr);
     if (window == nullptr) {return 1;}
 
     glfwSetKeyCallback(window, key_callback);

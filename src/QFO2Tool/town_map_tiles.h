@@ -46,6 +46,7 @@ struct STATE_export {
     Surface* src;
     tt_arr_handle* handle;
 
+    char extracted[4096];
 
     bool art = false;
     bool pro = false;
