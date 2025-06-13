@@ -463,6 +463,21 @@ bool io_make_dir(char* dir_path)
     return false;
 }
 
+//swaps all '\\' slashes for '/' slashes
+//input string needs '\0' terminating character
+bool io_swap_slash(char* path_buff)
+{
+    int i = 0;
+    while (path_buff[i] != '\0')
+    {
+        if (path_buff[i] == '\\') {
+            path_buff[i] = PLATFORM_SLASH;      //for linux '/'
+        }
+        i++;
+    }
+    return true;
+}
+
 
 #endif
 
@@ -472,7 +487,7 @@ bool io_create_path_from_file(char* file_path)
 {
     // char* ptr = strrchr(file_path, PLATFORM_SLASH);
     //TODO: figure out how to get PLATFORM_SLASH back in here for windows?
-    char* ptr = strrchr(file_path, '/');
+    char* ptr = strrchr(file_path, PLATFORM_SLASH);
     char back = ptr[0];
     ptr[0] = '\0';
     if (!io_isdir(file_path)) {
@@ -566,6 +581,9 @@ char* io_load_txt_file(char* full_path)
     return text_file_buff;
 }
 
+//writes a string (txt) onto disk at destination (path)
+//takes strlen(txt) to determine length to write (needs '\0' terminator)
+//returns true on success
 bool io_save_txt_file(char* path, char* txt)
 {
     if (path == nullptr) {return false;}
@@ -577,7 +595,8 @@ bool io_save_txt_file(char* path, char* txt)
         printf("Error: io_save_txt_file() : unable to open file to write to: %d\n", __LINE__);
         return false;
     }
-    fwrite(txt, strlen(txt), 1, txt_file);
+    int size = fwrite(txt, 1, strlen(txt), txt_file);
+    printf("size of %s written: %d\n", path, size);
     fclose(txt_file);
 
     return true;
