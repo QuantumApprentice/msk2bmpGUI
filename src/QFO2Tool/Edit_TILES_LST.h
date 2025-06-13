@@ -25,3 +25,5 @@ bool load_FRM_tiles_LST(user_info* usr_nfo, export_state* cur_state);
 void set_false(export_state* cur_state);
 char* check_FRM_LST_names(char* tiles_lst, tt_arr_handle* handle, export_state* state);
 void append_FRM_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_state* state, bool auto_export);
+
+bool game_path_menu(user_info* usr_nfo, char* FObuff);
