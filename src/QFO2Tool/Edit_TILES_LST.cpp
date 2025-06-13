@@ -456,7 +456,7 @@ bool append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle, export_sta
 }
 
 //Fallout 2 source folder location menu
-void game_path_menu(user_info* usr_nfo, char* FObuff)
+bool game_path_menu(user_info* usr_nfo, char* FObuff)
 {
     static bool no_exe = false;
     set_game_path_POPUP(usr_nfo, FObuff);
@@ -481,6 +481,8 @@ void game_path_menu(user_info* usr_nfo, char* FObuff)
     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
     ImGui::Text(error_txt);
     ImGui::PopStyleColor();
+
+    return no_exe;
 }
 
 //makes a char* list of tilenames from handle

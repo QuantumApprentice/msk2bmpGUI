@@ -209,7 +209,6 @@ void draw_TMAP_tiles(user_info* usr_nfo, image_data *img_data,
                     uv_l, uv_t, uv_r, uv_b);
 
                 // ImGui::ShowMetricsWindow();
-
                 // printf("position: %d,%d\n", Left.x, Left.y);
             }
 
@@ -239,9 +238,10 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
             "Is checked for the names of these tiles\n"
             "and then appended to only if they\n"
             "don't already exist.\n\n"
-            "(NOTE: Currently can't load\n"
-            "TILES.LST from master.dat\n"
-            "but should be able too in the future)"
+            //TODO: delete this commented stuff, it works now
+            // "(NOTE: Currently can't load\n"
+            // "TILES.LST from master.dat\n"
+            // "but should be able too in the future)"
         );
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
@@ -320,6 +320,7 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
             ImGui::EndPopup();
         }
         // Popups: Always center this window when appearing
+        //TODO: for some reason the centering doesn't work yet
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Proto Info", NULL, ImGuiWindowFlags_MenuBar))
@@ -332,6 +333,7 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
             ImGui::EndPopup();
         }
         // Always center this window when appearing? does this even work?
+        //TODO: for some reason the centering doesn't work yet
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         if (ImGui::BeginPopupModal("Pattern File", NULL, ImGuiWindowFlags_MenuBar))
         {
@@ -376,7 +378,6 @@ void rename_tiles(tt_arr_handle* handle, char* name)
 
 
 
-
 void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo, STATE_export* state)
 {
     if (ImGui::BeginTable("auto_export", 2))
@@ -396,9 +397,10 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
             "Is checked for the names of these tiles\n"
             "and then appended to only if they\n"
             "don't already exist.\n\n"
-            "(NOTE: Currently can't load\n"
-            "TILES.LST from master.dat\n"
-            "but should be able too in the future)"
+            //TODO: delete commented stuff, can now extract
+            // "(NOTE: Currently can't load\n"
+            // "TILES.LST from master.dat\n"
+            // "but should be able too in the future)"
         );
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
@@ -432,7 +434,7 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
         //checkbox 2
         ImGui::Checkbox("Auto Export Protos", &state->pro);
         ImGui::SetItemTooltip(
-            "Needs FRMs to be already listed\n"
+            "Needs FRMs to already be listed\n"
             "in art/tiles/TILES.LST\n"
         );
         if (state->pro) {
@@ -528,7 +530,6 @@ bool load_FRM_LST_state(user_info* usr_nfo, STATE_export* state)
 
 bool load_PRO_LST_state(user_info* usr_nfo, STATE_export* state)
 {
-
     char* LST_path = state->LST_path;
     snprintf(LST_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", usr_nfo->default_game_path);
     char* actual_path = io_path_check(LST_path);
@@ -538,7 +539,7 @@ bool load_PRO_LST_state(user_info* usr_nfo, STATE_export* state)
 
     char* old_PRO_LST = io_load_txt_file(LST_path);
     if (old_PRO_LST == nullptr) {
-        printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+        printf("Unable to load /proto/tiles/TILES.LST...\n");
         return false;
     }
 
@@ -568,7 +569,7 @@ bool load_PRO_MSG_state(user_info* usr_nfo, STATE_export* state)
         // ImGui::OpenPopup("Missing Files");
 
 
-        printf("Unable to load /proto/tiles/TILES.LST...\nCreating new one...\n");
+        printf("Unable to load /proto/tiles/TILES.LST...\n");
         return false;
     }
 
@@ -596,7 +597,7 @@ class event_Export {};
 class event_MatchesFound {};
 class event_FilesNotFound {};
 class event_UserExit {};
-class event_UserOverwrite {};
+class event_UserExtract {};
 class event_ResetState {};
 class event_ShowError{};
 //states
@@ -617,14 +618,39 @@ class ExportMachine {
 
             *state<class state_ExportMenu> + event<event_Render> /
                 [](back::process<event_Export> process_event, const event_Render&, STATE_export* state) {
-                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+                    //this state is running when preview tiles window is open
+                    //  but not when actually exporting
 
                     bool export_tile_popup = true;
                     if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
+
+
+                            //input name
+                        ImGui::Text(
+                            "In order to get new FRMs to appear in the Fallout 2\n"
+                            "mapper (mapper2.exe), new entries must be made in\n\n"
+                            "   Fallout 2/data/art/tiles/TILES.LST\n\n"
+                            "For this to work, please provide the path to\n"
+                            "fallout2.exe in your modded Fallout 2 folder,\n"
+                            "and have this file extracted to its\n"
+                            "appropriate location.\n"
+                        );
+                        //fallout2.exe check
+                        //TODO: disable the "Auto Export All" button when fallout2.exe not found
+                        static char FObuff[MAX_PATH] = "";
+                        bool found = game_path_menu(state->usr_nfo, FObuff);
+
+
+
+
+
                         if (state->art || state->pro || state->pat) {
-                            //TODO: need to disable this button if fallout2.exe not found
+                            if (found) {
+                                ImGui::BeginDisabled();
+                            }
                             if (ImGui::Button("Auto Export All")) {
 
+                                //TODO: delete? are we using rename_tiles()?
                                 // rename_tiles(state->handle, state->save_name);
                                 state->handle = crop_TMAP_tiles(state->offset, state->src, state);
                                 if (!state->handle) {
@@ -633,13 +659,17 @@ class ExportMachine {
                                     process_event(event_Export{});
                                 }
                             }
+                            if (found) {
+                                ImGui::EndDisabled();
+                            }
                             if (ImGui::Button("Close")) {
                                 ImGui::CloseCurrentPopup();
                             }
                         }
+
+
                         ImGui::EndPopup();
                     }
-                    ImGui::PopStyleColor();
                 }
                 ,
 
@@ -688,7 +718,7 @@ class ExportMachine {
 
             state<class state_UserInput>   + event<event_Render> /
                 // render_user_input
-                [](back::process<event_Export, event_UserOverwrite, event_UserExit> process_event, const event_Render&, STATE_export* state) {
+                [](back::process<event_Export, event_UserExtract, event_UserExit> process_event, const event_Render&, STATE_export* state) {
                     bool export_tile_popup = true;
                     bool open_popup = false;
                     if (ImGui::BeginPopupModal("Need Input!", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
@@ -706,12 +736,12 @@ class ExportMachine {
                                 }
                             }
 
-                            ImGui::Text("Extract from the relevant DAT file?\n");
+                            ImGui::Text("Extract from the relevant DAT file and append?\n");
 
 
                             //TODO: need to disable this button if fallout2.exe not found
                             if (ImGui::Button("Extract from DAT")) {
-                                process_event(event_UserOverwrite{});
+                                process_event(event_UserExtract{});
                             }
                             ImGui::Text("Create new from scratch?\n");
                             if (ImGui::Button("Create blank")) {
@@ -729,13 +759,13 @@ class ExportMachine {
                 ,
 
 
-            state<class state_UserInput>   + event<event_UserOverwrite>
+            state<class state_UserInput>   + event<event_UserExtract>
                 = state<class state_ExportFiles>,
 
             state<class state_ExportFiles> + event<event_Render> /
                 [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
                     if (tt_file_DAT_extract(state->usr_nfo, state)) {
-                        ImGui::OpenPopup("Success! Files Extracted");
+                        ImGui::OpenPopup("Number 5 is Alive! Files Extracted!");
                         process_event(event_ShowError{});
                     } else {
                         ImGui::OpenPopup("Error: Unable to Extract Files");
@@ -743,13 +773,14 @@ class ExportMachine {
                     }
                 }
                 ,
+
             state<class state_ExportFiles> + event<event_ShowError>
                 = state<class state_ErrorPopup>,
 
             state<class state_ErrorPopup> + event<event_Render> /
                 [](back::process<event_Render, event_ResetState, event_ShowError> process_event, const event_Render&, STATE_export* state) {
 
-                    if (ImGui::BeginPopupModal("Success! Files Extracted")) {
+                    if (ImGui::BeginPopupModal("Number 5 is Alive! Files Extracted!")) {
                         char* ptr = state->extracted;
 
                         int i = 0;

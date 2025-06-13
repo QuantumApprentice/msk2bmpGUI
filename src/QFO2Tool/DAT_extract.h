@@ -28,4 +28,4 @@ struct Buffer {
 
 // DAT_file load_dat_file(char* file_name, char* game_path);
 bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state);
-bool extract_from_DAT(char* file_name, char* dat_name, user_info* usr_nfo, DAT_file* dat_file);
+// bool extract_from_DAT(char* file_name, char* dat_name, user_info* usr_nfo, DAT_file* dat_file, Buffer* buff);
