@@ -9,7 +9,8 @@
 #include "ImGui_Warning.h"
 #include "Proto_Files.h"
 
-void generate_new_tile_list_arr(char* name, tt_arr_handle* handle)
+//TODO: delete? not used for some reason
+void assign_tile_names_arr(char* name, tt_arr_handle* handle)
 {
     tt_arr* node = handle->tile;
     int counter = 0;
@@ -145,6 +146,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
 
 #pragma region                                                         popup
     if (buff_size < 1) {
+        //TODO: this needs testing
         //if there are no nodes (or none with viable names)
         ImGui::OpenPopup("TILES.LST Unmodified");
         return nullptr;
@@ -161,7 +163,9 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
             continue;
         }
 
-        if (!(match_buff[tile_num/8] & 1 << shift_ctr)) {
+        //if name is not already on the list
+        //  add it to the list here
+        if (!(match_buff[tile_num/8] & (1 << shift_ctr))) {
             size_t copy_len = strlen(node->name_ptr);
             memcpy(c, node->name_ptr, copy_len);
             //TODO: delete after testing
@@ -171,7 +175,6 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
             c[copy_len+1] = '\n';
             c += copy_len+2;
 
-            node->tile_id = tile_num;
         }
 
         shift_ctr++;
@@ -221,7 +224,148 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_stat
     return new_tile_LST;
 }
 
+char* _check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle)
+{
+    int num_tiles = 0;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tt_arr* node = &handle->tile[i];
+        if (node->tile_id != 1) {
+            num_tiles++;
+        }
+    }
 
+    int tiles_lst_len = strlen(old_tiles_LST);
+    uint8_t shift_ctr = 0;
+
+    uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
+    char* strt       = old_tiles_LST;           //keeps track of first letter of name on TILES.LST
+
+    int line_ctr = 0;                       //.LST file line numbers are 1-indexed (not 0-indexed)
+    int match_ctr = 0;
+    tt_arr* tiles = handle->tile;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tt_arr* node = &tiles[i];
+        if (node->tile_id == -1) {
+            continue;
+        }
+
+        line_ctr = 0;                       //.LST file line numbers are 1-indexed (not 0-indexed)
+        for (int char_ctr = 0; char_ctr < tiles_lst_len; char_ctr++)
+        {
+            if (old_tiles_LST[char_ctr] != '\n' && old_tiles_LST[char_ctr] != '\0') {
+                continue;
+            }
+            line_ctr++;
+            //compare first character before full string
+            if (tolower(strt[0]) != tolower(node->name_ptr[0])) {
+                strt = &old_tiles_LST[char_ctr+1];
+                continue;
+            }
+            //TODO: replace with io_strncasecmp()? or at least strncsecmp()?
+            if (strncmp(strt, node->name_ptr, strlen(node->name_ptr)) != 0) {
+                strt = &old_tiles_LST[char_ctr+1];
+                continue;
+            }
+            node->tile_id = line_ctr;
+            //identify this node as having a duplicate match
+            matches[match_ctr/8] |= 1 << shift_ctr;
+            break;
+        }
+        //increment all the counters
+        match_ctr++;
+        shift_ctr++;
+        if (shift_ctr >= 8) {
+            shift_ctr = 0;
+        }
+        strt = old_tiles_LST;
+    }
+
+    //assign tile_id's that haven't already been assigned
+    //  id's are line number on FRM LST file
+    for (int i = 0; i < handle->size; i++)
+    {
+        tt_arr* tile = &tiles[i];
+        if (tiles[i].tile_id == 0) {
+            tiles[i].tile_id = ++line_ctr;
+        }
+    }
+
+    //TODO: maybe pull this function out to the surface?
+    //      would make the whole process flatter,
+    //      but its a pita to refactor
+    //generate new list from remaining nodes in linked_lst
+    char* cropped_list = nullptr;
+    cropped_list = make_FRM_tile_LST(handle, matches);
+
+    free(matches);
+    return cropped_list;
+}
+
+char* _append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle)
+{
+    //search old_FRM_LST (TILES.LST) for matching names from tiles in handle
+    char* new_FRM_LST = _check_FRM_LST_names(old_FRM_LST, handle);
+    if (new_FRM_LST == nullptr) {
+        //either matches found or no new names added to LST file
+        return old_FRM_LST;
+    }
+
+    //append new_FRM_LST to the end of old_FRM_LST
+    //in a new buffer large enough to fit both
+    int old_LST_size    = strlen(old_FRM_LST);
+    int new_LST_size    = strlen(new_FRM_LST);
+    int final_size      = old_LST_size + new_LST_size + 1;      //+1 for null char
+    char* final_FRM_LST = (char*)malloc(final_size);
+    snprintf(final_FRM_LST, final_size, "%s%s", old_FRM_LST, new_FRM_LST);
+
+    return final_FRM_LST;
+}
+
+//Create new art TILES.LST then append to old art TILES.LST
+//  full LST is then attached to usr_nfo.game_files.FRM_TILES_LST
+//  On fail returns false, game_files.FRM_TILES_LST not changed
+bool _append_TMAP_tiles_LST(user_info* usr_nfo, tt_arr_handle* handle)
+{
+    char* game_path = usr_nfo->default_game_path;
+
+    //append new tiles.LST to old tiles.LST in memory
+    char* FRM_tiles_lst = usr_nfo->game_files.FRM_TILES_LST;
+    char* new_tiles_lst = _append_FRM_tiles_LST(FRM_tiles_lst, handle);
+    if (new_tiles_lst == FRM_tiles_lst) {
+        return true;
+    }
+
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/art/tiles/TILES.LST", game_path);    //town map tiles.lst location
+    char* actual_path = io_path_check(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    //write combined lists out
+    bool success = io_backup_file(save_path, nullptr);
+    success = io_save_txt_file(save_path, new_tiles_lst);
+    if (!success) {
+        //TODO: need to verify this works
+        set_popup_warning(
+            "[ERROR] append_TMAP_tiles_LST()"
+            "Unable to append to FRM TILES.LST\n"
+        );
+        free(new_tiles_lst);
+        return false;
+    }
+
+    if (usr_nfo->game_files.FRM_TILES_LST) {
+        free(usr_nfo->game_files.FRM_TILES_LST);
+    }
+    usr_nfo->game_files.FRM_TILES_LST = new_tiles_lst;
+
+    return true;
+}
+
+//TODO: delete below, only kept this temporarily
 char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_state* state)
 {
     bool append_new_only = state->auto_export;

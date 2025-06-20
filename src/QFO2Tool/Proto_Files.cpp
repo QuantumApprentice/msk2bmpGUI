@@ -98,6 +98,7 @@ char* make_PRO_tiles_LST(tt_arr_handle* head, uint8_t* match_buff_src)
 
     //if there are no nodes (or none with viable names)
     if (total_size < 1) {
+        //TODO: log this & make sure popup opens?
         ImGui::OpenPopup("TILES.LST Unmodified");
         return nullptr;
     }
@@ -323,6 +324,7 @@ void append_to_PRO_LST(export_state* state)
     }
 }
 
+//TODO: delete?
 void fallout2_exe_NOT_FOUND(char* FObuff)
 {
     ImGui::Text(
@@ -502,7 +504,7 @@ char* make_PRO_tile_MSG(proto_info* info, int tile_id)
 }
 
 //append new protos to list in memory
-char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG, export_state* state)
+char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG)
 {
     //TODO: make a function that searches old_PRO_MSG
     //      for matching entries so those can be replaced
@@ -523,6 +525,80 @@ char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG, export_s
     return final_PRO_LST;
 }
 
+//TODO: need to match key/value pairs and make sure no duplicates happen
+//      also maybe replace when duplicate detected?
+bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char* language)
+{
+    char* FRM_tiles_LST = usr_nfo->game_files.FRM_TILES_LST;
+    if (FRM_tiles_LST == NULL) {
+        //need /art/tiles/TILES.LST in order to
+        //  get line numbers for proto tile_id
+        return false;
+    }
+    char* game_path = usr_nfo->default_game_path;
+    if (game_path[0] == '\0') {
+        return false;
+    }
+
+    proto_info info;
+    info.name        = input_name();
+    info.description = input_desc();
+
+    if (info.name[0] == '\0' && info.description[0] == '\0') {
+        //append to pro_tile.msg if either a name
+        //or a description has been provided
+        return true;
+    }
+
+    assign_tile_id(handle, FRM_tiles_LST);
+
+    //look for the first non-blank tile and assign that to *tile
+    tt_arr* tile = NULL;
+    for (int i = 0; i < handle->size; i++)
+    {
+        tile = &handle->tile[i];
+        if (tile->tile_id != -1) {
+            break;
+        }
+    }
+
+    if (tile == NULL) {
+        //TODO: popup warning saying no tiles exported
+        //      (same in save_NEW_PRO_tile_MSG())
+        return false;
+    }
+
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
+
+    char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
+
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, language);
+    char* actual_path = io_path_check(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    bool success = io_backup_file(save_path, nullptr);
+    success      = io_save_txt_file(save_path, final_PRO_tile_MSG);
+    if (!success) {
+        free(new_PRO_tile_MSG);
+        free(final_PRO_tile_MSG);
+        return false;
+    }
+
+    // store new_PRO_tile_MSG;
+    if (usr_nfo->game_files.PRO_TILE_MSG) {
+        free(usr_nfo->game_files.PRO_TILE_MSG);
+    }
+    usr_nfo->game_files.PRO_TILE_MSG = final_PRO_tile_MSG;
+    free(new_PRO_tile_MSG);
+
+    return true;
+}
+
+
+//TODO: delete below, replaced by _append_PRO_tile_MSG()
 bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state* state)
 {
     state->append_PRO_MSG = false;
@@ -558,6 +634,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
             break;
         }
     }
+    //TODO: delete this?
     // //I dunno...what do you think?
     // //     easy to read? or trash?
     // //     also doesn't handle the case where all tiles are blank
@@ -575,7 +652,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
     char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
 
 
-    char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG, state);
+    char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, state->language[0]);
@@ -1133,7 +1210,7 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
 }
 
 //append new protos to list in memory
-char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, export_state* state)
+char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head)
 {
     char* new_PRO_LST = check_PRO_LST_names(old_PRO_LST, head);
     if (new_PRO_LST == nullptr) {
@@ -1157,13 +1234,49 @@ char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head, export_state*
 //this assumes usr_info->default_game_path has been set
 //and art/tiles/TILES.LST has been loaded up correctly
 //append to data/proto/tiles/TILES.LST
+bool _append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head)
+{
+    char* game_path   = usr_nfo->default_game_path;
+    char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
+    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head);
+
+    char save_path[MAX_PATH];
+    snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);
+    char* actual_path = io_path_check(save_path);
+    if (actual_path) {
+        strncpy(save_path, actual_path, MAX_PATH);
+    }
+
+    //backup and save new list
+    bool success = io_backup_file(save_path, nullptr);
+    success = io_save_txt_file(save_path, new_PRO_LST);
+    if (!success) {
+        free(new_PRO_LST);
+        return false;
+    }
+
+    if (new_PRO_LST != usr_nfo->game_files.PRO_TILES_LST) {
+        free(usr_nfo->game_files.PRO_TILES_LST);
+    }
+    usr_nfo->game_files.PRO_TILES_LST = new_PRO_LST;
+
+    return true;
+}
+
+//TODO: delete below, replaced by _append_TMAP_PRO_tiles_LST()
+//##### I feel like this is a stupid way to write this
+//##### but it's better than it was,
+//##### and I don't know a better way yet
+//this assumes usr_info->default_game_path has been set
+//and art/tiles/TILES.LST has been loaded up correctly
+//append to data/proto/tiles/TILES.LST
 bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_state* state)
 {
     state->append_PRO_LST = false;
 
     char* game_path   = usr_nfo->default_game_path;
     char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
-    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head, state);
+    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);

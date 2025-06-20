@@ -34,9 +34,11 @@ struct tt_arr_handle {
 struct STATE_export {
     char save_name[16] = "tile_";
     char LST_path[MAX_PATH];
-    const char* language[4] = {
+    //TODO: let the user choose the language
+    const char* language[5] = {
         "english",
         "french",
+        "german",
         "russian",
         "etc"
     };
@@ -56,10 +58,11 @@ struct STATE_export {
 struct export_state {
     char save_name[16] = "tile_";
     char LST_path[MAX_PATH];
-    const char* language[4] = {
+    const char* language[5] = {
         "english",
         "french",
         "russian",
+        "german",
         "etc"
     };
     bool auto_export    = false;

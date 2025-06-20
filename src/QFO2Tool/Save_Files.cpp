@@ -1170,6 +1170,7 @@ void save_folder_dialog(user_info* usr)
 tt_arr_handle* export_TMAP_tiles_POPUP(user_info* usr_info, Surface* srfc, Rect* offset, export_state* state)
 {
     bool auto_export = state->art;
+    //TODO: delete this comment? no longer bothering with asking
     //TODO: re-implement auto_export_question() with ImFileDialog()
     // bool success = auto_export_question(usr_info, usr_info->exe_directory, save_path, TILE);
     // if (!success) {

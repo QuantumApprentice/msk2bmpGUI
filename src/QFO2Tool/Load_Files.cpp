@@ -502,6 +502,7 @@ bool prep_extension(LF *F_Prop, user_info *usr_info, const char *file_name)
     return true;
 }
 
+//TODO: delete?
 void game_path_NOT_set_POPUP()
 {
     if (ImGui::BeginPopupModal("Fallout2.exe Not Found")) {
@@ -540,36 +541,15 @@ void set_game_path_POPUP(user_info* usr_nfo, char* FObuff)
 {
     if (ifd::FileDialog::Instance().IsDone("Fallout2exe_path")) {
         if (ifd::FileDialog::Instance().HasResult()) {
-//TODO: clean this up
-//             NATIVE_STRING_TYPE* fallout2_exe;
-//             NATIVE_STRING_TYPE* fallout2HR_exe;
-// #ifdef QFO2_WINDOWS
-//             fallout2_exe = L"fallout2.exe";
-//             fallout2HR_exe = L"fallout2HR.exe";
-// #elif defined(QFO2_LINUX)
-//             fallout2_exe = "fallout2.exe";
-//             fallout2HR_exe = "fallout2HR.exe";
-// #endif
 
             std::filesystem::path game_path = ifd::FileDialog::Instance().GetResult();
             std::filesystem::path filename = game_path.filename();
-
-            // if (io_strncasecmp(filename.c_str(), fallout2_exe, 13)
-            // &&  io_strncasecmp(filename.c_str(), fallout2HR_exe, 15)) {
-
-            //     ImGui::OpenPopup("Fallout2.exe Not Found");
-            //     ifd::FileDialog::Instance().Close();
-            //     return;
-            // }
 
             if (std::filesystem::exists(game_path)) {
                 if (FObuff) {
                     FObuff[0] = '\0';
                 }
                 strncpy(usr_nfo->default_game_path, game_path.parent_path().u8string().c_str(), MAX_PATH);
-                // ImGui::OpenPopup("Fallout2.exe Found");
-            } else {
-                // ImGui::OpenPopup("Fallout2.exe Not Found");
             }
         }
         ifd::FileDialog::Instance().Close();
