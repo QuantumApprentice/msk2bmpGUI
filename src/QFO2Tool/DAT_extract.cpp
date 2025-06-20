@@ -6,6 +6,7 @@
 #include "DAT_extract.h"
 #include "Load_Settings.h"
 #include "Edit_TILES_LST.h"
+#include "Proto_Files.h"
 
 bool extract_from_DAT(const char* file_name, const char* dat_name, user_info* usr_nfo, DAT_file* dat_file, Buffer* buff);
 
@@ -96,32 +97,9 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.FRM_TILES_LST = DAT_to_txt(&buff);
-
-
-
-
-
-
-
-
-        //append to art/tiles/TILES.LST
-        // success = append_TMAP_tiles_LST(usr_nfo, state->handle, state);
-        if (!success) {
-            // set_false(state);
-            return false;
-        }
-
-
-
-
-
-
-
-
-
-
-
+        _append_TMAP_tiles_LST(usr_nfo, state->handle);
     }
+
     if (usr_nfo->game_files.PRO_TILES_LST == NULL && state->pro == true) {
         append(state->extracted, "proto\\TILES\\TILES.LST");
         success = extract_from_DAT("proto\\TILES\\TILES.LST", "master", usr_nfo, &dat_file, &buff);
@@ -129,7 +107,9 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.PRO_TILES_LST = DAT_to_txt(&buff);
+        _append_TMAP_PRO_tiles_LST(usr_nfo, state->handle);
     }
+
     if (usr_nfo->game_files.PRO_TILE_MSG == NULL && state->pro == true) {
         //TODO: need to store language in state?
         append(state->extracted, "text\\english\\Game\\pro_tile.msg");
@@ -138,6 +118,8 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.PRO_TILE_MSG = DAT_to_txt(&buff);
+        //TODO: let the user choose the language
+        _append_PRO_tile_MSG(usr_nfo, state->handle, state->language[0]);
     }
 
     free(dat_file.data);
@@ -218,6 +200,7 @@ bool extract_from_DAT(const char* file_name, const char* dat_name, user_info* us
 
         // printf("****%s\n", entry.path_ptr);
 
+        memset(buff->file_data, 0, buff->file_size);
         // ulong temp = BUFF_size;
         buff->file_size = BUFF_size;
 
@@ -229,6 +212,7 @@ bool extract_from_DAT(const char* file_name, const char* dat_name, user_info* us
             break;
         }
 
+        //TODO: log to file
         printf("writing file to disk: %s\n", entry.path_ptr);
 
         char path_buff[MAX_PATH] = {0};

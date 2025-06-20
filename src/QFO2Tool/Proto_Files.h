@@ -26,3 +26,10 @@ bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info);
 void export_tiles_POPUPS(export_state* state, char* FObuff);
 bool load_PRO_tiles_LST(user_info* usr_nfo, export_state* state);
 bool load_PRO_tiles_MSG(user_info* usr_nfo, export_state* state);
+
+//TODO: clean this up
+bool _append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head);
+bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char* language);
+
+char* input_name();
+char* input_desc();
