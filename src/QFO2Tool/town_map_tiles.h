@@ -19,9 +19,10 @@
 struct tt_arr {
     char     name_ptr[14];  //names can't be longer than 8 characters plus extension (plus '\0')
     uint8_t  frm_data[80*36];
-    uint32_t row     = 0;   //might not need these
-    uint32_t col     = 0;   //might not need these
-    uint32_t tile_id = 0;   //line number where it appears in TILES.LST (proto? or art?)
+    uint32_t row    = 0;   //might not need these
+    uint32_t col    = 0;   //might not need these
+    uint32_t frm_id = 0;   //line number where it appears in art/tiles/TILES.LST
+    uint32_t pro_id = 0;   //line number where it appears in proto/tiles/TILES.LST (if proto created)
 };
 
 struct tt_arr_handle {
@@ -53,6 +54,10 @@ struct STATE_export {
     bool art = false;
     bool pro = false;
     bool pat = false;
+
+    bool FRM_LST = false;
+    bool PRO_LST = false;
+    bool PRO_MSG = false;
 };
 
 struct export_state {

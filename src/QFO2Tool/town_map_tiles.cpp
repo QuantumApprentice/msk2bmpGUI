@@ -231,6 +231,7 @@ int crop_single_tile_vector_clear(
 #define row_offset_y         (24)   //  move one row down
 
 
+//TODO: delete? check if I'm using this first!
 tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
 {
     char* name = state->save_name;
@@ -276,7 +277,7 @@ tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
                 || (origin_y >= h)
                 ) {
                 // tile->name_ptr = {0};
-                tile->tile_id = -1;      //-1 indicates blank tile, 0 indicates filled tile
+                tile->frm_id = -1;      //-1 indicates blank tile, 0 indicates filled tile
                 continue;
             }
             snprintf(tile->name_ptr, 14, "%s%03d.FRM", name, tile_num);
@@ -293,7 +294,7 @@ tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
             //      then move to next tile
 
             memcpy(tile->frm_data, tile_buff, TMAP_W*TMAP_H);
-            tile->tile_id = 0;      //-1 indicates blank tile, 0 indicates filled tile
+            tile->frm_id = 0;      //-1 indicates blank tile, 0 indicates filled tile
 
             tile_num++;
         }
@@ -308,6 +309,7 @@ tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
 
 
 //array version (stores tile position)
+//TODO: delete? check if I'm using this first!
 tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite)
 {
     char* name = state->save_name;
@@ -368,7 +370,7 @@ tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fld
                 || (origin_x >= img_w)
                 || (origin_y >= img_h)
                 ) {
-                tile->tile_id = -1;
+                tile->frm_id = -1;
                 continue;
             }
 
@@ -383,7 +385,7 @@ tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fld
             //      then move to next tile
 
             memcpy(tile->frm_data, tile_buff, TMAP_W*TMAP_H);
-            tile->tile_id = 0;
+            tile->frm_id = 0;
 
             //TODO: make this a separate process
             //      tiles should be in memory first

@@ -359,23 +359,12 @@ void rename_tiles(tt_arr_handle* handle, char* name)
     int tile_num = 0;
     tt_arr* tile = handle->tile;
     for (int i = 0; i < handle->size; i++) {
-        if (tile[i].tile_id != -1) {
-            snprintf(tile[i].name_ptr, 14, "%s%03d.FRM", name, tile_num++);
+        if (tile[i].frm_id == -1) {
+            continue;
         }
+        snprintf(tile[i].name_ptr, 14, "%s%03d.FRM", name, tile_num++);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo, STATE_export* state)
@@ -604,6 +593,7 @@ class event_ShowError{};
 class state_ExportMenu {};
 class state_CheckFiles {};
 class state_UserInput {};
+class state_ExtractFiles {};
 class state_ExportFiles {};
 class state_ErrorPopup {};
 
@@ -727,40 +717,30 @@ class ExportMachine {
 
             state<class state_CheckFiles>  + event<event_Render> /
                 // render_check_files
-                [](back::process<event_FilesNotFound, event_MatchesFound> process_event, const event_Render&, STATE_export* state) {
+                [](back::process<event_FilesNotFound, event_MatchesFound, event_Export> process_event, const event_Render&, STATE_export* state) {
                     bool FRM_LST = false;
                     bool PRO_LST = false;
                     bool PRO_MSG = false;
                     if (state->art) {
                         FRM_LST = load_FRM_LST_state(state->usr_nfo, state);
-                        if (FRM_LST) {
-                            _append_TMAP_tiles_LST(state->usr_nfo, state->handle);
-                        }
                     }
                     if (state->pro) {
                         PRO_LST = load_PRO_LST_state(state->usr_nfo, state);
-                        if (PRO_LST) {
-                            _append_TMAP_PRO_tiles_LST(state->usr_nfo, state->handle);
-                        }
                         PRO_MSG = load_PRO_MSG_state(state->usr_nfo, state);
-                        if (PRO_MSG) {
-                            _append_PRO_tile_MSG(state->usr_nfo, state->handle, state->language[0]);
-                        }
-                    }
-                    if (!FRM_LST || !PRO_LST || !PRO_MSG) {
-                        process_event(event_FilesNotFound{});
-                        ImGui::OpenPopup("Need Input!");
                     }
 
+                    bool match_found = false;
                     for (int i = 0; i < state->handle->size; i++)
                     {
-                        if (state->handle->tile[i].tile_id == -1) {
+                        if (state->handle->tile[i].frm_id == -1) {
                             continue;
                         }
-                        snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s", state->usr_nfo->default_game_path, state->handle->tile[i].name_ptr);
+                        snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s",
+                                state->usr_nfo->default_game_path,
+                                state->handle->tile[i].name_ptr);
+
                         char* path_case = io_path_check(state->LST_path);
 
-                        bool match_found = false;
                         if (io_file_exists(path_case)) {
                             match_found = true;
                         }
@@ -769,6 +749,15 @@ class ExportMachine {
                             process_event(event_MatchesFound{});
                         }
                     }
+
+                    if (!FRM_LST || !PRO_LST || !PRO_MSG) {
+                        process_event(event_FilesNotFound{});
+                        ImGui::OpenPopup("Need Input!");
+                    }
+                    else
+                    if (!match_found) {
+                        process_event(event_Export{});
+                    }
                 }
                 ,
 
@@ -776,6 +765,8 @@ class ExportMachine {
                 = state<class state_ExportFiles>,
             state<class state_CheckFiles>  + event<event_FilesNotFound>
                 = state<class state_UserInput>,
+            state<class state_CheckFiles>   + event<event_Export>
+                = state<class state_ExportFiles>,
 
             state<class state_UserInput>   + event<event_UserExit>
                 = state<class state_ExportMenu>,
@@ -843,9 +834,9 @@ class ExportMachine {
 
 
             state<class state_UserInput>   + event<event_UserExtract>
-                = state<class state_ExportFiles>,
+                = state<class state_ExtractFiles>,
 
-            state<class state_ExportFiles> + event<event_Render> /
+            state<class state_ExtractFiles> + event<event_Render> /
                 [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
                     if (tt_file_DAT_extract(state->usr_nfo, state)) {
                         ImGui::OpenPopup("Number 5 is Alive! Files Extracted!");
@@ -857,11 +848,56 @@ class ExportMachine {
                 }
                 ,
 
+            state<class state_ExportFiles> + event<event_Render> /
+                [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
+                    if (state->art) {
+                        state->FRM_LST = _append_TMAP_tiles_LST(state->usr_nfo, state->handle);
+                    }
+                    if (state->pro) {
+                        state->PRO_LST = _append_TMAP_PRO_tiles_LST(state->usr_nfo, state->handle);
+                        //TODO: let the user choose the language
+                        state->PRO_MSG = _append_PRO_tile_MSG(state->usr_nfo, state->handle, state->language[0]);
+                    }
+
+                    ImGui::OpenPopup("Append LST Files");
+                    process_event(event_ShowError{});
+                }
+                ,
+
             state<class state_ExportFiles> + event<event_ShowError>
                 = state<class state_ErrorPopup>,
 
             state<class state_ErrorPopup> + event<event_Render> /
                 [](back::process<event_Render, event_ResetState, event_ShowError> process_event, const event_Render&, STATE_export* state) {
+
+                    if (ImGui::BeginPopupModal("Append LST Files")) {
+                        if (state->art) {
+                            if (state->FRM_LST) {
+                                ImGui::Text("Tile names appended to art/TILES.LST successfully.");
+                            } else {
+                                ImGui::Text("Something went wrong with art/TILES.LST, but I'm not sure what.");
+                            }
+                        }
+
+                        if (state->pro) {
+                            if (state->PRO_LST) {
+                                ImGui::Text("Proto's successfully added to proto/TILES.LST");
+                            } else {
+                                ImGui::Text("Something went wrong with proto/TILES.LST, but I'm not sure what.");
+                            }
+                            if (state->PRO_MSG) {
+                                ImGui::Text("Proto description successfully added to %s/game/pro_tile.msg", state->language[0]);
+                            } else {
+                                ImGui::Text("Something went wrong with %s/game/pro_tile.msg, but I'm not sure what.", state->language[0]);
+                            }
+                        }
+
+                        if (ImGui::Button("Close")) {
+                            ImGui::CloseCurrentPopup();
+                            process_event(event_ResetState{});
+                        }
+                        ImGui::EndPopup();
+                    }
 
                     if (ImGui::BeginPopupModal("Number 5 is Alive! Files Extracted!")) {
                         char* ptr = state->extracted;
@@ -876,10 +912,9 @@ class ExportMachine {
                         ImGui::Text("Extracted from %s.dat");
 
                         if (ImGui::Button("Close")) {
+                            process_event(event_ResetState{});
                             ImGui::CloseCurrentPopup();
                         }
-
-
                         ImGui::EndPopup();
                     }
 
@@ -904,6 +939,7 @@ class ExportMachine {
                         }
                         ImGui::EndPopup();
                     }
+
                 }
                 ,
             state<class state_ErrorPopup> + event<event_ResetState>
