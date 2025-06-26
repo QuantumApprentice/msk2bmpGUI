@@ -44,9 +44,31 @@ bool is_tile_blank(town_tile* tile)
     return not_blank;
 }
 
+//assigns pro_id using line numbers starting from end of proto/tiles/TILES.LST
+void assign_NEW_proto_id(tt_arr_handle* handle, const char* PRO_tiles_LST)
+{
+    int LST_len = strlen(PRO_tiles_LST);
+    int LST_line = 1;
+    for (int i = 0; i < LST_len; i++)
+    {
+        if (PRO_tiles_LST[i] == '\n') {
+            LST_line++;
+        }
+    }
+
+    for (int i = 0; i < handle->size; i++)
+    {
+        if (handle->tile[i].frm_id == -1) {
+            handle->tile[i].pro_id =  -1;
+            continue;
+        }
+        handle->tile[i].pro_id = LST_line++;
+    }
+}
+
 //tile-names should already be on TILES.LST
 //so we loop through the list and identify the line number
-//then assign that line number as the tile_id
+//then assign that line number as the frm_id
 void assign_tile_id(tt_arr_handle* handle, const char* FRM_tiles_LST)
 {
     int tiles_lst_len = strlen(FRM_tiles_LST);
@@ -54,7 +76,7 @@ void assign_tile_id(tt_arr_handle* handle, const char* FRM_tiles_LST)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &handle->tile[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {
             //skip known blank tiles
             continue;
         }
@@ -78,10 +100,10 @@ void assign_tile_id(tt_arr_handle* handle, const char* FRM_tiles_LST)
                 continue;
             }
             //match found, assign current line # to current tile_id
-            node->tile_id = current_line;
+            node->frm_id = current_line;
             break;
         }
-        if (node->tile_id == 0) {
+        if (node->frm_id == 0) {
             //TODO: this needs its own popup window asking for next step
             printf("we've got a problem here, unable to find matching name\n");
         }
@@ -150,7 +172,7 @@ void export_TMAP_tiles_pattern(user_info* usr_info, tt_arr_handle* handle, char*
     {
         tt_arr* node = &tiles[i];
         //empty tile entries (id==1) also need to be | 0x4000000
-        out_pattern[i].tile_id = node->tile_id | 0x4000000;
+        out_pattern[i].tile_id = node->pro_id | 0x4000000;          //pattern uses proto id
     }
 
     //flip the entries around so they line up

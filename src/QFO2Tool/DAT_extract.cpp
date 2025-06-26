@@ -97,7 +97,6 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.FRM_TILES_LST = DAT_to_txt(&buff);
-        _append_TMAP_tiles_LST(usr_nfo, state->handle);
     }
 
     if (usr_nfo->game_files.PRO_TILES_LST == NULL && state->pro == true) {
@@ -107,7 +106,6 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.PRO_TILES_LST = DAT_to_txt(&buff);
-        _append_TMAP_PRO_tiles_LST(usr_nfo, state->handle);
     }
 
     if (usr_nfo->game_files.PRO_TILE_MSG == NULL && state->pro == true) {
@@ -118,8 +116,6 @@ bool tt_file_DAT_extract(user_info* usr_nfo, STATE_export* state)
             return false;
         }
         usr_nfo->game_files.PRO_TILE_MSG = DAT_to_txt(&buff);
-        //TODO: let the user choose the language
-        _append_PRO_tile_MSG(usr_nfo, state->handle, state->language[0]);
     }
 
     free(dat_file.data);

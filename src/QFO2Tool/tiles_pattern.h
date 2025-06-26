@@ -15,3 +15,4 @@ struct pattern {
 void export_TMAP_tiles_pattern(user_info* usr_info, tt_arr_handle* handle, char* file_buff);
 void export_PAT_file_POPUP(user_info* usr_info, tt_arr_handle* handle, export_state* state, bool auto_export);
 void assign_tile_id(tt_arr_handle* handle, const char* tiles_lst);
+void assign_NEW_proto_id(tt_arr_handle* handle, const char* PRO_tiles_LST);

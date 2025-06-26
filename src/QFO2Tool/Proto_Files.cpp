@@ -61,6 +61,7 @@ bool backup_append_LST(char* path, char* string);
 
 //TODO: refactor append_tiles_lst() to work here
 //arr stands for tt_arr*
+//TODO: delete?
 char* make_PRO_tiles_LST(tt_arr_handle* head, uint8_t* match_buff_src)
 {
     uint8_t* match_buff = match_buff_src;
@@ -78,7 +79,7 @@ char* make_PRO_tiles_LST(tt_arr_handle* head, uint8_t* match_buff_src)
     for (int i = 0; i < head->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {           //TODO: replace with pro_id?
             continue;
         }
 
@@ -111,12 +112,12 @@ char* make_PRO_tiles_LST(tt_arr_handle* head, uint8_t* match_buff_src)
     for (int i = 0; i < head->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {           //TODO: replace with pro_id?
             continue;
         }
 
         if (!(match_buff[match_ctr/8] & 1 << shift_ctr)) {
-            snprintf(c, 15, "%08d.pro\r\n", node->tile_id);
+            snprintf(c, 15, "%08d.pro\r\n", node->frm_id);           //TODO: replace with pro_id?
             c += strlen(c);
         }
         //increment all the counters
@@ -133,13 +134,16 @@ char* make_PRO_tiles_LST(tt_arr_handle* head, uint8_t* match_buff_src)
 
 //compare names on tiles_lst to names on new_tiles
 //but convert new_tiles to town_tile* linked list first
+//TODO: delete? not sure if I want to check names for now
+//      but might want to keep this around in case
+//      I add something that edits protos
 char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
 {
     int num_tiles = 0;
     tt_arr* tiles = new_protos->tile;
     for (int i = 0; i < new_protos->size; i++) {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {           //TODO: replace with pro_id?
             continue;
         }
         num_tiles++;
@@ -163,7 +167,7 @@ char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
     {
         tt_arr* node = &tiles[i];
         //skip blank nodes
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {      //TODO: replace with pro_id?
             continue;
         }
 
@@ -175,7 +179,7 @@ char* check_PRO_LST_names(char* tiles_lst, tt_arr_handle* new_protos)
             }
             //check if strt == node.tile_id
             int num = atoi(strt);
-            if (num != node->tile_id) {
+            if (num != node->frm_id) {      //TODO: replace with pro_id?
                 strt = &tiles_lst[char_ctr+1];
                 continue;
             }
@@ -483,9 +487,12 @@ char* input_desc()
     return desc_buff;
 }
 
-char* make_PRO_tile_MSG(proto_info* info, int tile_id)
+#define DESC_SIZE    (512)
+#define NAME_SIZE    (32)
+
+char* make_PRO_tile_MSG(proto_info* info, int pro_id)
 {
-    char* msg_line = (char*)malloc(512+32);
+    char* msg_line = (char*)malloc(DESC_SIZE+NAME_SIZE);
     if (msg_line == NULL) {
         //TODO: log to file
         set_popup_warning(
@@ -495,10 +502,10 @@ char* make_PRO_tile_MSG(proto_info* info, int tile_id)
         printf("Error: make_PRO_tile_MSG() allocate memory for msg_line failed: %d\n", __LINE__);
     }
 
-    snprintf(msg_line, 512+32,
+    snprintf(msg_line, DESC_SIZE+NAME_SIZE,
             "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
-            tile_id*100,   info->name,
-            tile_id*100+1, info->description);
+            pro_id*100,   info->name,
+            pro_id*100+1, info->description);
 
     return msg_line;
 }
@@ -557,7 +564,7 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
-        if (tile->tile_id != -1) {
+        if (tile->frm_id != -1) {
             break;
         }
     }
@@ -568,7 +575,7 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
         return false;
     }
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->pro_id);
 
     char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
 
@@ -630,7 +637,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
-        if (tile->tile_id != -1) {
+        if (tile->frm_id != -1) {           //TODO: replace with pro_id?
             break;
         }
     }
@@ -649,7 +656,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
         return false;
     }
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->frm_id);        //TODO: replace with pro_id?
 
 
     char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
@@ -679,6 +686,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
     return true;
 }
 
+//TODO: delete?
 char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_state* state)
 {
     char* FRM_tiles_LST = usr_nfo->game_files.FRM_TILES_LST;
@@ -696,7 +704,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
     for (int i = 0; i < handle->size; i++)
     {
         tile = &handle->tile[i];
-        if (tile->tile_id != -1) {
+        if (tile->frm_id != -1) {           //TODO: replace with pro_id?
             break;
         }
     }
@@ -721,7 +729,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
 
     assign_tile_id(handle, FRM_tiles_LST);
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->tile_id);
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->frm_id);        //TODO: replace with pro_id?
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/english/game/pro_tile.msg", game_path);
@@ -905,6 +913,7 @@ bool create_FRM_tiles_LST_popup(export_state* state)
     return false;
 }
 
+//TODO: delete? have to clean up when I finish making this work
 void export_protos(user_info* usr_nfo, tt_arr_handle* handle)
 {
     if (handle == nullptr) {
@@ -927,11 +936,11 @@ void export_protos(user_info* usr_nfo, tt_arr_handle* handle)
     //tiles can reference different line numbers in pro_tile.msg
     //have all tiles from this batch point to first new tile entry
     tt_arr* tiles = handle->tile;
-    info.pro_tile = tiles->tile_id * 100;
+    info.pro_tile = tiles->pro_id * 100;
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {
             continue;
         }
         bool success = export_single_tile_PRO(usr_nfo->default_game_path, node, &info);
@@ -1209,6 +1218,62 @@ void export_PRO_tiles_POPUP(user_info* usr_nfo, tt_arr_handle* handle, export_st
     }
 }
 
+//create LST with NEW protos ONLY
+//entries are made from tile.pro_id entries
+#define PRO_NAME_SIZE           (16)        //assumes 13 bytes for name, +2 for /r/n, +1 for '\0'
+char* create_PRO_LST(tt_arr_handle* handle)
+{
+    int LST_size = 0;
+    for (int i = 0; i < handle->size; i++)
+    {
+        if (handle->tile[i].pro_id == -1) {
+            continue;
+        }
+        LST_size += PRO_NAME_SIZE;
+    }
+
+    if (LST_size == 0) {
+        return NULL;
+    }
+
+    char* new_PRO_LST = (char*)malloc(LST_size);
+    char* LST_ptr = new_PRO_LST;
+    for (int i = 0; i < handle->size; i++)
+    {
+        if (handle->tile[i].pro_id == -1) {
+            continue;
+        }
+        snprintf(LST_ptr, PRO_NAME_SIZE, "%08d.pro\r\n", handle->tile[i].pro_id);
+        LST_ptr += strlen(LST_ptr);
+    }
+
+    return new_PRO_LST;
+}
+
+//append NEW protos ONLY to list in memory
+char* _append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head)
+{
+    // char* new_PRO_LST = check_PRO_LST_names(old_PRO_LST, head);
+    char* new_PRO_LST = create_PRO_LST(head);
+    if (new_PRO_LST == nullptr) {
+        return old_PRO_LST;
+    }
+
+    //append new list_of_tiles to the end of original list
+    //in a new buffer large enough to fit both
+    int old_LST_size    = strlen(old_PRO_LST);
+    int new_LST_size    = strlen(new_PRO_LST);
+    int final_size      = old_LST_size+new_LST_size+1;
+    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
+    snprintf(final_PRO_LST, final_size, "%s%s", old_PRO_LST, new_PRO_LST);
+
+    free(new_PRO_LST);
+
+    return final_PRO_LST;
+}
+
+
+//TODO: delete
 //append new protos to list in memory
 char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head)
 {
@@ -1238,7 +1303,11 @@ bool _append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head)
 {
     char* game_path   = usr_nfo->default_game_path;
     char* old_PRO_LST = usr_nfo->game_files.PRO_TILES_LST;
-    char* new_PRO_LST = append_PRO_tiles_LST(old_PRO_LST, head);
+
+    //assigns new ids only
+    //  (not sure if I want to do something more detailed like editing or matching)
+    assign_NEW_proto_id(head, old_PRO_LST);
+    char* new_PRO_LST = _append_PRO_tiles_LST(old_PRO_LST, head);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/proto/tiles/TILES.LST", game_path);
@@ -1358,13 +1427,13 @@ bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
 
     tile_proto proto;
     //protoIDs are 1 indexed? (1-indexing happens on assignment now)
-    proto.ObjectID        = tile->tile_id | 0x4000000;
+    proto.ObjectID        = tile->pro_id | 0x4000000;
 
     //used as a key/value pair in pro_tile.msg
     //key number from /text/language/game/pro_tile.msg
     proto.TextID          = info->pro_tile;
     //FrmID is the line number (starting from 0) in art/tiles/TILES.LST
-    proto.FrmID           = (tile->tile_id) | 0x4000000;
+    proto.FrmID           = (tile->frm_id) | 0x4000000;
     //TODO: test if these 3 have effect on tiles
     proto.Light_Radius    = 8;
     proto.Light_Intensity = 8;
@@ -1375,7 +1444,7 @@ bool export_single_tile_PRO(char* game_path, tt_arr* tile, proto_info* info)
     B_Endian::flip_proto_endian(&proto);
 
     //TODO: create folder paths if they don't exist
-    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", game_path, tile->tile_id);
+    snprintf(path_buff, MAX_PATH, "%s/data/proto/tiles/%08d.pro", game_path, tile->pro_id);
     char* actual_path = io_path_check(path_buff);
     if (actual_path) {
         strncpy(path_buff, actual_path, MAX_PATH);

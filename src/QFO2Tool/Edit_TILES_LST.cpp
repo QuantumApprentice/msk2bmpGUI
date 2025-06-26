@@ -17,7 +17,7 @@ void assign_tile_names_arr(char* name, tt_arr_handle* handle)
 
     for (int i = 0; i < handle->size; i++)
     {
-        if (node[i].tile_id == 1) {
+        if (node[i].frm_id == 1) {
             continue;
         }
         snprintf(node[i].name_ptr, 14, "%s%03d.FRM\r\n", name, counter);
@@ -113,6 +113,7 @@ tile_name_arr* make_name_list_arr(char* new_tiles_list)
 //passing NULL into match_buff_src will
 //auto allocate an empty buffer of appropriate size
 //this creates a list that includes all(?) handle->names
+//TODO: delete? need to check if this is used
 char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
 {
     uint8_t* match_buff = match_buff_src;
@@ -128,7 +129,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {
             continue;
         }
 
@@ -159,7 +160,7 @@ char* make_FRM_tile_LST(tt_arr_handle* handle, uint8_t* match_buff_src)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {
             continue;
         }
 
@@ -226,11 +227,12 @@ char* save_NEW_FRM_tiles_LST(tt_arr_handle* handle, char* game_path, export_stat
 
 char* _check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle)
 {
+    //count number of actual tiles for allocation purposes
     int num_tiles = 0;
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &handle->tile[i];
-        if (node->tile_id != 1) {
+        if (node->frm_id != -1) {
             num_tiles++;
         }
     }
@@ -241,13 +243,13 @@ char* _check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle)
     uint8_t* matches = (uint8_t*)calloc(1+num_tiles/8, 1);
     char* strt       = old_tiles_LST;           //keeps track of first letter of name on TILES.LST
 
-    int line_ctr = 0;                       //.LST file line numbers are 1-indexed (not 0-indexed)
+    int line_ctr = 0;                           //.LST file line numbers are 1-indexed (not 0-indexed)
     int match_ctr = 0;
     tt_arr* tiles = handle->tile;
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {
             continue;
         }
 
@@ -268,7 +270,7 @@ char* _check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle)
                 strt = &old_tiles_LST[char_ctr+1];
                 continue;
             }
-            node->tile_id = line_ctr;
+            node->frm_id = line_ctr;
             //identify this node as having a duplicate match
             matches[match_ctr/8] |= 1 << shift_ctr;
             break;
@@ -287,8 +289,8 @@ char* _check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle)
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* tile = &tiles[i];
-        if (tiles[i].tile_id == 0) {
-            tiles[i].tile_id = ++line_ctr;
+        if (tiles[i].frm_id == 0) {
+            tiles[i].frm_id = ++line_ctr;
         }
     }
 
@@ -373,7 +375,7 @@ char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_sta
     for (int i = 0; i < handle->size; i++)
     {
         tt_arr* node = &handle->tile[i];
-        if (node->tile_id != 1) {
+        if (node->frm_id != 1) {
             num_tiles++;
         }
     }
@@ -390,7 +392,7 @@ char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_sta
     {
         int line_ctr = 0;                   //.LST file line numbers are 1-indexed (not 0-indexed)
         tt_arr* node = &tiles[i];
-        if (node->tile_id == -1) {
+        if (node->frm_id == -1) {           //TODO: replace with pro_id
             continue;
         }
 
@@ -410,7 +412,7 @@ char* check_FRM_LST_names(char* old_tiles_LST, tt_arr_handle* handle, export_sta
                 strt = &old_tiles_LST[char_ctr+1];
                 continue;
             }
-            node->tile_id = line_ctr;
+            node->frm_id = line_ctr;        //TODO: replace with pro_id
 
             //first match found, ask what to do
             if (append_new_only == false) {
