@@ -490,6 +490,160 @@ char* input_desc()
 #define DESC_SIZE    (512)
 #define NAME_SIZE    (32)
 
+int _check_MSG_line(char* msg_txt, int id)
+{
+    char* msg_ptr;
+    char id_char[11];   //an id for a game msg file shouldn't be more than 10 characters since its the proto_id*100, and the proto_id can't be more than 8 characters to fit in dos filename format
+    int i = 0;
+    if (msg_txt[i] != '{') {
+        return 0;
+    }
+    msg_ptr = &msg_txt[++i];
+    int id_size = i;
+    while (msg_txt[i] != '}')
+    {
+        i++;
+    }
+    id_size = i - id_size;
+
+    memcpy(id_char, msg_ptr, id_size);
+    id_char[id_size] = '\0';
+    while (msg_txt[i] != '\n' && msg_txt[i++] != '\0');
+
+    int val = atoi(id_char);
+    if (id == val) {
+        return i;
+    }
+    return 0;
+}
+
+char* check_MSG_line(char* msg_txt, int id)
+{
+    // int msg_len = strlen(msg_txt);
+    char* msg_ptr;
+    char id_char[11];   //an id for a game msg file shouldn't be more than 10 characters since its the proto_id*100, and the proto_id can't be more than 8 characters to fit in dos filename format
+
+    for (int i = 0; msg_txt[i] != '\n' && msg_txt[i] != '\0'; i++)
+    {
+        if (msg_txt[i] != '{') {
+            continue;
+        }
+        msg_ptr = &msg_txt[i+1];
+
+        int id_size = i;
+        while (msg_txt[i] != '}')
+        {
+            i++;
+        }
+        id_size = i - id_size-1;
+
+        memcpy(id_char, msg_ptr, id_size);
+        id_char[id_size] = '\0';
+        while (msg_txt[i] != '\n' && msg_txt[i++] != '\0');
+
+        int val = atoi(id_char);
+        if (id == val) {
+            msg_ptr = &msg_txt[i];
+            return msg_ptr;
+        } else {
+            return NULL;
+        }
+    }
+
+    return NULL;
+}
+
+char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
+{
+    int old_msg_len = strlen(old_PRO_MSG);
+    int src_msg_id  = pro_id * 100;
+    int src_dsc_id  = src_msg_id + 1;
+    char* msg_ptr = NULL;
+    char* end_ptr = NULL;
+    for (int i = 0; i < old_msg_len; i++)
+    {
+        if (old_PRO_MSG[i] == '{') {
+            int offset = _check_MSG_line(&old_PRO_MSG[i], src_msg_id);
+
+            if (offset) {
+                msg_ptr = &old_PRO_MSG[i];
+                i += offset;
+                end_ptr = &old_PRO_MSG[i++];
+                // char* temp = check_MSG_line(end_ptr, src_dsc_id);
+                offset = _check_MSG_line(&old_PRO_MSG[i], src_dsc_id);
+                if (offset) {
+                    i += offset;
+                    end_ptr = &old_PRO_MSG[i];
+                }
+                break;
+            }
+        }
+        while (old_PRO_MSG[i] != '\n' && old_PRO_MSG[i++] != '\0');
+    }
+
+    // //find the end of the name && description
+    // if (msg_ptr != NULL) {
+    //     int dsc_size = 0;
+    //     char* dsc_ptr = &end_ptr[1];    //description pointer
+    //     while ((dsc_ptr[dsc_size] != '}') && (dsc_size < 11) && (dsc_ptr[dsc_size] != '\0'))
+    //     {
+    //         dsc_size++;
+    //     }
+    //     memcpy(id_char, dsc_ptr, dsc_size);
+    //     id_char[dsc_size+1] = '\0';
+    //     int dsc_id = atoi(id_char);
+    //     if (src_dsc_id == dsc_id) {
+    //         while (dsc_ptr[dsc_size] != '\n' && dsc_ptr[dsc_size] != '\0')
+    //         {
+    //             dsc_size++;
+    //         }
+    //         end_ptr = &end_ptr[dsc_size];
+    //     }
+    // }
+
+
+
+    char msg_line[DESC_SIZE+NAME_SIZE+6];       // +6 for the extra curly braces '{' & '}'
+    snprintf(msg_line, DESC_SIZE+NAME_SIZE+6,
+            "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
+            pro_id*100,   info->name,
+            pro_id*100+1, info->description);
+
+
+    int new_msg_len = old_msg_len+DESC_SIZE+NAME_SIZE+6;
+    char* new_PRO_tile_MSG = (char*)malloc(new_msg_len);
+
+    if (offset) {
+
+        old_PRO_MSG[offset] = '\0';
+
+        snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s%s", old_PRO_MSG, msg_line, &old_PRO_MSG[offset2+1]);
+
+
+
+    }
+
+
+    // snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s%s", msg_ptr, msg_line, end_ptr);
+    int copy_amt = 0;
+    if (msg_ptr != NULL) {
+        //match found - copy first half, new entry, then last half
+        copy_amt = &msg_ptr[0] - &old_PRO_MSG[0];
+        memcpy(new_PRO_tile_MSG, old_PRO_MSG, copy_amt);
+        char* new_msg_ptr = new_PRO_tile_MSG + copy_amt;
+        memcpy(new_msg_ptr, msg_line, strlen(msg_line));
+        new_msg_ptr = new_msg_ptr + strlen(msg_line);
+        memcpy(new_msg_ptr, end_ptr, strlen(end_ptr));
+        new_msg_ptr[strlen(end_ptr)] = '\0';
+    } else {
+        //no match found - append to end
+        snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", old_PRO_MSG, msg_line);
+    }
+
+
+    return new_PRO_tile_MSG;
+}
+//TODO: delete
 char* make_PRO_tile_MSG(proto_info* info, int pro_id)
 {
     char* msg_line = (char*)malloc(DESC_SIZE+NAME_SIZE);
@@ -525,8 +679,8 @@ char* append_PRO_tile_MSG_inplace(char* old_PRO_MSG, char* new_PRO_MSG)
     //in a new buffer large enough to fit both
     int old_LST_size    = strlen(old_PRO_MSG);
     int new_LST_size    = strlen(new_PRO_MSG);
-    int final_size      = old_LST_size+new_LST_size+1;
-    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
+    int final_size      = old_LST_size+new_LST_size+1;   //+1 for null char
+    char* final_PRO_LST = (char*)malloc(final_size);
     snprintf(final_PRO_LST, final_size, "%s%s", old_PRO_MSG, new_PRO_MSG);
 
     return final_PRO_LST;
@@ -557,6 +711,7 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
         return true;
     }
 
+    //TODO: do I need assign_tile_id()?
     assign_tile_id(handle, FRM_tiles_LST);
 
     //look for the first non-blank tile and assign that to *tile
@@ -575,7 +730,8 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
         return false;
     }
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->pro_id);
+    //pass in the first non-blank tile and use that pro_id
+    char* new_PRO_tile_MSG = _make_PRO_tile_MSG(&info, tile->pro_id, usr_nfo->game_files.PRO_TILE_MSG);
 
     char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
 
@@ -656,7 +812,7 @@ bool append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, export_state
         return false;
     }
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->frm_id);        //TODO: replace with pro_id?
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->pro_id);
 
 
     char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
@@ -722,6 +878,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
     //      Or just leave it like this and create the file anyway?
     //      This might be a moot point after I'm able to extract
     //      the txt file from the DAT file
+    //TODO: delete, because now it's a moot point
     // if (info.name[0] == '\0' && info.description[0] == '\0') {
     //     state->append_PRO_MSG = false;
     //     return NULL;
@@ -729,7 +886,7 @@ char* save_NEW_PRO_tile_MSG(tt_arr_handle* handle, user_info* usr_nfo, export_st
 
     assign_tile_id(handle, FRM_tiles_LST);
 
-    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->frm_id);        //TODO: replace with pro_id?
+    char* new_PRO_tile_MSG = make_PRO_tile_MSG(&info, tile->pro_id);
 
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/english/game/pro_tile.msg", game_path);
@@ -1264,7 +1421,7 @@ char* _append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head)
     int old_LST_size    = strlen(old_PRO_LST);
     int new_LST_size    = strlen(new_PRO_LST);
     int final_size      = old_LST_size+new_LST_size+1;
-    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for null char
+    char* final_PRO_LST = (char*)malloc(old_LST_size + new_LST_size +1);   //+1 for '\0'
     snprintf(final_PRO_LST, final_size, "%s%s", old_PRO_LST, new_PRO_LST);
 
     free(new_PRO_LST);
@@ -1299,6 +1456,7 @@ char* append_PRO_tiles_LST(char* old_PRO_LST, tt_arr_handle* head)
 //this assumes usr_info->default_game_path has been set
 //and art/tiles/TILES.LST has been loaded up correctly
 //append to data/proto/tiles/TILES.LST
+//TODO: delete? possibly replaced by _append_PRO_tiles_LST()?
 bool _append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head)
 {
     char* game_path   = usr_nfo->default_game_path;
@@ -1332,13 +1490,13 @@ bool _append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head)
     return true;
 }
 
-//TODO: delete below, replaced by _append_TMAP_PRO_tiles_LST()
 //##### I feel like this is a stupid way to write this
 //##### but it's better than it was,
 //##### and I don't know a better way yet
 //this assumes usr_info->default_game_path has been set
 //and art/tiles/TILES.LST has been loaded up correctly
 //append to data/proto/tiles/TILES.LST
+//TODO: delete below, replaced by _append_TMAP_PRO_tiles_LST()
 bool append_TMAP_PRO_tiles_LST(user_info* usr_nfo, tt_arr_handle* head, export_state* state)
 {
     state->append_PRO_LST = false;
