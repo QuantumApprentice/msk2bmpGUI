@@ -413,7 +413,7 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
-        if (ImGui::Button("Export Protos")) {
+        if (ImGui::Button("Export NEW Protos (only)")) {
             ImGui::OpenPopup("Proto Info");
         }
         if (exported_tiles == NULL) {
