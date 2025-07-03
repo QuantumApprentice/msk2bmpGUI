@@ -489,7 +489,9 @@ char* input_desc()
 
 #define DESC_SIZE    (512)
 #define NAME_SIZE    (32)
-
+// checks msg {key} against proto id
+// returns length of line if match found
+// returns 0 if no match
 int _check_MSG_line(char* msg_txt, int id)
 {
     char* msg_ptr;
@@ -558,49 +560,27 @@ char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
     int old_msg_len = strlen(old_PRO_MSG);
     int src_msg_id  = pro_id * 100;
     int src_dsc_id  = src_msg_id + 1;
-    char* msg_ptr = NULL;
-    char* end_ptr = NULL;
+
+    int offset_start;
+    int offset_end;
     for (int i = 0; i < old_msg_len; i++)
     {
         if (old_PRO_MSG[i] == '{') {
             int offset = _check_MSG_line(&old_PRO_MSG[i], src_msg_id);
 
             if (offset) {
-                msg_ptr = &old_PRO_MSG[i];
-                i += offset;
-                end_ptr = &old_PRO_MSG[i++];
-                // char* temp = check_MSG_line(end_ptr, src_dsc_id);
+                offset_start = i;
+                ++i += offset;
+                // char* msg_ptr = &old_PRO_MSG[i];
                 offset = _check_MSG_line(&old_PRO_MSG[i], src_dsc_id);
                 if (offset) {
-                    i += offset;
-                    end_ptr = &old_PRO_MSG[i];
+                    offset_end = i + offset;
                 }
                 break;
             }
         }
         while (old_PRO_MSG[i] != '\n' && old_PRO_MSG[i++] != '\0');
     }
-
-    // //find the end of the name && description
-    // if (msg_ptr != NULL) {
-    //     int dsc_size = 0;
-    //     char* dsc_ptr = &end_ptr[1];    //description pointer
-    //     while ((dsc_ptr[dsc_size] != '}') && (dsc_size < 11) && (dsc_ptr[dsc_size] != '\0'))
-    //     {
-    //         dsc_size++;
-    //     }
-    //     memcpy(id_char, dsc_ptr, dsc_size);
-    //     id_char[dsc_size+1] = '\0';
-    //     int dsc_id = atoi(id_char);
-    //     if (src_dsc_id == dsc_id) {
-    //         while (dsc_ptr[dsc_size] != '\n' && dsc_ptr[dsc_size] != '\0')
-    //         {
-    //             dsc_size++;
-    //         }
-    //         end_ptr = &end_ptr[dsc_size];
-    //     }
-    // }
-
 
 
     char msg_line[DESC_SIZE+NAME_SIZE+6];       // +6 for the extra curly braces '{' & '}'
@@ -610,36 +590,25 @@ char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
             pro_id*100+1, info->description);
 
 
-    int new_msg_len = old_msg_len+DESC_SIZE+NAME_SIZE+6;
+    int new_msg_len = old_msg_len + strlen(msg_line);
     char* new_PRO_tile_MSG = (char*)malloc(new_msg_len);
 
-    if (offset) {
-
-        old_PRO_MSG[offset] = '\0';
-
-        snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s%s", old_PRO_MSG, msg_line, &old_PRO_MSG[offset2+1]);
-
-
-
-    }
-
-
-    // snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s%s", msg_ptr, msg_line, end_ptr);
-    int copy_amt = 0;
-    if (msg_ptr != NULL) {
-        //match found - copy first half, new entry, then last half
-        copy_amt = &msg_ptr[0] - &old_PRO_MSG[0];
-        memcpy(new_PRO_tile_MSG, old_PRO_MSG, copy_amt);
-        char* new_msg_ptr = new_PRO_tile_MSG + copy_amt;
-        memcpy(new_msg_ptr, msg_line, strlen(msg_line));
-        new_msg_ptr = new_msg_ptr + strlen(msg_line);
-        memcpy(new_msg_ptr, end_ptr, strlen(end_ptr));
-        new_msg_ptr[strlen(end_ptr)] = '\0';
+    if (offset_start) {
+        old_PRO_MSG[offset_start] = '\0';
+        // char* msg_ptr = &old_PRO_MSG[offset_start-5];
+        if (old_msg_len - offset_end < 4) {
+            snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", old_PRO_MSG, msg_line);
+        } else {
+            snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s%s", old_PRO_MSG, msg_line, &old_PRO_MSG[offset_end+1]);
+        }
     } else {
-        //no match found - append to end
-        snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", old_PRO_MSG, msg_line);
+        if (offset_end) {
+            snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", msg_line, &old_PRO_MSG[offset_end+1]);
+        } else {
+            snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", old_PRO_MSG, msg_line);
+        }
     }
-
+    new_PRO_tile_MSG[new_msg_len] = '\0';
 
     return new_PRO_tile_MSG;
 }
@@ -733,8 +702,6 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
     //pass in the first non-blank tile and use that pro_id
     char* new_PRO_tile_MSG = _make_PRO_tile_MSG(&info, tile->pro_id, usr_nfo->game_files.PRO_TILE_MSG);
 
-    char* final_PRO_tile_MSG = append_PRO_tile_MSG_inplace(usr_nfo->game_files.PRO_TILE_MSG, new_PRO_tile_MSG);
-
     char save_path[MAX_PATH];
     snprintf(save_path, MAX_PATH, "%s/data/text/%s/game/pro_tile.msg", game_path, language);
     char* actual_path = io_path_check(save_path);
@@ -743,19 +710,16 @@ bool _append_PRO_tile_MSG(user_info* usr_nfo, tt_arr_handle* handle, const char*
     }
 
     bool success = io_backup_file(save_path, nullptr);
-    success      = io_save_txt_file(save_path, final_PRO_tile_MSG);
+    success      = io_save_txt_file(save_path, new_PRO_tile_MSG);
     if (!success) {
         free(new_PRO_tile_MSG);
-        free(final_PRO_tile_MSG);
         return false;
     }
 
-    // store new_PRO_tile_MSG;
     if (usr_nfo->game_files.PRO_TILE_MSG) {
         free(usr_nfo->game_files.PRO_TILE_MSG);
     }
-    usr_nfo->game_files.PRO_TILE_MSG = final_PRO_tile_MSG;
-    free(new_PRO_tile_MSG);
+    usr_nfo->game_files.PRO_TILE_MSG = new_PRO_tile_MSG;
 
     return true;
 }
