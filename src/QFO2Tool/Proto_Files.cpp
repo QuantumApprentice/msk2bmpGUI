@@ -518,7 +518,7 @@ int _check_MSG_line(char* msg_txt, int id)
     }
     return 0;
 }
-
+//TODO: delete
 char* check_MSG_line(char* msg_txt, int id)
 {
     // int msg_len = strlen(msg_txt);
@@ -558,8 +558,8 @@ char* check_MSG_line(char* msg_txt, int id)
 char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
 {
     int old_msg_len = strlen(old_PRO_MSG);
-    int src_msg_id  = pro_id * 100;
-    int src_dsc_id  = src_msg_id + 1;
+    int src_msg_id  = pro_id * 100;         //message id {key} is the proto id * 100
+    int src_dsc_id  = src_msg_id + 1;       //message description {key} is the message id + 1
 
     int offset_start;
     int offset_end;
@@ -570,11 +570,11 @@ char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
 
             if (offset) {
                 offset_start = i;
-                ++i += offset;
-                // char* msg_ptr = &old_PRO_MSG[i];
+                i = offset + 1;
+                // char* debug = &old_PRO_MSG[i];
                 offset = _check_MSG_line(&old_PRO_MSG[i], src_dsc_id);
                 if (offset) {
-                    offset_end = i + offset;
+                    offset_end = i + offset;    //+1? or not? TODO: maybe add 1 here and check if == to old_PRO_MSG_len?
                 }
                 break;
             }
@@ -586,8 +586,8 @@ char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
     char msg_line[DESC_SIZE+NAME_SIZE+6];       // +6 for the extra curly braces '{' & '}'
     snprintf(msg_line, DESC_SIZE+NAME_SIZE+6,
             "{%d}{}{%s}\r\n{%d}{}{%s}\r\n",
-            pro_id*100,   info->name,
-            pro_id*100+1, info->description);
+            src_msg_id, info->name,
+            src_dsc_id, info->description);
 
 
     int new_msg_len = old_msg_len + strlen(msg_line);
@@ -595,7 +595,7 @@ char* _make_PRO_tile_MSG(proto_info* info, int pro_id, char* old_PRO_MSG)
 
     if (offset_start) {
         old_PRO_MSG[offset_start] = '\0';
-        // char* msg_ptr = &old_PRO_MSG[offset_start-5];
+        // char* debug = &old_PRO_MSG[offset_start-5];
         if (old_msg_len - offset_end < 4) {
             snprintf(new_PRO_tile_MSG, new_msg_len, "%s%s", old_PRO_MSG, msg_line);
         } else {
