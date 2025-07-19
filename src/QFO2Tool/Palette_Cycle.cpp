@@ -57,6 +57,15 @@ void color_cycle_PAL(Palette* pal, int* g_dwCurrent, int pal_index, uint8_t * cy
 {
     uint16_t Current_Frame = *g_dwCurrent;
 
+    //print palette, all colors in a 3 column table
+    // static bool debug = true;
+    // if (debug) {
+    //     for (int i = 0; i < 255; i++) {
+    //         printf("%03d %d %d %d\n", i, pal->colors[i].r, pal->colors[i].g, pal->colors[i].b);
+    //     }
+    //     debug = false;
+    // }
+
     for (int i = cycle_count; i >= 0; i--) {
         pal->colors[pal_index + i].r = cycle_colors[Current_Frame * 3 + 0];
         pal->colors[pal_index + i].g = cycle_colors[Current_Frame * 3 + 1];
