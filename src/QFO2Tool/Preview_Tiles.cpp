@@ -373,7 +373,6 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
     {
 //////////////////////////////////////////
         ImGui::TableNextColumn();
-        //button 1
         if (exported_tiles == NULL) {
             ImGui::BeginDisabled();
         }
@@ -386,10 +385,6 @@ void export_button_table_STATE(tt_arr_handle* exported_tiles, user_info* usr_nfo
             "Is checked for the names of these tiles\n"
             "and then appended to only if they\n"
             "don't already exist.\n\n"
-            //TODO: delete commented stuff, can now extract
-            // "(NOTE: Currently can't load\n"
-            // "TILES.LST from master.dat\n"
-            // "but should be able too in the future)"
         );
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
@@ -955,7 +950,8 @@ enum TileExport {
     MatchFound  = 3,
     Extract     = 4,
     Append      = 5,
-    Feedback    = 6,
+    ExportTiles = 6,
+    Feedback    = 7,
 };
 
 TileExport append_LST_feedback_popup(STATE_export* state, TileExport state_switch)
@@ -1150,100 +1146,6 @@ TileExport export_TILE_match_found(STATE_export* state)
     return state_switch;
 }
 
-// Init
-TileExport export_TILE_init_popup(STATE_export* state)
-{
-    TileExport state_switch = Init;
-    bool export_tile_popup = true;
-    if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
-        //input name
-        ImGui::Text(
-            "Please type a default name for these tiles.\n"
-            "Exporting will append a tile number to this name.\n\n"
-            "Tile names can only be 8 characters total,\n"
-            "and 3 of those characters are currently\n"
-            "taken up by the numbering system.\n"
-            "(Which leaves 5 for you to work with).\n"
-            "ex: tile_000.FRM, tile_001.FRM, ... tile_999.FRM\n"
-        );
-        //game engine/mapper only takes 8 character tile-names
-        ImGui::InputText(
-            "Name\n(max 5 characters)",
-            state->save_name, 6);
-
-        ImGui::Text(
-            "In order to get new FRMs to appear in the Fallout 2\n"
-            "mapper (mapper2.exe), new entries must be made in\n\n"
-            "   Fallout 2/data/art/tiles/TILES.LST\n\n"
-            "For this to work, please provide the path to\n"
-            "fallout2.exe in your modded Fallout 2 folder,\n"
-            "and have this file extracted to its\n"
-            "appropriate location.\n"
-        );
-        //fallout2.exe check
-        //TODO: disable the "Auto Export All" button when fallout2.exe not found
-        static char FObuff[MAX_PATH] = "";
-        bool found = game_path_menu(state->usr_nfo, FObuff);
-
-        ImGui::Text(
-            "If only exporting FRMs, the mapper must be set in\n"
-            "'Librarian' mode and new protos must be made from\n"
-            "these new FRMs."
-        );
-
-        static char* lst_path = NULL;
-
-        //input name
-        ImGui::Text(
-        "In order to get new tiles to appear in the mapper\n"
-        "(and thus in the game), each tile must have a proto(.pro)\n"
-        "file made, and an entry for each tile appended to\n\n"
-        "   Fallout 2/data/art/tiles/TILES.LST\n"
-        "   Fallout 2/data/proto/tiles/TILES.LST\n\n"
-        "In addition, entries can optionally be made in\n\n"
-        "   Fallout 2/data/text/english/game/pro_tile.msg\n\n"
-        "to give the tile a name and description in the\n"
-        "Fallout 2 mapper (Mapper2.exe).\n\n"
-        );
-
-        ImGui::Text(
-        "\nThese are Optional,\n"
-        "and will be applied to all tiles in this set.\n"
-        );
-
-        get_material_id();
-        input_name();
-        input_desc();
-
-        if (state->art || state->pro || state->pat) {
-            if (found) {
-                ImGui::BeginDisabled();
-            }
-            if (ImGui::Button("Auto Export All")) {
-
-                //TODO: delete? are we using rename_tiles()?
-                // rename_tiles(state->handle, state->save_name);
-                state->handle = crop_TMAP_tiles(state->offset, state->src, state);
-                if (!state->handle) {
-                    //TODO: what do I do on fail?
-                } else {
-                    state_switch = LoadFiles;
-                    // process_event(event_Export{});
-                }
-            }
-            if (found) {
-                ImGui::EndDisabled();
-            }
-            if (ImGui::Button("Close")) {
-                state_switch = Off;
-                ImGui::CloseCurrentPopup();
-            }
-        }
-        ImGui::EndPopup();
-    }
-    return state_switch;
-}
-
 // LoadFiles
 TileExport export_TILE_load_LST_files(STATE_export* state)
 {
@@ -1293,30 +1195,141 @@ TileExport export_TILE_load_LST_files(STATE_export* state)
     return switch_state;
 }
 
-void export_TILE_state_machine(TileExport state_switch, user_info* usr_nfo)
+// Init
+TileExport export_TILE_init_popup(STATE_export* state)
 {
-    static STATE_export state;
-    state.usr_nfo = usr_nfo;
+    TileExport state_switch = Init;
+    bool export_tile_popup = true;
+    if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
+        //input name
+        ImGui::Text(
+            "Please type a default name for these tiles.\n"
+            "Exporting will append a tile number to this name.\n\n"
+            "Tile names can only be 8 characters total,\n"
+            "and 3 of those characters are currently\n"
+            "taken up by the numbering system.\n"
+            "(Which leaves 5 for you to work with).\n"
+            "ex: tile_000.FRM, tile_001.FRM, ... tile_999.FRM\n"
+        );
+        //game engine/mapper only takes 8 character tile-names
+        ImGui::InputText(
+            "Name\n(max 5 characters)",
+            state->save_name, 6);
+
+        bool found = false;
+
+        if (state->art) {   // || state->pro || state->pat) {
+            ImGui::Text(
+                "In order to get new FRMs to appear in the Fallout 2\n"
+                "mapper (mapper2.exe), new entries must be made in\n\n"
+                "   Fallout 2/data/art/tiles/TILES.LST\n\n"
+                "For this to work, please provide the path to\n"
+                "fallout2.exe in your modded Fallout 2 folder,\n"
+                "and have this file extracted to its\n"
+                "appropriate location.\n"
+            );
+            //fallout2.exe check
+            //TODO: disable the "Auto Export All" button when fallout2.exe not found
+            static char FObuff[MAX_PATH] = "";
+            found = game_path_menu(state->usr_nfo, FObuff);
+        }
+
+        ImGui::Text(
+            "If only exporting FRMs, the mapper must be set in\n"
+            "'Librarian' mode and new protos must be made from\n"
+            "inside the mapper, using these new FRMs."
+        );
+
+        if (state->pro) {
+            //input name
+            ImGui::Text(
+            "In order to get new tiles to appear in the mapper\n"
+            "(and thus in the game), each tile must have a proto(.pro)\n"
+            "file made, and an entry for each tile appended to\n\n"
+            "   Fallout 2/data/art/tiles/TILES.LST\n"
+            "   Fallout 2/data/proto/tiles/TILES.LST\n\n"
+            "In addition, entries can optionally be made in\n\n"
+            "   Fallout 2/data/text/english/game/pro_tile.msg\n\n"
+            "to give the tile a name and description in the\n"
+            "Fallout 2 mapper (Mapper2.exe).\n\n"
+            );
+
+            ImGui::Text(
+            "\nThese are Optional,\n"
+            "and will be applied to all tiles in this set.\n"
+            );
+
+            get_material_id();
+            input_name();
+            input_desc();
+        }
+
+        if (state->art) {   // || state->pro || state->pat) {
+            if (found) {
+                ImGui::BeginDisabled();
+            }
+            if (ImGui::Button("Auto Export All")) {
+
+                //TODO: delete? are we using rename_tiles()?
+                // rename_tiles(state->handle, state->save_name);
+                state->handle = crop_TMAP_tiles(state->offset, state->src, state);
+                if (!state->handle) {
+                    //TODO: what do I do on fail?
+                } else {
+                    state_switch = LoadFiles;
+                }
+            }
+            if (found) {
+                ImGui::EndDisabled();
+            }
+            if (ImGui::Button("Close")) {
+                state_switch = Off;
+                ImGui::CloseCurrentPopup();
+            }
+        } else {
+            if (ImGui::Button("Auto Export Tile FRMs")) {
+                state->handle = crop_TMAP_tiles(state->offset, state->src, state);
+                if (!state->handle) {
+                    //TODO: what do I do on fail?
+                } else {
+                    state_switch = ExportTiles;
+                }
+            }
+        }
+        ImGui::EndPopup();
+    }
+    return state_switch;
+}
+
+void export_TILE_state_machine(TileExport state_switch, user_info* usr_nfo, STATE_export* state)
+{
+    state->usr_nfo = usr_nfo;
 
     switch (state_switch)
     {
+    case Off:
+        //do nothing
+        break;
     case Init:
-        state_switch = export_TILE_init_popup(&state);
+        state_switch = export_TILE_init_popup(state);
         break;
     case LoadFiles:
-        state_switch = export_TILE_load_LST_files(&state);
+        state_switch = export_TILE_load_LST_files(state);
         break;
     case MatchFound:
-        state_switch = export_TILE_match_found(&state);
+        state_switch = export_TILE_match_found(state);
         break;
     case Extract:
-        state_switch = export_TILE_success(&state);
+        state_switch = export_TILE_success(state);
         break;
     case Append:
-        state_switch = export_TILE_append(&state);
+        state_switch = export_TILE_append(state);
+        break;
+    case ExportTiles:
+        //TODO: actually export the tiles here (or maybe move it earlier)
         break;
     case Feedback:
-        state_switch = export_TILE_feedback(&state);
+        state_switch = export_TILE_feedback(state);
         break;
 
     default:
@@ -1334,7 +1347,7 @@ tt_arr_handle* TMAP_tile_state_machine(user_info* usr_nfo, Surface* srfc, Rect* 
     // static boost::sml::sm<ExportMachine, boost::sml::process_queue<std::queue>> StateMachine{&state};
 
     static TileExport export_state = Off;
-    export_TILE_state_machine(export_state, usr_nfo);
+    export_TILE_state_machine(export_state, usr_nfo, &state);
 
     if (handle) {
         state.handle = handle;
