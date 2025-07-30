@@ -18,7 +18,10 @@
 #include "imgui.h"
 #include "Load_Settings.h"
 #include "MSK_Convert.h"
+
 #include "platform_io.h"
+#include "platform_dialogs.h"
+
 #include "Edit_TILES_LST.h"
 #include "tiles_pattern.h"
 #include "town_map_tiles.h"
@@ -187,6 +190,12 @@ bool ImDialog_save_PNG(PNG_Save_Struct* save_nfo)
     return false;
 }
 
+//TODO: delete?
+bool ImDialog_save_TILE()
+{
+
+}
+
 
 
 
@@ -263,33 +272,6 @@ bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info)
     save_inf.match_name = NULL;
     save_inf.overwrite  = false;
     return false;
-}
-
-
-//initialize Ifd::FileDialog system
-//by setting callbacks that create and delete thumbnail textures
-void init_IFD()
-{
-    //TODO: move this to some initializing function
-    ifd::FileDialog::Instance().CreateTexture = [](uint8_t* data, int w, int h, char fmt) -> void* {
-        GLuint tex;
-        // https://github.com/dfranx/ImFileDialog
-        glGenTextures(1, &tex);
-        glBindTexture(GL_TEXTURE_2D, tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt==0)?GL_BGRA:GL_RGBA, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        return (void*)(uint64_t)tex;
-    };
-    ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
-        GLuint texID = (uint64_t)tex;
-        glDeleteTextures(1, &texID);
-    };
 }
 
 bool write_single_frame_FRM_SURFACE(Surface* src, FILE* dst, bool single_frame)
@@ -483,13 +465,16 @@ bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_I
     static char save_name[MAX_PATH];
     const char* save_type;
     if (sv_info->s_type == single_frm) {
-        save_type = "Export only selected \nframe as FRM.";
+        save_type = "Export only selected\n"
+                    "frame as FRM.";
     }
     else if (sv_info->s_type == single_dir) {
-        save_type = "Export all frames in \nselected direction as FRx.";
+        save_type = "Export all frames in\n"
+                    "selected direction as FRx.";
     }
     else if (sv_info->s_type == all_dirs) {
-        save_type = "Export all frames in \nall directions as FRM.";
+        save_type = "Export all frames in\n"
+                    "all directions as FRM.";
     }
 
     const char* ext_filter;
@@ -800,7 +785,7 @@ uint8_t* tile_grid(Surface* src, uint8_t* selected, int e)
     return selected;
 }
 
-
+//TODO: delete?
 //called 1st
 bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info)
 {
@@ -945,7 +930,7 @@ bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_
     return true;
 }
 
-//TODO: do I need this blending system?
+//TODO: delete? do I need this blending system?
 //      seems like it was used to get alpha channels back
 //      into the FRM, but not sure how well it worked
 //      --certainly doesn't work now

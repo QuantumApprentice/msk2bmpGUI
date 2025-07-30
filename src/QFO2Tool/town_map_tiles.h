@@ -34,7 +34,9 @@ struct tt_arr_handle {
 
 struct STATE_export {
     char save_name[16] = "tile_";
-    char LST_path[MAX_PATH];
+    char LST_path[MAX_PATH];    //TODO: delete? get rid of this entry
+    char* save_path = NULL;
+    char* matches = NULL;
     //TODO: let the user choose the language
     const char* language[5] = {
         "english",
@@ -146,7 +148,8 @@ static int tile_mask[] = {
     30, 39,     //row 35
     32, 35,     //row 36
 };
+tt_arr_handle* export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr);
+tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite);
 
 tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state);
-tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite);
 void crop_single_tile(uint8_t* tile_buff, uint8_t* frm_pxls, int img_w, int img_h, int x, int y);

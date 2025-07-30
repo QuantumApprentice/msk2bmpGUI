@@ -307,6 +307,27 @@ tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
     return handle;
 }
 
+tt_arr_handle* export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr)
+{
+    int row_cnt = handle->row_cnt;
+    int col_cnt = handle->col_cnt;
+
+    for (int row = 0; row < row_cnt; row++) {
+        for (int col = 0; col < col_cnt; col++) {
+            tt_arr* tile = &handle->tile[row*col_cnt + col];
+            if (tile->frm_id == -1) {
+                continue;
+            }
+
+            char buffer[MAX_PATH];
+            snprintf(buffer, MAX_PATH, "%s/%s", save_fldr, tile->name_ptr);
+
+            save_TMAP_tile_FRM(buffer, tile->frm_data, tile->name_ptr);
+        }
+    }
+
+    return handle;
+}
 
 //array version (stores tile position)
 //TODO: delete? check if I'm using this first!

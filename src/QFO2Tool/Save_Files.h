@@ -16,7 +16,6 @@ struct Save_Info {
     Save_Type s_type;
     int action_frame = 0;
 };
-void init_IFD();
 bool ImDialog_save_FRM_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info);
 bool ImDialog_save_TILE_SURFACE(image_data* img_data, user_info* usr_info, Save_Info* sv_info);
 bool save_PNG_popup_INTERNAL(image_data* img_data, user_info* usr_info);
