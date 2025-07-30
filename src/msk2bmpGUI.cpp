@@ -1083,9 +1083,9 @@ bool save_FRM_popup(LF* F_Prop)
     //TODO: replace ImGui::Begin() with BeginPopupModal()?
     ImGui::Begin("Export FRM", &open_window);
         static int e;
-        ImGui::RadioButton("Selected Frame",     &e, 0);
+        ImGui::RadioButton("Selected Frame",     &e, 2);
         ImGui::RadioButton("Selected Direction", &e, 1);
-        ImGui::RadioButton("All Directions",     &e, 2);
+        ImGui::RadioButton("All Directions",     &e, 0);
         sv_info.s_type = (Save_Type)e;
 
         char dup_name[MAX_PATH] = {};

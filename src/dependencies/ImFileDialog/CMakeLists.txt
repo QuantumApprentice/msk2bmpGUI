@@ -12,14 +12,6 @@ set(SOURCES
 	../imgui-1.90.8-docking/imgui_draw.cpp
 	../imgui-1.90.8-docking/imgui_tables.cpp
 	../imgui-1.90.8-docking/backends/imgui_impl_opengl3.cpp
-
-	
-	# libs/imgui/imgui.cpp
-	# libs/imgui/imgui_widgets.cpp
-	# libs/imgui/imgui_draw.cpp
-	# libs/imgui/imgui_tables.cpp
-	# libs/imgui/backends/imgui_impl_opengl3.cpp
-	# libs/imgui/backends/imgui_impl_sdl.cpp
 )
 
 # cmake toolchain

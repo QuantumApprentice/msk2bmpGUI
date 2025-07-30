@@ -45,6 +45,8 @@ add_library(QFO2ToolLib
   Zoom_Pan.h
   platform_io.h
   platform_io.cpp
+  platform_dialogs.h
+  platform_dialogs.cpp
   timer_functions.h
   timer_functions.cpp
   Edit_TILES_LST.h
