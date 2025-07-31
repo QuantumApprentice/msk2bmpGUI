@@ -1087,9 +1087,10 @@ TileExport export_TILE_success(STATE_export* state)
 TileExport export_TILE_match_found_popup(STATE_export* state)
 {
     TileExport state_switch = MatchFound;
-    bool export_tile_popup = true;
+    bool need_input_popup = true;
+    bool match_found_popup = true;
     bool open_popup = false;
-    if (ImGui::BeginPopupModal("Need Input!", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
+    if (ImGui::BeginPopupModal("Need Input!", &need_input_popup, ImGuiChildFlags_AutoResizeY)) {
         if (state->art) {// || state->pro || state->pat) {
             ImGui::Text("Unable to find:");
             if (!state->usr_nfo->game_files.FRM_TILES_LST) {
@@ -1144,7 +1145,7 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
     }
 
     // static char save_path[MAX_PATH];
-    if (ImGui::BeginPopupModal("Match Found", &export_tile_popup, ImGuiChildFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal("Match Found", &match_found_popup, ImGuiChildFlags_AlwaysAutoResize)) {
         ImGui::Text("Filename matches found:\n");
 
         ImGui::Text(
@@ -1153,16 +1154,18 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
         if (ImGui::Button("Overwrite?")) {
             state_switch = ExportTiles;
             ImGui::CloseCurrentPopup();
+            free(state->matches);
         }
         if (ImGui::Button("Select a different folder?")) {
             state_switch = Save;
-            // ImDialog_save_folder(state->usr_nfo);
             ImGui::CloseCurrentPopup();
+            free(state->matches);
         }
 
         if (ImGui::Button("Cancel")) {
             state_switch = Init;
             ImGui::CloseCurrentPopup();
+            free(state->matches);
         }
 
         ImGui::EndPopup();
@@ -1449,7 +1452,6 @@ void export_TILE_state_machine(STATE_export* state)
         break;
     case Save:
         state_switch = export_TILE_save(state);
-        //TODO: check filenames and open MatchFound if matches found
         break;
     case ExportTiles:
         //TODO: overwrite tiles
@@ -1463,7 +1465,6 @@ void export_TILE_state_machine(STATE_export* state)
         printf("got a missing state: L%d\n", __LINE__);
         break;
     }
-
 }
 
 tt_arr_handle* TMAP_tile_state_machine(user_info* usr_nfo, Surface* srfc, Rect* offset, tt_arr_handle* handle)
