@@ -1039,6 +1039,32 @@ TileExport extract_LST_fail_popup(STATE_export* state, TileExport state_switch)
     return state_switch;
 }
 
+TileExport export_TILES_success_popup(STATE_export* state, TileExport state_switch)
+{
+    if (ImGui::BeginPopupModal("Export Successful", NULL, ImGuiChildFlags_AlwaysAutoResize)) {
+
+        ImGui::BeginChild("Export Successful", ImVec2(ImGui::GetContentRegionAvail().x, 260), ImGuiChildFlags_None);
+        for (int i = 0; i < state->handle->size; i++)
+        {
+            tt_arr* tile = &state->handle->tile[i];
+            if (tile->frm_id != -1) {
+                ImGui::Text("%s\n", tile->name_ptr);
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::Text("Exported Successfully to\n%s\n", state->save_path);
+
+        if (ImGui::Button("Close")) {
+            ImGui::CloseCurrentPopup();
+            state_switch = Off;
+        }
+
+        ImGui::EndPopup();
+    }
+    return state_switch;
+}
+
 // Feedback
 TileExport export_TILE_feedback(STATE_export* state)
 {
@@ -1047,6 +1073,7 @@ TileExport export_TILE_feedback(STATE_export* state)
     state_switch = append_LST_feedback_popup( state, state_switch);
     state_switch = extract_LST_feedback_popup(state, state_switch);
     state_switch = extract_LST_fail_popup(    state, state_switch);
+    state_switch = export_TILES_success_popup(state, state_switch);
 
     return state_switch;
 }
@@ -1091,7 +1118,7 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
     bool match_found_popup = true;
     bool open_popup = false;
     if (ImGui::BeginPopupModal("Need Input!", &need_input_popup, ImGuiChildFlags_AutoResizeY)) {
-        if (state->art) {// || state->pro || state->pat) {
+        if (state->art) {
             ImGui::Text("Unable to find:");
             if (!state->usr_nfo->game_files.FRM_TILES_LST) {
                 ImGui::Text("art\\tiles\\TILES.LST");
@@ -1144,13 +1171,9 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
         ImGui::EndPopup();
     }
 
-    // static char save_path[MAX_PATH];
-    if (ImGui::BeginPopupModal("Match Found", &match_found_popup, ImGuiChildFlags_AlwaysAutoResize)) {
-        ImGui::Text("Filename matches found:\n");
+    if (ImGui::BeginPopupModal("Match Found", &match_found_popup, ImGuiChildFlags_AutoResizeY)) {
+        ImGui::Text("Filename matches found:\n%s\n", state->matches);
 
-        ImGui::Text(
-            "%s already exists,\n\n", state->matches
-        );
         if (ImGui::Button("Overwrite?")) {
             state_switch = ExportTiles;
             ImGui::CloseCurrentPopup();
@@ -1161,7 +1184,6 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
             ImGui::CloseCurrentPopup();
             free(state->matches);
         }
-
         if (ImGui::Button("Cancel")) {
             state_switch = Init;
             ImGui::CloseCurrentPopup();
@@ -1189,36 +1211,45 @@ TileExport export_TILE_load_LST_files(STATE_export* state)
         PRO_MSG = load_PRO_MSG_state(state->usr_nfo, state);
     }
 
-    bool match_found = false;
-    for (int i = 0; i < state->handle->size; i++)
-    {
-        if (state->handle->tile[i].frm_id == -1) {
-            continue;
-        }
-        snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s",
-                state->usr_nfo->default_game_path,
-                state->handle->tile[i].name_ptr);
+    // bool match_found = false;
+    // for (int i = 0; i < state->handle->size; i++)
+    // {
+    //     if (state->handle->tile[i].frm_id == -1) {
+    //         continue;
+    //     }
+    //     snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s",
+    //             state->usr_nfo->default_game_path,
+    //             state->handle->tile[i].name_ptr);
+    //     char* path_case = io_path_check(state->LST_path);
+    //     if (io_file_exists(path_case)) {
+    //         match_found = true;
+    //     }
+    // }
+    // if (match_found) {
+    //     // process_event(event_MatchesFound{});
+    //     switch_state = MatchFound;
+    //     ImGui::OpenPopup("Match Found");
+    // }
 
-        char* path_case = io_path_check(state->LST_path);
-
-        if (io_file_exists(path_case)) {
-            match_found = true;
-        }
-
-        if (match_found) {
-            // process_event(event_MatchesFound{});
-            switch_state = MatchFound;
+    if (state->art) {
+        if (FRM_LST) {
+            // process_event(event_FilesNotFound{});
+            switch_state = Append;
+        } else {
+            switch_state = Extract;
         }
     }
+    if (state->pro) {
+        if (PRO_LST && PRO_MSG) {
+            switch_state = Append;
+        } else {
+            switch_state = Extract;
+        }
 
-    if (!FRM_LST || !PRO_LST || !PRO_MSG) {
-        // process_event(event_FilesNotFound{});
-        ImGui::OpenPopup("Need Input!");
-        switch_state = Extract;
     }
-    else
-    if (!match_found) {
+    if (switch_state == Extract) {
         // process_event(event_Export{});
+        ImGui::OpenPopup("Need Input!");
     }
     return switch_state;
 }
@@ -1303,11 +1334,16 @@ TileExport export_TILE_init_popup(STATE_export* state)
                 //TODO: delete? are we using rename_tiles()?
                 // rename_tiles(state->handle, state->save_name);
                 state->handle = crop_TMAP_tiles(state->offset, state->src, state);
-                if (!state->handle) {
+                if (state->handle) {
+                    // state_switch = LoadFiles;
+                    static char buffer[MAX_PATH];
+                    snprintf(buffer, MAX_PATH, "%s/data/ART/tiles", state->usr_nfo->default_game_path);
+                    // state->save_path = state->usr_nfo->default_game_path;
+                    state->save_path = buffer;
+                    state_switch = MatchCheck;
+                } else {
                     //TODO: what do I do on fail? warning popup?
                     // state_switch=Feedback    //?
-                } else {
-                    state_switch = LoadFiles;
                 }
             }
             if (found) {
@@ -1369,50 +1405,56 @@ TileExport export_TILE_export(STATE_export* state)
     }
 
     if (success) {
-        switch_state = Feedback;
+        // ImGui::OpenPopup("Export Successful");
+        // switch_state = Feedback;
+        switch_state = LoadFiles;
     }
 
     return switch_state;
+}
+
+char* check_names(char* path, tt_arr_handle* handle)
+{
+    int match_len = 0;
+    char* matches = NULL;
+    char buffer[MAX_PATH];
+    int size = handle->size;
+    for (int i = 0; i < size; i++)
+    {
+        tt_arr* tile = &handle->tile[i];
+        if (tile->frm_id == -1) {
+            continue;
+        }
+
+        snprintf(buffer, MAX_PATH, "%s/%s", path, tile->name_ptr);
+
+        if (io_file_exists(buffer)) {
+            if (!matches) {
+                match_len = 64;
+                matches = (char*)calloc(1,64);
+            } else
+            if (strlen(matches) + 8 > match_len) {
+                matches = (char*)realloc(matches, match_len + 64);
+                match_len += 64;
+            }
+            strcat(matches, tile->name_ptr);
+            strcat(matches, "\n");
+        }
+    }
+    return matches;
 }
 
 TileExport export_TILE_check_names(STATE_export* state)
 {
     TileExport switch_state = MatchCheck;
     char* path = state->save_path;
-    int   size = state->handle->size;
-    int match_ln = 0;
-    char buffer[MAX_PATH];
 
-    for (int i = 0; i < size; i++)
-    {
-        tt_arr* tile = &state->handle->tile[i];
-        if (tile->frm_id == -1) {
-            continue;
-        }
-
-        snprintf(buffer, MAX_PATH, "%s/%s", state->save_path, tile->name_ptr);
-
-        if (io_file_exists(buffer)) {
-            if (!state->matches) {
-                match_ln = 64;
-                state->matches = (char*)calloc(1,64);
-            } else
-            if (strlen(state->matches) + 8 > match_ln) {
-                state->matches = (char*)realloc(state->matches, match_ln + 64);
-                match_ln += 64;
-            }
-            strcat(state->matches, tile->name_ptr);
-            strcat(state->matches, "\n");
-
-            switch_state = MatchFound;
-        }
-    }
-
-    if (switch_state == MatchCheck) {
-        switch_state = ExportTiles;
-    }
-    if (switch_state == MatchFound) {
+    state->matches = check_names(state->save_path, state->handle);
+    if (state->matches) {
+        switch_state = MatchFound;
         ImGui::OpenPopup("Match Found");
+    } else {
+        switch_state = ExportTiles;
     }
 
     return switch_state;
@@ -1454,7 +1496,6 @@ void export_TILE_state_machine(STATE_export* state)
         state_switch = export_TILE_save(state);
         break;
     case ExportTiles:
-        //TODO: overwrite tiles
         state_switch = export_TILE_export(state);
         break;
     case Feedback:

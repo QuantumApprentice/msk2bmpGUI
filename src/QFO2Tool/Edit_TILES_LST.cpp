@@ -318,7 +318,7 @@ char* _append_FRM_tiles_LST(char* old_FRM_LST, tt_arr_handle* handle)
     //in a new buffer large enough to fit both
     int old_LST_size    = strlen(old_FRM_LST);
     int new_LST_size    = strlen(new_FRM_LST);
-    int final_size      = old_LST_size + new_LST_size + 1;      //+1 for null char
+    int final_size      = old_LST_size + new_LST_size + 1;      //+1 for '\0'
     char* final_FRM_LST = (char*)malloc(final_size);
     snprintf(final_FRM_LST, final_size, "%s%s", old_FRM_LST, new_FRM_LST);
 
