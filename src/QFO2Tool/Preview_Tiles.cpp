@@ -22,9 +22,23 @@
 #define MTILE_H (300)
 #define MTILE_SIZE (350 * 300)
 
+enum TileExport {
+    Off         , //= 0,
+    Init        , //= 1,
+    LoadFiles   , //= 2,
+    MatchFound  , //= 3,
+    Extract     , //= 4,
+    Append      , //= 5,
+    Save        , //= 6,
+    MatchCheck  , //= 7,
+    ExportTiles , //= 8,
+    Feedback    , //= 9,
+};
+
 void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, image_data *img_data);
 void draw_red_squares(image_data *img_data, bool show_squares);
 void draw_red_tiles(image_data *img_data, bool show_squares);
+TileExport export_TILE_check_filenames(STATE_export* state);
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
@@ -99,7 +113,7 @@ void crop_WMAP_tile(int tile_w, int tile_h, int img_w, int img_h, int scale, ima
             new_bottom.x = new_corner.x + (tile_w * scale);
             new_bottom.y = new_corner.y + (tile_h * scale);
 
-#pragma region render tiles
+#pragma region render_tiles
             //TODO: blit each crop to a single texture
             //      with adequate spacing between
             //      then display that texture directly in window call
@@ -941,19 +955,6 @@ class ExportMachine {
     }
 };
 
-enum TileExport {
-    Off         , //= 0,
-    Init        , //= 1,
-    LoadFiles   , //= 2,
-    MatchFound  , //= 3,
-    Extract     , //= 4,
-    Append      , //= 5,
-    Save        , //= 6,
-    MatchCheck  , //= 7,
-    ExportTiles , //= 8,
-    Feedback    , //= 9,
-};
-
 TileExport append_LST_feedback_popup(STATE_export* state, TileExport state_switch)
 {
     if (ImGui::BeginPopupModal("Append LST Files")) {
@@ -1098,7 +1099,7 @@ TileExport export_TILE_append(STATE_export* state)
 }
 
 // Extract
-TileExport export_TILE_success(STATE_export* state)
+TileExport export_TILE_extract_DAT(STATE_export* state)
 {
     if (tt_file_DAT_extract(state->usr_nfo, state)) {
         ImGui::OpenPopup("Number 5 is Alive! Files Extracted!");
@@ -1115,8 +1116,6 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
 {
     TileExport state_switch = MatchFound;
     bool need_input_popup = true;
-    bool match_found_popup = true;
-    bool open_popup = false;
     if (ImGui::BeginPopupModal("Need Input!", &need_input_popup, ImGuiChildFlags_AutoResizeY)) {
         if (state->art) {
             ImGui::Text("Unable to find:");
@@ -1171,11 +1170,13 @@ TileExport export_TILE_match_found_popup(STATE_export* state)
         ImGui::EndPopup();
     }
 
+    bool match_found_popup = true;
     if (ImGui::BeginPopupModal("Match Found", &match_found_popup, ImGuiChildFlags_AutoResizeY)) {
         ImGui::Text("Filename matches found:\n%s\n", state->matches);
 
         if (ImGui::Button("Overwrite?")) {
             state_switch = ExportTiles;
+            // state_switch = export_TILE_export(state);
             ImGui::CloseCurrentPopup();
             free(state->matches);
         }
@@ -1335,12 +1336,11 @@ TileExport export_TILE_init_popup(STATE_export* state)
                 // rename_tiles(state->handle, state->save_name);
                 state->handle = crop_TMAP_tiles(state->offset, state->src, state);
                 if (state->handle) {
-                    // state_switch = LoadFiles;
                     static char buffer[MAX_PATH];
                     snprintf(buffer, MAX_PATH, "%s/data/ART/tiles", state->usr_nfo->default_game_path);
-                    // state->save_path = state->usr_nfo->default_game_path;
                     state->save_path = buffer;
-                    state_switch = MatchCheck;
+                    // state_switch = MatchCheck;
+                    state_switch = export_TILE_check_filenames(state);
                 } else {
                     //TODO: what do I do on fail? warning popup?
                     // state_switch=Feedback    //?
@@ -1365,6 +1365,13 @@ TileExport export_TILE_init_popup(STATE_export* state)
         }
         ImGui::EndPopup();
     }
+
+    //have to open popups outside the current popup
+    //  in order to have it pop up at all
+    if (state_switch == MatchFound) {
+        ImGui::OpenPopup("Match Found");
+    }
+
     return state_switch;
 }
 
@@ -1373,14 +1380,14 @@ TileExport export_TILE_save(STATE_export* state)
     TileExport state_switch = Save;
 
     char* save_folder = ImDialog_save_folder(state->usr_nfo);
-
     if (save_folder) {
         if (save_folder[0] == '\0') {
             state_switch = Init;
             ImGui::OpenPopup("Export Tiles");
         } else {
             state->save_path = save_folder;
-            state_switch = MatchCheck;
+            // state_switch = MatchCheck;
+            state_switch = export_TILE_check_filenames(state);
         }
     }
 
@@ -1396,18 +1403,17 @@ TileExport export_TILE_export(STATE_export* state)
     }
     bool success = io_make_dir(state->save_path);
 
-    tt_arr_handle* handle = NULL;
     if (state->save_path[0] != '\0' && success) {
-        handle = export_TMAP_tiles(state->offset, state->handle, state->save_path);
-        if (!handle) {
-            success = false;
-        }
+        export_TMAP_tiles(state->offset, state->handle, state->save_path);
     }
 
-    if (success) {
-        // ImGui::OpenPopup("Export Successful");
-        // switch_state = Feedback;
-        switch_state = LoadFiles;
+    if (success) {  //TODO: do we need success check here?
+        if (state->art) {
+            switch_state = LoadFiles;
+        } else {
+            ImGui::OpenPopup("Export Successful");
+            switch_state = Feedback;
+        }
     }
 
     return switch_state;
@@ -1444,20 +1450,17 @@ char* check_names(char* path, tt_arr_handle* handle)
     return matches;
 }
 
-TileExport export_TILE_check_names(STATE_export* state)
+TileExport export_TILE_check_filenames(STATE_export* state)
 {
-    TileExport switch_state = MatchCheck;
-    char* path = state->save_path;
-
     state->matches = check_names(state->save_path, state->handle);
     if (state->matches) {
-        switch_state = MatchFound;
-        ImGui::OpenPopup("Match Found");
+        return MatchFound;
     } else {
-        switch_state = ExportTiles;
-    }
 
-    return switch_state;
+        // TileExport export_TILE_export(STATE_export* state)
+
+        return ExportTiles;
+    }
 }
 
 void export_TILE_state_machine(STATE_export* state)
@@ -1481,13 +1484,15 @@ void export_TILE_state_machine(STATE_export* state)
         state_switch = export_TILE_load_LST_files(state);
         break;
     case MatchCheck:
-        state_switch = export_TILE_check_names(state);
+        //TODO: remove this switch
+        state_switch = export_TILE_check_filenames(state);
         break;
     case MatchFound:
         state_switch = export_TILE_match_found_popup(state);
         break;
     case Extract:
-        state_switch = export_TILE_success(state);
+        //TODO: remove this switch
+        state_switch = export_TILE_extract_DAT(state);
         break;
     case Append:
         state_switch = export_TILE_append(state);
@@ -1685,7 +1690,10 @@ void prev_TMAP_tiles_SURFACE(user_info* usr_info, variables *My_Variables, image
 
     show_popup_warnings();
 
-    static Rect offset = {};
+    static Rect offset = {
+        .w = 1,
+        .h = 1
+    };
     static tt_arr_handle* handle = nullptr;
     Surface* srfc = img_data->ANM_dir[dir].frame_data[0];
     // handle = TMAP_tile_buttons(usr_info, srfc, &offset, handle);

@@ -316,7 +316,6 @@ void draw_texture_to_framebuffer(Palette* pal, Shader* shader, mesh* triangle,
 
     shader->use();
 
-
     GLint t = glGetUniformLocation(shader->ID, "ColorPaletteUINT");
     glUniform1uiv(t, 256, (GLuint*)pal->colors);
 
