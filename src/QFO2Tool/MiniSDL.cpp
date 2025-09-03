@@ -1,11 +1,10 @@
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
+// #include <string.h>
+// #include <stdlib.h>
+// #include <assert.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include "MiniSDL.h"
-#include "ImGui_Warning.h"
 
 //create blank surface, 4-bytes per pixel (RGBA)
 Surface* Create_RGBA_Surface(int width, int height)

@@ -148,7 +148,7 @@ static int tile_mask[] = {
     30, 39,     //row 35
     32, 35,     //row 36
 };
-tt_arr_handle* export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr);
+void export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr);
 tt_arr_handle* crop_export_TMAP_tiles(Rect* offset, Surface* src, char* save_fldr, export_state* state, char* save_path, bool overwrite);
 
 tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state);

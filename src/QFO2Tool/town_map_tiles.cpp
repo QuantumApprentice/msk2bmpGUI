@@ -307,7 +307,7 @@ tt_arr_handle* crop_TMAP_tiles(Rect* offset, Surface* src, STATE_export* state)
     return handle;
 }
 
-tt_arr_handle* export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr)
+void export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save_fldr)
 {
     int row_cnt = handle->row_cnt;
     int col_cnt = handle->col_cnt;
@@ -326,7 +326,7 @@ tt_arr_handle* export_TMAP_tiles(Rect* offset, tt_arr_handle* handle, char* save
         }
     }
 
-    return handle;
+    return;
 }
 
 //array version (stores tile position)

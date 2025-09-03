@@ -283,7 +283,7 @@ int main(int argc, char** argv)
 
 
     // Our state
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.2f, 0.2f, 0.2f, 1.00f);
     // used to reset the default layout back to original
     bool firstframe = true;
 
