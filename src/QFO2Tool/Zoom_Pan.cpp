@@ -11,7 +11,9 @@
 ImVec2 top_corner(ImVec2 offset)
 {
     ImVec2 corner_pos;
-    corner_pos.x = offset.x + ImGui::GetCursorScreenPos().x;
+    // ImVec2 size = ImGui::GetWindowSize();
+
+    corner_pos.x = offset.x + ImGui::GetCursorScreenPos().x + ImGui::GetWindowWidth()/3;
     corner_pos.y = offset.y + ImGui::GetCursorScreenPos().y;
 
     return corner_pos;

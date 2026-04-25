@@ -310,6 +310,8 @@ bool load_FRM_to_SURFACE(const char* file, image_data* img_data, shader_info* sh
 //load FRM image from char* file_name
 //stores GLuint and size info to img_data
 //returns true on success, else false
+//TODO: this returns false and closes the window when loading a 0 byte FRM
+//      I don't like this design anymore, need to brainstorm some way around this
 bool load_FRM_OpenGL(const char* file_name, image_data* img_data, shader_info* shaders)
 {
     //read in FRM data including animation frames
