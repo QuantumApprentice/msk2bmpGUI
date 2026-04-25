@@ -253,10 +253,6 @@ void export_button_table(tt_arr_handle* exported_tiles, user_info* usr_nfo, expo
             "Is checked for the names of these tiles\n"
             "and then appended to only if they\n"
             "don't already exist.\n\n"
-            //TODO: delete this commented stuff, it works now
-            // "(NOTE: Currently can't load\n"
-            // "TILES.LST from master.dat\n"
-            // "but should be able too in the future)"
         );
         if (exported_tiles == NULL) {
             ImGui::EndDisabled();
@@ -578,383 +574,6 @@ bool load_PRO_MSG_state(user_info* usr_nfo, STATE_export* state)
 
 
 
-/*
-button press to start checking files    CheckFiles
-checking files success          --      ExportFiles
-checking files failure          --      UserInput
-user exit for failure           --      ExportMenu
-user overwrite/extract          --      ExportFiles
-*/
-#include <queue>
-#include <sml.hpp>
-//events
-class event_Render {};
-class event_Export {};
-class event_MatchesFound {};
-class event_FilesNotFound {};
-class event_UserExit {};
-class event_UserExtract {};
-class event_ResetState {};
-class event_ShowError{};
-//states
-class state_ExportMenu {};
-class state_CheckFiles {};
-class state_UserInput {};
-class state_ExtractFiles {};
-class state_ExportFiles {};
-class state_ErrorPopup {};
-
-class ExportMachine {
-    public:
-    auto operator()() const {
-        using namespace boost::sml;
-
-        return make_transition_table(
-            *state<class state_ExportMenu> + event<event_Render> /
-                [](back::process<event_Export> process_event, const event_Render&, STATE_export* state) {
-                    //this state is running when preview tiles window is open
-                    //  but not when actually exporting
-
-                    bool export_tile_popup = true;
-                    if (ImGui::BeginPopupModal("Export Tiles", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
-                        //input name
-                        ImGui::Text(
-                            "Please type a default name for these tiles.\n"
-                            "Exporting will append a tile number to this name.\n\n"
-                            "Tile names can only be 8 characters total,\n"
-                            "and 3 of those characters are currently\n"
-                            "taken up by the numbering system.\n"
-                            "(Which leaves 5 for you to work with).\n"
-                            "ex: tile_000.FRM, tile_001.FRM, ... tile_999.FRM\n"
-                        );
-                        //game engine/mapper only takes 8 character tile-names
-                        ImGui::InputText(
-                            "Name\n(max 5 characters)",
-                            state->save_name, 6);
-
-                        // create the filename for the current list of tiles
-                        // assigns final save path string to Full_Save_File_Path
-                        // if (!auto_export) {
-                        //     if (ImGui::Button("Save as Town Map Tiles")) {
-                        //         save_folder_dialog(usr_info);
-                        //     }
-                        // }
-
-
-
-
-
-                        ImGui::Text(
-                            "In order to get new FRMs to appear in the Fallout 2\n"
-                            "mapper (mapper2.exe), new entries must be made in\n\n"
-                            "   Fallout 2/data/art/tiles/TILES.LST\n\n"
-                            "For this to work, please provide the path to\n"
-                            "fallout2.exe in your modded Fallout 2 folder,\n"
-                            "and have this file extracted to its\n"
-                            "appropriate location.\n"
-                        );
-                        //fallout2.exe check
-                        //TODO: disable the "Auto Export All" button when fallout2.exe not found
-                        static char FObuff[MAX_PATH] = "";
-                        bool found = game_path_menu(state->usr_nfo, FObuff);
-
-                        ImGui::Text(
-                            "If only exporting FRMs, the mapper must be set in\n"
-                            "'Librarian' mode and new protos must be made from\n"
-                            "these new FRMs."
-                        );
-
-    static char* lst_path = NULL;
-
-    //input name
-    ImGui::Text(
-        "In order to get new tiles to appear in the mapper\n"
-        "(and thus in the game), each tile must have a proto(.pro)\n"
-        "file made, and an entry for each tile appended to\n\n"
-        "   Fallout 2/data/art/tiles/TILES.LST\n"
-        "   Fallout 2/data/proto/tiles/TILES.LST\n\n"
-        "In addition, entries can optionally be made in\n\n"
-        "   Fallout 2/data/text/english/game/pro_tile.msg\n\n"
-        "to give the tile a name and description in the\n"
-        "Fallout 2 mapper (Mapper2.exe).\n\n"
-    );
-
-    ImGui::Text(
-        "\nThese are Optional,\n"
-        "and will be applied to all tiles in this set.\n"
-    );
-
-    get_material_id();
-    input_name();
-    input_desc();
-
-
-
-                        if (state->art || state->pro || state->pat) {
-                            if (found) {
-                                ImGui::BeginDisabled();
-                            }
-                            if (ImGui::Button("Auto Export All")) {
-
-                                //TODO: delete? are we using rename_tiles()?
-                                // rename_tiles(state->handle, state->save_name);
-                                state->handle = crop_TMAP_tiles(state->offset, state->src, state);
-                                if (!state->handle) {
-                                    //TODO: what do I do on fail?
-                                } else {
-                                    process_event(event_Export{});
-                                }
-                            }
-                            if (found) {
-                                ImGui::EndDisabled();
-                            }
-                            if (ImGui::Button("Close")) {
-                                ImGui::CloseCurrentPopup();
-                            }
-                        }
-
-
-                        ImGui::EndPopup();
-                    }
-                }
-                ,
-
-            *state<class state_ExportMenu> + event<event_Export>
-                = state<class state_CheckFiles>,
-
-            state<class state_CheckFiles>  + event<event_Render> /
-                // render_check_files
-                [](back::process<event_FilesNotFound, event_MatchesFound, event_Export> process_event, const event_Render&, STATE_export* state) {
-                    bool FRM_LST = false;
-                    bool PRO_LST = false;
-                    bool PRO_MSG = false;
-                    if (state->art) {
-                        FRM_LST = load_FRM_LST_state(state->usr_nfo, state);
-                    }
-                    if (state->pro) {
-                        PRO_LST = load_PRO_LST_state(state->usr_nfo, state);
-                        PRO_MSG = load_PRO_MSG_state(state->usr_nfo, state);
-                    }
-
-                    bool match_found = false;
-                    for (int i = 0; i < state->handle->size; i++)
-                    {
-                        if (state->handle->tile[i].frm_id == -1) {
-                            continue;
-                        }
-                        snprintf(state->LST_path, MAX_PATH, "%s/data/art/tiles/%s",
-                                state->usr_nfo->default_game_path,
-                                state->handle->tile[i].name_ptr);
-
-                        char* path_case = io_path_check(state->LST_path);
-
-                        if (io_file_exists(path_case)) {
-                            match_found = true;
-                        }
-
-                        if (match_found) {
-                            process_event(event_MatchesFound{});
-                        }
-                    }
-
-                    if (!FRM_LST || !PRO_LST || !PRO_MSG) {
-                        process_event(event_FilesNotFound{});
-                        ImGui::OpenPopup("Need Input!");
-                    }
-                    else
-                    if (!match_found) {
-                        process_event(event_Export{});
-                    }
-                }
-                ,
-
-            state<class state_CheckFiles>  + event<event_MatchesFound>
-                = state<class state_ExportFiles>,
-            state<class state_CheckFiles>  + event<event_FilesNotFound>
-                = state<class state_UserInput>,
-            state<class state_CheckFiles>   + event<event_Export>
-                = state<class state_ExportFiles>,
-
-            state<class state_UserInput>   + event<event_UserExit>
-                = state<class state_ExportMenu>,
-
-            state<class state_UserInput>   + event<event_Render> /
-                // render_user_input
-                [](back::process<event_Export, event_UserExtract, event_UserExit> process_event, const event_Render&, STATE_export* state) {
-                    bool export_tile_popup = true;
-                    bool open_popup = false;
-                    if (ImGui::BeginPopupModal("Need Input!", &export_tile_popup, ImGuiChildFlags_AutoResizeY)) {
-                        if (state->art || state->pro || state->pat) {
-                            ImGui::Text("Unable to find:");
-                            if (!state->usr_nfo->game_files.FRM_TILES_LST) {
-                                ImGui::Text("art\\tiles\\TILES.LST");
-                            }
-                            if (state->pro) {
-                                if (!state->usr_nfo->game_files.PRO_TILES_LST) {
-                                    ImGui::Text("proto\\tiles\\TILES.LST");
-                                }
-                                if (!state->usr_nfo->game_files.PRO_TILE_MSG) {
-                                    ImGui::Text("text\\english\\Game\\pro_tile.msg");
-                                }
-                            }
-
-                            ImGui::Text("Extract from the relevant DAT file and append?\n");
-                            //TODO: need to disable this button if fallout2.exe not found
-                            if (ImGui::Button("Extract from DAT")) {
-                                process_event(event_UserExtract{});
-                            }
-
-                            ImGui::Text(
-                                "\n"
-                                "Would you like to make new ones?\n"
-                                "These new proto files will be blank\n"
-                                "(except for the new tiles made here),\n"
-                                "and will create all the subfolders\n"
-                                "necessary for the game engine to load\n"
-                                "these new files.\n\n"
-
-                                "--IMPORTANT--\n"
-                                "The Fallout game engine reads proto IDs/FRM names\n"
-                                "in from *.LST files based on the line number.\n"
-                                "The new *.LST files will override the old ones.\n"
-                                "Only do this if you want to create\n"
-                                "the whole tile system from scratch,\n"
-                                "or to preview the results before manually merging.\n"
-                            );
-                            ImGui::BeginDisabled();
-                            if (ImGui::Button("Create new blank LST")) {
-
-
-                            }
-                            ImGui::SameLine();
-                            ImGui::Text("(Currently unimplemented)");
-                            ImGui::EndDisabled();
-                            if (ImGui::Button("Cancel")) {
-                                ImGui::CloseCurrentPopup();
-                                process_event(event_UserExit{});
-                            }
-                        }
-                        ImGui::EndPopup();
-                    }
-                }
-                ,
-
-
-            state<class state_UserInput>   + event<event_UserExtract>
-                = state<class state_ExtractFiles>,
-
-            state<class state_ExtractFiles> + event<event_Render> /
-                [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
-                    if (tt_file_DAT_extract(state->usr_nfo, state)) {
-                        ImGui::OpenPopup("Number 5 is Alive! Files Extracted!");
-                        process_event(event_ShowError{});
-                    } else {
-                        ImGui::OpenPopup("Error: Unable to Extract Files");
-                        process_event(event_ShowError{});
-                    }
-                }
-                ,
-
-            state<class state_ExportFiles> + event<event_Render> /
-                [](back::process<event_Render, event_ShowError> process_event, const event_Render&, STATE_export* state) {
-                    if (state->art) {
-                        state->FRM_LST = _append_TMAP_tiles_LST(state->usr_nfo, state->handle);
-                    }
-                    if (state->pro) {
-                        state->PRO_LST = _append_TMAP_PRO_tiles_LST(state->usr_nfo, state->handle);
-                        //TODO: let the user choose the language
-                        state->PRO_MSG = _append_PRO_tile_MSG(state->usr_nfo, state->handle, state->language[0]);
-                    }
-
-                    ImGui::OpenPopup("Append LST Files");
-                    process_event(event_ShowError{});
-                }
-                ,
-
-            state<class state_ExportFiles> + event<event_ShowError>
-                = state<class state_ErrorPopup>,
-
-            state<class state_ErrorPopup> + event<event_Render> /
-                [](back::process<event_Render, event_ResetState, event_ShowError> process_event, const event_Render&, STATE_export* state) {
-
-                    if (ImGui::BeginPopupModal("Append LST Files")) {
-                        if (state->art) {
-                            if (state->FRM_LST) {
-                                ImGui::Text("Tile names appended to art/TILES.LST successfully.");
-                            } else {
-                                ImGui::Text("Something went wrong with art/TILES.LST, but I'm not sure what.");
-                            }
-                        }
-
-                        if (state->pro) {
-                            if (state->PRO_LST) {
-                                ImGui::Text("Proto's successfully added to proto/TILES.LST");
-                            } else {
-                                ImGui::Text("Something went wrong with proto/TILES.LST, but I'm not sure what.");
-                            }
-                            if (state->PRO_MSG) {
-                                ImGui::Text("Proto description successfully added to %s/game/pro_tile.msg", state->language[0]);
-                            } else {
-                                ImGui::Text("Something went wrong with %s/game/pro_tile.msg, but I'm not sure what.", state->language[0]);
-                            }
-                        }
-
-                        if (ImGui::Button("Close")) {
-                            ImGui::CloseCurrentPopup();
-                            process_event(event_ResetState{});
-                        }
-                        ImGui::EndPopup();
-                    }
-
-                    if (ImGui::BeginPopupModal("Number 5 is Alive! Files Extracted!")) {
-                        char* ptr = state->extracted;
-
-                        int i = 0;
-                        while (ptr[i] != '\0' && i < 4096)
-                        {
-                            ImGui::Text(&ptr[i]);
-                            i += strlen(&ptr[i]) + 1;
-                        }
-
-                        ImGui::Text("Extracted from %s.dat");
-
-                        if (ImGui::Button("Close")) {
-                            process_event(event_ResetState{});
-                            ImGui::CloseCurrentPopup();
-                        }
-                        ImGui::EndPopup();
-                    }
-
-                    if (ImGui::BeginPopupModal("Error: Unable to Extract Files")) {
-
-                        ImGui::Text("Unable to extract:");
-                        if (!state->usr_nfo->game_files.FRM_TILES_LST) {
-                            ImGui::Text("art\\tiles\\TILES.LST");
-                        }
-                        if (state->pro) {
-                            if (!state->usr_nfo->game_files.PRO_TILES_LST) {
-                                ImGui::Text("proto\\tiles\\TILES.LST");
-                            }
-                            if (!state->usr_nfo->game_files.PRO_TILE_MSG) {
-                                ImGui::Text("text\\english\\Game\\pro_tile.msg");
-                            }
-                        }
-
-                        if (ImGui::Button("return to start?")) {
-                            process_event(event_ResetState{});
-                            ImGui::CloseCurrentPopup();
-                        }
-                        ImGui::EndPopup();
-                    }
-
-                }
-                ,
-            state<class state_ErrorPopup> + event<event_ResetState>
-                = state<class state_ExportMenu>
-        );
-    }
-};
-
 TileExport append_LST_feedback_popup(STATE_export* state, TileExport state_switch)
 {
     if (ImGui::BeginPopupModal("Append LST Files")) {
@@ -982,7 +601,6 @@ TileExport append_LST_feedback_popup(STATE_export* state, TileExport state_switc
         if (ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
             state_switch = Off;
-            // process_event(event_ResetState{});
         }
         ImGui::EndPopup();
     }
@@ -1004,7 +622,6 @@ TileExport extract_LST_feedback_popup(STATE_export* state, TileExport state_swit
         ImGui::Text("Extracted from %s.dat");
 
         if (ImGui::Button("Close")) {
-            // process_event(event_ResetState{});
             state_switch = Off;
             ImGui::CloseCurrentPopup();
         }
@@ -1031,7 +648,6 @@ TileExport extract_LST_fail_popup(STATE_export* state, TileExport state_switch)
         }
 
         if (ImGui::Button("return to start?")) {
-            // process_event(event_ResetState{});
             state_switch = Off;
             ImGui::CloseCurrentPopup();
         }
@@ -1093,7 +709,6 @@ TileExport export_TILE_append(STATE_export* state)
     }
 
     ImGui::OpenPopup("Append LST Files");
-    // process_event(event_ShowError{});
     state_switch = Feedback;
     return state_switch;
 }
@@ -1103,10 +718,8 @@ TileExport export_TILE_extract_DAT(STATE_export* state)
 {
     if (tt_file_DAT_extract(state->usr_nfo, state)) {
         ImGui::OpenPopup("Number 5 is Alive! Files Extracted!");
-        // process_event(event_ShowError{});
     } else {
         ImGui::OpenPopup("Error: Unable to Extract Files");
-        // process_event(event_ShowError{});
     }
     return Feedback;
 }
@@ -1227,14 +840,12 @@ TileExport export_TILE_load_LST_files(STATE_export* state)
     //     }
     // }
     // if (match_found) {
-    //     // process_event(event_MatchesFound{});
     //     switch_state = MatchFound;
     //     ImGui::OpenPopup("Match Found");
     // }
 
     if (state->art) {
         if (FRM_LST) {
-            // process_event(event_FilesNotFound{});
             switch_state = Append;
         } else {
             switch_state = Extract;
@@ -1249,7 +860,6 @@ TileExport export_TILE_load_LST_files(STATE_export* state)
 
     }
     if (switch_state == Extract) {
-        // process_event(event_Export{});
         ImGui::OpenPopup("Need Input!");
     }
     return switch_state;
@@ -1456,9 +1066,6 @@ TileExport export_TILE_check_filenames(STATE_export* state)
     if (state->matches) {
         return MatchFound;
     } else {
-
-        // TileExport export_TILE_export(STATE_export* state)
-
         return ExportTiles;
     }
 }
@@ -1519,25 +1126,17 @@ tt_arr_handle* TMAP_tile_state_machine(user_info* usr_nfo, Surface* srfc, Rect* 
     state.usr_nfo = usr_nfo;
     state.offset  = offset;
     state.src     = srfc;
-    // static boost::sml::sm<ExportMachine, boost::sml::process_queue<std::queue>> StateMachine{&state};
     export_TILE_state_machine(&state);
 
     if (handle) {
         state.handle = handle;
     }
 
-
-
-
-
-
     //TODO: move these into their own function (plus add stuff)
     ImGui::SliderInt("Image Offset X", &offset->x, -400, 400, NULL);
     ImGui::SliderInt("Image Offset Y", &offset->y, -400, 400, NULL);
     ImGui::SliderInt("Tile Spacing X", &offset->w, 0, 80, NULL);
     ImGui::SliderInt("Tile Spacing Y", &offset->h, 0, 80, NULL);
-
-    // StateMachine.process_event(event_Render{});
 
     return state.handle;
 

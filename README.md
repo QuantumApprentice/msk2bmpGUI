@@ -1,7 +1,7 @@
 # msk2bmpGUI
-a GUI version of the msk2bmp tool made by temaperacl
-
-This project ended up being a lot more ambitious than 
+I need to rename this.
+This was originally a GUI version of the msk2bmp tool made by temaperacl,
+but this project ended up being a lot more ambitious than 
 I originally planned, but it's turning out quite nicely.
 
 A special "Thank You!" goes out to several people in the 
@@ -19,24 +19,28 @@ Ok so here's how "Q's (version) Fallout Image Editor" works:
 The program currently opens with a very simple "Load files..." 
 button and the full default Fallout palette including the 
 upper cycling colors.
+Drag and dropping images is supported,
+(and might work better than the Load Files button).
 
 ### *Load File*
-Loading a compatible image (jpg, png, bmp) or Fallout FRM file
-will open a second window with a preview of this image.
-The red squares indicate how the image will be tiled if it's
-supposed to be an overworld map.
-- Currently only a single frame of an FRM will be displayed,
-  Plans are to expand this to display all frames, and to allow
-  each frame to be edited individually.
-- FRM's that use color cycling currently don't display correctly,
-  Plans are to add color cycling to this image display too.
+Loading or dropping a compatible image (jpg, png, bmp) 
+or Fallout FRM file will open a second window with a 
+preview of this image.
 
-Once the image is loaded there are several buttons above the image
-with conversion and editing options.
-- These buttons are currently fairly generic and mostly apply to
-  non-FRM images, 
- - Plans are to make them context specific with dropdowns for the
-  alternative color matching profiles (to include dithering options).
+If its larger than the size of an overworld map tile, 
+then red squares indicate how the image will be tiled.
+
+- Once the image is loaded you can use the Angle
+Bracket keys "<" and ">" to browse all supported images
+in the source folder for that image.
+- The Left <- and Right -> Arrow keys scrub through the
+frames of an animated FRM.
+- The Up and Aown Arrow keys change the facing direction
+of an animated FRM if those directions are stored in it.
+- The Space Bar plays/pauses FRM animations.
+- CTRL + Mouse Scroll will zoom in and out on images.
+- Right Click and Drag will move the image around the window.
+
 
 ### *Preview Tiles*
 The "Preview Tiles" buttons are intended to be used to make Fallout's
