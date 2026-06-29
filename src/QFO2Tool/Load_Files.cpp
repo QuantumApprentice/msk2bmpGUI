@@ -745,13 +745,13 @@ bool ImDialog_load_files(LF* F_Prop, image_data *img_data, user_info *usr_info, 
 bool FRx_check(char *ext)
 {
     if (
-        (io_strncmp(ext, "FRM", 4) == 0)
-     || (io_strncmp(ext, "FR0", 4) == 0)
-     || (io_strncmp(ext, "FR1", 4) == 0)
-     || (io_strncmp(ext, "FR2", 4) == 0)
-     || (io_strncmp(ext, "FR3", 4) == 0)
-     || (io_strncmp(ext, "FR4", 4) == 0)
-     || (io_strncmp(ext, "FR5", 4) == 0))
+        (io_strncasecmp(ext, "FRM", 4) == 0)
+     || (io_strncasecmp(ext, "FR0", 4) == 0)
+     || (io_strncasecmp(ext, "FR1", 4) == 0)
+     || (io_strncasecmp(ext, "FR2", 4) == 0)
+     || (io_strncasecmp(ext, "FR3", 4) == 0)
+     || (io_strncasecmp(ext, "FR4", 4) == 0)
+     || (io_strncasecmp(ext, "FR5", 4) == 0))
     {
         return true;
     }
